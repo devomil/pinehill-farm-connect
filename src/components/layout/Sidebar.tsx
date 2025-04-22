@@ -1,155 +1,266 @@
-
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
-  Calendar,
-  Clock,
-  FileText,
-  Book,
-  MessageSquare,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  Users,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useMobile } from "@/hooks/useMobile";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  BarChart3, 
+  Calendar as CalendarIcon, 
+  ClipboardList, 
+  Compass, 
+  Home, 
+  Inbox, 
+  LifeBuoy, 
+  LogOut, 
+  Settings, 
+  Users, 
+  BookOpenCheck,
+  Clipboard,
+  BookOpen 
 } from "lucide-react";
 
 interface SidebarProps {
-  className?: string;
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ className }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
   const { currentUser, logout } = useAuth();
-  const location = useLocation();
+  const navigate = useNavigate();
+  const isMobile = useMobile();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
-
-  const navItems = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: Home,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Time Management",
-      href: "/time-management",
-      icon: Clock,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Training Portal",
-      href: "/training",
-      icon: Book,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Communication",
-      href: "/communication",
-      icon: MessageSquare,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Shift Reports",
-      href: "/reports",
-      icon: FileText,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Calendar",
-      href: "/calendar",
-      icon: Calendar,
-      roles: ["employee", "admin"],
-    },
-    {
-      name: "Employee Management",
-      href: "/employees",
-      icon: Users,
-      roles: ["admin"],
-    },
-  ];
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-muted border-r transition-all duration-300 ease-in-out z-10",
-        collapsed ? "w-16" : "w-64",
-        className
+        "border-r bg-background relative h-screen flex flex-col transition-all",
+        collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex items-center justify-between p-4 border-b">
-        {collapsed ? (
-          <div className="mx-auto">
-            <img
-              src="/lovable-uploads/5475bb37-9a4d-4088-af2e-92926b00f241.png" 
-              alt="PineHill Farm"
-              className="h-8"
-            />
-          </div>
-        ) : (
-          <div className="flex-1">
-            <img
-              src="/lovable-uploads/5475bb37-9a4d-4088-af2e-92926b00f241.png" 
-              alt="PineHill Farm"
-              className="h-12"
-            />
-          </div>
-        )}
+      <div className="flex items-center h-20 px-4 shrink-0">
+        <Button variant="ghost" onClick={() => setCollapsed(!collapsed)}>
+          <Compass className="h-6 w-6 mr-2" />
+          {!collapsed && <span>Pinehill Farm</span>}
+        </Button>
+      </div>
+      
+      <div className="grow overflow-y-auto">
+        <nav className="flex flex-col gap-1 px-2">
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname === "/dashboard" && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/dashboard">
+              <Home className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Dashboard</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/employees") && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/employees">
+              <Users className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Employees</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/time") && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/time">
+              <CalendarIcon className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Time Management</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/calendar") && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/calendar">
+              <CalendarIcon className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Calendar</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/communication") && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/communication">
+              <Inbox className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Communication</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/reports") && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/reports">
+              <BarChart3 className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Reports</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start font-normal",
+              pathname.includes("/training") && pathname !== "/admin-training" && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to="/training">
+              <BookOpen className="h-5 w-5 mr-3" />
+              <span className={!collapsed ? "block" : "hidden"}>Training Portal</span>
+            </Link>
+          </Button>
+
+          {currentUser?.role === "admin" && (
+            <Button
+              variant="ghost"
+              className={cn(
+                "justify-start font-normal",
+                pathname.includes("/admin-training") && "bg-accent"
+              )}
+              asChild
+            >
+              <Link to="/admin-training">
+                <BookOpenCheck className="h-5 w-5 mr-3" />
+                <span className={!collapsed ? "block" : "hidden"}>Training Admin</span>
+              </Link>
+            </Button>
+          )}
+        </nav>
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full border-t">
         <Button
           variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className="text-muted-foreground"
+          className="justify-start font-normal w-full"
+          onClick={handleLogout}
         >
-          {collapsed ? <Menu /> : <X />}
+          <LogOut className="h-5 w-5 mr-3" />
+          <span className={!collapsed ? "block" : "hidden"}>Logout</span>
         </Button>
       </div>
 
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden py-4 gap-1">
-        {navItems
-          .filter((item) => currentUser && item.roles.includes(currentUser.role))
-          .map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "flex items-center px-4 py-2 mx-2 rounded-md hover:bg-accent group transition-colors",
-                isActive(item.href) ? "bg-primary text-primary-foreground" : "text-foreground"
+      {isMobile && (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="absolute top-4 right-4">
+              Menu
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-3/4">
+            <SheetHeader>
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Navigate to different sections of the application.
+              </SheetDescription>
+            </SheetHeader>
+            <nav className="grid gap-4 py-4">
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/dashboard">
+                  <Home className="h-5 w-5 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/employees">
+                  <Users className="h-5 w-5 mr-2" />
+                  Employees
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/time">
+                  <CalendarIcon className="h-5 w-5 mr-2" />
+                  Time Management
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/calendar">
+                  <CalendarIcon className="h-5 w-5 mr-2" />
+                  Calendar
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/communication">
+                  <Inbox className="h-5 w-5 mr-2" />
+                  Communication
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/reports">
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  Reports
+                </Link>
+              </Button>
+              <Button variant="ghost" className="justify-start font-normal">
+                <Link to="/training">
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  Training Portal
+                </Link>
+              </Button>
+              {currentUser?.role === "admin" && (
+                <Button variant="ghost" className="justify-start font-normal">
+                  <Link to="/admin-training">
+                    <BookOpenCheck className="h-5 w-5 mr-2" />
+                    Training Admin
+                  </Link>
+                </Button>
               )}
-            >
-              <item.icon className={cn("h-5 w-5 mr-3", collapsed && "mr-0")} />
-              <span className={cn("", collapsed && "hidden")}>
-                {item.name}
-              </span>
-            </Link>
-          ))}
-      </div>
-
-      <div className="p-4 border-t mt-auto">
-        {!collapsed && (
-          <div className="flex items-center mb-4 px-4 py-2">
-            <div className="flex-1 ml-3">
-              <p className="text-sm font-medium">{currentUser?.name}</p>
-              <p className="text-xs text-muted-foreground">{currentUser?.role}</p>
-            </div>
-          </div>
-        )}
-        <Button
-          variant="outline"
-          onClick={logout}
-          className={cn(
-            "flex items-center w-full justify-center",
-            collapsed ? "p-2" : ""
-          )}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          {!collapsed && "Logout"}
-        </Button>
-      </div>
+              <Button variant="ghost" className="justify-start font-normal" onClick={handleLogout}>
+                <LogOut className="h-5 w-5 mr-2" />
+                Logout
+              </Button>
+            </nav>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
-}
+};

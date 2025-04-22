@@ -1,6 +1,4 @@
 
-// REFACTOR: Split out subfields, add time/location, and notification recipient select
-
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,7 +15,7 @@ import {
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { notifyManager } from "@/utils/notifyManager";
 import { TeamCalendarEventFormDialog } from "./TeamCalendarEventFormDialog";
 import { TeamCalendarEventFormFileField } from "./TeamCalendarEventFormFileField";
@@ -26,6 +24,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { TeamCalendarEventDateTimeLocationFields } from "./TeamCalendarEventDateTimeLocationFields";
 import { TeamCalendarEventNotifySelector } from "./TeamCalendarEventNotifySelector";
 import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface TeamCalendarEventFormProps {
   open: boolean;
@@ -94,15 +93,17 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
         end_time: values.endTime,
         location: values.location,
       };
-      const { supabase } = await import("@/integrations/supabase/client");
+
       const { error, data } = await supabase
         .from("company_events")
         .insert([newEvent]);
+        
       if (error) {
         toast.error("Failed to create event");
         setLoading(false);
         return;
       }
+      
       toast.success("Event created successfully");
       if (sendNotifications) {
         if (notifyAll) {

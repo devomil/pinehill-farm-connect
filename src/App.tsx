@@ -1,47 +1,78 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
+import React from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import Employees from "./pages/Employees";
 import TimeManagement from "./pages/TimeManagement";
-import Training from "./pages/Training";
+import Calendar from "./pages/Calendar";
 import Communication from "./pages/Communication";
 import Reports from "./pages/Reports";
-import Calendar from "./pages/Calendar";
-import Employees from "./pages/Employees";
+import Training from "./pages/Training";
+import AdminTraining from "./pages/AdminTraining";
+import { Toaster } from "./components/ui/toaster";
+import { AuthProvider } from "./contexts/AuthContext";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
+function App() {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <Index />,
+    },
+    {
+      path: "/login",
+      element: <Login />,
+    },
+    {
+      path: "/dashboard",
+      element: <Dashboard />,
+    },
+    {
+      path: "/employees",
+      element: <Employees />,
+    },
+    {
+      path: "/time",
+      element: <TimeManagement />,
+    },
+    {
+      path: "/calendar",
+      element: <Calendar />,
+    },
+    {
+      path: "/communication",
+      element: <Communication />,
+    },
+    {
+      path: "/reports",
+      element: <Reports />,
+    },
+    {
+      path: "/training",
+      element: <Training />,
+    },
+    {
+      path: "/admin-training",
+      element: <AdminTraining />,
+    },
+    {
+      path: "*",
+      element: <NotFound />,
+    },
+  ]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
         <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/time-management" element={<TimeManagement />} />
-            <Route path="/training" element={<Training />} />
-            <Route path="/communication" element={<Communication />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/employees" element={<Employees />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
