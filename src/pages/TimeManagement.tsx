@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,8 +6,6 @@ import { TimeOffRequest } from "@/types";
 import { TimeOffRequestForm } from "@/components/time-management/TimeOffRequestForm";
 import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffRequests";
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
-// Remove old placeholder
-// import { TeamCalendarPlaceholder } from "@/components/time-management/TeamCalendarPlaceholder";
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -18,12 +15,10 @@ export default function TimeManagement() {
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch time-off requests from Supabase
   const fetchRequests = async () => {
     if (!currentUser) return;
     setLoading(true);
     const { data, error } = await supabase
-      // @ts-ignore
       .from("time_off_requests")
       .select("*");
     if (error) {
@@ -50,7 +45,6 @@ export default function TimeManagement() {
 
   useEffect(() => {
     fetchRequests();
-    // Optionally: subscribe to real-time updates here
   }, [currentUser]);
 
   if (!currentUser) {
@@ -68,9 +62,6 @@ export default function TimeManagement() {
   const userRequests = timeOffRequests.filter(
     (request) => request.userId === currentUser.id
   );
-
-  // Show form dialog when empty state is clicked (optional, now managed by form/modal itself)
-  // const [formOpen, setFormOpen] = useState(false);
 
   return (
     <DashboardLayout>
