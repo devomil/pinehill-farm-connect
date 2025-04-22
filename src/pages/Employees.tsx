@@ -11,11 +11,14 @@ import { EmployeeSearchBar } from "@/components/employee/EmployeeSearchBar";
 import { EmployeeTable } from "@/components/employee/EmployeeTable";
 import { useEmployeeModal } from "@/hooks/useEmployeeModal";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialogDescription } from "@/components/ui/alert-dialog";
 
 export default function Employees() {
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const { currentUser } = useAuth();
   const {
@@ -25,7 +28,6 @@ export default function Employees() {
     closeModal
   } = useEmployeeModal();
 
-  // Fetch employees from Supabase
   const fetchEmployees = async () => {
     try {
       setLoading(true);
@@ -66,48 +68,6 @@ export default function Employees() {
       ];
 
       setEmployees(mockEmployees);
-      /*
-      // Uncomment the below for actual Supabase integration
-      
-      // This would need to be implemented with a proper admin function in Supabase
-      // to securely fetch user data
-      
-      // First fetch user roles to determine primary role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('*');
-      
-      if (roleError) throw roleError;
-      
-      const rolesByUser = {};
-      if (roleData) {
-        roleData.forEach(role => {
-          if (!rolesByUser[role.user_id]) {
-            rolesByUser[role.user_id] = [];
-          }
-          rolesByUser[role.user_id].push(role.role);
-        });
-      }
-      
-      // Then fetch user data and merge with roles
-      // Note: In a real app, we'd need a serverless function to securely fetch users from auth.users
-      const fetchedEmployees = mockEmployees.map(emp => {
-        const roles = rolesByUser[emp.id] || ['employee'];
-        // Determine primary role (admin > hr > manager > employee)
-        let primaryRole = 'employee';
-        if (roles.includes('admin')) primaryRole = 'admin';
-        else if (roles.includes('hr')) primaryRole = 'hr';
-        else if (roles.includes('manager')) primaryRole = 'manager';
-        
-        return {
-          ...emp,
-          role: primaryRole
-        };
-      });
-      
-      setEmployees(fetchedEmployees);
-      */
-      
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast.error("Failed to load employees");
@@ -120,7 +80,6 @@ export default function Employees() {
     fetchEmployees();
   }, []);
 
-  // Filter employees based on search query
   const filteredEmployees = employees.filter((employee) =>
     employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,7 +87,6 @@ export default function Employees() {
     (employee.position && employee.position.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Handle add/edit/delete employee
   const handleAddEmployee = () => {
     toast.info("This feature is coming soon!");
   };
@@ -136,6 +94,34 @@ export default function Employees() {
   const handleDeleteEmployee = (id: string) =>
     toast.info(`Delete employee with ID ${id} - Coming soon!`);
   const handleEmployeeUpdate = () => fetchEmployees();
+  const handleResetPassword = (employee: UserType) => {
+    setResetEmployee(employee);
+  };
+  const confirmResetPassword = async () => {
+    if (!resetEmployee) return;
+    setResetLoading(true);
+    try {
+      const res = await fetch("https://pdeaxfhsodenefeckabm.supabase.co/functions/v1/admin-reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // no need to send auth header, handled via edge function service role
+        },
+        body: JSON.stringify({ email: resetEmployee.email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Password reset link sent to ${resetEmployee.email}.`);
+      } else {
+        toast.error(data.error || "Failed to send reset email.");
+      }
+    } catch (err) {
+      toast.error("Failed to send reset email.");
+    } finally {
+      setResetLoading(false);
+      setResetEmployee(null);
+    }
+  };
 
   return (
     <DashboardLayout requireAdmin={true}>
@@ -157,6 +143,8 @@ export default function Employees() {
             loading={loading}
             onEdit={handleEditEmployee}
             onDelete={handleDeleteEmployee}
+            onResetPassword={handleResetPassword}
+            isAdmin={currentUser && currentUser.role === "admin"}
           />
         </CardContent>
       </Card>
@@ -166,6 +154,23 @@ export default function Employees() {
         employee={selectedEmployee}
         onEmployeeUpdate={handleEmployeeUpdate}
       />
+      <AlertDialog open={!!resetEmployee} onOpenChange={open => !open && setResetEmployee(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Password?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Send a password reset email to <b>{resetEmployee?.name}</b> ({resetEmployee?.email})? <br />
+              This will allow the employee to set a new password.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmResetPassword} disabled={resetLoading}>
+              {resetLoading ? "Sending..." : "Send Reset Email"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

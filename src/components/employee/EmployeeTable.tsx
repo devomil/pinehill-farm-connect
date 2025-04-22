@@ -16,9 +16,11 @@ interface EmployeeTableProps {
   loading: boolean;
   onEdit: (employee: UserType) => void;
   onDelete: (id: string) => void;
+  onResetPassword?: (employee: UserType) => void;
+  isAdmin?: boolean;
 }
 
-export function EmployeeTable({ employees, loading, onEdit, onDelete }: EmployeeTableProps) {
+export function EmployeeTable({ employees, loading, onEdit, onDelete, onResetPassword, isAdmin }: EmployeeTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -46,6 +48,8 @@ export function EmployeeTable({ employees, loading, onEdit, onDelete }: Employee
                 employee={employee}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onResetPassword={onResetPassword}
+                isAdmin={isAdmin}
               />
             ))
           ) : (

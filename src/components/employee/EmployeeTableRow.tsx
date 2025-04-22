@@ -1,16 +1,18 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, KeyRound } from "lucide-react";
 import { User as UserType } from "@/types";
 
 interface EmployeeTableRowProps {
   employee: UserType;
   onEdit: (employee: UserType) => void;
   onDelete: (id: string) => void;
+  onResetPassword?: (employee: UserType) => void; // New prop
+  isAdmin?: boolean; // Passes true if currentUser is admin
 }
 
-export function EmployeeTableRow({ employee, onEdit, onDelete }: EmployeeTableRowProps) {
+export function EmployeeTableRow({ employee, onEdit, onDelete, onResetPassword, isAdmin }: EmployeeTableRowProps) {
   return (
     <tr>
       <td className="font-medium">{employee.name}</td>
@@ -43,6 +45,16 @@ export function EmployeeTableRow({ employee, onEdit, onDelete }: EmployeeTableRo
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+          {isAdmin && onResetPassword && (
+            <Button 
+              variant="ghost"
+              size="icon"
+              title="Reset Password"
+              onClick={() => onResetPassword(employee)}
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </td>
     </tr>
