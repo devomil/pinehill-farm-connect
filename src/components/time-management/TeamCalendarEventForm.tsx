@@ -1,4 +1,6 @@
 
+// REFACTOR: Split out subfields, add time/location, and notification recipient select
+
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,10 @@ import { notifyManager } from "@/utils/notifyManager";
 import { TeamCalendarEventFormDialog } from "./TeamCalendarEventFormDialog";
 import { TeamCalendarEventFormFileField } from "./TeamCalendarEventFormFileField";
 import { TeamCalendarEventAttendanceType } from "./TeamCalendarEventAttendanceType";
+import { useEmployees } from "@/hooks/useEmployees";
+import { TeamCalendarEventDateTimeLocationFields } from "./TeamCalendarEventDateTimeLocationFields";
+import { TeamCalendarEventNotifySelector } from "./TeamCalendarEventNotifySelector";
+import { User } from "@/types";
 
 export interface TeamCalendarEventFormProps {
   open: boolean;
@@ -33,9 +39,11 @@ const formSchema = z.object({
   description: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  location: z.string().optional(),
   attachments: z.array(z.string()).optional(),
   attendanceType: z.enum(["required", "optional", "would-like", "info-only"]),
-  sendNotifications: z.boolean().default(false),
 });
 
 export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
@@ -45,6 +53,11 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
   currentUser,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [sendNotifications, setSendNotifications] = useState(false);
+  const [notifyAll, setNotifyAll] = useState(true);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
+  const { unfilteredEmployees, loading: employeesLoading } = useEmployees();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,15 +66,22 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
       description: "",
       startDate: new Date(),
       endDate: new Date(),
+      startTime: "09:00",
+      endTime: "10:00",
+      location: "",
       attachments: [],
       attendanceType: "required",
-      sendNotifications: false,
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoading(true);
+
+      // Compose combined start and end datetime strings
+      const start_datetime = `${values.startDate.toISOString().split("T")[0]}T${values.startTime || "09:00"}:00`;
+      const end_datetime = `${values.endDate.toISOString().split("T")[0]}T${values.endTime || "10:00"}:00`;
+
       const newEvent = {
         title: values.title,
         description: values.description || "",
@@ -70,9 +90,12 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
         created_by: currentUser.id,
         attendance_type: values.attendanceType,
         attachments: values.attachments ?? [],
+        start_time: values.startTime,
+        end_time: values.endTime,
+        location: values.location,
       };
       const { supabase } = await import("@/integrations/supabase/client");
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from("company_events")
         .insert([newEvent]);
       if (error) {
@@ -81,12 +104,21 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
         return;
       }
       toast.success("Event created successfully");
-      if (values.sendNotifications) {
-        await notifyManager("event_created", currentUser, {
-          event: newEvent,
-          notificationType: "team_calendar",
-        });
-        toast.success("Notifications sent to team members");
+      if (sendNotifications) {
+        if (notifyAll) {
+          await notifyManager("event_created", currentUser, {
+            event: newEvent,
+            notificationType: "team_calendar",
+            recipients: "all",
+          });
+        } else {
+          await notifyManager("event_created", currentUser, {
+            event: newEvent,
+            notificationType: "team_calendar",
+            recipients: selectedUserIds,
+          });
+        }
+        toast.success("Notifications sent");
       }
       setOpen(false);
       form.reset();
@@ -130,43 +162,7 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
             )}
           />
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Start Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      value={field.value.toISOString().split("T")[0]}
-                      onChange={(e) => field.onChange(new Date(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>End Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      value={field.value.toISOString().split("T")[0]}
-                      onChange={(e) => field.onChange(new Date(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <TeamCalendarEventDateTimeLocationFields form={form} />
 
           <FormField
             control={form.control}
@@ -184,22 +180,18 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
             )}
           />
 
-          <div className="flex items-center space-x-2 pt-2">
-            <input
-              type="checkbox"
-              id="send-notifications"
-              checked={form.watch("sendNotifications")}
-              onChange={(e) => form.setValue("sendNotifications", e.target.checked)}
-              className="h-4 w-4"
-            />
-            <FormLabel htmlFor="send-notifications" className="flex items-center gap-1">
-              <Bell className="h-4 w-4 text-amber-500" />
-              Send notifications to team members
-            </FormLabel>
-          </div>
+          <TeamCalendarEventNotifySelector
+            enabled={sendNotifications}
+            setEnabled={setSendNotifications}
+            notifyAll={notifyAll}
+            setNotifyAll={setNotifyAll}
+            selectedUserIds={selectedUserIds}
+            setSelectedUserIds={setSelectedUserIds}
+            allEmployees={unfilteredEmployees}
+          />
 
           <div className="pt-4 flex justify-end">
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || employeesLoading}>
               {loading ? "Creating..." : "Create Event"}
             </Button>
           </div>
