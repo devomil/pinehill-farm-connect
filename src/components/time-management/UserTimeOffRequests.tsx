@@ -7,13 +7,19 @@ import { TimeOffRequest } from "@/types";
 
 interface UserTimeOffRequestsProps {
   userRequests: TimeOffRequest[];
-  onNewRequest: () => void;
+  loading?: boolean;
+  refresh?: () => void;
 }
 
 export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
   userRequests,
-  onNewRequest,
+  loading,
+  refresh,
 }) => {
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
   if (userRequests.length === 0) {
     return (
       <div className="text-center py-12">
@@ -22,10 +28,12 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
         <p className="mt-2 text-sm text-muted-foreground">
           Create your first time-off request to get started.
         </p>
-        <Button className="mt-4" onClick={onNewRequest}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Request
-        </Button>
+        {refresh && (
+          <Button className="mt-4" onClick={refresh}>
+            <Plus className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        )}
       </div>
     );
   }

@@ -6,45 +6,51 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
-import { TimeOffRequest, User } from "@/types";
-import { notifyManager } from "@/utils/notifyManager";
+import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/sonner";
 
 interface TimeOffRequestFormProps {
   currentUser: User;
-  onRequest: (request: TimeOffRequest) => void;
+  onRequestSubmitted: () => void;
 }
 
-export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentUser, onRequest }) => {
+export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentUser, onRequestSubmitted }) => {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newRequest: TimeOffRequest = {
-      id: `${Date.now()}`,
-      userId: currentUser.id,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      reason,
-      status: "pending",
-    };
-    onRequest(newRequest);
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("time_off_requests")
+      .insert({
+        user_id: currentUser.id,
+        start_date: startDate,
+        end_date: endDate,
+        reason,
+        status: "pending",
+      });
+
+    if (error) {
+      toast.error("Failed to submit request: " + error.message);
+      setLoading(false);
+      return;
+    }
+
+    toast.success("Request submitted!");
     setStartDate("");
     setEndDate("");
     setReason("");
     setOpen(false);
+    setLoading(false);
 
-    notifyManager(
-      "time_off_request",
-      {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-      },
-      { request: { startDate, endDate, reason } }
-    );
+    if (onRequestSubmitted) onRequestSubmitted();
+    // Optionally: notifyManager edge function call here
   };
 
   return (
@@ -73,6 +79,7 @@ export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentU
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -83,6 +90,7 @@ export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentU
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -94,11 +102,12 @@ export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentU
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
+                disabled={loading}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Submit Request</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Submitting..." : "Submit Request"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
