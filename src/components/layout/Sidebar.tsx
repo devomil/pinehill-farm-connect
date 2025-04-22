@@ -85,7 +85,7 @@ export function Sidebar({ className }: SidebarProps) {
         {collapsed ? (
           <div className="mx-auto">
             <img
-              src="/lovable-uploads/b54ef249-55c4-4a2c-a8c3-c6bf4effae60.png"
+              src="/lovable-uploads/5475bb37-9a4d-4088-af2e-92926b00f241.png" 
               alt="PineHill Farm"
               className="h-8"
             />
@@ -93,7 +93,7 @@ export function Sidebar({ className }: SidebarProps) {
         ) : (
           <div className="flex-1">
             <img
-              src="/lovable-uploads/b54ef249-55c4-4a2c-a8c3-c6bf4effae60.png"
+              src="/lovable-uploads/5475bb37-9a4d-4088-af2e-92926b00f241.png" 
               alt="PineHill Farm"
               className="h-12"
             />
