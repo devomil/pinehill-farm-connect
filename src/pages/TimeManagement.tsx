@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TimeOffRequest } from "@/types";
 import { Calendar, Clock, Plus } from "lucide-react";
+import { notifyManager } from "@/utils/notifyManager";
 
 export default function TimeManagement() {
   const { currentUser } = useAuth();
@@ -19,7 +19,6 @@ export default function TimeManagement() {
   const [reason, setReason] = useState("");
   const [open, setOpen] = useState(false);
 
-  // Mock time-off requests for display
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([
     {
       id: "1",
@@ -39,12 +38,10 @@ export default function TimeManagement() {
     },
   ]);
 
-  // For admin users, show requests that need approval
   const pendingRequests = timeOffRequests.filter(
     (request) => request.status === "pending"
   );
 
-  // For all users, show their own requests
   const userRequests = timeOffRequests.filter(
     (request) => currentUser && request.userId === currentUser.id
   );
@@ -67,6 +64,16 @@ export default function TimeManagement() {
       setEndDate("");
       setReason("");
       setOpen(false);
+
+      notifyManager(
+        "time_off_request",
+        {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+        },
+        { request: { startDate, endDate, reason } }
+      );
     }
   };
 
