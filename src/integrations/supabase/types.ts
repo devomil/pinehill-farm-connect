@@ -143,6 +143,39 @@ export type Database = {
         }
         Relationships: []
       }
+      time_off_requests: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          notes: string | null
+          reason: string | null
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          start_date: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
