@@ -30,19 +30,30 @@ export default function TrainingPortal() {
 
         if (trainingError) throw trainingError;
         
+        // Map the training data from snake_case to camelCase to match our Training interface
+        const mappedTrainings: Training[] = (trainingData || []).map(training => ({
+          id: training.id,
+          title: training.title,
+          description: training.description || "",
+          category: training.category as "CBD101" | "HIPAA" | "SaltGenerator" | "OpeningClosing" | "Other",
+          requiredFor: training.required_for || [],
+          duration: training.duration,
+          expiresAfter: training.expires_after,
+        }));
+
         // For assigned trainings, we would fetch from training_assignments
         // But for demo, we'll use mock progress data
         const mockProgress: TrainingProgress[] = [
           {
             userId: currentUser?.id || "",
-            trainingId: trainingData?.[0]?.id || "",
+            trainingId: mappedTrainings[0]?.id || "",
             completed: true,
             completedDate: new Date("2023-03-15"),
             score: 95,
           }
         ];
 
-        setTrainings(trainingData as Training[]);
+        setTrainings(mappedTrainings);
         setTrainingProgress(mockProgress);
       } catch (err) {
         console.error("Error fetching data:", err);
