@@ -9,6 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      announcement_recipients: {
+        Row: {
+          announcement_id: string
+          id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          id?: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_recipients_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          attachments: Json | null
+          author_id: string
+          content: string
+          created_at: string | null
+          has_quiz: boolean | null
+          id: string
+          priority: string
+          target_type: string
+          title: string
+        }
+        Insert: {
+          attachments?: Json | null
+          author_id: string
+          content: string
+          created_at?: string | null
+          has_quiz?: boolean | null
+          id?: string
+          priority: string
+          target_type: string
+          title: string
+        }
+        Update: {
+          attachments?: Json | null
+          author_id?: string
+          content?: string
+          created_at?: string | null
+          has_quiz?: boolean | null
+          id?: string
+          priority?: string
+          target_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       employee_hr: {
         Row: {
           address: string | null
