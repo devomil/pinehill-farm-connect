@@ -8,7 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { EmployeeSelector } from "./EmployeeSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Paperclip, FileText } from "lucide-react";
+import { Paperclip, FileText, Loader2 } from "lucide-react";
 import { User } from "@/types";
 
 interface AdminAnnouncementDialogProps {
@@ -190,8 +190,15 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" loading={loading ? "true" : undefined} disabled={loading}>
-              Create
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create"
+              )}
             </Button>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={loading}>Cancel</Button>
