@@ -35,8 +35,11 @@ export default function Login() {
       <Card className="w-full max-w-md z-10 shadow-lg">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
-            {/* Placeholder for logo */}
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-lg">PF</div>
+            <img 
+              src="/lovable-uploads/b54ef249-55c4-4a8c-a8c3-c6bf4effae60.png" 
+              alt="PineHill Farm Logo" 
+              className="w-24 h-24 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold">PineHill Farm Connect</CardTitle>
           <CardDescription>Enter your credentials to access the intranet</CardDescription>
