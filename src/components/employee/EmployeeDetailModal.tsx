@@ -103,7 +103,7 @@ export function EmployeeDetailModal({
         setUserRoles(data.map(role => ({
           id: role.id,
           userId: role.user_id,
-          role: role.role
+          role: role.role as "admin" | "employee" | "hr" | "manager"
         })));
         
         // Initialize selected roles
@@ -115,7 +115,7 @@ export function EmployeeDetailModal({
         };
         
         data.forEach(role => {
-          roleMap[role.role] = true;
+          roleMap[role.role as keyof typeof roleMap] = true;
         });
         
         setSelectedRoles(roleMap);
@@ -167,8 +167,8 @@ export function EmployeeDetailModal({
         // Transform camelCase to snake_case for Supabase
         const hrData = {
           user_id: employeeData.id,
-          start_date: employeeHR.startDate,
-          end_date: employeeHR.endDate,
+          start_date: employeeHR.startDate ? employeeHR.startDate.toISOString().split('T')[0] : null,
+          end_date: employeeHR.endDate ? employeeHR.endDate.toISOString().split('T')[0] : null,
           salary: employeeHR.salary,
           employment_type: employeeHR.employmentType,
           address: employeeHR.address,
@@ -198,18 +198,18 @@ export function EmployeeDetailModal({
       // Update roles
       // First, get current roles to compare
       const currentRoles = userRoles.map(r => r.role);
-      const newRoles: string[] = [];
+      const newRoles: ("admin" | "employee" | "hr" | "manager")[] = [];
       
       // Collect selected roles
       Object.entries(selectedRoles).forEach(([role, selected]) => {
-        if (selected) newRoles.push(role);
+        if (selected) newRoles.push(role as "admin" | "employee" | "hr" | "manager");
       });
       
       // Roles to add
       const rolesToAdd = newRoles.filter(r => !currentRoles.includes(r));
       
       // Roles to remove
-      const rolesToRemove = currentRoles.filter(r => !newRoles.includes(r));
+      const rolesToRemove = currentRoles.filter(r => !newRoles.includes(r as ("admin" | "employee" | "hr" | "manager")));
       
       // Add new roles
       if (rolesToAdd.length > 0) {

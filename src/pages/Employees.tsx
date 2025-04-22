@@ -35,7 +35,7 @@ export default function Employees() {
       
       // For demo purposes, we'll use the mock data initially
       // In a real app, you'd fetch from Supabase auth users and join with employee_hr table
-      const mockEmployees = [
+      const mockEmployees: UserType[] = [
         {
           id: "1",
           name: "John Doe",
