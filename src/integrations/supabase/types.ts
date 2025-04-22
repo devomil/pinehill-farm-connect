@@ -9,16 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      employee_hr: {
+        Row: {
+          address: string | null
+          emergency_contact: string | null
+          employment_type: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          salary: number | null
+          start_date: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          emergency_contact?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          salary?: number | null
+          start_date?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          emergency_contact?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          salary?: number | null
+          start_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { uid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee" | "hr" | "manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +192,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee", "hr", "manager"],
+    },
   },
 } as const

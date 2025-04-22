@@ -3,10 +3,29 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "employee" | "admin";
+  role: "employee" | "admin" | "hr" | "manager";
   profileImage?: string;
   department?: string;
   position?: string;
+}
+
+export interface UserRole {
+  id: string;
+  userId: string;
+  role: "employee" | "admin" | "hr" | "manager";
+}
+
+export interface EmployeeHR {
+  id: string;
+  userId: string;
+  startDate?: Date;
+  endDate?: Date;
+  salary?: number;
+  employmentType?: string;
+  address?: string;
+  phone?: string;
+  emergencyContact?: string;
+  notes?: string;
 }
 
 export interface TimeOffRequest {

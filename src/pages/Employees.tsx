@@ -14,48 +14,116 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, User, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { User as UserType } from "@/types";
+import { User as UserType, EmployeeHR, UserRole } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { EmployeeDetailModal } from "@/components/employee/EmployeeDetailModal";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Employees() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [employees, setEmployees] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEmployee, setSelectedEmployee] = useState<UserType | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
   const { currentUser } = useAuth();
   
-  // Mock employee data (would come from Supabase in a real implementation)
-  const [employees, setEmployees] = useState<UserType[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@pinehillfarm.co",
-      role: "employee",
-      department: "Sales",
-      position: "Associate"
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@pinehillfarm.co",
-      role: "employee",
-      department: "Production",
-      position: "Team Lead"
-    },
-    {
-      id: "3",
-      name: "Robert Johnson",
-      email: "robert@pinehillfarm.co",
-      role: "admin",
-      department: "Management",
-      position: "Operations Manager"
-    },
-    {
-      id: "4",
-      name: "Sarah Williams",
-      email: "sarah@pinehillfarm.co",
-      role: "employee",
-      department: "Customer Service",
-      position: "Representative"
+  // Fetch employees from Supabase
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      
+      // For demo purposes, we'll use the mock data initially
+      // In a real app, you'd fetch from Supabase auth users and join with employee_hr table
+      const mockEmployees = [
+        {
+          id: "1",
+          name: "John Doe",
+          email: "john@pinehillfarm.co",
+          role: "employee",
+          department: "Sales",
+          position: "Associate"
+        },
+        {
+          id: "2",
+          name: "Jane Smith",
+          email: "jane@pinehillfarm.co",
+          role: "employee",
+          department: "Production",
+          position: "Team Lead"
+        },
+        {
+          id: "3",
+          name: "Robert Johnson",
+          email: "robert@pinehillfarm.co",
+          role: "admin",
+          department: "Management",
+          position: "Operations Manager"
+        },
+        {
+          id: "4",
+          name: "Sarah Williams",
+          email: "sarah@pinehillfarm.co",
+          role: "employee",
+          department: "Customer Service",
+          position: "Representative"
+        }
+      ];
+      
+      setEmployees(mockEmployees);
+      
+      // Uncomment the below for actual Supabase integration
+      /*
+      // This would need to be implemented with a proper admin function in Supabase
+      // to securely fetch user data
+      
+      // First fetch user roles to determine primary role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('*');
+      
+      if (roleError) throw roleError;
+      
+      const rolesByUser = {};
+      if (roleData) {
+        roleData.forEach(role => {
+          if (!rolesByUser[role.user_id]) {
+            rolesByUser[role.user_id] = [];
+          }
+          rolesByUser[role.user_id].push(role.role);
+        });
+      }
+      
+      // Then fetch user data and merge with roles
+      // Note: In a real app, we'd need a serverless function to securely fetch users from auth.users
+      const fetchedEmployees = mockEmployees.map(emp => {
+        const roles = rolesByUser[emp.id] || ['employee'];
+        // Determine primary role (admin > hr > manager > employee)
+        let primaryRole = 'employee';
+        if (roles.includes('admin')) primaryRole = 'admin';
+        else if (roles.includes('hr')) primaryRole = 'hr';
+        else if (roles.includes('manager')) primaryRole = 'manager';
+        
+        return {
+          ...emp,
+          role: primaryRole
+        };
+      });
+      
+      setEmployees(fetchedEmployees);
+      */
+      
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      toast.error("Failed to load employees");
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   // Filter employees based on search query
   const filteredEmployees = employees.filter((employee) =>
@@ -65,19 +133,31 @@ export default function Employees() {
     (employee.position && employee.position.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Handle adding a new employee (placeholder for now)
+  // Handle adding a new employee
   const handleAddEmployee = () => {
     toast.info("This feature is coming soon!");
   };
 
-  // Handle editing an employee (placeholder for now)
-  const handleEditEmployee = (id: string) => {
-    toast.info(`Edit employee with ID ${id} - Coming soon!`);
+  // Handle editing an employee
+  const handleEditEmployee = (employee: UserType) => {
+    setSelectedEmployee(employee);
+    setIsDetailModalOpen(true);
   };
 
-  // Handle deleting an employee (placeholder for now)
+  // Handle deleting an employee
   const handleDeleteEmployee = (id: string) => {
     toast.info(`Delete employee with ID ${id} - Coming soon!`);
+  };
+
+  // Handle closing the detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedEmployee(null);
+  };
+
+  // Handle employee update
+  const handleEmployeeUpdate = () => {
+    fetchEmployees();
   };
 
   return (
@@ -118,7 +198,13 @@ export default function Employees() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEmployees.length > 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading employees...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredEmployees.length > 0 ? (
                   filteredEmployees.map((employee) => (
                     <TableRow key={employee.id}>
                       <TableCell className="font-medium">{employee.name}</TableCell>
@@ -127,7 +213,10 @@ export default function Employees() {
                       <TableCell>{employee.position}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          employee.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
+                          employee.role === "admin" ? "bg-purple-100 text-purple-800" : 
+                          employee.role === "hr" ? "bg-green-100 text-green-800" :
+                          employee.role === "manager" ? "bg-amber-100 text-amber-800" :
+                          "bg-blue-100 text-blue-800"
                         }`}>
                           {employee.role}
                         </span>
@@ -137,7 +226,7 @@ export default function Employees() {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => handleEditEmployee(employee.id)}
+                            onClick={() => handleEditEmployee(employee)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -164,6 +253,14 @@ export default function Employees() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Employee Detail Modal */}
+      <EmployeeDetailModal 
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        employee={selectedEmployee}
+        onEmployeeUpdate={handleEmployeeUpdate}
+      />
     </DashboardLayout>
   );
 }
