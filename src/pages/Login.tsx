@@ -36,9 +36,9 @@ export default function Login() {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
             <img 
-              src="/lovable-uploads/b54ef249-55c4-4a8c-a8c3-c6bf4effae60.png" 
+              src="/lovable-uploads/010a26d1-93ce-48fa-a2f9-ffa39636566d.png" 
               alt="PineHill Farm Logo" 
-              className="w-24 h-24 object-contain"
+              className="w-48 h-24 object-contain"
             />
           </div>
           <CardTitle className="text-2xl font-bold">PineHill Farm Connect</CardTitle>
