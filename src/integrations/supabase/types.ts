@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      company_events: {
+        Row: {
+          attachments: Json | null
+          attendance_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string
+          id: string
+          start_date: string
+          title: string
+        }
+        Insert: {
+          attachments?: Json | null
+          attendance_type?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date: string
+          id?: string
+          start_date: string
+          title: string
+        }
+        Update: {
+          attachments?: Json | null
+          attendance_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          start_date?: string
+          title?: string
+        }
+        Relationships: []
+      }
       employee_hr: {
         Row: {
           address: string | null

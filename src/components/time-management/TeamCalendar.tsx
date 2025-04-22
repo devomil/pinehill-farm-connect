@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Calendar as CalendarIcon, Clock, PlusCircle, Info, Check, ThumbsUp, CircleDot, Paperclip, Bell, BellOff, Mail } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -61,6 +60,7 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -75,26 +75,47 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
     },
   });
 
-  // Fetch both time-off requests and company events
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files) return [];
+    setUploading(true);
+
+    const attachments: string[] = [];
+    for (let i = 0; i < Math.min(files.length, 2); i++) {
+      const file = files[i];
+      if (!file.type.match(/image|pdf/)) {
+        toast.error("File type must be image or PDF");
+        continue;
+      }
+      if (file.size > 1 * 1024 * 1024) {
+        toast.error("File too large (max 1MB)");
+        continue;
+      }
+      const reader = new FileReader();
+      attachments.push(
+        await new Promise<string>((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        })
+      );
+    }
+    setUploading(false);
+    return attachments;
+  };
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      
-      // Fetch time-off requests
       try {
-        let query = supabase
+        let requestQuery = supabase
           .from("time_off_requests")
           .select("*");
-
-        // Employees can see only approved requests, admin/manager see all
         if (currentUser.role !== "admin" && currentUser.role !== "manager") {
-          query = query.eq("status", "approved");
+          requestQuery = requestQuery.eq("status", "approved");
         }
-        const { data: requestData, error: requestError } = await query;
+        const { data: requestData, error: requestError } = await requestQuery;
         if (requestError) {
           toast.error("Failed to load time off requests");
-          console.error(requestError);
-        } else {
+        } else if (requestData) {
           setRequests(
             requestData.map((r: any) => ({
               ...r,
@@ -108,56 +129,48 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
             }))
           );
         }
-        
-        // Fetch company events
         const { data: eventData, error: eventError } = await supabase
           .from("company_events")
           .select("*");
-        
         if (eventError) {
           toast.error("Failed to load company events");
-          console.error(eventError);
         } else if (eventData) {
-          setEvents(eventData);
+          setEvents(
+            eventData.map((e: any) => ({
+              id: e.id,
+              title: e.title,
+              description: e.description || "",
+              start_date: e.start_date,
+              end_date: e.end_date,
+              created_by: e.created_by,
+              attendance_type: e.attendance_type,
+              attachments: (e.attachments ?? []) as string[],
+            }))
+          );
         }
       } catch (error) {
-        console.error("Error fetching calendar data:", error);
+        toast.error("Error fetching calendar data");
       } finally {
         setLoading(false);
       }
     }
-    
     fetchData();
-    
-    // Set up real-time listener for changes
     const channel = supabase
       .channel('calendar-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'time_off_requests' }, 
-        () => fetchData()
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'company_events' }, 
-        () => fetchData()
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'time_off_requests' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'company_events' }, fetchData)
       .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); }
   }, [currentUser]);
 
-  // Map time-off requests to CalendarItem type
   const timeoffItems: CalendarItem[] = requests.map((r) => ({
     id: r.id,
     type: "timeoff",
     label: `Time off (${r.status})${r.reason ? ": " + r.reason : ""}`,
     startDate: r.startDate,
     endDate: r.endDate,
-    status: r.status
+    status: r.status,
   }));
-  
-  // Map company events to CalendarItem type
   const eventItems: CalendarItem[] = events.map((e) => ({
     id: e.id,
     type: "event",
@@ -165,13 +178,9 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
     startDate: new Date(e.start_date),
     endDate: new Date(e.end_date),
     attachments: e.attachments,
-    attendanceType: e.attendance_type as "required" | "optional" | "would-like" | "info-only"
+    attendanceType: e.attendance_type,
   }));
-  
-  // Combine both types into a single array
-  const calendarItems: CalendarItem[] = [...timeoffItems, ...eventItems];
-
-  // Create a map keyed by date string for single-day/timeoff items
+  const calendarItems = [...timeoffItems, ...eventItems];
   const dayItemMap: Record<string, CalendarItem[]> = {};
   for (const item of calendarItems) {
     let day = new Date(item.startDate);
@@ -182,35 +191,29 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
       day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
     }
   }
-
-  // To highlight days, return an array of Date for items
   const calendarHighlightDays = Object.keys(dayItemMap).map((d) => new Date(d));
-  
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      setLoading(true);
       const newEvent = {
         title: values.title,
         description: values.description || "",
-        start_date: values.startDate.toISOString(),
-        end_date: values.endDate.toISOString(),
+        start_date: values.startDate.toISOString().split("T")[0],
+        end_date: values.endDate.toISOString().split("T")[0],
         created_by: currentUser.id,
-        attachments: values.attachments || [],
-        attendance_type: values.attendanceType
+        attendance_type: values.attendanceType,
+        attachments: values.attachments ?? [],
       };
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("company_events")
-        .insert(newEvent)
-        .select();
-        
+        .insert([newEvent]);
       if (error) {
         toast.error("Failed to create event");
-        console.error(error);
+        setLoading(false);
         return;
       }
-      
       toast.success("Event created successfully");
-      
       if (values.sendNotifications) {
         await notifyManager("event_created", currentUser, {
           event: newEvent,
@@ -218,13 +221,12 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
         });
         toast.success("Notifications sent to team members");
       }
-      
       setDialogOpen(false);
       form.reset();
-      
     } catch (error) {
-      console.error("Error creating event:", error);
       toast.error("An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,19 +237,14 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
       form.setValue("endDate", date);
     }
   };
-  
+
   function getAttendanceIcon(type: string | undefined) {
     switch(type) {
-      case "required":
-        return <Check className="h-4 w-4 text-red-500" />;
-      case "would-like":
-        return <ThumbsUp className="h-4 w-4 text-blue-500" />;
-      case "optional":
-        return <CircleDot className="h-4 w-4 text-green-500" />;
-      case "info-only":
-        return <Info className="h-4 w-4 text-gray-500" />;
-      default:
-        return null;
+      case "required": return <Check className="h-4 w-4 text-red-500" />;
+      case "would-like": return <ThumbsUp className="h-4 w-4 text-blue-500" />;
+      case "optional": return <CircleDot className="h-4 w-4 text-green-500" />;
+      case "info-only": return <Info className="h-4 w-4 text-gray-500" />;
+      default: return null;
     }
   }
 
@@ -315,10 +312,10 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
                           <FormItem className="flex-1">
                             <FormLabel>Start Date</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="date" 
-                                value={field.value.toISOString().split('T')[0]} 
-                                onChange={(e) => field.onChange(new Date(e.target.value))} 
+                              <Input
+                                type="date"
+                                value={field.value.toISOString().split('T')[0]}
+                                onChange={(e) => field.onChange(new Date(e.target.value))}
                               />
                             </FormControl>
                             <FormMessage />
@@ -333,10 +330,10 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
                           <FormItem className="flex-1">
                             <FormLabel>End Date</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="date" 
-                                value={field.value.toISOString().split('T')[0]} 
-                                onChange={(e) => field.onChange(new Date(e.target.value))} 
+                              <Input
+                                type="date"
+                                value={field.value.toISOString().split('T')[0]}
+                                onChange={(e) => field.onChange(new Date(e.target.value))}
                               />
                             </FormControl>
                             <FormMessage />
@@ -354,7 +351,7 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
                           <FormControl>
                             <RadioGroup
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                               className="flex flex-col space-y-1"
                             >
                               <div className="flex items-center space-x-2">
@@ -392,6 +389,44 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
                       )}
                     />
                     
+                    <FormField
+                      control={form.control}
+                      name="attachments"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Attachments (Images or PDFs, max 2, 1MB each)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              multiple
+                              accept="image/*,application/pdf"
+                              disabled={uploading}
+                              onChange={async (e) => {
+                                const uploaded = await handleFileUpload(e.target.files);
+                                field.onChange((field.value || []).concat(uploaded));
+                              }}
+                            />
+                          </FormControl>
+                          {(field.value && field.value.length > 0) && (
+                            <div className="mt-2 space-y-2">
+                              {field.value.map((a: string, idx: number) => (
+                                <div key={idx} className="flex items-center gap-2 text-xs">
+                                  {a.startsWith("data:image") ? (
+                                    <img src={a} alt={`Attachment-${idx}`} className="h-8 w-8 rounded" />
+                                  ) : a.startsWith("data:application/pdf") ? (
+                                    <span className="text-blue-400">PDF document {idx+1}</span>
+                                  ) : (
+                                    <span>Attachment {idx+1}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <div className="flex items-center space-x-2 pt-2">
                       <input
                         type="checkbox"
@@ -407,7 +442,9 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
                     </div>
                     
                     <DialogFooter className="pt-4">
-                      <Button type="submit">Create Event</Button>
+                      <Button type="submit" disabled={loading || uploading}>
+                        {loading || uploading ? "Creating..." : "Create Event"}
+                      </Button>
                     </DialogFooter>
                   </form>
                 </Form>
