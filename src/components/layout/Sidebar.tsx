@@ -82,9 +82,23 @@ export function Sidebar({ className }: SidebarProps) {
       )}
     >
       <div className="flex items-center justify-between p-4 border-b">
-        <div className={cn("font-semibold text-primary", collapsed && "hidden")}>
-          PineHill Farm
-        </div>
+        {collapsed ? (
+          <div className="mx-auto">
+            <img
+              src="/lovable-uploads/b54ef249-55c4-4a2c-a8c3-c6bf4effae60.png"
+              alt="PineHill Farm"
+              className="h-8"
+            />
+          </div>
+        ) : (
+          <div className="flex-1">
+            <img
+              src="/lovable-uploads/b54ef249-55c4-4a2c-a8c3-c6bf4effae60.png"
+              alt="PineHill Farm"
+              className="h-12"
+            />
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon"
