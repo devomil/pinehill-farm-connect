@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,17 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminAnnouncementDialog } from "@/components/communication/AdminAnnouncementDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
 
 export default function Communication() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
 
-  // New: employees loaded from Supabase (for assigning announcements)
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
   useEffect(() => {
     async function fetchEmployees() {
-      // TODO: If you have a dedicated table for users, fetch from there. This demo uses MOCK_USERS from AuthContext.
-      // In production you should fetch real user data from Supabase!
       setAllEmployees([
         { id: "1", name: "Admin User", email: "admin@pinehillfarm.co", role: "admin" },
         { id: "2", name: "John Employee", email: "john@pinehillfarm.co", role: "employee" },
@@ -30,14 +27,12 @@ export default function Communication() {
     fetchEmployees();
   }, []);
 
-  // Announcements from Supabase
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAnnouncements = async () => {
     setLoading(true);
     try {
-      // Get all announcements and their recipients
       const { data: annData, error } = await supabase
         .from("announcements")
         .select("*")
@@ -62,7 +57,6 @@ export default function Communication() {
         attachments: Array.isArray(a.attachments) ? a.attachments.map((file: any) => file.name) : [],
       }));
 
-      // Now fetch which announcements the current user has read from announcement_recipients
       if (currentUser) {
         const { data: reads } = await supabase
           .from("announcement_recipients")
@@ -95,7 +89,6 @@ export default function Communication() {
 
   const markAsRead = async (id: string) => {
     if (!currentUser) return;
-    // Mark as read in DB
     await supabase
       .from("announcement_recipients")
       .update({ read_at: new Date().toISOString() })
@@ -141,207 +134,15 @@ export default function Communication() {
             <AdminAnnouncementDialog allEmployees={allEmployees} onCreate={fetchAnnouncements} />
           )}
         </div>
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unread">
-              Unread
-              {announcements.filter(a => !isRead(a)).length > 0 && (
-                <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2 py-0.5">
-                  {announcements.filter(a => !isRead(a)).length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="urgent">Urgent</TabsTrigger>
-          </TabsList>
-          <TabsContent value="all" className="space-y-4 mt-4">
-            {loading ? (
-              <div className="text-center text-muted-foreground py-10">Loading...</div>
-            ) : announcements.length === 0 ? (
-              <div className="text-center text-muted-foreground py-10">No announcements.</div>
-            ) : (
-              announcements.map(announcement => (
-                <Card
-                  key={announcement.id}
-                  className={`transition-colors ${
-                    isRead(announcement)
-                      ? "bg-muted/30"
-                      : announcement.priority === "urgent"
-                        ? "bg-red-50"
-                        : "bg-white"
-                  }`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center">
-                          {announcement.title}
-                          {isRead(announcement) && (
-                            <CheckCircle className="h-4 w-4 ml-2 text-green-600" />
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          {announcement.createdAt.toLocaleDateString()} by {announcement.author}
-                        </CardDescription>
-                      </div>
-                      {getPriorityBadge(announcement.priority)}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <p className="text-sm mb-4">{announcement.content}</p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {announcement.hasQuiz && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Has Quiz
-                        </Badge>
-                      )}
-                      {announcement.attachments?.length > 0 && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <Paperclip className="h-3 w-3 mr-1" />
-                          {announcement.attachments.length} attachment{announcement.attachments.length !== 1 ? "s" : ""}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div />
-                      {!isRead(announcement) && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => markAsRead(announcement.id)}
-                        >
-                          Mark as Read
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-          <TabsContent value="unread" className="space-y-4 mt-4">
-            {loading ? (
-              <div className="text-center text-muted-foreground py-10">Loading...</div>
-            ) : announcements.filter(a => !isRead(a)).length > 0 ? (
-              announcements.filter(a => !isRead(a)).map(announcement => (
-                <Card key={announcement.id} className={announcement.priority === "urgent" ? "bg-red-50" : "bg-white"}>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                        <CardDescription>
-                          {announcement.createdAt.toLocaleDateString()} by {announcement.author}
-                        </CardDescription>
-                      </div>
-                      {getPriorityBadge(announcement.priority)}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <p className="text-sm mb-4">{announcement.content}</p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {announcement.hasQuiz && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Has Quiz
-                        </Badge>
-                      )}
-                      {announcement.attachments?.length > 0 && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <Paperclip className="h-3 w-3 mr-1" />
-                          {announcement.attachments.length} attachment{announcement.attachments.length !== 1 ? "s" : ""}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div />
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => markAsRead(announcement.id)}
-                      >
-                        Mark as Read
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-500 opacity-50" />
-                <h3 className="mt-4 text-lg font-medium">All caught up!</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  You have read all announcements.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-          <TabsContent value="urgent" className="space-y-4 mt-4">
-            {loading ? (
-              <div className="text-center text-muted-foreground py-10">Loading...</div>
-            ) : announcements.filter(a => a.priority === "urgent").length > 0 ? (
-              announcements.filter(a => a.priority === "urgent").map(announcement => (
-                <Card key={announcement.id} className="bg-red-50">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center">
-                          {announcement.title}
-                          {isRead(announcement) && (
-                            <CheckCircle className="h-4 w-4 ml-2 text-green-600" />
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          {announcement.createdAt.toLocaleDateString()} by {announcement.author}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">URGENT</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <p className="text-sm mb-4">{announcement.content}</p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {announcement.hasQuiz && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <FileText className="h-3 w-3 mr-1" />
-                          Has Quiz
-                        </Badge>
-                      )}
-                      {announcement.attachments?.length > 0 && (
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
-                          <Paperclip className="h-3 w-3 mr-1" />
-                          {announcement.attachments.length} attachment{announcement.attachments.length !== 1 ? "s" : ""}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div />
-                      {!isRead(announcement) && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => markAsRead(announcement.id)}
-                        >
-                          Mark as Read
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-medium">No urgent announcements</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  There are currently no urgent announcements.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        <CommunicationTabs
+          announcements={announcements}
+          loading={loading}
+          isRead={isRead}
+          markAsRead={markAsRead}
+          getPriorityBadge={getPriorityBadge}
+          currentUserId={currentUser?.id}
+        />
       </div>
     </DashboardLayout>
   );
 }
-// Communication.tsx is now over 300 lines. Consider splitting into smaller files!
