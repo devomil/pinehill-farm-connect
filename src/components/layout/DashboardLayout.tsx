@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -11,6 +11,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, requireAdmin = false }: DashboardLayoutProps) {
   const { currentUser, isAuthenticated } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
 
   if (!isAuthenticated) {
     return <Navigate to="/" />;
@@ -22,7 +23,7 @@ export function DashboardLayout({ children, requireAdmin = false }: DashboardLay
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>

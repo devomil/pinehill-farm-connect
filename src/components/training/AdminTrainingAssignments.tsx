@@ -41,7 +41,14 @@ export const AdminTrainingAssignments: React.FC = () => {
         throw error;
       }
 
-      setTrainings(data as Training[]);
+      // Map required_for to requiredFor to match our Training type
+      const mappedTrainings = (data || []).map(training => ({
+        ...training,
+        requiredFor: training.required_for,
+        expiresAfter: training.expires_after
+      })) as Training[];
+
+      setTrainings(mappedTrainings);
     } catch (err) {
       console.error("Error fetching trainings:", err);
       toast.error("Failed to load trainings");
