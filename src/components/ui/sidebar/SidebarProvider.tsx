@@ -6,8 +6,10 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_COOKIE_NAME, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_KEYBOARD_SHORTCUT }
   from "./sidebar-utils"
 
+type SidebarState = "expanded" | "collapsed"
+
 type SidebarContext = {
-  state: "expanded" | "collapsed"
+  state: SidebarState
   open: boolean
   setOpen: (open: boolean) => void
   openMobile: boolean
@@ -65,7 +67,7 @@ export const SidebarProvider = React.forwardRef<
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
 
-  const state = open ? "expanded" : "collapsed"
+  const state: SidebarState = open ? "expanded" : "collapsed"
   const contextValue = React.useMemo(() => ({
     state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar
   }), [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar])
