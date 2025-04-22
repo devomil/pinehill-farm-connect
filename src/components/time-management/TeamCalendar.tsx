@@ -43,4 +43,3 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
     </Card>
   );
 };
-

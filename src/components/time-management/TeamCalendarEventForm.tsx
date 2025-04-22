@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { PlusCircle, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,7 +53,6 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
     },
   });
 
-  // Only move this function, unchanged
   const handleFileUpload = async (files: FileList | null) => {
     if (!files) return [];
     setUploading(true);

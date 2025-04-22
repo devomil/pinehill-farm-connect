@@ -35,4 +35,3 @@ export const TeamCalendarHeader: React.FC<TeamCalendarHeaderProps> = ({
     </div>
   </CardHeader>
 );
-
