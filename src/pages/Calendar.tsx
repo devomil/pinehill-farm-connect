@@ -8,46 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addMonths, subMonths } from "date-fns";
-
-interface EventType {
-  id: string;
-  title: string;
-  date: Date;
-  type: "time-off" | "training" | "meeting" | "shift";
-}
+import { TeamCalendar } from "@/components/time-management/TeamCalendar";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"month" | "team">("month");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-
-  // Sample events for demonstration
-  const events: EventType[] = [
-    {
-      id: "1",
-      title: "John's Time Off",
-      date: new Date(),
-      type: "time-off",
-    },
-    {
-      id: "2",
-      title: "HIPAA Training",
-      date: new Date(new Date().setDate(new Date().getDate() + 2)),
-      type: "training",
-    },
-    {
-      id: "3",
-      title: "Team Meeting",
-      date: new Date(new Date().setDate(new Date().getDate() + 4)),
-      type: "meeting",
-    },
-    {
-      id: "4",
-      title: "Opening Shift",
-      date: new Date(new Date().setDate(new Date().getDate() - 2)),
-      type: "shift",
-    },
-  ];
+  const { currentUser } = useAuth();
 
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
@@ -57,20 +25,9 @@ export default function CalendarPage() {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
-  // Function to get events for the current date
-  const getTodaysEvents = () => {
-    return events.filter(
-      (event) => event.date.toDateString() === new Date().toDateString()
-    );
-  };
-
-  // Function to get upcoming events
-  const getUpcomingEvents = () => {
-    const today = new Date();
-    return events
-      .filter((event) => event.date > today)
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-  };
+  if (!currentUser) {
+    return null;
+  }
 
   return (
     <DashboardLayout>
@@ -126,7 +83,6 @@ export default function CalendarPage() {
                         <SelectItem value="time-off">Time Off</SelectItem>
                         <SelectItem value="training">Training</SelectItem>
                         <SelectItem value="meeting">Meetings</SelectItem>
-                        <SelectItem value="shift">Shifts</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -142,50 +98,14 @@ export default function CalendarPage() {
                   </TabsContent>
                   
                   <TabsContent value="team" className="mt-0">
-                    <div className="border rounded-md p-4">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between pb-2 border-b">
-                          <div className="w-1/4 font-medium">Employee</div>
-                          <div className="flex-1 grid grid-cols-7 text-center text-sm text-muted-foreground">
-                            <div>Sun</div>
-                            <div>Mon</div>
-                            <div>Tue</div>
-                            <div>Wed</div>
-                            <div>Thu</div>
-                            <div>Fri</div>
-                            <div>Sat</div>
-                          </div>
-                        </div>
-                        
-                        {["John Smith", "Sarah Johnson", "Mike Davis", "Emily Wilson"].map((name, i) => (
-                          <div key={i} className="flex items-center justify-between py-2">
-                            <div className="w-1/4 font-medium">{name}</div>
-                            <div className="flex-1 grid grid-cols-7 gap-1">
-                              {Array(7).fill(null).map((_, dayIndex) => {
-                                // This is just a placeholder visualization
-                                // In a real app, you'd match this with actual schedule data
-                                const hasEvent = Math.random() > 0.7;
-                                const eventType = ["bg-blue-100 border-blue-300", "bg-green-100 border-green-300", "bg-amber-100 border-amber-300"][Math.floor(Math.random() * 3)];
-                                
-                                return (
-                                  <div
-                                    key={dayIndex}
-                                    className={`h-6 rounded-sm border ${hasEvent ? eventType : "border-transparent"}`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <TeamCalendar currentUser={currentUser} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
           </div>
 
-          <div className="lg:w-1/3 space-y-6">
+          <div className="lg:w-1/3">
             <Card>
               <CardHeader>
                 <CardTitle>Today</CardTitle>
@@ -194,78 +114,9 @@ export default function CalendarPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {getTodaysEvents().length > 0 ? (
-                  <div className="space-y-4">
-                    {getTodaysEvents().map((event) => (
-                      <div key={event.id} className="flex items-start space-x-3">
-                        <Badge
-                          className={
-                            event.type === "time-off"
-                              ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                              : event.type === "training"
-                              ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
-                              : event.type === "meeting"
-                              ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                              : "bg-green-100 text-green-800 hover:bg-green-200"
-                          }
-                        >
-                          {event.type}
-                        </Badge>
-                        <div>
-                          <p className="font-medium">{event.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(event.date, "h:mm a")}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">
-                    No events scheduled for today
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming</CardTitle>
-                <CardDescription>Your scheduled events</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {getUpcomingEvents().length > 0 ? (
-                  <div className="space-y-4">
-                    {getUpcomingEvents().slice(0, 3).map((event) => (
-                      <div key={event.id} className="flex items-start space-x-3">
-                        <Badge
-                          className={
-                            event.type === "time-off"
-                              ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                              : event.type === "training"
-                              ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
-                              : event.type === "meeting"
-                              ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                              : "bg-green-100 text-green-800 hover:bg-green-200"
-                          }
-                        >
-                          {event.type}
-                        </Badge>
-                        <div>
-                          <p className="font-medium">{event.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(event.date, "EEE, MMM d")} at{" "}
-                            {format(event.date, "h:mm a")}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">
-                    No upcoming events scheduled
-                  </p>
-                )}
+                <p className="text-muted-foreground text-center py-4">
+                  No events scheduled for today
+                </p>
               </CardContent>
             </Card>
           </div>
