@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -26,7 +25,6 @@ const Communication = () => {
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
-  // Debug log to see if announcements are loading
   useEffect(() => {
     console.log("Communication page - currentUser:", currentUser);
     console.log("Communication page - employees:", allEmployees);
@@ -81,11 +79,9 @@ const Communication = () => {
     setEditingAnnouncement(announcement);
   };
 
-  const handleSaveEdit = () => {
-    if (editingAnnouncement) {
-      handleEdit(editingAnnouncement);
-      setEditingAnnouncement(null);
-    }
+  const handleSaveEdit = (updatedAnnouncement: Announcement) => {
+    handleEdit(updatedAnnouncement);
+    setEditingAnnouncement(null);
   };
 
   return (
