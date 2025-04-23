@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,10 +8,13 @@ export function useAuthSession() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("useAuthSession initializing");
+    
     // First check for user in localStorage
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
       try {
+        console.log("Found stored user in localStorage");
         const parsedUser = JSON.parse(storedUser);
         setCurrentUser(parsedUser);
       } catch (e) {
@@ -24,6 +26,7 @@ export function useAuthSession() {
     // Check for existing session on load
     const checkSession = async () => {
       try {
+        console.log("Checking for existing session");
         const { data, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -32,19 +35,25 @@ export function useAuthSession() {
           return;
         }
         
+        console.log("Session check result:", data.session ? "Session exists" : "No session");
+        
         // If no session but we have a stored user, keep using that
         if (!data.session?.user && currentUser) {
+          console.log("No session but has stored user - keeping current user");
           setLoading(false);
           return;
         }
         
         // If no session and no stored user, we're not authenticated
         if (!data.session?.user) {
+          console.log("No session and no stored user - clearing auth state");
           setCurrentUser(null); // Ensure currentUser is null when no session exists
           localStorage.removeItem("currentUser"); // Clear localStorage to be safe
           setLoading(false);
           return;
         }
+        
+        console.log("Valid session found with user:", data.session.user.email);
         
         try {
           // Get user role and profile information
@@ -59,6 +68,7 @@ export function useAuthSession() {
           }
           
           const role = userRoleData?.role || "employee";
+          console.log("User role:", role);
           
           const userData: User = {
             id: data.session.user.id,
@@ -69,6 +79,7 @@ export function useAuthSession() {
             position: data.session.user.user_metadata?.position || ""
           };
           
+          console.log("Setting user data from session:", userData);
           setCurrentUser(userData);
           localStorage.setItem("currentUser", JSON.stringify(userData));
         } catch (err) {
@@ -84,6 +95,7 @@ export function useAuthSession() {
               department: "",
               position: ""
             };
+            console.log("Setting fallback user data from session:", basicUserData);
             setCurrentUser(basicUserData);
             localStorage.setItem("currentUser", JSON.stringify(basicUserData));
           }
@@ -106,6 +118,7 @@ export function useAuthSession() {
         console.log("Auth state changed:", event, session);
         
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log("User signed in event detected:", session.user.email);
           try {
             // Get user role
             const { data: userRoleData, error: roleError } = await supabase
@@ -119,6 +132,7 @@ export function useAuthSession() {
             }
             
             const role = userRoleData?.role || "employee";
+            console.log("User role from auth change:", role);
             
             const userData: User = {
               id: session.user.id,
@@ -129,6 +143,7 @@ export function useAuthSession() {
               position: session.user.user_metadata?.position || ""
             };
             
+            console.log("Setting user data from auth change:", userData);
             setCurrentUser(userData);
             localStorage.setItem("currentUser", JSON.stringify(userData));
           } catch (err) {
@@ -143,6 +158,7 @@ export function useAuthSession() {
                 department: "",
                 position: ""
               };
+              console.log("Setting fallback user data from auth change:", basicUserData);
               setCurrentUser(basicUserData);
               localStorage.setItem("currentUser", JSON.stringify(basicUserData));
             }
@@ -156,6 +172,7 @@ export function useAuthSession() {
     );
 
     return () => {
+      console.log("useAuthSession cleanup - unsubscribing from auth events");
       subscription.unsubscribe();
     };
   }, []);

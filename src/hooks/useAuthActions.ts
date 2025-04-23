@@ -13,6 +13,7 @@ export function useAuthActions(
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
+    console.log("Login attempt for:", email);
     
     try {
       // First, try Supabase authentication for real users
@@ -22,12 +23,16 @@ export function useAuthActions(
       });
 
       if (signInError) {
+        console.error("Supabase auth error:", signInError);
         setError(signInError.message);
         toast.error(signInError.message);
         return false;
       }
       
+      console.log("Supabase auth response:", data);
+      
       if (!data.user || !data.session) {
+        console.error("Authentication failed - no user or session returned");
         setError("Authentication failed");
         toast.error("Authentication failed");
         return false;
@@ -41,7 +46,12 @@ export function useAuthActions(
           .eq("user_id", data.user.id)
           .single();
         
+        if (roleError) {
+          console.error("Error fetching user role:", roleError);
+        }
+        
         const role = userRoleData?.role || "employee";
+        console.log("User role:", role);
         
         const userData: User = {
           id: data.user.id,
@@ -52,6 +62,7 @@ export function useAuthActions(
           position: data.user.user_metadata?.position || ""
         };
         
+        console.log("Setting user data:", userData);
         setCurrentUser(userData);
         localStorage.setItem("currentUser", JSON.stringify(userData));
         toast.success("Login successful");
@@ -69,6 +80,7 @@ export function useAuthActions(
           position: ""
         };
         
+        console.log("Setting fallback user data:", basicUserData);
         setCurrentUser(basicUserData);
         localStorage.setItem("currentUser", JSON.stringify(basicUserData));
         toast.success("Login successful");
@@ -86,12 +98,16 @@ export function useAuthActions(
 
   const logout = async () => {
     setLoading(true);
+    console.log("Logout initiated");
+    
     try {
       // Clear state first to provide immediate feedback
       setCurrentUser(null);
+      console.log("User state cleared");
       
       // Clear localStorage
       localStorage.removeItem("currentUser");
+      console.log("Local storage cleared");
       
       // Sign out from Supabase - even if this fails, the user will be logged out of the app
       const { error } = await supabase.auth.signOut();
@@ -100,6 +116,7 @@ export function useAuthActions(
         console.error("Supabase signOut error:", error);
         toast.error("Error during logout, but you've been logged out locally");
       } else {
+        console.log("Supabase signOut successful");
         toast.success("Logged out successfully");
       }
     } catch (err) {

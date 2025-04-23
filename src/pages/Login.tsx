@@ -13,8 +13,19 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, error, isAuthenticated } = useAuth();
+  const { login, error, isAuthenticated, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  // Debug logged-in state
+  useEffect(() => {
+    console.log("Login page - isAuthenticated:", isAuthenticated);
+    console.log("Login page - currentUser:", currentUser);
+    
+    if (isAuthenticated && currentUser) {
+      console.log("User authenticated, redirecting to dashboard");
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +34,10 @@ export default function Login() {
     try {
       const success = await login(email, password);
       if (success) {
+        console.log("Login success, redirecting to dashboard");
         navigate("/dashboard");
+      } else {
+        console.log("Login failed");
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -34,7 +48,8 @@ export default function Login() {
   };
 
   // If already logged in, redirect to dashboard
-  if (isAuthenticated) {
+  if (isAuthenticated && currentUser) {
+    console.log("Rendering redirect to dashboard");
     return <Navigate to="/dashboard" />;
   }
 
