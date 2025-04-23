@@ -1,38 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
 import { Badge } from "@/components/ui/badge";
-import { Announcement, User } from "@/types";
+import { Announcement } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommunicationHeader } from "@/components/communication/CommunicationHeader";
 import { useToast } from "@/hooks/use-toast";
 import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
+import { useEmployees } from "@/hooks/useEmployees";
 
 const Communication = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
-  const [allEmployees, setAllEmployees] = useState<User[]>([]);
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-
-  useEffect(() => {
-    setAllEmployees([
-      {
-        id: "00000000-0000-0000-0000-000000000001",
-        name: "Admin User",
-        email: "admin@company.com",
-        role: "admin",
-        department: "Management",
-      },
-      {
-        id: "00000000-0000-0000-0000-000000000002",
-        name: "John Doe",
-        email: "john@company.com",
-        role: "employee",
-        department: "Engineering",
-      },
-    ]);
-  }, []);
 
   const {
     announcements,
@@ -42,12 +24,6 @@ const Communication = () => {
     handleEdit,
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
-
-  useEffect(() => {
-    if (currentUser && allEmployees.length > 0) {
-      fetchAnnouncements();
-    }
-  }, [currentUser, allEmployees]);
 
   const refreshAnnouncements = () => {
     fetchAnnouncements();
@@ -102,9 +78,6 @@ const Communication = () => {
     }
   };
 
-  console.log("Current user:", currentUser);
-  console.log("Is admin:", isAdmin);
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -112,6 +85,7 @@ const Communication = () => {
           isAdmin={isAdmin}
           allEmployees={allEmployees}
           onAnnouncementCreate={refreshAnnouncements}
+          loading={employeesLoading}
         />
         
         <CommunicationTabs
@@ -131,6 +105,7 @@ const Communication = () => {
           allEmployees={allEmployees}
           onClose={() => setEditingAnnouncement(null)}
           onSave={handleSaveEdit}
+          loading={employeesLoading}
         />
       </div>
     </DashboardLayout>
