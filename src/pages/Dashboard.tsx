@@ -1,3 +1,4 @@
+
 import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,9 @@ import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
 import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { CalendarContent } from "@/components/calendar/CalendarContent";
+import { useState } from "react";
+import { addMonths, subMonths } from "date-fns";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -21,6 +25,18 @@ export default function Dashboard() {
     isAdmin 
   } = useDashboardData();
 
+  const [date, setDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<"month" | "team">("month");
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -30,10 +46,26 @@ export default function Dashboard() {
           <AdminTimeOffCard count={pendingTimeOff.length || 0} />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <MarketingContent />
-          <SocialMediaFeeds />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <CalendarContent
+              date={date}
+              currentMonth={currentMonth}
+              viewMode={viewMode}
+              currentUser={currentUser}
+              onDateSelect={(newDate) => newDate && setDate(newDate)}
+              onViewModeChange={setViewMode}
+              onPreviousMonth={goToPreviousMonth}
+              onNextMonth={goToNextMonth}
+            />
+          </div>
+          <div className="space-y-4">
+            <MarketingContent />
+            <SocialMediaFeeds />
+          </div>
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {assignedTrainings && assignedTrainings.length > 0 && (
             <TrainingCard trainings={assignedTrainings} />
           )}

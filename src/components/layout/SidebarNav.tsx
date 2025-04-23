@@ -1,11 +1,10 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   BarChart3, 
-  Calendar as CalendarIcon, 
+  CalendarIcon, 
   Home, 
   Inbox, 
   Users, 
@@ -72,20 +71,6 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
         variant="ghost"
         className={cn(
           "justify-start font-normal",
-          pathname.includes("/calendar") && "bg-accent"
-        )}
-        asChild
-      >
-        <Link to="/calendar">
-          <CalendarIcon className="h-5 w-5 mr-3" />
-          <span className={!collapsed ? "block" : "hidden"}>Calendar</span>
-        </Link>
-      </Button>
-
-      <Button
-        variant="ghost"
-        className={cn(
-          "justify-start font-normal",
           pathname.includes("/communication") && "bg-accent"
         )}
         asChild
@@ -142,4 +127,3 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
     </nav>
   );
 };
-
