@@ -1,71 +1,60 @@
 
-import React, { useState } from "react";
+import React from "react";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { toast } from "@/components/ui/sonner";
+import { UseFormReturn } from "react-hook-form";
+import { toast } from "@/hooks/use-toast";
 
-interface FileFieldProps {
-  value: string[];
-  onChange: (attachments: string[]) => void;
+interface TeamCalendarEventFormFileFieldProps {
+  form: UseFormReturn<any>;
+  name?: string;
+  label?: string;
 }
 
-export const TeamCalendarEventFormFileField: React.FC<FileFieldProps> = ({ value, onChange }) => {
-  const [uploading, setUploading] = useState(false);
+export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({
+  form,
+  name = "attachments",
+  label = "Attachments",
+}) => {
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files) return;
-    setUploading(true);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
 
-    const attachments: string[] = [];
-    for (let i = 0; i < Math.min(files.length, 2); i++) {
-      const file = files[i];
-      if (!file.type.match(/image|pdf/)) {
-        toast.error("File type must be image or PDF");
-        continue;
-      }
-      if (file.size > 5 * 1024 * 1024) {  // Changed to 5MB
-        toast.error("File too large (max 5MB)");
-        continue;
-      }
-      const reader = new FileReader();
-      // eslint-disable-next-line no-await-in-loop
-      attachments.push(await new Promise<string>((resolve) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(file);
-      }));
+    const oversizedFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "File too large",
+        description: `Files must be less than 5MB: ${oversizedFiles.map(f => f.name).join(", ")}`,
+        variant: "destructive",
+      });
+      e.target.value = '';
+      return;
     }
-    setUploading(false);
-    onChange((value || []).concat(attachments));
+
+    form.setValue(name, files);
   };
 
   return (
-    <FormItem>
-      <FormLabel>Attachments (Images or PDFs, max 2, 5MB each)</FormLabel>
-      <FormControl>
-        <Input
-          type="file"
-          multiple
-          accept="image/*,application/pdf"
-          disabled={uploading}
-          onChange={(e) => handleFileUpload(e.target.files)}
-        />
-      </FormControl>
-      {value && value.length > 0 && (
-        <div className="mt-2 space-y-2">
-          {value.map((a: string, idx: number) => (
-            <div key={idx} className="flex items-center gap-2 text-xs">
-              {a.startsWith("data:image") ? (
-                <img src={a} alt={`Attachment-${idx}`} className="h-8 w-8 rounded" />
-              ) : a.startsWith("data:application/pdf") ? (
-                <span className="text-blue-400">PDF document {idx+1}</span>
-              ) : (
-                <span>Attachment {idx+1}</span>
-              )}
-            </div>
-          ))}
-        </div>
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field: { onChange, ...field } }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+              {...field}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
       )}
-      <FormMessage />
-    </FormItem>
+    />
   );
 };
