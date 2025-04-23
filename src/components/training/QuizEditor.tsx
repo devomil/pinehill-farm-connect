@@ -45,9 +45,12 @@ export const QuizEditor: React.FC<QuizEditorProps> = ({
   const updateQuestion = (index: number, field: keyof QuizQuestion, value: any) => {
     const updatedQuestions = [...questions];
     if (field === "options") {
-      const [optionIndex, optionValue] = value;
+      const [optionIndex, optionValue] = value as [number, string];
       updatedQuestions[index].options[optionIndex] = optionValue;
+    } else if (field === "correctAnswer") {
+      updatedQuestions[index].correctAnswer = value as number;
     } else {
+      // @ts-ignore - This is safe since we're checking field is keyof QuizQuestion
       updatedQuestions[index][field] = value;
     }
     onQuestionsChange(updatedQuestions);
