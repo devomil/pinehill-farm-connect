@@ -12,22 +12,38 @@ export function useEmployees() {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const { data: profiles, error } = await supabase
+      
+      // Fetch profiles with proper role information
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      const formattedEmployees: UserType[] = profiles.map(profile => ({
-        id: profile.id,
-        name: profile.name || '',
-        email: profile.email || '',
-        department: profile.department || '',
-        position: profile.position || '',
-        role: 'employee' // Default role, the actual role should be fetched from user_roles
-      }));
+      // Fetch user roles to combine with profiles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) throw rolesError;
+
+      // Map roles to profiles
+      const formattedEmployees: UserType[] = profiles.map(profile => {
+        // Find the role for this user
+        const userRole = userRoles?.find(role => role.user_id === profile.id);
+        
+        return {
+          id: profile.id,
+          name: profile.name || '',
+          email: profile.email || '',
+          department: profile.department || '',
+          position: profile.position || '',
+          role: userRole?.role || 'employee'
+        };
+      });
 
       setEmployees(formattedEmployees);
+      console.log("Fetched employees:", formattedEmployees);
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast.error("Failed to load employees");

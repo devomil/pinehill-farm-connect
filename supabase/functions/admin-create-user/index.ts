@@ -33,10 +33,31 @@ serve(async (req) => {
     }
 
     // Assign initial role
-    await supabaseClient.from('user_roles').insert({
+    const { error: roleError } = await supabaseClient.from('user_roles').insert({
       user_id: user.user.id,
       role: 'employee'
     })
+
+    if (roleError) {
+      console.error("Error inserting user role:", roleError);
+      throw roleError;
+    }
+
+    // Manually insert into profiles if needed
+    const { error: profileError } = await supabaseClient.from('profiles').insert({
+      id: user.user.id,
+      name: userData.name,
+      email: email,
+      department: userData.department,
+      position: userData.position
+    });
+
+    if (profileError) {
+      console.error("Error inserting profile:", profileError);
+      // Continue anyway as the trigger might handle this
+    }
+
+    console.log(`User created successfully with ID: ${user.user.id}`);
 
     return new Response(
       JSON.stringify({ user: user.user }),
@@ -44,6 +65,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error("Error in admin-create-user:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

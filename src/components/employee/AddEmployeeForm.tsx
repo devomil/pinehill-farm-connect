@@ -36,7 +36,7 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const { error } = await supabase.functions.invoke('admin-create-user', {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: values.email,
           password: values.password,
@@ -49,10 +49,13 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
       });
 
       if (error) throw error;
-
+      
+      console.log("Employee created successfully:", data);
       toast.success("Employee created successfully");
+      form.reset();
       onSuccess();
     } catch (error) {
+      console.error("Error creating employee:", error);
       toast.error(error.message || "Failed to create employee");
     }
   };
