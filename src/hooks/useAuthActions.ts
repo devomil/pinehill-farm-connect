@@ -122,18 +122,22 @@ export function useAuthActions(
   const logout = async () => {
     setLoading(true);
     try {
-      // Clear localStorage first
+      // Clear state first to provide immediate feedback
+      setCurrentUser(null);
+      
+      // Clear localStorage
       localStorage.removeItem("currentUser");
       
-      // Sign out from Supabase
+      // Sign out from Supabase - even if this fails, the user will be logged out of the app
       await supabase.auth.signOut();
       
-      // Clear state last
-      setCurrentUser(null);
       toast.success("Logged out successfully");
     } catch (err) {
       console.error("Logout error:", err);
-      toast.error("Failed to log out");
+      // Even if there's an error with Supabase, ensure the user is logged out locally
+      setCurrentUser(null);
+      localStorage.removeItem("currentUser");
+      toast.error("Error during logout, but you've been logged out");
     } finally {
       setLoading(false);
     }
