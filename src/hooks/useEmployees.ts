@@ -8,10 +8,12 @@ export function useEmployees() {
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch profiles with proper role information
       const { data: profiles, error: profilesError } = await supabase
@@ -20,12 +22,16 @@ export function useEmployees() {
 
       if (profilesError) throw profilesError;
 
+      console.log("Fetched profiles:", profiles);
+
       // Fetch user roles to combine with profiles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
 
       if (rolesError) throw rolesError;
+
+      console.log("Fetched user roles:", userRoles);
 
       // Map roles to profiles
       const formattedEmployees: UserType[] = profiles.map(profile => {
@@ -43,9 +49,10 @@ export function useEmployees() {
       });
 
       setEmployees(formattedEmployees);
-      console.log("Fetched employees:", formattedEmployees);
-    } catch (error) {
+      console.log("Formatted employees:", formattedEmployees);
+    } catch (error: any) {
       console.error("Error fetching employees:", error);
+      setError(error.message);
       toast.error("Failed to load employees");
     } finally {
       setLoading(false);
@@ -68,6 +75,7 @@ export function useEmployees() {
     setSearchQuery,
     employees: filteredEmployees,
     loading,
+    error,
     refetch: fetchEmployees,
     unfilteredEmployees: employees,
   };
