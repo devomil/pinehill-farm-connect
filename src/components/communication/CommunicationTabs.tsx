@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnnouncementList } from "./AnnouncementList";
 import { CommunicationFilter } from "./CommunicationFilter";
 import { Announcement } from "@/types";
+import { DateRange } from "react-day-picker";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -31,9 +32,10 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onAttachmentAction
 }) => {
   const [activeTab, setActiveTab] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const itemsPerPage = 10;
 
   const filterAnnouncements = (tabType: string) => {
@@ -47,8 +49,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     }
 
     // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (searchQuery) {
+      const term = searchQuery.toLowerCase();
       filtered = filtered.filter(
         a => 
           a.title.toLowerCase().includes(term) ||
@@ -58,8 +60,29 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     }
 
     // Apply priority filter
-    if (priorityFilter) {
+    if (priorityFilter && priorityFilter !== 'all') {
       filtered = filtered.filter(a => a.priority === priorityFilter);
+    }
+
+    // Apply date range filter
+    if (dateRange?.from) {
+      const fromDate = new Date(dateRange.from);
+      fromDate.setHours(0, 0, 0, 0);
+      
+      filtered = filtered.filter(a => {
+        const announcementDate = new Date(a.createdAt);
+        return announcementDate >= fromDate;
+      });
+    }
+
+    if (dateRange?.to) {
+      const toDate = new Date(dateRange.to);
+      toDate.setHours(23, 59, 59, 999);
+      
+      filtered = filtered.filter(a => {
+        const announcementDate = new Date(a.createdAt);
+        return announcementDate <= toDate;
+      });
     }
 
     return filtered;
@@ -90,15 +113,12 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
         </TabsList>
 
         <CommunicationFilter
-          searchTerm={searchTerm}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           priorityFilter={priorityFilter}
-          onSearchChange={setSearchTerm}
           onPriorityChange={setPriorityFilter}
-          onReset={() => {
-            setSearchTerm("");
-            setPriorityFilter("");
-            setCurrentPage(1);
-          }}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
         />
       </div>
 
@@ -167,3 +187,4 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     </Tabs>
   );
 };
+
