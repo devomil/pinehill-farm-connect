@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +19,12 @@ export default function Communication() {
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
   useEffect(() => {
     async function fetchEmployees() {
+      // In a real app, this would fetch from the database
+      // For now, using mock data that includes an updated ID format for the admin user
       setAllEmployees([
-        { id: "1", name: "Admin User", email: "admin@pinehillfarm.co", role: "admin" },
-        { id: "2", name: "John Employee", email: "john@pinehillfarm.co", role: "employee" },
-        { id: "3", name: "Sarah Johnson", email: "sarah@pinehillfarm.co", role: "employee" }
+        { id: "00000000-0000-0000-0000-000000000001", name: "Admin User", email: "admin@pinehillfarm.co", role: "admin" },
+        { id: "00000000-0000-0000-0000-000000000002", name: "John Employee", email: "john@pinehillfarm.co", role: "employee" },
+        { id: "00000000-0000-0000-0000-000000000003", name: "Sarah Johnson", email: "sarah@pinehillfarm.co", role: "employee" }
       ]);
     }
     fetchEmployees();

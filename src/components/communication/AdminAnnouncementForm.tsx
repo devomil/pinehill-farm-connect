@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Paperclip, Loader2 } from "lucide-react";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { User } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminAnnouncementFormProps {
   allEmployees: User[];
@@ -22,6 +23,7 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
   onCreate,
   closeDialog,
 }) => {
+  const { currentUser } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState<"urgent" | "important" | "fyi">("fyi");
@@ -59,6 +61,13 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         setLoading(false);
         return;
       }
+      
+      if (!currentUser || !currentUser.id) {
+        toast({ title: "Authentication error", description: "You need to be logged in to create announcements.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      
       // "Upload" files: for MVP store names only. TODO: implement storage later.
       const attachmentsData = attachments.map(f => ({ name: f.name, size: f.size, type: f.type }));
       // Insert announcement
@@ -67,7 +76,7 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         .insert({
           title,
           content,
-          author_id: "", // TODO: have the backend derive this from auth.uid()
+          author_id: currentUser.id, // Use the current user's ID
           priority,
           has_quiz: hasQuiz,
           target_type: targetType,
