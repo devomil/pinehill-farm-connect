@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,9 +94,14 @@ export function useAuthActions(
       localStorage.removeItem("currentUser");
       
       // Sign out from Supabase - even if this fails, the user will be logged out of the app
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
       
-      toast.success("Logged out successfully");
+      if (error) {
+        console.error("Supabase signOut error:", error);
+        toast.error("Error during logout, but you've been logged out locally");
+      } else {
+        toast.success("Logged out successfully");
+      }
     } catch (err) {
       console.error("Logout error:", err);
       // Even if there's an error with Supabase, ensure the user is logged out locally

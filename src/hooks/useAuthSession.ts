@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,8 @@ export function useAuthSession() {
         
         // If no session and no stored user, we're not authenticated
         if (!data.session?.user) {
+          setCurrentUser(null); // Ensure currentUser is null when no session exists
+          localStorage.removeItem("currentUser"); // Clear localStorage to be safe
           setLoading(false);
           return;
         }
@@ -87,6 +90,8 @@ export function useAuthSession() {
         }
       } catch (err) {
         console.error("Session check error:", err);
+        setCurrentUser(null);
+        localStorage.removeItem("currentUser");
       } finally {
         setLoading(false);
       }
@@ -98,6 +103,8 @@ export function useAuthSession() {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session);
+        
         if (event === 'SIGNED_IN' && session?.user) {
           try {
             // Get user role
@@ -141,6 +148,7 @@ export function useAuthSession() {
             }
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out, clearing state and storage");
           setCurrentUser(null);
           localStorage.removeItem("currentUser");
         }
