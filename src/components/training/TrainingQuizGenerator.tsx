@@ -4,10 +4,11 @@ import { FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { QuizEditor } from "./QuizEditor";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TrainingQuizGeneratorProps {
   hasQuiz: boolean;
@@ -17,6 +18,12 @@ interface TrainingQuizGeneratorProps {
   setExternalTestUrl: (url: string) => void;
 }
 
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+}
+
 export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
   hasQuiz,
   setHasQuiz,
@@ -24,8 +31,8 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
   externalTestUrl,
   setExternalTestUrl
 }) => {
-  const [generatingQuiz, setGeneratingQuiz] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   const handleExternalUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setExternalTestUrl(e.target.value);
@@ -41,61 +48,27 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
     }
   };
 
-  const generateQuiz = async () => {
+  const generateQuestions = async () => {
     if (attachments.length === 0) {
       toast.error("Please upload training materials first");
       return;
     }
 
-    setGeneratingQuiz(true);
+    setGenerating(true);
     try {
-      // In a real implementation, we would call an AI service to analyze the attachments
-      // and generate quiz questions. For now, we'll mock this behavior
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data, error } = await supabase.functions.invoke('generate-quiz', {
+        body: { attachments }
+      });
 
-      // Mock generated questions
-      const mockQuestions = [
-        {
-          question: "What is the primary purpose of this training?",
-          options: [
-            "To improve employee morale",
-            "To ensure compliance with regulations",
-            "To reduce operational costs",
-            "To increase sales performance"
-          ],
-          correctAnswer: 1
-        },
-        {
-          question: "According to the training materials, what should you do first in an emergency situation?",
-          options: [
-            "Call your supervisor",
-            "Evacuate the building",
-            "Assess the situation safely",
-            "Document the incident"
-          ],
-          correctAnswer: 2
-        },
-        {
-          question: "What is the recommended frequency for reviewing these procedures?",
-          options: [
-            "Monthly",
-            "Quarterly",
-            "Annually",
-            "Bi-annually"
-          ],
-          correctAnswer: 2
-        }
-      ];
+      if (error) throw error;
 
-      setQuizQuestions(mockQuestions);
-      toast.success("Quiz generated successfully! Please review the questions.");
+      setQuestions(data.questions);
+      toast.success("Quiz questions generated successfully! Please review them.");
     } catch (error) {
       console.error("Error generating quiz:", error);
       toast.error("Failed to generate quiz questions");
     } finally {
-      setGeneratingQuiz(false);
+      setGenerating(false);
     }
   };
 
@@ -103,7 +76,7 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
     <div className="space-y-6">
       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
         <div className="space-y-0.5">
-          <FormLabel className="text-base">Auto-generated Quiz</FormLabel>
+          <FormLabel className="text-base">Quiz</FormLabel>
           <FormDescription>
             Create a quiz based on uploaded training materials
           </FormDescription>
@@ -118,41 +91,14 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
       </FormItem>
 
       {hasQuiz && (
-        <div className="space-y-4">
-          <Button 
-            type="button" 
-            onClick={generateQuiz} 
-            disabled={generatingQuiz || attachments.length === 0}
-          >
-            {generatingQuiz ? "Generating..." : "Generate Quiz Questions"}
-          </Button>
-
-          {quizQuestions.length > 0 && (
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium">Generated Questions (Review & Edit)</h4>
-              {quizQuestions.map((q, idx) => (
-                <Card key={idx}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Question {idx + 1}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Textarea defaultValue={q.question} className="min-h-0" />
-                    <div className="space-y-2">
-                      {q.options.map((option: string, oidx: number) => (
-                        <div key={oidx} className="flex items-center gap-2">
-                          <div className={`w-6 h-6 flex items-center justify-center rounded-full border ${oidx === q.correctAnswer ? 'bg-green-100 border-green-500' : 'border-gray-300'}`}>
-                            {String.fromCharCode(65 + oidx)}
-                          </div>
-                          <Input defaultValue={option} className="flex-1" />
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+        <Card className="p-6">
+          <QuizEditor
+            questions={questions}
+            onQuestionsChange={setQuestions}
+            onGenerateQuestions={generateQuestions}
+            generating={generating}
+          />
+        </Card>
       )}
 
       <Separator />
