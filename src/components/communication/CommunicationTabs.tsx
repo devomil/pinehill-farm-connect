@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,16 @@ import {
   AnnouncementEmptyUnread,
   AnnouncementEmptyUrgent
 } from "./AnnouncementListState";
+import { CommunicationFilter } from "./CommunicationFilter";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { DateRange } from "react-day-picker";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -28,8 +37,64 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   getPriorityBadge,
   currentUserId
 }) => {
-  const unreadAnnouncements = announcements.filter(a => !isRead(a));
-  const urgentAnnouncements = announcements.filter(a => a.priority === "urgent");
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [priorityFilter, setPriorityFilter] = React.useState("all");
+  const [dateRange, setDateRange] = React.useState<DateRange>();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 5;
+
+  const filterAnnouncements = (announcements: Announcement[]) => {
+    return announcements.filter((announcement) => {
+      const matchesSearch = announcement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          announcement.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesPriority = priorityFilter === "all" || announcement.priority === priorityFilter;
+      const matchesDate = !dateRange?.from || !dateRange?.to || 
+                         (announcement.createdAt >= dateRange.from && 
+                          announcement.createdAt <= dateRange.to);
+      return matchesSearch && matchesPriority && matchesDate;
+    });
+  };
+
+  const unreadAnnouncements = filterAnnouncements(announcements.filter(a => !isRead(a)));
+  const urgentAnnouncements = filterAnnouncements(announcements.filter(a => a.priority === "urgent"));
+  const allFilteredAnnouncements = filterAnnouncements(announcements);
+
+  const paginateAnnouncements = (announcements: Announcement[]) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return announcements.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(allFilteredAnnouncements.length / itemsPerPage);
+
+  const renderPagination = () => (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          />
+        </PaginationItem>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <PaginationItem key={i + 1}>
+            <PaginationLink
+              isActive={currentPage === i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+        <PaginationItem>
+          <PaginationNext
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
 
   return (
     <Tabs defaultValue="all">
@@ -45,24 +110,38 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
         </TabsTrigger>
         <TabsTrigger value="urgent">Urgent</TabsTrigger>
       </TabsList>
+      
+      <CommunicationFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+      />
+
       <TabsContent value="all" className="space-y-4 mt-4">
         {loading ? (
           <AnnouncementLoading />
-        ) : announcements.length === 0 ? (
+        ) : allFilteredAnnouncements.length === 0 ? (
           <AnnouncementEmptyAll />
         ) : (
-          announcements.map(announcement => (
-            <AnnouncementCard
-              key={announcement.id}
-              announcement={announcement}
-              isRead={isRead(announcement)}
-              onMarkAsRead={() => markAsRead(announcement.id)}
-              showMarkAsRead={true}
-              getPriorityBadge={getPriorityBadge}
-            />
-          ))
+          <>
+            {paginateAnnouncements(allFilteredAnnouncements).map(announcement => (
+              <AnnouncementCard
+                key={announcement.id}
+                announcement={announcement}
+                isRead={isRead(announcement)}
+                onMarkAsRead={() => markAsRead(announcement.id)}
+                showMarkAsRead={true}
+                getPriorityBadge={getPriorityBadge}
+              />
+            ))}
+            {allFilteredAnnouncements.length > itemsPerPage && renderPagination()}
+          </>
         )}
       </TabsContent>
+
       <TabsContent value="unread" className="space-y-4 mt-4">
         {loading ? (
           <AnnouncementLoading />
@@ -81,6 +160,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           <AnnouncementEmptyUnread />
         )}
       </TabsContent>
+
       <TabsContent value="urgent" className="space-y-4 mt-4">
         {loading ? (
           <AnnouncementLoading />
@@ -102,4 +182,3 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     </Tabs>
   );
 };
-

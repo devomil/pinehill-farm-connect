@@ -23,8 +23,8 @@ export const TeamCalendarEventFormFileField: React.FC<FileFieldProps> = ({ value
         toast.error("File type must be image or PDF");
         continue;
       }
-      if (file.size > 1 * 1024 * 1024) {
-        toast.error("File too large (max 1MB)");
+      if (file.size > 5 * 1024 * 1024) {  // Changed to 5MB
+        toast.error("File too large (max 5MB)");
         continue;
       }
       const reader = new FileReader();
@@ -40,7 +40,7 @@ export const TeamCalendarEventFormFileField: React.FC<FileFieldProps> = ({ value
 
   return (
     <FormItem>
-      <FormLabel>Attachments (Images or PDFs, max 2, 1MB each)</FormLabel>
+      <FormLabel>Attachments (Images or PDFs, max 2, 5MB each)</FormLabel>
       <FormControl>
         <Input
           type="file"
