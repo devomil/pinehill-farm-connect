@@ -155,6 +155,39 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_content: {
+        Row: {
+          content_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          uploaded_by: string | null
+          url: string | null
+        }
+        Insert: {
+          content_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          uploaded_by?: string | null
+          url?: string | null
+        }
+        Update: {
+          content_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          uploaded_by?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

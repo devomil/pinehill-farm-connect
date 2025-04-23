@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +7,8 @@ import { TrainingCard } from "@/components/dashboard/TrainingCard";
 import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
 import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
 import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
+import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
+import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 export default function Dashboard() {
@@ -29,7 +30,10 @@ export default function Dashboard() {
           <AdminTimeOffCard count={pendingTimeOff.length || 0} />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <MarketingContent />
+          <SocialMediaFeeds />
+
           {assignedTrainings && assignedTrainings.length > 0 && (
             <TrainingCard trainings={assignedTrainings} />
           )}
