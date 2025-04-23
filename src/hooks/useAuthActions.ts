@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,38 +14,7 @@ export function useAuthActions(
     setError(null);
     
     try {
-      // For demo purposes, allow logging in with our mock users
-      if (email === "admin@pinehillfarm.co" && password.length > 0) {
-        const mockUser: User = {
-          id: "1",
-          name: "Admin User",
-          email: "admin@pinehillfarm.co",
-          role: "admin",
-          department: "Management",
-          position: "Farm Manager"
-        };
-        setCurrentUser(mockUser);
-        localStorage.setItem("currentUser", JSON.stringify(mockUser));
-        toast.success("Login successful");
-        return true;
-      }
-      
-      if (email === "john@pinehillfarm.co" && password.length > 0) {
-        const mockUser: User = {
-          id: "2",
-          name: "John Employee",
-          email: "john@pinehillfarm.co",
-          role: "employee",
-          department: "Operations",
-          position: "Field Worker"
-        };
-        setCurrentUser(mockUser);
-        localStorage.setItem("currentUser", JSON.stringify(mockUser));
-        toast.success("Login successful");
-        return true;
-      }
-      
-      // Actual Supabase login
+      // First, try Supabase authentication for real users
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -59,22 +27,18 @@ export function useAuthActions(
       }
       
       if (!data.user || !data.session) {
-        setError("Failed to authenticate");
-        toast.error("Failed to authenticate");
+        setError("Authentication failed");
+        toast.error("Authentication failed");
         return false;
       }
       
       try {
-        // Get user role and data
+        // Fetch user role from user_roles table
         const { data: userRoleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
           .single();
-        
-        if (roleError && roleError.code !== "PGRST116") {
-          console.error("Error fetching user role:", roleError);
-        }
         
         const role = userRoleData?.role || "employee";
         
@@ -92,9 +56,9 @@ export function useAuthActions(
         toast.success("Login successful");
         return true;
       } catch (err) {
-        console.error("Error setting up user data after authentication:", err);
+        console.error("Error processing user data after authentication:", err);
         
-        // Even if we have issues with role data, let's at least log the user in with basic info
+        // Fallback with basic user data
         const basicUserData: User = {
           id: data.user.id,
           name: data.user.email?.split('@')[0] || "User",
