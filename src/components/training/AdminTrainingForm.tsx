@@ -2,17 +2,15 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form, FormField } from "@/components/ui/form"; // Added FormField import
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@/types";
 import { TrainingAttachmentsField } from "./TrainingAttachmentsField";
 import { TrainingQuizGenerator } from "./TrainingQuizGenerator";
 import { BasicTrainingInfoSection } from "./BasicTrainingInfoSection";
 import { RequiredDepartmentsSection } from "./RequiredDepartmentsSection";
+import { useTrainingForm } from "@/hooks/useTrainingForm";
 
 interface AdminTrainingFormProps {
   open: boolean;
@@ -21,30 +19,27 @@ interface AdminTrainingFormProps {
   currentUser: User;
 }
 
-const formSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().optional(),
-  category: z.string().min(1, { message: "Category is required" }),
-  duration: z.coerce.number().min(1, { message: "Duration must be at least 1 minute" }),
-  expiresAfter: z.coerce.number().optional(),
-  requiredForAll: z.boolean().default(true),
-  requiredForRetail: z.boolean().default(false),
-  requiredForOperations: z.boolean().default(false),
-  requiredForManagement: z.boolean().default(false),
-  attachments: z.array(z.string()).default([]),
-  externalTestUrl: z.string().url().optional().or(z.literal('')),
-});
-
 export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
   open,
   setOpen,
   onTrainingCreated,
   currentUser,
 }) => {
-  const [loading, setLoading] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(false);
+  
+  const {
+    loading,
+    handleSubmit,
+    handleRequiredForAllChange,
+    handleSpecificDepartmentChange,
+    formSchema,
+  } = useTrainingForm({
+    currentUser,
+    onTrainingCreated,
+    setOpen,
+  });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -61,73 +56,8 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
     },
   });
 
-  const handleRequiredForAllChange = (value: boolean) => {
-    form.setValue("requiredForAll", value);
-    if (value) {
-      form.setValue("requiredForRetail", false);
-      form.setValue("requiredForOperations", false);
-      form.setValue("requiredForManagement", false);
-    }
-  };
-
-  const handleSpecificDepartmentChange = () => {
-    const retail = form.getValues("requiredForRetail");
-    const operations = form.getValues("requiredForOperations");
-    const management = form.getValues("requiredForManagement");
-    
-    if (retail || operations || management) {
-      form.setValue("requiredForAll", false);
-    }
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      setLoading(true);
-      
-      let requiredFor: string[] = [];
-      
-      if (values.requiredForAll) {
-        requiredFor = ["all"];
-      } else {
-        if (values.requiredForRetail) requiredFor.push("retail");
-        if (values.requiredForOperations) requiredFor.push("operations");
-        if (values.requiredForManagement) requiredFor.push("management");
-      }
-      
-      if (requiredFor.length === 0) {
-        toast.error("You must select at least one department");
-        return;
-      }
-
-      const newTraining = {
-        title: values.title,
-        description: values.description || "",
-        category: values.category,
-        duration: values.duration,
-        expires_after: values.expiresAfter || null,
-        required_for: requiredFor,
-        created_by: currentUser.id,
-        attachments: values.attachments,
-        has_quiz: hasQuiz,
-        external_test_url: values.externalTestUrl || null,
-      };
-
-      const { error } = await supabase
-        .from("trainings")
-        .insert([newTraining]);
-
-      if (error) throw error;
-
-      toast.success("Training created successfully");
-      form.reset();
-      setOpen(false);
-      onTrainingCreated();
-    } catch (err) {
-      console.error("Error submitting form:", err);
-      toast.error("An error occurred");
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = (values: any) => {
+    handleSubmit(values, hasQuiz);
   };
 
   return (
@@ -146,8 +76,8 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
             
             <RequiredDepartmentsSection 
               form={form}
-              onRequiredForAllChange={handleRequiredForAllChange}
-              onSpecificDepartmentChange={handleSpecificDepartmentChange}
+              onRequiredForAllChange={(value) => handleRequiredForAllChange(form, value)}
+              onSpecificDepartmentChange={() => handleSpecificDepartmentChange(form)}
             />
             
             <FormField
