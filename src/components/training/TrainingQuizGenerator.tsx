@@ -1,14 +1,12 @@
 
 import React, { useState } from "react";
-import { FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 import { QuizEditor } from "./QuizEditor";
+import { QuizToggle } from "./QuizToggle";
+import { ExternalTestUrlInput } from "./ExternalTestUrlInput";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface TrainingQuizGeneratorProps {
   hasQuiz: boolean;
@@ -16,12 +14,6 @@ interface TrainingQuizGeneratorProps {
   attachments: string[];
   externalTestUrl: string;
   setExternalTestUrl: (url: string) => void;
-}
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswer: number;
 }
 
 export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
@@ -34,17 +26,17 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [generating, setGenerating] = useState(false);
 
-  const handleExternalUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setExternalTestUrl(e.target.value);
-    if (e.target.value) {
-      setHasQuiz(false);
-    }
-  };
-
   const handleQuizToggle = (checked: boolean) => {
     setHasQuiz(checked);
     if (checked) {
       setExternalTestUrl("");
+    }
+  };
+
+  const handleExternalUrlChange = (url: string) => {
+    setExternalTestUrl(url);
+    if (url) {
+      setHasQuiz(false);
     }
   };
 
@@ -74,21 +66,11 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
 
   return (
     <div className="space-y-6">
-      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-        <div className="space-y-0.5">
-          <FormLabel className="text-base">Quiz</FormLabel>
-          <FormDescription>
-            Create a quiz based on uploaded training materials
-          </FormDescription>
-        </div>
-        <FormControl>
-          <Switch
-            checked={hasQuiz}
-            onCheckedChange={handleQuizToggle}
-            disabled={!attachments.length}
-          />
-        </FormControl>
-      </FormItem>
+      <QuizToggle 
+        enabled={hasQuiz}
+        onToggle={handleQuizToggle}
+        disabled={!attachments.length}
+      />
 
       {hasQuiz && (
         <Card className="p-6">
@@ -103,22 +85,11 @@ export const TrainingQuizGenerator: React.FC<TrainingQuizGeneratorProps> = ({
 
       <Separator />
 
-      <FormItem>
-        <FormLabel>External Testing URL (Optional)</FormLabel>
-        <FormDescription>
-          Alternatively, provide a URL to external testing platform
-        </FormDescription>
-        <FormControl>
-          <Input 
-            type="url" 
-            placeholder="https://example.com/test" 
-            value={externalTestUrl}
-            onChange={handleExternalUrlChange}
-            disabled={hasQuiz}
-          />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
+      <ExternalTestUrlInput 
+        value={externalTestUrl}
+        onChange={handleExternalUrlChange}
+        disabled={hasQuiz}
+      />
     </div>
   );
 };
