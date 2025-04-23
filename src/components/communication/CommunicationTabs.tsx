@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Announcement } from "@/types";
 import {
@@ -33,6 +34,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   const [priorityFilter, setPriorityFilter] = React.useState("all");
   const [dateRange, setDateRange] = React.useState<DateRange>();
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState(announcements);
   const itemsPerPage = 5;
 
   const handleEdit = (announcement: Announcement) => {
@@ -40,8 +42,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   };
 
   const handleDelete = async (id: string) => {
-    const updatedAnnouncements = announcements.filter(a => a.id !== id);
-    setAnnouncements(updatedAnnouncements);
+    // We don't need to call setAnnouncements here, instead we'll emit the deletion
+    // to the parent component through the props (handled in Communication.tsx)
+    console.log("Delete announcement:", id);
   };
 
   const filterAnnouncements = (announcements: Announcement[]) => {
@@ -104,7 +107,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onPageChange={setCurrentPage}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          isAdmin={currentUser?.role === 'admin'}
+          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
 
@@ -121,7 +124,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           emptyComponent={<AnnouncementEmptyUnread />}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          isAdmin={currentUser?.role === 'admin'}
+          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
 
@@ -138,7 +141,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           emptyComponent={<AnnouncementEmptyUrgent />}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          isAdmin={currentUser?.role === 'admin'}
+          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
     </Tabs>

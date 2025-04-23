@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,10 +48,18 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       if (error) throw error;
       
       onDelete(announcement.id);
-      toast.success("Announcement deleted successfully");
+      toast({
+        title: "Success",
+        description: "Announcement deleted successfully",
+        variant: "default"
+      });
     } catch (error) {
       console.error('Error deleting announcement:', error);
-      toast.error("Failed to delete announcement");
+      toast({
+        title: "Error",
+        description: "Failed to delete announcement",
+        variant: "destructive"
+      });
     }
   };
 
@@ -60,7 +67,11 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     if (attachment.url) {
       window.open(attachment.url, '_blank');
     } else {
-      toast.error("Attachment URL not available");
+      toast({
+        title: "Error",
+        description: "Attachment URL not available",
+        variant: "destructive"
+      });
     }
   };
 
