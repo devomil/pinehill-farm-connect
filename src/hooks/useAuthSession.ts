@@ -1,0 +1,91 @@
+
+import { useState, useEffect } from "react";
+import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+
+export function useAuthSession() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for existing session on load
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
+        }
+        
+        if (session) {
+          // Get user role and profile information
+          const { data: userRoleData, error: roleError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
+            
+          if (roleError && roleError.code !== "PGRST116") {
+            console.error("Error fetching user role:", roleError);
+          }
+          
+          const role = userRoleData?.role || "employee";
+          
+          const userData: User = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
+            email: session.user.email || "",
+            role: role as "employee" | "admin" | "hr" | "manager",
+            department: session.user.user_metadata?.department || "",
+            position: session.user.user_metadata?.position || ""
+          };
+          
+          setCurrentUser(userData);
+        }
+      } catch (err) {
+        console.error("Session check error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Initial session check
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Get user role
+          const { data: userRoleData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
+          
+          const role = userRoleData?.role || "employee";
+          
+          const userData: User = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
+            email: session.user.email || "",
+            role: role as "employee" | "admin" | "hr" | "manager",
+            department: session.user.user_metadata?.department || "",
+            position: session.user.user_metadata?.position || ""
+          };
+          
+          setCurrentUser(userData);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return { currentUser, setCurrentUser, loading, error, setError };
+}
