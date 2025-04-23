@@ -1,18 +1,13 @@
 
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User as UserType } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { EmployeeDetailModal } from "@/components/employee/EmployeeDetailModal";
-import { EmployeeSearchBar } from "@/components/employee/EmployeeSearchBar";
-import { EmployeeTable } from "@/components/employee/EmployeeTable";
 import { useEmployeeModal } from "@/hooks/useEmployeeModal";
 import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
-import { EmployeeResetPasswordDialog } from "@/components/employee/EmployeeResetPasswordDialog";
 import { useEmployees } from "@/hooks/useEmployees";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AddEmployeeForm } from "@/components/employee/AddEmployeeForm";
+import { EmployeeContent } from "@/components/employee/EmployeeContent";
+import { EmployeeModals } from "@/components/employee/EmployeeModals";
 
 export default function Employees() {
   const { currentUser } = useAuth();
@@ -45,47 +40,29 @@ export default function Employees() {
   return (
     <DashboardLayout requireAdmin={true}>
       <EmployeeHeader onAddEmployee={handleAddEmployee} />
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Employees Directory</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EmployeeSearchBar value={searchQuery} onChange={setSearchQuery} />
-          <EmployeeTable
-            employees={employees}
-            loading={loading}
-            onEdit={handleEditEmployee}
-            onDelete={handleDeleteEmployee}
-            onResetPassword={handleResetPassword}
-            isAdmin={currentUser && currentUser.role === "admin"}
-          />
-        </CardContent>
-      </Card>
-
-      <EmployeeDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeModal}
-        employee={selectedEmployee}
-        onEmployeeUpdate={handleEmployeeUpdate}
+      
+      <EmployeeContent
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        employees={employees}
+        loading={loading}
+        onEdit={handleEditEmployee}
+        onDelete={handleDeleteEmployee}
+        onResetPassword={handleResetPassword}
+        isAdmin={currentUser && currentUser.role === "admin"}
       />
 
-      <EmployeeResetPasswordDialog
-        employee={resetEmployee}
-        open={!!resetEmployee}
-        setOpen={open => !open ? setResetEmployee(null) : void 0}
+      <EmployeeModals
+        selectedEmployee={selectedEmployee}
+        isDetailModalOpen={isDetailModalOpen}
+        closeDetailModal={closeModal}
+        handleEmployeeUpdate={handleEmployeeUpdate}
+        resetEmployee={resetEmployee}
+        setResetEmployee={setResetEmployee}
+        isAddModalOpen={isAddModalOpen}
+        setIsAddModalOpen={setIsAddModalOpen}
+        handleEmployeeCreated={handleEmployeeCreated}
       />
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Employee</DialogTitle>
-          </DialogHeader>
-          <AddEmployeeForm
-            onSuccess={handleEmployeeCreated}
-            onCancel={() => setIsAddModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 }
