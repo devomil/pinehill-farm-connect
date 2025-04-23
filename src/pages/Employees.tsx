@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
 import { useEmployees } from "@/hooks/useEmployees";
 import { EmployeeContent } from "@/components/employee/EmployeeContent";
 import { EmployeeModals } from "@/components/employee/EmployeeModals";
+import { toast } from "sonner";
 
 export default function Employees() {
   const { currentUser } = useAuth();
@@ -18,9 +19,26 @@ export default function Employees() {
     closeModal
   } = useEmployeeModal();
 
-  const { searchQuery, setSearchQuery, employees, loading, refetch } = useEmployees();
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    employees, 
+    loading, 
+    error, 
+    refetch 
+  } = useEmployees();
+  
   const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(`Error loading employees: ${error}`);
+    }
+    
+    // Log the employee count on each render to help with debugging
+    console.log(`Displaying ${employees.length} employees`);
+  }, [employees.length, error]);
 
   const handleAddEmployee = () => {
     setIsAddModalOpen(true);
@@ -28,13 +46,20 @@ export default function Employees() {
 
   const handleEmployeeCreated = () => {
     setIsAddModalOpen(false);
-    refetch();
+    console.log("Employee created - refreshing list...");
+    // Run the refetch with a slight delay to ensure database updates are complete
+    setTimeout(() => {
+      refetch();
+    }, 500);
   };
 
   const handleEditEmployee = (employee: UserType) => openModal(employee);
+  
   const handleDeleteEmployee = (id: string) =>
     import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`));
+  
   const handleEmployeeUpdate = () => refetch();
+  
   const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
 
   return (

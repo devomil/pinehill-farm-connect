@@ -43,7 +43,7 @@ serve(async (req) => {
       throw roleError;
     }
 
-    // Manually insert into profiles if needed
+    // Manually ensure the profiles table has the user data
     const { error: profileError } = await supabaseClient.from('profiles').insert({
       id: user.user.id,
       name: userData.name,
@@ -54,10 +54,29 @@ serve(async (req) => {
 
     if (profileError) {
       console.error("Error inserting profile:", profileError);
-      // Continue anyway as the trigger might handle this
+      // Don't throw here - we'll try to get it created via the trigger
     }
 
     console.log(`User created successfully with ID: ${user.user.id}`);
+    
+    // Verify the profile was created or try to update it
+    const { data: profileData, error: getProfileError } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user.user.id)
+      .single();
+      
+    if (getProfileError || !profileData) {
+      console.log("Profile not found after creation, trying to create it again");
+      // Try a different approach if the profile doesn't exist
+      await supabaseClient.from('profiles').upsert({
+        id: user.user.id,
+        name: userData.name,
+        email: email,
+        department: userData.department || '',
+        position: userData.position || ''
+      });
+    }
 
     return new Response(
       JSON.stringify({ user: user.user }),

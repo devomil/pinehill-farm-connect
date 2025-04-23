@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User as UserType } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,7 @@ export function useEmployees() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -33,8 +33,16 @@ export function useEmployees() {
 
       console.log("Fetched user roles:", userRoles);
 
+      // If there are no profiles, try to fetch users directly and create profiles
+      if (!profiles || profiles.length === 0) {
+        console.log("No profiles found, attempting to fetch auth users");
+        
+        // We can't directly access auth.users from the client, so let's handle this case
+        toast.warning("No employee profiles found. Please check database setup.");
+      }
+
       // Map roles to profiles
-      const formattedEmployees: UserType[] = profiles.map(profile => {
+      const formattedEmployees: UserType[] = (profiles || []).map(profile => {
         // Find the role for this user
         const userRole = userRoles?.find(role => role.user_id === profile.id);
         
@@ -50,6 +58,11 @@ export function useEmployees() {
 
       setEmployees(formattedEmployees);
       console.log("Formatted employees:", formattedEmployees);
+      
+      if (formattedEmployees.length === 0) {
+        console.log("No employees found after formatting");
+      }
+      
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       setError(error.message);
@@ -57,11 +70,11 @@ export function useEmployees() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [fetchEmployees]);
 
   const filteredEmployees = employees.filter((employee) =>
     employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

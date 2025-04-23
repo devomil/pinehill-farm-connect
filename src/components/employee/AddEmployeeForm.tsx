@@ -36,6 +36,8 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const toastId = toast.loading(`Creating employee ${values.name}...`);
+      
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: values.email,
@@ -48,19 +50,27 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        toast.dismiss(toastId);
+        throw error;
+      }
       
+      toast.dismiss(toastId);
       console.log("Employee created successfully:", data);
       toast.success(`Employee ${values.name} created successfully`);
       form.reset();
-      onSuccess();
+      
+      // Delay the success callback to allow the database to update
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
     } catch (error: any) {
       console.error("Error creating employee:", error);
       
       // More specific error handling
-      if (error.message.includes('User already exists')) {
+      if (error.message?.includes('User already exists')) {
         toast.error("An employee with this email already exists");
-      } else if (error.message.includes('Invalid email')) {
+      } else if (error.message?.includes('Invalid email')) {
         toast.error("The email address is invalid");
       } else {
         toast.error(error.message || "Failed to create employee");
