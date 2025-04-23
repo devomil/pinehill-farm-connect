@@ -1,54 +1,24 @@
 
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { useEmployees } from "@/hooks/useEmployees";
-import { Training } from "@/types";
+import { useTrainings } from "@/hooks/useTrainings";
+import { supabase } from "@/integrations/supabase/client";
 import { EmptyTrainingState } from "./EmptyTrainingState";
 import { AssignTrainingDialog } from "./AssignTrainingDialog";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const AdminTrainingAssignments: React.FC = () => {
   const { currentUser } = useAuth();
-  const [trainings, setTrainings] = useState<Training[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { trainings, loading: trainingsLoading } = useTrainings();
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTrainingId, setSelectedTrainingId] = useState<string>("");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [assigningLoading, setAssigningLoading] = useState(false);
   const { unfilteredEmployees, loading: employeesLoading } = useEmployees();
-
-  const fetchTrainings = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("trainings")
-        .select("*")
-        .order("title");
-
-      if (error) throw error;
-
-      const mappedTrainings = (data || []).map(training => ({
-        ...training,
-        requiredFor: training.required_for,
-        expiresAfter: training.expires_after
-      })) as Training[];
-
-      setTrainings(mappedTrainings);
-    } catch (err) {
-      console.error("Error fetching trainings:", err);
-      toast.error("Failed to load trainings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrainings();
-  }, []);
 
   const handleAssignTraining = async () => {
     if (!selectedTrainingId || selectedUserIds.length === 0 || !currentUser) {
@@ -90,7 +60,7 @@ export const AdminTrainingAssignments: React.FC = () => {
     }
   };
 
-  if (loading || employeesLoading) {
+  if (trainingsLoading || employeesLoading) {
     return (
       <div className="flex justify-center items-center h-40">
         <p className="text-muted-foreground">Loading...</p>
