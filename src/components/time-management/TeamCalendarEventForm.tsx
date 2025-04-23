@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,7 @@ const formSchema = z.object({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   location: z.string().optional(),
-  attachments: z.array(z.string()).optional(),
+  attachments: z.any().optional(),
   attendanceType: z.enum(["required", "optional", "would-like", "info-only"]),
 });
 
@@ -77,9 +76,22 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
     try {
       setLoading(true);
 
-      // Compose combined start and end datetime strings
       const start_datetime = `${values.startDate.toISOString().split("T")[0]}T${values.startTime || "09:00"}:00`;
       const end_datetime = `${values.endDate.toISOString().split("T")[0]}T${values.endTime || "10:00"}:00`;
+
+      let processedAttachments: string[] = [];
+      
+      if (values.attachments && values.attachments instanceof FileList) {
+        processedAttachments = await Promise.all(
+          Array.from(values.attachments).map(file => 
+            new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.readAsDataURL(file);
+            })
+          )
+        );
+      }
 
       const newEvent = {
         title: values.title,
@@ -88,7 +100,7 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
         end_date: values.endDate.toISOString().split("T")[0],
         created_by: currentUser.id,
         attendance_type: values.attendanceType,
-        attachments: values.attachments ?? [],
+        attachments: processedAttachments,
         start_time: values.startTime,
         end_time: values.endTime,
         location: values.location,
@@ -173,13 +185,7 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="attachments"
-            render={({ field }) => (
-              <TeamCalendarEventFormFileField value={field.value || []} onChange={field.onChange} />
-            )}
-          />
+          <TeamCalendarEventFormFileField form={form} name="attachments" label="Attachments (Images or Documents, 5MB max)" />
 
           <TeamCalendarEventNotifySelector
             enabled={sendNotifications}
