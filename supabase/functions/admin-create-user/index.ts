@@ -20,6 +20,8 @@ serve(async (req) => {
 
     const { email, password, userData } = await req.json()
 
+    console.log("Creating user with data:", { email, userData })
+
     // Create the user
     const { data: user, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
@@ -29,54 +31,58 @@ serve(async (req) => {
     })
 
     if (createError) {
+      console.error("Error creating user:", createError)
       throw createError
     }
 
-    // Assign initial role
+    console.log("User created successfully:", user)
+
+    // Assign admin role
     const { error: roleError } = await supabaseClient.from('user_roles').insert({
       user_id: user.user.id,
-      role: 'employee'
+      role: 'admin'  // Set as admin
     })
 
     if (roleError) {
-      console.error("Error inserting user role:", roleError);
-      throw roleError;
+      console.error("Error inserting user role:", roleError)
+      throw roleError
     }
 
-    // Manually ensure the profiles table has the user data
+    console.log("Admin role assigned successfully")
+
+    // Create profile
     const { error: profileError } = await supabaseClient.from('profiles').insert({
       id: user.user.id,
       name: userData.name,
       email: email,
-      department: userData.department,
-      position: userData.position
-    });
+      department: userData.department || 'Management',
+      position: userData.position || 'Super Admin'
+    })
 
     if (profileError) {
-      console.error("Error inserting profile:", profileError);
-      // Don't throw here - we'll try to get it created via the trigger
+      console.error("Error creating profile:", profileError)
+      // Don't throw here - profile might be created by trigger
     }
 
-    console.log(`User created successfully with ID: ${user.user.id}`);
-    
-    // Verify the profile was created or try to update it
-    const { data: profileData, error: getProfileError } = await supabaseClient
+    // Verify profile was created
+    const { data: profile, error: getProfileError } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', user.user.id)
-      .single();
-      
-    if (getProfileError || !profileData) {
-      console.log("Profile not found after creation, trying to create it again");
-      // Try a different approach if the profile doesn't exist
+      .single()
+
+    if (getProfileError || !profile) {
+      console.log("Profile not found, trying to create again")
       await supabaseClient.from('profiles').upsert({
         id: user.user.id,
         name: userData.name,
         email: email,
-        department: userData.department || '',
-        position: userData.position || ''
-      });
+        department: 'Management',
+        position: 'Super Admin'
+      })
     }
+
+    console.log("Super admin user creation completed successfully")
 
     return new Response(
       JSON.stringify({ user: user.user }),
@@ -84,7 +90,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error("Error in admin-create-user:", error);
+    console.error("Error in admin-create-user:", error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
