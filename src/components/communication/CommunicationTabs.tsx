@@ -8,6 +8,8 @@ import {
 import { CommunicationFilter } from "./CommunicationFilter";
 import { AnnouncementList } from "./AnnouncementList";
 import { DateRange } from "react-day-picker";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -26,11 +28,21 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   getPriorityBadge,
   currentUserId
 }) => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [priorityFilter, setPriorityFilter] = React.useState("all");
   const [dateRange, setDateRange] = React.useState<DateRange>();
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 5;
+
+  const handleEdit = (announcement: Announcement) => {
+    console.log("Edit announcement:", announcement);
+  };
+
+  const handleDelete = async (id: string) => {
+    const updatedAnnouncements = announcements.filter(a => a.id !== id);
+    setAnnouncements(updatedAnnouncements);
+  };
 
   const filterAnnouncements = (announcements: Announcement[]) => {
     return announcements.filter((announcement) => {
@@ -90,6 +102,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isAdmin={currentUser?.role === 'admin'}
         />
       </TabsContent>
 
@@ -104,6 +119,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           totalPages={1}
           onPageChange={() => {}}
           emptyComponent={<AnnouncementEmptyUnread />}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isAdmin={currentUser?.role === 'admin'}
         />
       </TabsContent>
 
@@ -118,6 +136,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           totalPages={1}
           onPageChange={() => {}}
           emptyComponent={<AnnouncementEmptyUrgent />}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isAdmin={currentUser?.role === 'admin'}
         />
       </TabsContent>
     </Tabs>

@@ -18,6 +18,9 @@ interface AnnouncementListProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   emptyComponent?: React.ReactNode;
+  onEdit?: (announcement: Announcement) => void;
+  onDelete?: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 export const AnnouncementList: React.FC<AnnouncementListProps> = ({
@@ -29,7 +32,10 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
   currentPage,
   totalPages,
   onPageChange,
-  emptyComponent = <AnnouncementEmptyAll />
+  emptyComponent = <AnnouncementEmptyAll />,
+  onEdit,
+  onDelete,
+  isAdmin
 }) => {
   if (loading) {
     return <AnnouncementLoading />;
@@ -49,6 +55,9 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
           onMarkAsRead={() => markAsRead(announcement.id)}
           showMarkAsRead={true}
           getPriorityBadge={getPriorityBadge}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          isAdmin={isAdmin}
         />
       ))}
       {totalPages > 1 && (

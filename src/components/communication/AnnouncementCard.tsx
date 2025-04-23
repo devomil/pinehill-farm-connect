@@ -4,9 +4,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle, FileText, Paperclip } from "lucide-react";
+import { CheckCircle, FileText, Paperclip, Trash2, Edit } from "lucide-react";
 import { Announcement } from "@/types";
 import { AnnouncementAttachmentPreview } from "./AnnouncementAttachmentPreview";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementCardProps {
   announcement: Announcement;
@@ -17,6 +19,8 @@ interface AnnouncementCardProps {
   showMarkAsRead?: boolean;
   getPriorityBadge: (priority: string) => JSX.Element;
   isAdmin?: boolean;
+  onEdit?: (announcement: Announcement) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
@@ -27,8 +31,39 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   onAcknowledge,
   showMarkAsRead,
   getPriorityBadge,
-  isAdmin
+  isAdmin,
+  onEdit,
+  onDelete
 }) => {
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', announcement.id);
+      
+      if (error) throw error;
+      
+      onDelete(announcement.id);
+      toast.success("Announcement deleted successfully");
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      toast.error("Failed to delete announcement");
+    }
+  };
+
+  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+    if (attachment.url) {
+      window.open(attachment.url, '_blank');
+    } else {
+      toast.error("Attachment URL not available");
+    }
+  };
+
   return (
     <Card
       className={`transition-colors ${
@@ -52,7 +87,29 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
               {announcement.createdAt.toLocaleDateString()} by {announcement.author}
             </CardDescription>
           </div>
-          {getPriorityBadge(announcement.priority)}
+          <div className="flex items-center gap-2">
+            {getPriorityBadge(announcement.priority)}
+            {isAdmin && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onEdit?.(announcement)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pb-4">
@@ -65,10 +122,15 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             <div className="flex flex-wrap gap-2">
               {announcement.attachments.map((attachment, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => handleAttachmentAction(attachment)}
+                  >
                     <Paperclip className="h-3 w-3 mr-1" />
                     {attachment.name}
-                  </Badge>
+                  </Button>
                   <AnnouncementAttachmentPreview attachment={attachment} />
                 </div>
               ))}
