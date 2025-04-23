@@ -72,6 +72,7 @@ export interface Announcement {
   hasQuiz?: boolean;
   requires_acknowledgment?: boolean;
   attachments?: { name: string; type: string; url?: string }[];
+  target_type?: "all" | "specific"; // Added missing property
 }
 
 export interface ShiftReport {

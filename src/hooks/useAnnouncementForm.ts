@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +82,7 @@ export const useAnnouncementForm = ({
       };
 
       let error;
+      let announcementId = initialData?.id;
       
       if (initialData) {
         const { error: updateError } = await supabase
@@ -89,11 +91,16 @@ export const useAnnouncementForm = ({
           .eq('id', initialData.id);
         error = updateError;
       } else {
-        const { error: insertError } = await supabase
+        const { data: newAnnouncement, error: insertError } = await supabase
           .from("announcements")
           .insert(announcementData)
           .select()
           .single();
+        
+        if (newAnnouncement) {
+          announcementId = newAnnouncement.id;
+        }
+        
         error = insertError;
       }
         
@@ -115,7 +122,7 @@ export const useAnnouncementForm = ({
         recipientIds = selectedUserIds;
       }
       
-      if (recipientIds.length) {
+      if (recipientIds.length && announcementId) {
         const validRecipientIds = recipientIds.filter(id => validateUuid(id));
         
         if (validRecipientIds.length !== recipientIds.length) {
@@ -130,7 +137,7 @@ export const useAnnouncementForm = ({
           });
         } else {
           const recipientsRows = validRecipientIds.map(user_id => ({ 
-            announcement_id: initialData?.id || announcementData.id, 
+            announcement_id: announcementId, 
             user_id 
           }));
           

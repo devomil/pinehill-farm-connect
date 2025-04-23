@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +38,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
           hasQuiz: !!a.has_quiz,
           requires_acknowledgment: a.requires_acknowledgment,
           attachments: Array.isArray(a.attachments) ? a.attachments : [],
+          target_type: a.target_type, // Map target_type from database
         };
       });
 
