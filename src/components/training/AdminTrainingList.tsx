@@ -27,10 +27,15 @@ export const AdminTrainingList: React.FC = () => {
 
       // Map database fields to our Training type
       const mappedTrainings = data.map(training => ({
-        ...training,
+        id: training.id,
+        title: training.title,
+        description: training.description,
+        category: training.category,
         requiredFor: training.required_for,
+        duration: training.duration,
         expiresAfter: training.expires_after,
         hasQuiz: training.has_quiz,
+        attachments: training.attachments,
         externalTestUrl: training.external_test_url
       })) as Training[];
 
