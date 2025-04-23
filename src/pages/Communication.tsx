@@ -110,6 +110,7 @@ const Communication = () => {
           currentUserId={currentUser?.id}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          isAdmin={isAdmin}
         />
       </div>
     </DashboardLayout>
@@ -117,3 +118,4 @@ const Communication = () => {
 };
 
 export default Communication;
+

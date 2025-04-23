@@ -9,8 +9,6 @@ import {
 import { CommunicationFilter } from "./CommunicationFilter";
 import { AnnouncementList } from "./AnnouncementList";
 import { DateRange } from "react-day-picker";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -21,6 +19,7 @@ interface CommunicationTabsProps {
   currentUserId: string | undefined;
   onEdit?: (announcement: Announcement) => void;
   onDelete?: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
@@ -31,7 +30,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   getPriorityBadge,
   currentUserId,
   onEdit,
-  onDelete
+  onDelete,
+  isAdmin
 }) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -112,7 +112,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onPageChange={setCurrentPage}
           onEdit={onEdit}
           onDelete={onDelete}
-          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
+          isAdmin={isAdmin}
         />
       </TabsContent>
 
@@ -129,7 +129,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           emptyComponent={<AnnouncementEmptyUnread />}
           onEdit={onEdit}
           onDelete={onDelete}
-          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
+          isAdmin={isAdmin}
         />
       </TabsContent>
 
@@ -146,9 +146,10 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           emptyComponent={<AnnouncementEmptyUrgent />}
           onEdit={onEdit}
           onDelete={onDelete}
-          isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
+          isAdmin={isAdmin}
         />
       </TabsContent>
     </Tabs>
   );
 };
+
