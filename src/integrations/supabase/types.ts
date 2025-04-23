@@ -11,18 +11,21 @@ export type Database = {
     Tables: {
       announcement_recipients: {
         Row: {
+          acknowledged_at: string | null
           announcement_id: string
           id: string
           read_at: string | null
           user_id: string
         }
         Insert: {
+          acknowledged_at?: string | null
           announcement_id: string
           id?: string
           read_at?: string | null
           user_id: string
         }
         Update: {
+          acknowledged_at?: string | null
           announcement_id?: string
           id?: string
           read_at?: string | null
@@ -47,6 +50,7 @@ export type Database = {
           has_quiz: boolean | null
           id: string
           priority: string
+          requires_acknowledgment: boolean
           target_type: string
           title: string
         }
@@ -58,6 +62,7 @@ export type Database = {
           has_quiz?: boolean | null
           id?: string
           priority: string
+          requires_acknowledgment?: boolean
           target_type: string
           title: string
         }
@@ -69,6 +74,7 @@ export type Database = {
           has_quiz?: boolean | null
           id?: string
           priority?: string
+          requires_acknowledgment?: boolean
           target_type?: string
           title?: string
         }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +24,7 @@ export const useAnnouncementForm = ({
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [requiresAcknowledgment, setRequiresAcknowledgment] = useState(false);
   const { toast } = useToast();
 
   const validateUuid = (id: string): boolean => {
@@ -76,6 +76,7 @@ export const useAnnouncementForm = ({
           has_quiz: hasQuiz,
           target_type: targetType,
           attachments: attachmentsData,
+          requires_acknowledgment: requiresAcknowledgment
         })
         .select()
         .single();
@@ -173,6 +174,8 @@ export const useAnnouncementForm = ({
     attachments,
     setAttachments,
     loading,
-    handleCreate
+    handleCreate,
+    requiresAcknowledgment,
+    setRequiresAcknowledgment
   };
 };

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +38,8 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
     setSelectedUserIds,
     attachments,
     setAttachments,
+    requiresAcknowledgment,
+    setRequiresAcknowledgment,
     loading,
     handleCreate
   } = useAnnouncementForm({
@@ -87,6 +88,16 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
             className="accent-primary" 
           />
           <span>Has Quiz</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={requiresAcknowledgment} 
+            disabled={loading} 
+            onChange={e => setRequiresAcknowledgment(e.target.checked)} 
+            className="accent-primary" 
+          />
+          <span>Requires Acknowledgment</span>
         </label>
       </div>
 

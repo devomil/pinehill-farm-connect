@@ -3,22 +3,31 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle, FileText, Paperclip } from "lucide-react";
 import { Announcement } from "@/types";
+import { AnnouncementAttachmentPreview } from "./AnnouncementAttachmentPreview";
 
 interface AnnouncementCardProps {
   announcement: Announcement;
   isRead: boolean;
+  isAcknowledged?: boolean;
   onMarkAsRead?: () => void;
+  onAcknowledge?: () => void;
   showMarkAsRead?: boolean;
   getPriorityBadge: (priority: string) => JSX.Element;
+  isAdmin?: boolean;
 }
+
 export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   announcement,
   isRead,
+  isAcknowledged,
   onMarkAsRead,
+  onAcknowledge,
   showMarkAsRead,
   getPriorityBadge,
+  isAdmin
 }) => {
   return (
     <Card
@@ -48,28 +57,51 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       </CardHeader>
       <CardContent className="pb-4">
         <p className="text-sm mb-4">{announcement.content}</p>
-        <div className="flex flex-wrap gap-1 mb-3">
-          {announcement.hasQuiz && (
-            <Badge variant="outline" className="border-blue-200 text-blue-700">
-              <FileText className="h-3 w-3 mr-1" />
-              Has Quiz
-            </Badge>
-          )}
-          {announcement.attachments?.length > 0 && (
-            <Badge variant="outline" className="border-blue-200 text-blue-700">
-              <Paperclip className="h-3 w-3 mr-1" />
-              {announcement.attachments.length} attachment{announcement.attachments.length !== 1 ? "s" : ""}
-            </Badge>
-          )}
-        </div>
-        <div className="flex justify-between items-center">
-          <div />
+        
+        {/* Attachments */}
+        {announcement.attachments && announcement.attachments.length > 0 && (
+          <div className="space-y-2 mb-4">
+            <h4 className="text-sm font-medium">Attachments:</h4>
+            <div className="flex flex-wrap gap-2">
+              {announcement.attachments.map((attachment, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                    <Paperclip className="h-3 w-3 mr-1" />
+                    {attachment.name}
+                  </Badge>
+                  <AnnouncementAttachmentPreview attachment={attachment} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Acknowledgment Section */}
+        {announcement.requires_acknowledgment && !isAdmin && (
+          <div className="flex items-center gap-2 mt-4 p-2 bg-muted rounded">
+            <Checkbox
+              id={`ack-${announcement.id}`}
+              checked={isAcknowledged}
+              onCheckedChange={onAcknowledge}
+              disabled={isAcknowledged}
+            />
+            <label htmlFor={`ack-${announcement.id}`} className="text-sm">
+              I acknowledge that I have read and understood this announcement
+            </label>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex gap-2">
+            {announcement.hasQuiz && (
+              <Badge variant="outline" className="border-blue-200 text-blue-700">
+                <FileText className="h-3 w-3 mr-1" />
+                Has Quiz
+              </Badge>
+            )}
+          </div>
           {showMarkAsRead && !isRead && onMarkAsRead && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={onMarkAsRead}
-            >
+            <Button size="sm" variant="secondary" onClick={onMarkAsRead}>
               Mark as Read
             </Button>
           )}
@@ -78,4 +110,3 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     </Card>
   );
 };
-
