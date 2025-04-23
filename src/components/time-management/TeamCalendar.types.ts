@@ -1,4 +1,3 @@
-
 import { User } from "@/types";
 
 export interface TeamCalendarProps {
@@ -26,3 +25,10 @@ export type CompanyEvent = {
   attachments?: string[];
   attendance_type: "required" | "optional" | "would-like" | "info-only";
 };
+
+export interface TeamCalendarEventFormProps {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onEventCreated: () => void;
+  currentUser: User;
+}
