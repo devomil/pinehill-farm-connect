@@ -11,9 +11,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AdminAnnouncementDialog } from "@/components/communication/AdminAnnouncementDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Communication() {
   const { currentUser } = useAuth();
+  const { toast } = useToast();
   const isAdmin = currentUser?.role === "admin";
 
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
@@ -42,43 +44,57 @@ export default function Communication() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error(error);
+        console.error("Announcement fetch error:", error);
+        toast({ title: "Failed to load announcements", description: error.message, variant: "destructive" });
         setAnnouncements([]);
         setLoading(false);
         return;
       }
 
-      let mappedAnnouncements: Announcement[] = (annData || []).map((a: any) => ({
-        id: a.id,
-        title: a.title,
-        content: a.content,
-        createdAt: a.created_at ? new Date(a.created_at) : new Date(),
-        author: allEmployees.find(x => x.id === a.author_id)?.name || "Admin",
-        priority: a.priority,
-        readBy: [],
-        hasQuiz: !!a.has_quiz,
-        attachments: Array.isArray(a.attachments) ? a.attachments.map((file: any) => file.name) : [],
-      }));
+      let mappedAnnouncements: Announcement[] = (annData || []).map((a: any) => {
+        // Find author in employees
+        const author = allEmployees.find(x => x.id === a.author_id);
+        
+        return {
+          id: a.id,
+          title: a.title,
+          content: a.content,
+          createdAt: a.created_at ? new Date(a.created_at) : new Date(),
+          author: author?.name || "Unknown",
+          priority: a.priority,
+          readBy: [],
+          hasQuiz: !!a.has_quiz,
+          attachments: Array.isArray(a.attachments) ? a.attachments.map((file: any) => file.name) : [],
+        };
+      });
 
       if (currentUser) {
-        const { data: reads } = await supabase
-          .from("announcement_recipients")
-          .select("announcement_id, read_at")
-          .eq("user_id", currentUser.id);
+        try {
+          const { data: reads, error: readsError } = await supabase
+            .from("announcement_recipients")
+            .select("announcement_id, read_at")
+            .eq("user_id", currentUser.id);
 
-        if (reads) {
-          mappedAnnouncements = mappedAnnouncements.map(a => ({
-            ...a,
-            readBy: reads
-              .filter((rec: any) => rec.announcement_id === a.id && rec.read_at)
-              .length > 0
-              ? [currentUser.id]
-              : []
-          }))
+          if (readsError) {
+            console.error("Read status fetch error:", readsError);
+          } else if (reads) {
+            mappedAnnouncements = mappedAnnouncements.map(a => ({
+              ...a,
+              readBy: reads
+                .filter((rec: any) => rec.announcement_id === a.id && rec.read_at)
+                .length > 0
+                ? [currentUser.id]
+                : []
+            }));
+          }
+        } catch (err) {
+          console.error("Error processing read status:", err);
         }
       }
       setAnnouncements(mappedAnnouncements);
     } catch (err) {
+      console.error("Unexpected error in fetchAnnouncements:", err);
+      toast({ title: "Failed to load announcements", description: "An unexpected error occurred", variant: "destructive" });
       setAnnouncements([]);
     } finally {
       setLoading(false);
@@ -88,26 +104,39 @@ export default function Communication() {
   useEffect(() => {
     fetchAnnouncements();
     // eslint-disable-next-line
-  }, []);
+  }, [allEmployees]); // Re-fetch when employees are loaded
 
   const markAsRead = async (id: string) => {
     if (!currentUser) return;
-    await supabase
-      .from("announcement_recipients")
-      .update({ read_at: new Date().toISOString() })
-      .eq("announcement_id", id)
-      .eq("user_id", currentUser.id);
-    setAnnouncements(
-      announcements.map(announcement => {
-        if (announcement.id === id && !announcement.readBy.includes(currentUser.id)) {
-          return {
-            ...announcement,
-            readBy: [...announcement.readBy, currentUser.id]
-          };
-        }
-        return announcement;
-      })
-    );
+    
+    try {
+      const { error } = await supabase
+        .from("announcement_recipients")
+        .update({ read_at: new Date().toISOString() })
+        .eq("announcement_id", id)
+        .eq("user_id", currentUser.id);
+        
+      if (error) {
+        console.error("Mark as read error:", error);
+        toast({ title: "Failed to mark as read", description: error.message, variant: "destructive" });
+        return;
+      }
+      
+      setAnnouncements(
+        announcements.map(announcement => {
+          if (announcement.id === id && !announcement.readBy.includes(currentUser.id)) {
+            return {
+              ...announcement,
+              readBy: [...announcement.readBy, currentUser.id]
+            };
+          }
+          return announcement;
+        })
+      );
+    } catch (err) {
+      console.error("Unexpected error in markAsRead:", err);
+      toast({ title: "Failed to mark as read", description: "An unexpected error occurred", variant: "destructive" });
+    }
   };
 
   const isRead = (announcement: Announcement) => {

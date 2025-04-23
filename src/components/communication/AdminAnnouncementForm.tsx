@@ -46,6 +46,12 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
     setAttachments(attachments.filter((_, idx) => idx !== i));
   };
 
+  const validateUuid = (id: string): boolean => {
+    // UUID validation regex pattern
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidPattern.test(id);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -68,8 +74,22 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         return;
       }
       
+      // Validate user ID format
+      if (!validateUuid(currentUser.id)) {
+        toast({ 
+          title: "Invalid user ID format", 
+          description: "Your user ID is not in the correct format. Please contact an administrator.", 
+          variant: "destructive" 
+        });
+        setLoading(false);
+        return;
+      }
+      
       // "Upload" files: for MVP store names only. TODO: implement storage later.
       const attachmentsData = attachments.map(f => ({ name: f.name, size: f.size, type: f.type }));
+      
+      console.log("Creating announcement with author_id:", currentUser.id);
+      
       // Insert announcement
       const { data: announcement, error } = await supabase
         .from("announcements")
@@ -84,11 +104,14 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         })
         .select()
         .single();
+        
       if (error) {
+        console.error("Announcement creation error:", error);
         toast({ title: "Failed to create announcement", description: error.message, variant: "destructive" });
         setLoading(false);
         return;
       }
+      
       // Attach recipients
       let recipientIds: string[];
       if (targetType === "all") {
@@ -96,23 +119,56 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
       } else {
         recipientIds = selectedUserIds;
       }
+      
       if (recipientIds.length) {
-        const recipientsRows = recipientIds.map(user_id => ({ announcement_id: announcement.id, user_id }));
-        const { error: recipErr } = await supabase.from("announcement_recipients").insert(recipientsRows);
-        if (recipErr) {
-          toast({ title: "Failed to assign recipients", description: recipErr.message, variant: "destructive" });
-          setLoading(false);
-          return;
+        // Validate recipient IDs
+        const validRecipientIds = recipientIds.filter(id => validateUuid(id));
+        
+        if (validRecipientIds.length !== recipientIds.length) {
+          console.warn(`Some recipient IDs were invalid and were filtered out: ${recipientIds.filter(id => !validateUuid(id))}`);
+        }
+        
+        if (validRecipientIds.length === 0) {
+          toast({ 
+            title: "Warning", 
+            description: "No valid recipients found. The announcement was created but no recipients were assigned.", 
+            variant: "warning" 
+          });
+        } else {
+          const recipientsRows = validRecipientIds.map(user_id => ({ 
+            announcement_id: announcement.id, 
+            user_id 
+          }));
+          
+          const { error: recipErr } = await supabase
+            .from("announcement_recipients")
+            .insert(recipientsRows);
+            
+          if (recipErr) {
+            console.error("Recipients assignment error:", recipErr);
+            toast({ 
+              title: "Announcement created", 
+              description: "But there was an error assigning recipients: " + recipErr.message,
+              variant: "warning" 
+            });
+            setLoading(false);
+            closeDialog();
+            setTimeout(() => onCreate(), 500);
+            return;
+          }
         }
       }
+      
       toast({ title: "Announcement created!" });
       closeDialog();
       setTimeout(() => {
         onCreate();
       }, 500);
+      
       // Reset form
       setTitle(""); setContent(""); setPriority("fyi"); setHasQuiz(false); setTargetType("all"); setSelectedUserIds([]); setAttachments([]);
     } catch (e: any) {
+      console.error("Unexpected error in handleCreate:", e);
       toast({ title: "Unexpected error", description: e.message || String(e), variant: "destructive" });
     } finally {
       setLoading(false);
