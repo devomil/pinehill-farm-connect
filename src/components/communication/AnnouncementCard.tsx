@@ -21,6 +21,7 @@ interface AnnouncementCardProps {
   isAdmin?: boolean;
   onEdit?: (announcement: Announcement) => void;
   onDelete?: (id: string) => void;
+  onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
 export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
@@ -34,11 +35,14 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   isAdmin,
   onEdit,
   onDelete,
+  onAttachmentAction,
 }) => {
   const { toast } = useToast();
 
   const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
-    if (attachment.url) {
+    if (onAttachmentAction) {
+      onAttachmentAction(attachment);
+    } else if (attachment.url) {
       try {
         window.open(attachment.url, '_blank');
       } catch (error) {

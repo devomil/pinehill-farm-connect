@@ -1,15 +1,9 @@
 
 import React, { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Announcement } from "@/types";
-import {
-  AnnouncementEmptyUnread,
-  AnnouncementEmptyUrgent
-} from "./AnnouncementListState";
-import { CommunicationFilter } from "./CommunicationFilter";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnnouncementList } from "./AnnouncementList";
-import { DateRange } from "react-day-picker";
-import { useToast } from "@/hooks/use-toast";
+import { CommunicationFilter } from "./CommunicationFilter";
+import { Announcement } from "@/types";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -17,10 +11,11 @@ interface CommunicationTabsProps {
   isRead: (a: Announcement) => boolean;
   markAsRead: (id: string) => void;
   getPriorityBadge: (priority: string) => JSX.Element;
-  currentUserId: string | undefined;
+  currentUserId?: string;
   onEdit?: (announcement: Announcement) => void;
   onDelete?: (id: string) => void;
   isAdmin?: boolean;
+  onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
 export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
@@ -32,122 +27,141 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   currentUserId,
   onEdit,
   onDelete,
-  isAdmin
+  isAdmin,
+  onAttachmentAction
 }) => {
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [priorityFilter, setPriorityFilter] = React.useState("all");
-  const [dateRange, setDateRange] = React.useState<DateRange>();
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState(announcements);
-  const itemsPerPage = 5;
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const handleEdit = (announcement: Announcement) => {
-    console.log("Edit announcement:", announcement);
+  const filterAnnouncements = (tabType: string) => {
+    let filtered = [...announcements];
+
+    // Apply tab filter
+    if (tabType === "unread") {
+      filtered = filtered.filter(a => !isRead(a));
+    } else if (tabType === "important") {
+      filtered = filtered.filter(a => a.priority === "important" || a.priority === "urgent");
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        a => 
+          a.title.toLowerCase().includes(term) ||
+          a.content.toLowerCase().includes(term) ||
+          a.author.toLowerCase().includes(term)
+      );
+    }
+
+    // Apply priority filter
+    if (priorityFilter) {
+      filtered = filtered.filter(a => a.priority === priorityFilter);
+    }
+
+    return filtered;
   };
 
-  const handleDelete = async (id: string) => {
-    // We don't need to call setAnnouncements here, instead we'll emit the deletion
-    // to the parent component through the props (handled in Communication.tsx)
-    console.log("Delete announcement:", id);
+  const getFilteredAnnouncements = (tabType: string) => {
+    const filtered = filterAnnouncements(tabType);
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    
+    // Paginate
+    const start = (currentPage - 1) * itemsPerPage;
+    const paginated = filtered.slice(start, start + itemsPerPage);
+    
+    return { announcements: paginated, totalPages };
   };
 
-  const filterAnnouncements = (announcements: Announcement[]) => {
-    return announcements.filter((announcement) => {
-      const matchesSearch = announcement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          announcement.content.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesPriority = priorityFilter === "all" || announcement.priority === priorityFilter;
-      const matchesDate = !dateRange?.from || !dateRange?.to || 
-                         (announcement.createdAt >= dateRange.from && 
-                          announcement.createdAt <= dateRange.to);
-      return matchesSearch && matchesPriority && matchesDate;
-    });
-  };
-
-  // Make sure we're using currentUserId instead of currentUser
-  const unreadAnnouncements = filterAnnouncements(announcements.filter(a => !isRead(a)));
-  const urgentAnnouncements = filterAnnouncements(announcements.filter(a => a.priority === "urgent"));
-  const allFilteredAnnouncements = filterAnnouncements(announcements);
-
-  const paginateAnnouncements = (announcements: Announcement[]) => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return announcements.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(allFilteredAnnouncements.length / itemsPerPage);
+  const { announcements: allFiltered, totalPages: allTotalPages } = getFilteredAnnouncements("all");
+  const { announcements: unreadFiltered, totalPages: unreadTotalPages } = getFilteredAnnouncements("unread");
+  const { announcements: importantFiltered, totalPages: importantTotalPages } = getFilteredAnnouncements("important");
 
   return (
-    <Tabs defaultValue="all">
-      <TabsList>
-        <TabsTrigger value="all">All</TabsTrigger>
-        <TabsTrigger value="unread">
-          Unread
-          {unreadAnnouncements.length > 0 && (
-            <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2 py-0.5">
-              {unreadAnnouncements.length}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="urgent">Urgent</TabsTrigger>
-      </TabsList>
-      
-      <CommunicationFilter
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
+    <Tabs defaultValue="all" onValueChange={value => { setActiveTab(value); setCurrentPage(1); }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <TabsList>
+          <TabsTrigger value="all">All Announcements</TabsTrigger>
+          <TabsTrigger value="unread">Unread</TabsTrigger>
+          <TabsTrigger value="important">Important</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="all" className="space-y-4 mt-4">
+        <CommunicationFilter
+          searchTerm={searchTerm}
+          priorityFilter={priorityFilter}
+          onSearchChange={setSearchTerm}
+          onPriorityChange={setPriorityFilter}
+          onReset={() => {
+            setSearchTerm("");
+            setPriorityFilter("");
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      <TabsContent value="all" className="mt-0">
         <AnnouncementList
-          announcements={paginateAnnouncements(allFilteredAnnouncements)}
+          announcements={allFiltered}
           loading={loading}
           isRead={isRead}
           markAsRead={markAsRead}
           getPriorityBadge={getPriorityBadge}
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={allTotalPages}
           onPageChange={setCurrentPage}
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
+          onAttachmentAction={onAttachmentAction}
         />
       </TabsContent>
 
-      <TabsContent value="unread" className="space-y-4 mt-4">
+      <TabsContent value="unread" className="mt-0">
         <AnnouncementList
-          announcements={unreadAnnouncements}
+          announcements={unreadFiltered}
           loading={loading}
           isRead={isRead}
           markAsRead={markAsRead}
           getPriorityBadge={getPriorityBadge}
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => {}}
-          emptyComponent={<AnnouncementEmptyUnread />}
+          currentPage={currentPage}
+          totalPages={unreadTotalPages}
+          onPageChange={setCurrentPage}
+          emptyComponent={
+            <div className="text-center p-6">
+              <p className="text-lg font-medium">No unread announcements</p>
+              <p className="text-muted-foreground">You're all caught up!</p>
+            </div>
+          }
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
+          onAttachmentAction={onAttachmentAction}
         />
       </TabsContent>
 
-      <TabsContent value="urgent" className="space-y-4 mt-4">
+      <TabsContent value="important" className="mt-0">
         <AnnouncementList
-          announcements={urgentAnnouncements}
+          announcements={importantFiltered}
           loading={loading}
           isRead={isRead}
           markAsRead={markAsRead}
           getPriorityBadge={getPriorityBadge}
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => {}}
-          emptyComponent={<AnnouncementEmptyUrgent />}
+          currentPage={currentPage}
+          totalPages={importantTotalPages}
+          onPageChange={setCurrentPage}
+          emptyComponent={
+            <div className="text-center p-6">
+              <p className="text-lg font-medium">No important announcements</p>
+              <p className="text-muted-foreground">Check back later for important updates</p>
+            </div>
+          }
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
+          onAttachmentAction={onAttachmentAction}
         />
       </TabsContent>
     </Tabs>

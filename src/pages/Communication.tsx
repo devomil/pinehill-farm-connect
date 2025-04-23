@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -9,12 +10,14 @@ import { CommunicationHeader } from "@/components/communication/CommunicationHea
 import { useToast } from "@/hooks/use-toast";
 import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
 import { useEmployees } from "@/hooks/useEmployees";
+import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
 
 const Communication = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<{ name: string; type: string; url?: string } | null>(null);
 
   const {
     announcements,
@@ -42,6 +45,7 @@ const Communication = () => {
   };
 
   const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+    console.log("Opening attachment:", attachment);
     if (attachment.url) {
       try {
         window.open(attachment.url, '_blank');
@@ -104,6 +108,7 @@ const Communication = () => {
           onEdit={onEditAnnouncement}
           onDelete={handleDelete}
           isAdmin={isAdmin}
+          onAttachmentAction={handleAttachmentAction}
         />
 
         <EditAnnouncementDialog

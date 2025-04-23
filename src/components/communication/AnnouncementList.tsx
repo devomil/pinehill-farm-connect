@@ -21,6 +21,7 @@ interface AnnouncementListProps {
   onEdit?: (announcement: Announcement) => void;
   onDelete?: (id: string) => void;
   isAdmin?: boolean;
+  onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
 export const AnnouncementList: React.FC<AnnouncementListProps> = ({
@@ -35,7 +36,8 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
   emptyComponent = <AnnouncementEmptyAll />,
   onEdit,
   onDelete,
-  isAdmin
+  isAdmin,
+  onAttachmentAction
 }) => {
   if (loading) {
     return <AnnouncementLoading />;
@@ -58,6 +60,7 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
+          onAttachmentAction={onAttachmentAction}
         />
       ))}
       {totalPages > 1 && (

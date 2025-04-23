@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { MessageSquare, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
+import { AnnouncementAttachmentsList } from "@/components/communication/announcement/AnnouncementAttachmentsList";
 import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementsCardProps {
@@ -70,24 +71,10 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
               {/* Attachments Section */}
               {announcement.attachments && announcement.attachments.length > 0 && (
                 <div className="mt-2">
-                  <div className="flex flex-wrap gap-2">
-                    {announcement.attachments.map((attachment: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs flex items-center gap-1"
-                          onClick={() => handleAttachmentAction(attachment)}
-                        >
-                          <Paperclip className="h-3 w-3" />
-                          {attachment.name}
-                        </Button>
-                        <AnnouncementAttachmentPreview 
-                          attachment={attachment}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <AnnouncementAttachmentsList 
+                    attachments={announcement.attachments}
+                    onAttachmentAction={handleAttachmentAction}
+                  />
                 </div>
               )}
             </li>
