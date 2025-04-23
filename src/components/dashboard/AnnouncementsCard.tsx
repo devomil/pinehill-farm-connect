@@ -53,6 +53,11 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
                           variant="outline"
                           size="sm"
                           className="h-7 text-xs flex items-center gap-1"
+                          onClick={() => {
+                            if (attachment.url) {
+                              window.open(attachment.url, '_blank');
+                            }
+                          }}
                         >
                           <Paperclip className="h-3 w-3" />
                           {attachment.name}
