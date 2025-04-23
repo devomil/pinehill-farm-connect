@@ -116,44 +116,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // For demo purposes, allow logging in with our mock users
       if (email === "admin@pinehillfarm.co" && password.length > 0) {
-        setCurrentUser({
+        const mockUser = {
           id: "1",
           name: "Admin User",
           email: "admin@pinehillfarm.co",
           role: "admin",
           department: "Management",
           position: "Farm Manager"
-        });
-        localStorage.setItem("currentUser", JSON.stringify({
-          id: "1",
-          name: "Admin User",
-          email: "admin@pinehillfarm.co",
-          role: "admin",
-          department: "Management",
-          position: "Farm Manager"
-        }));
+        };
+        setCurrentUser(mockUser);
+        localStorage.setItem("currentUser", JSON.stringify(mockUser));
         setLoading(false);
+        toast.success("Login successful");
         return true;
       }
       
       if (email === "john@pinehillfarm.co" && password.length > 0) {
-        setCurrentUser({
+        const mockUser = {
           id: "2",
           name: "John Employee",
           email: "john@pinehillfarm.co",
           role: "employee",
           department: "Operations",
           position: "Field Worker"
-        });
-        localStorage.setItem("currentUser", JSON.stringify({
-          id: "2",
-          name: "John Employee",
-          email: "john@pinehillfarm.co",
-          role: "employee",
-          department: "Operations",
-          position: "Field Worker"
-        }));
+        };
+        setCurrentUser(mockUser);
+        localStorage.setItem("currentUser", JSON.stringify(mockUser));
         setLoading(false);
+        toast.success("Login successful");
         return true;
       }
       
