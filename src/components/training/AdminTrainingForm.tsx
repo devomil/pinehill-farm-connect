@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TrainingAttachmentsField } from "./TrainingAttachmentsField";
+import { TrainingQuizGenerator } from "./TrainingQuizGenerator";
 
 interface AdminTrainingFormProps {
   open: boolean;
@@ -37,6 +39,8 @@ const formSchema = z.object({
   requiredForRetail: z.boolean().default(false),
   requiredForOperations: z.boolean().default(false),
   requiredForManagement: z.boolean().default(false),
+  attachments: z.array(z.string()).default([]),
+  externalTestUrl: z.string().url().optional().or(z.literal('')),
 });
 
 export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
@@ -46,6 +50,7 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
   currentUser,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [hasQuiz, setHasQuiz] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,6 +64,8 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
       requiredForRetail: false,
       requiredForOperations: false,
       requiredForManagement: false,
+      attachments: [],
+      externalTestUrl: "",
     },
   });
 
@@ -92,6 +99,9 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
         expires_after: values.expiresAfter || null,
         required_for: requiredFor,
         created_by: currentUser.id,
+        attachments: values.attachments,
+        has_quiz: hasQuiz,
+        external_test_url: values.externalTestUrl || null,
       };
 
       const { error } = await supabase
@@ -137,7 +147,7 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Training</DialogTitle>
           <DialogDescription>
@@ -299,6 +309,25 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
                 </div>
               )}
             </div>
+            
+            <FormField
+              control={form.control}
+              name="attachments"
+              render={({ field }) => (
+                <TrainingAttachmentsField 
+                  value={field.value} 
+                  onChange={field.onChange} 
+                />
+              )}
+            />
+            
+            <TrainingQuizGenerator 
+              hasQuiz={hasQuiz}
+              setHasQuiz={setHasQuiz}
+              attachments={form.watch("attachments")}
+              externalTestUrl={form.watch("externalTestUrl") || ""}
+              setExternalTestUrl={(url) => form.setValue("externalTestUrl", url)}
+            />
 
             <div className="pt-4 flex justify-end">
               <Button type="submit" disabled={loading}>

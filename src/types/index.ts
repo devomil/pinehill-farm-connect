@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -42,10 +41,13 @@ export interface Training {
   id: string;
   title: string;
   description: string;
-  category: "CBD101" | "HIPAA" | "SaltGenerator" | "OpeningClosing" | "Other";
+  category: string;
   requiredFor: string[];
   duration: number; // in minutes
   expiresAfter?: number; // days until recertification needed
+  attachments?: string[]; // URLs or base64 data for attachments
+  externalTestUrl?: string; // URL to external testing site
+  hasQuiz?: boolean; // Whether this training has an auto-generated quiz
 }
 
 export interface TrainingProgress {
