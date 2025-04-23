@@ -58,35 +58,59 @@ export function useAuthActions(
         return false;
       }
       
-      if (!data.session) {
+      if (!data.user || !data.session) {
         setError("Failed to authenticate");
         toast.error("Failed to authenticate");
         return false;
       }
       
-      // Get user role and data
-      const { data: userRoleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .single();
-      
-      const role = userRoleData?.role || "employee";
-      
-      const userData: User = {
-        id: data.user.id,
-        name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || "User",
-        email: data.user.email || "",
-        role: role as "employee" | "admin" | "hr" | "manager",
-        department: data.user.user_metadata?.department || "",
-        position: data.user.user_metadata?.position || ""
-      };
-      
-      setCurrentUser(userData);
-      localStorage.setItem("currentUser", JSON.stringify(userData));
-      toast.success("Login successful");
-      return true;
+      try {
+        // Get user role and data
+        const { data: userRoleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+        
+        if (roleError && roleError.code !== "PGRST116") {
+          console.error("Error fetching user role:", roleError);
+        }
+        
+        const role = userRoleData?.role || "employee";
+        
+        const userData: User = {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || "User",
+          email: data.user.email || "",
+          role: role as "employee" | "admin" | "hr" | "manager",
+          department: data.user.user_metadata?.department || "",
+          position: data.user.user_metadata?.position || ""
+        };
+        
+        setCurrentUser(userData);
+        localStorage.setItem("currentUser", JSON.stringify(userData));
+        toast.success("Login successful");
+        return true;
+      } catch (err) {
+        console.error("Error setting up user data after authentication:", err);
+        
+        // Even if we have issues with role data, let's at least log the user in with basic info
+        const basicUserData: User = {
+          id: data.user.id,
+          name: data.user.email?.split('@')[0] || "User",
+          email: data.user.email || "",
+          role: "employee",
+          department: "",
+          position: ""
+        };
+        
+        setCurrentUser(basicUserData);
+        localStorage.setItem("currentUser", JSON.stringify(basicUserData));
+        toast.success("Login successful");
+        return true;
+      }
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.message || "An error occurred during login");
       toast.error(err.message || "An error occurred during login");
       return false;
