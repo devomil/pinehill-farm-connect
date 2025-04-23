@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Eye, Download } from "lucide-react";
 
 interface AttachmentPreviewProps {
@@ -21,7 +21,9 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl h-[80vh]">
-        <div className="h-full overflow-auto p-4">
+        <DialogTitle>Preview: {attachment.name}</DialogTitle>
+        <DialogDescription>Viewing attachment</DialogDescription>
+        <div className="h-full overflow-auto p-4 mt-4">
           {isImage && attachment.url && (
             <img 
               src={attachment.url} 
@@ -34,6 +36,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
               src={attachment.url}
               className="w-full h-full"
               title={attachment.name}
+              sandbox="allow-scripts allow-same-origin"
             />
           )}
           {(!isImage && !isPdf || !attachment.url) && (

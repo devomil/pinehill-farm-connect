@@ -1,7 +1,9 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Paperclip } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
 
 interface AnnouncementsCardProps {
   announcements: any[];
@@ -20,24 +22,49 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
       <CardContent>
         <ul className="space-y-3">
           {announcements.map((announcement) => (
-            <li key={announcement.id} className="flex justify-between items-center">
-              <div>
-                <p>{announcement.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(announcement.created_at).toLocaleDateString()}
-                </p>
+            <li key={announcement.id} className="flex flex-col">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p>{announcement.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(announcement.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <span 
+                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
+                    ${announcement.priority === "urgent" 
+                      ? "bg-red-100 text-red-800" 
+                      : announcement.priority === "important" 
+                        ? "bg-amber-100 text-amber-800" 
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                >
+                  {announcement.priority}
+                </span>
               </div>
-              <span 
-                className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
-                  ${announcement.priority === "urgent" 
-                    ? "bg-red-100 text-red-800" 
-                    : announcement.priority === "important" 
-                      ? "bg-amber-100 text-amber-800" 
-                      : "bg-blue-100 text-blue-800"
-                  }`}
-              >
-                {announcement.priority}
-              </span>
+              
+              {/* Attachments Section */}
+              {announcement.attachments && announcement.attachments.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex flex-wrap gap-2">
+                    {announcement.attachments.map((attachment: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs flex items-center gap-1"
+                        >
+                          <Paperclip className="h-3 w-3" />
+                          {attachment.name}
+                        </Button>
+                        <AnnouncementAttachmentPreview 
+                          attachment={attachment}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
