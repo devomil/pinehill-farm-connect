@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,16 @@ const Communication = () => {
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
+  // Debug log to see if announcements are loading
+  useEffect(() => {
+    console.log("Communication page - currentUser:", currentUser);
+    console.log("Communication page - employees:", allEmployees);
+    console.log("Communication page - announcements:", announcements);
+    console.log("Communication page - loading:", loading);
+  }, [currentUser, allEmployees, announcements, loading]);
+
   const refreshAnnouncements = () => {
+    console.log("Refreshing announcements...");
     fetchAnnouncements();
   };
 

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
         return;
       }
 
+      console.log("Fetched announcements:", annData);
       let mappedAnnouncements = mapAnnouncementData(annData, allEmployees);
 
       if (currentUser) {
@@ -45,6 +46,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
         }
       }
       
+      console.log("Mapped announcements:", mappedAnnouncements);
       setAnnouncements(mappedAnnouncements);
     } catch (err) {
       console.error("Unexpected error in fetchAnnouncements:", err);
@@ -54,6 +56,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       setLoading(false);
     }
   };
+
+  // Add effect to fetch announcements when component mounts
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [currentUser?.id]); // Re-fetch when user changes
 
   const markAsRead = async (id: string) => {
     if (!currentUser) return;
