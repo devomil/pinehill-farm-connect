@@ -29,13 +29,13 @@ export const AdminTrainingList: React.FC = () => {
       const mappedTrainings = data.map(training => ({
         id: training.id,
         title: training.title,
-        description: training.description,
-        category: training.category,
-        requiredFor: training.required_for,
+        description: training.description || "",
+        category: training.category || "",
+        requiredFor: training.required_for || [],
         duration: training.duration,
         expiresAfter: training.expires_after,
-        hasQuiz: training.has_quiz,
-        attachments: training.attachments,
+        hasQuiz: training.has_quiz || false,
+        attachments: training.attachments || [],
         externalTestUrl: training.external_test_url
       })) as Training[];
 

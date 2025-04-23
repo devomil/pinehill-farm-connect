@@ -244,36 +244,115 @@ export type Database = {
           },
         ]
       }
+      training_quiz_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          id: string
+          passed: boolean
+          quiz_id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          completed_at?: string | null
+          id?: string
+          passed: boolean
+          quiz_id: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          id?: string
+          passed?: boolean
+          quiz_id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "training_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_quizzes: {
+        Row: {
+          created_at: string | null
+          id: string
+          passing_score: number
+          questions: Json
+          training_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          passing_score?: number
+          questions?: Json
+          training_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          passing_score?: number
+          questions?: Json
+          training_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_quizzes_training_id_fkey"
+            columns: ["training_id"]
+            isOneToOne: false
+            referencedRelation: "trainings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trainings: {
         Row: {
+          attachments: Json | null
           category: string | null
           created_at: string | null
           created_by: string
           description: string | null
           duration: number
           expires_after: number | null
+          external_test_url: string | null
+          has_quiz: boolean | null
           id: string
           required_for: string[] | null
           title: string
         }
         Insert: {
+          attachments?: Json | null
           category?: string | null
           created_at?: string | null
           created_by: string
           description?: string | null
           duration: number
           expires_after?: number | null
+          external_test_url?: string | null
+          has_quiz?: boolean | null
           id?: string
           required_for?: string[] | null
           title: string
         }
         Update: {
+          attachments?: Json | null
           category?: string | null
           created_at?: string | null
           created_by?: string
           description?: string | null
           duration?: number
           expires_after?: number | null
+          external_test_url?: string | null
+          has_quiz?: boolean | null
           id?: string
           required_for?: string[] | null
           title?: string
