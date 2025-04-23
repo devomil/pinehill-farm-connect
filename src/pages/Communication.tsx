@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -8,13 +7,14 @@ import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommunicationHeader } from "@/components/communication/CommunicationHeader";
 import { useToast } from "@/hooks/use-toast";
+import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
 
 const Communication = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
 
-  // Mocked employees for demo purposes
   useEffect(() => {
     setAllEmployees([
       {
@@ -43,7 +43,6 @@ const Communication = () => {
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
-  // Fetch announcements when component mounts or when user/employees change
   useEffect(() => {
     if (currentUser && allEmployees.length > 0) {
       fetchAnnouncements();
@@ -90,8 +89,18 @@ const Communication = () => {
     }
   };
 
-  // Check if the current user is an admin
   const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
+
+  const onEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingAnnouncement) {
+      handleEdit(editingAnnouncement);
+      setEditingAnnouncement(null);
+    }
+  };
 
   console.log("Current user:", currentUser);
   console.log("Is admin:", isAdmin);
@@ -112,9 +121,16 @@ const Communication = () => {
           markAsRead={markAsRead}
           getPriorityBadge={getPriorityBadge}
           currentUserId={currentUser?.id}
-          onEdit={handleEdit}
+          onEdit={onEditAnnouncement}
           onDelete={handleDelete}
           isAdmin={isAdmin}
+        />
+
+        <EditAnnouncementDialog
+          announcement={editingAnnouncement}
+          allEmployees={allEmployees}
+          onClose={() => setEditingAnnouncement(null)}
+          onSave={handleSaveEdit}
         />
       </div>
     </DashboardLayout>

@@ -1,30 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
+import { User, Announcement } from "@/types";
 
 interface UseAnnouncementFormProps {
   allEmployees: User[];
   onCreate: () => void;
   closeDialog: () => void;
   currentUser: User | null;
+  initialData?: Announcement;
 }
 
 export const useAnnouncementForm = ({
   allEmployees,
   onCreate,
   closeDialog,
-  currentUser
+  currentUser,
+  initialData
 }: UseAnnouncementFormProps) => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [priority, setPriority] = useState<"urgent" | "important" | "fyi">("fyi");
-  const [hasQuiz, setHasQuiz] = useState(false);
-  const [targetType, setTargetType] = useState<"all"|"specific">("all");
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [priority, setPriority] = useState<"urgent" | "important" | "fyi">(initialData?.priority as any || "fyi");
+  const [hasQuiz, setHasQuiz] = useState(initialData?.hasQuiz || false);
+  const [targetType, setTargetType] = useState<"all"|"specific">(initialData?.target_type || "all");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
-  const [requiresAcknowledgment, setRequiresAcknowledgment] = useState(false);
+  const [requiresAcknowledgment, setRequiresAcknowledgment] = useState(initialData?.requires_acknowledgment || false);
   const { toast } = useToast();
 
   const validateUuid = (id: string): boolean => {
@@ -42,6 +44,7 @@ export const useAnnouncementForm = ({
         setLoading(false);
         return;
       }
+
       if (targetType === "specific" && selectedUserIds.length === 0) {
         toast({ title: "No recipients selected", description: "Select at least one employee.", variant: "destructive" });
         setLoading(false);
@@ -66,28 +69,45 @@ export const useAnnouncementForm = ({
       
       const attachmentsData = attachments.map(f => ({ name: f.name, size: f.size, type: f.type }));
       
-      const { data: announcement, error } = await supabase
-        .from("announcements")
-        .insert({
-          title,
-          content,
-          author_id: currentUser.id,
-          priority,
-          has_quiz: hasQuiz,
-          target_type: targetType,
-          attachments: attachmentsData,
-          requires_acknowledgment: requiresAcknowledgment
-        })
-        .select()
-        .single();
+      const announcementData = {
+        title,
+        content,
+        author_id: currentUser?.id,
+        priority,
+        has_quiz: hasQuiz,
+        target_type: targetType,
+        attachments: attachmentsData,
+        requires_acknowledgment: requiresAcknowledgment
+      };
+
+      let error;
+      
+      if (initialData) {
+        const { error: updateError } = await supabase
+          .from("announcements")
+          .update(announcementData)
+          .eq('id', initialData.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("announcements")
+          .insert(announcementData)
+          .select()
+          .single();
+        error = insertError;
+      }
         
       if (error) {
-        console.error("Announcement creation error:", error);
-        toast({ title: "Failed to create announcement", description: error.message, variant: "destructive" });
+        console.error("Announcement error:", error);
+        toast({ 
+          title: `Failed to ${initialData ? 'update' : 'create'} announcement`, 
+          description: error.message, 
+          variant: "destructive" 
+        });
         setLoading(false);
         return;
       }
-      
+
       let recipientIds: string[];
       if (targetType === "all") {
         recipientIds = allEmployees.map(u => u.id);
@@ -110,7 +130,7 @@ export const useAnnouncementForm = ({
           });
         } else {
           const recipientsRows = validRecipientIds.map(user_id => ({ 
-            announcement_id: announcement.id, 
+            announcement_id: initialData?.id || announcementData.id, 
             user_id 
           }));
           
@@ -133,7 +153,7 @@ export const useAnnouncementForm = ({
         }
       }
       
-      toast({ title: "Announcement created!" });
+      toast({ title: initialData ? "Announcement updated!" : "Announcement created!" });
       closeDialog();
       setTimeout(() => {
         onCreate();
@@ -141,7 +161,7 @@ export const useAnnouncementForm = ({
       
       resetForm();
     } catch (e: any) {
-      console.error("Unexpected error in handleCreate:", e);
+      console.error("Unexpected error:", e);
       toast({ title: "Unexpected error", description: e.message || String(e), variant: "destructive" });
     } finally {
       setLoading(false);

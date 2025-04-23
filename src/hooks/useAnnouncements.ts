@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -146,12 +145,41 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   };
 
   const handleEdit = async (announcement: Announcement) => {
-    console.log("Edit announcement:", announcement);
-    // For now, just log the edit action
-    toast({
-      title: "Edit announcement",
-      description: `Editing "${announcement.title}"`,
-    });
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .update({
+          title: announcement.title,
+          content: announcement.content,
+          priority: announcement.priority,
+          has_quiz: announcement.hasQuiz,
+          target_type: announcement.target_type,
+          attachments: announcement.attachments,
+          requires_acknowledgment: announcement.requires_acknowledgment
+        })
+        .eq('id', announcement.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setAnnouncements(prevAnnouncements =>
+        prevAnnouncements.map(a => 
+          a.id === announcement.id ? announcement : a
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: "Announcement updated successfully",
+      });
+    } catch (err: any) {
+      console.error('Error updating announcement:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update the announcement",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {

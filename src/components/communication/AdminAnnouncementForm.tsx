@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { EmployeeSelector } from "./EmployeeSelector";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { User } from "@/types";
+import { User, Announcement } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { useAnnouncementForm } from "@/hooks/useAnnouncementForm";
@@ -15,12 +16,14 @@ interface AdminAnnouncementFormProps {
   allEmployees: User[];
   onCreate: () => void;
   closeDialog: () => void;
+  initialData?: Announcement;
 }
 
 export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
   allEmployees,
   onCreate,
   closeDialog,
+  initialData
 }) => {
   const { currentUser } = useAuth();
   const {
@@ -46,7 +49,8 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
     allEmployees,
     onCreate,
     closeDialog,
-    currentUser
+    currentUser,
+    initialData
   });
 
   return (
@@ -131,10 +135,10 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
+              {initialData ? "Saving..." : "Creating..."}
             </>
           ) : (
-            "Create"
+            initialData ? "Save Changes" : "Create"
           )}
         </Button>
         <DialogClose asChild>
