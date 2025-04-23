@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,8 +20,6 @@ export default function Communication() {
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
   useEffect(() => {
     async function fetchEmployees() {
-      // In a real app, this would fetch from the database
-      // For now, using mock data that includes an updated ID format for the admin user
       setAllEmployees([
         { id: "00000000-0000-0000-0000-000000000001", name: "Admin User", email: "admin@pinehillfarm.co", role: "admin" },
         { id: "00000000-0000-0000-0000-000000000002", name: "John Employee", email: "john@pinehillfarm.co", role: "employee" },
@@ -52,7 +49,6 @@ export default function Communication() {
       }
 
       let mappedAnnouncements: Announcement[] = (annData || []).map((a: any) => {
-        // Find author in employees
         const author = allEmployees.find(x => x.id === a.author_id);
         
         return {
@@ -103,8 +99,7 @@ export default function Communication() {
 
   useEffect(() => {
     fetchAnnouncements();
-    // eslint-disable-next-line
-  }, [allEmployees]); // Re-fetch when employees are loaded
+  }, [allEmployees]);
 
   const markAsRead = async (id: string) => {
     if (!currentUser) return;
@@ -154,6 +149,34 @@ export default function Communication() {
     }
   };
 
+  const handleEdit = async (announcement: Announcement) => {
+    console.log("Edit announcement:", announcement);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setAnnouncements(announcements.filter(a => a.id !== id));
+      toast({
+        title: "Announcement deleted",
+        description: "The announcement has been successfully deleted",
+      });
+    } catch (err: any) {
+      console.error('Error deleting announcement:', err);
+      toast({
+        title: "Error",
+        description: "Failed to delete the announcement",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -173,6 +196,8 @@ export default function Communication() {
           markAsRead={markAsRead}
           getPriorityBadge={getPriorityBadge}
           currentUserId={currentUser?.id}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </div>
     </DashboardLayout>

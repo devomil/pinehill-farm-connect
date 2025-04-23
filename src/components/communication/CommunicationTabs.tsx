@@ -19,6 +19,8 @@ interface CommunicationTabsProps {
   markAsRead: (id: string) => void;
   getPriorityBadge: (priority: string) => JSX.Element;
   currentUserId: string | undefined;
+  onEdit?: (announcement: Announcement) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
@@ -27,7 +29,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   isRead,
   markAsRead,
   getPriorityBadge,
-  currentUserId
+  currentUserId,
+  onEdit,
+  onDelete
 }) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -106,8 +110,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={onEdit}
+          onDelete={onDelete}
           isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
@@ -123,8 +127,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           totalPages={1}
           onPageChange={() => {}}
           emptyComponent={<AnnouncementEmptyUnread />}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={onEdit}
+          onDelete={onDelete}
           isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
@@ -140,8 +144,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           totalPages={1}
           onPageChange={() => {}}
           emptyComponent={<AnnouncementEmptyUrgent />}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onEdit={onEdit}
+          onDelete={onDelete}
           isAdmin={currentUserId === "00000000-0000-0000-0000-000000000001"}
         />
       </TabsContent>
