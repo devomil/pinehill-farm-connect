@@ -38,19 +38,21 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
         </Link>
       </Button>
 
-      <Button
-        variant="ghost"
-        className={cn(
-          "justify-start font-normal",
-          pathname.includes("/employees") && "bg-accent"
-        )}
-        asChild
-      >
-        <Link to="/employees">
-          <Users className="h-5 w-5 mr-3" />
-          <span className={!collapsed ? "block" : "hidden"}>Employees</span>
-        </Link>
-      </Button>
+      {currentUser?.role === "admin" && (
+        <Button
+          variant="ghost"
+          className={cn(
+            "justify-start font-normal",
+            pathname.includes("/employees") && "bg-accent"
+          )}
+          asChild
+        >
+          <Link to="/employees">
+            <Users className="h-5 w-5 mr-3" />
+            <span className={!collapsed ? "block" : "hidden"}>Employees</span>
+          </Link>
+        </Button>
+      )}
 
       <Button
         variant="ghost"
@@ -140,3 +142,4 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
     </nav>
   );
 };
+
