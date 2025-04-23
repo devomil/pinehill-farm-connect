@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +33,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // How files are "uploaded": for now store file names and fake download links (real storage would use supabase storage)
   const handleAttachments = (ev: React.ChangeEvent<HTMLInputElement>) => {
     const files = ev.target.files;
     if (files) {
@@ -47,7 +45,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
   };
 
   const validateUuid = (id: string): boolean => {
-    // UUID validation regex pattern
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidPattern.test(id);
   };
@@ -74,7 +71,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         return;
       }
       
-      // Validate user ID format
       if (!validateUuid(currentUser.id)) {
         toast({ 
           title: "Invalid user ID format", 
@@ -85,18 +81,16 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         return;
       }
       
-      // "Upload" files: for MVP store names only. TODO: implement storage later.
       const attachmentsData = attachments.map(f => ({ name: f.name, size: f.size, type: f.type }));
       
       console.log("Creating announcement with author_id:", currentUser.id);
       
-      // Insert announcement
       const { data: announcement, error } = await supabase
         .from("announcements")
         .insert({
           title,
           content,
-          author_id: currentUser.id, // Use the current user's ID
+          author_id: currentUser.id,
           priority,
           has_quiz: hasQuiz,
           target_type: targetType,
@@ -112,7 +106,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         return;
       }
       
-      // Attach recipients
       let recipientIds: string[];
       if (targetType === "all") {
         recipientIds = allEmployees.map(u => u.id);
@@ -121,7 +114,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
       }
       
       if (recipientIds.length) {
-        // Validate recipient IDs
         const validRecipientIds = recipientIds.filter(id => validateUuid(id));
         
         if (validRecipientIds.length !== recipientIds.length) {
@@ -132,7 +124,7 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
           toast({ 
             title: "Warning", 
             description: "No valid recipients found. The announcement was created but no recipients were assigned.", 
-            variant: "warning" 
+            variant: "default" 
           });
         } else {
           const recipientsRows = validRecipientIds.map(user_id => ({ 
@@ -149,7 +141,7 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
             toast({ 
               title: "Announcement created", 
               description: "But there was an error assigning recipients: " + recipErr.message,
-              variant: "warning" 
+              variant: "default" 
             });
             setLoading(false);
             closeDialog();
@@ -165,7 +157,6 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
         onCreate();
       }, 500);
       
-      // Reset form
       setTitle(""); setContent(""); setPriority("fyi"); setHasQuiz(false); setTargetType("all"); setSelectedUserIds([]); setAttachments([]);
     } catch (e: any) {
       console.error("Unexpected error in handleCreate:", e);
