@@ -41,11 +41,12 @@ const Communication = () => {
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
+  // Fetch announcements when component mounts or when user/employees change
   useEffect(() => {
-    if (allEmployees.length > 0) {
+    if (currentUser && allEmployees.length > 0) {
       fetchAnnouncements();
     }
-  }, [allEmployees]);
+  }, [currentUser, allEmployees]);
 
   const refreshAnnouncements = () => {
     fetchAnnouncements();

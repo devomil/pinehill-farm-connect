@@ -13,7 +13,8 @@ export const AnnouncementAcknowledgment = ({
   isAcknowledged,
   onAcknowledge,
 }: AnnouncementAcknowledgmentProps) => {
-  if (!onAcknowledge) return null;
+  // Don't render if no acknowledgment handler is provided or if already acknowledged
+  if (!onAcknowledge || isAcknowledged) return null;
 
   return (
     <div className="flex items-center gap-2 mt-4 p-2 bg-muted rounded">
@@ -21,7 +22,6 @@ export const AnnouncementAcknowledgment = ({
         id={`ack-${id}`}
         checked={isAcknowledged}
         onCheckedChange={onAcknowledge}
-        disabled={isAcknowledged}
       />
       <label htmlFor={`ack-${id}`} className="text-sm">
         I acknowledge that I have read and understood this announcement
