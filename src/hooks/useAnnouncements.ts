@@ -147,6 +147,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
 
   const handleEdit = async (announcement: Announcement) => {
     console.log("Edit announcement:", announcement);
+    // For now, just log the edit action
+    toast({
+      title: "Edit announcement",
+      description: `Editing "${announcement.title}"`,
+    });
   };
 
   const handleDelete = async (id: string) => {

@@ -98,7 +98,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             {isAdmin && onEdit && onDelete && (
               <AnnouncementActions
                 announcement={announcement}
-                onEdit={onEdit}
+                onEdit={() => onEdit(announcement)}
                 onDelete={handleDelete}
               />
             )}

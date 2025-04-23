@@ -90,7 +90,11 @@ const Communication = () => {
     }
   };
 
-  const isAdmin = currentUser?.id === "00000000-0000-0000-0000-000000000001";
+  // Check if the current user is an admin
+  const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
+
+  console.log("Current user:", currentUser);
+  console.log("Is admin:", isAdmin);
 
   return (
     <DashboardLayout>
@@ -118,4 +122,3 @@ const Communication = () => {
 };
 
 export default Communication;
-

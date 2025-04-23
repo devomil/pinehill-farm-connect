@@ -16,7 +16,7 @@ import { Announcement } from "@/types";
 
 interface AnnouncementActionsProps {
   announcement: Announcement;
-  onEdit: (announcement: Announcement) => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
@@ -31,7 +31,7 @@ export const AnnouncementActions = ({
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        onClick={() => onEdit(announcement)}
+        onClick={onEdit}
       >
         <Edit className="h-4 w-4" />
       </Button>
