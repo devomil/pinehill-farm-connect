@@ -9,6 +9,7 @@ import {
 import { CommunicationFilter } from "./CommunicationFilter";
 import { AnnouncementList } from "./AnnouncementList";
 import { DateRange } from "react-day-picker";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -152,4 +153,3 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     </Tabs>
   );
 };
-
