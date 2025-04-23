@@ -59,6 +59,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     });
   };
 
+  // Make sure we're using currentUserId instead of currentUser
   const unreadAnnouncements = filterAnnouncements(announcements.filter(a => !isRead(a)));
   const urgentAnnouncements = filterAnnouncements(announcements.filter(a => a.priority === "urgent"));
   const allFilteredAnnouncements = filterAnnouncements(announcements);
