@@ -1,61 +1,49 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Announcement } from "@/types";
+import { validateUuid } from "@/utils/validators";
 
-interface UseAnnouncementFormProps {
-  allEmployees: User[];
+interface UseAnnouncementSubmitProps {
+  currentUser: User | null;
   onCreate: () => void;
   closeDialog: () => void;
-  currentUser: User | null;
   initialData?: Announcement;
 }
 
-export const useAnnouncementForm = ({
-  allEmployees,
+export const useAnnouncementSubmit = ({
+  currentUser,
   onCreate,
   closeDialog,
-  currentUser,
   initialData
-}: UseAnnouncementFormProps) => {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [content, setContent] = useState(initialData?.content || "");
-  const [priority, setPriority] = useState<"urgent" | "important" | "fyi">(initialData?.priority as any || "fyi");
-  const [hasQuiz, setHasQuiz] = useState(initialData?.hasQuiz || false);
-  const [targetType, setTargetType] = useState<"all"|"specific">(initialData?.target_type || "all");
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [attachments, setAttachments] = useState<File[]>([]);
+}: UseAnnouncementSubmitProps) => {
   const [loading, setLoading] = useState(false);
-  const [requiresAcknowledgment, setRequiresAcknowledgment] = useState(initialData?.requires_acknowledgment || false);
   const { toast } = useToast();
 
-  const validateUuid = (id: string): boolean => {
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidPattern.test(id);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (
+    announcementData: {
+      title: string;
+      content: string;
+      priority: "urgent" | "important" | "fyi";
+      hasQuiz: boolean;
+      targetType: "all" | "specific";
+      attachments: { name: string; size: number; type: string }[];
+      requiresAcknowledgment: boolean;
+    },
+    selectedUserIds: string[],
+    allEmployees: User[]
+  ) => {
     setLoading(true);
 
     try {
-      if (!title.trim() || !content.trim()) {
-        toast({ title: "Title and content required", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      if (targetType === "specific" && selectedUserIds.length === 0) {
-        toast({ title: "No recipients selected", description: "Select at least one employee.", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      
       if (!currentUser || !currentUser.id) {
-        toast({ title: "Authentication error", description: "You need to be logged in to create announcements.", variant: "destructive" });
-        setLoading(false);
-        return;
+        toast({ 
+          title: "Authentication error", 
+          description: "You need to be logged in to create announcements.", 
+          variant: "destructive" 
+        });
+        return false;
       }
       
       if (!validateUuid(currentUser.id)) {
@@ -64,21 +52,18 @@ export const useAnnouncementForm = ({
           description: "Your user ID is not in the correct format. Please contact an administrator.", 
           variant: "destructive" 
         });
-        setLoading(false);
-        return;
+        return false;
       }
-      
-      const attachmentsData = attachments.map(f => ({ name: f.name, size: f.size, type: f.type }));
-      
-      const announcementData = {
-        title,
-        content,
-        author_id: currentUser?.id,
-        priority,
-        has_quiz: hasQuiz,
-        target_type: targetType,
-        attachments: attachmentsData,
-        requires_acknowledgment: requiresAcknowledgment
+
+      const dbAnnouncementData = {
+        title: announcementData.title,
+        content: announcementData.content,
+        author_id: currentUser.id,
+        priority: announcementData.priority,
+        has_quiz: announcementData.hasQuiz,
+        target_type: announcementData.targetType,
+        attachments: announcementData.attachments,
+        requires_acknowledgment: announcementData.requiresAcknowledgment
       };
 
       let error;
@@ -87,23 +72,22 @@ export const useAnnouncementForm = ({
       if (initialData) {
         const { error: updateError } = await supabase
           .from("announcements")
-          .update(announcementData)
+          .update(dbAnnouncementData)
           .eq('id', initialData.id);
         error = updateError;
       } else {
         const { data: newAnnouncement, error: insertError } = await supabase
           .from("announcements")
-          .insert(announcementData)
+          .insert(dbAnnouncementData)
           .select()
           .single();
         
         if (newAnnouncement) {
           announcementId = newAnnouncement.id;
         }
-        
         error = insertError;
       }
-        
+
       if (error) {
         console.error("Announcement error:", error);
         toast({ 
@@ -111,12 +95,11 @@ export const useAnnouncementForm = ({
           description: error.message, 
           variant: "destructive" 
         });
-        setLoading(false);
-        return;
+        return false;
       }
 
       let recipientIds: string[];
-      if (targetType === "all") {
+      if (announcementData.targetType === "all") {
         recipientIds = allEmployees.map(u => u.id);
       } else {
         recipientIds = selectedUserIds;
@@ -152,57 +135,24 @@ export const useAnnouncementForm = ({
               description: "But there was an error assigning recipients: " + recipErr.message,
               variant: "default" 
             });
-            setLoading(false);
-            closeDialog();
-            setTimeout(() => onCreate(), 500);
-            return;
+            return true;
           }
         }
       }
       
       toast({ title: initialData ? "Announcement updated!" : "Announcement created!" });
-      closeDialog();
-      setTimeout(() => {
-        onCreate();
-      }, 500);
-      
-      resetForm();
+      return true;
     } catch (e: any) {
       console.error("Unexpected error:", e);
       toast({ title: "Unexpected error", description: e.message || String(e), variant: "destructive" });
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setTitle("");
-    setContent("");
-    setPriority("fyi");
-    setHasQuiz(false);
-    setTargetType("all");
-    setSelectedUserIds([]);
-    setAttachments([]);
-  };
-
   return {
-    title,
-    setTitle,
-    content,
-    setContent,
-    priority,
-    setPriority,
-    hasQuiz,
-    setHasQuiz,
-    targetType,
-    setTargetType,
-    selectedUserIds,
-    setSelectedUserIds,
-    attachments,
-    setAttachments,
     loading,
-    handleCreate,
-    requiresAcknowledgment,
-    setRequiresAcknowledgment
+    handleSubmit
   };
 };

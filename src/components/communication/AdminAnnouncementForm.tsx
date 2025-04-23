@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +8,7 @@ import { DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { User, Announcement } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { useAnnouncementForm } from "@/hooks/useAnnouncementForm";
+import { useAnnouncementForm } from "@/hooks/announcement/useAnnouncementForm";
 import { AnnouncementAttachments } from "./AnnouncementAttachments";
 
 interface AdminAnnouncementFormProps {
