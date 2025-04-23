@@ -19,14 +19,14 @@ const Communication = () => {
         id: "00000000-0000-0000-0000-000000000001",
         name: "Admin User",
         email: "admin@company.com",
-        role: "Admin",
+        role: "admin",
         department: "Management",
       },
       {
         id: "00000000-0000-0000-0000-000000000002",
         name: "John Doe",
         email: "john@company.com",
-        role: "Employee",
+        role: "employee",
         department: "Engineering",
       },
     ]);
