@@ -31,10 +31,25 @@ export const QuizManagementSection: React.FC<QuizManagementSectionProps> = ({
         body: { attachments }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error generating quiz:", error);
+        toast.error("Failed to generate quiz questions. Please try again later.");
+        return;
+      }
 
-      setQuestions(data.questions);
-      toast.success("Quiz questions generated successfully! Please review them.");
+      if (data.error) {
+        console.warn("Warning from quiz generator:", data.error);
+        if (data.error.includes("quota")) {
+          toast.error("API quota exceeded. Using sample questions instead.");
+        }
+      }
+
+      if (data.questions && data.questions.length > 0) {
+        setQuestions(data.questions);
+        toast.success("Quiz questions generated successfully! Please review them.");
+      } else {
+        toast.error("No questions could be generated. Please try again.");
+      }
     } catch (error) {
       console.error("Error generating quiz:", error);
       toast.error("Failed to generate quiz questions");

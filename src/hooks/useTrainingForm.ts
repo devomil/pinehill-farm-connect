@@ -46,7 +46,14 @@ export const useTrainingForm = ({ currentUser, onTrainingCreated, setOpen }: Use
       
       if (requiredFor.length === 0) {
         toast.error("You must select at least one department");
-        return;
+        return false;
+      }
+
+      // Make sure we have a valid UUID for created_by
+      if (!currentUser?.id || typeof currentUser.id !== 'string' || !currentUser.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        console.error("Invalid user ID:", currentUser?.id);
+        toast.error("Authentication error. Please log in again.");
+        return false;
       }
 
       const newTraining = {
@@ -66,7 +73,10 @@ export const useTrainingForm = ({ currentUser, onTrainingCreated, setOpen }: Use
         .from("trainings")
         .insert([newTraining]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
 
       toast.success("Training created successfully");
       setOpen(false);
@@ -74,7 +84,7 @@ export const useTrainingForm = ({ currentUser, onTrainingCreated, setOpen }: Use
       return true;
     } catch (err) {
       console.error("Error submitting form:", err);
-      toast.error("An error occurred");
+      toast.error("An error occurred while creating the training");
       return false;
     } finally {
       setLoading(false);
