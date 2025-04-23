@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
 import { Badge } from "@/components/ui/badge";
 import { Announcement, User } from "@/types";
-import { useAnnouncements } from "@/hooks/useAnnouncements";
+import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommunicationHeader } from "@/components/communication/CommunicationHeader";
 import { useToast } from "@/hooks/use-toast";
