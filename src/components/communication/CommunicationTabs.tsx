@@ -1,23 +1,12 @@
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Announcement } from "@/types";
-import { AnnouncementCard } from "./AnnouncementCard";
 import {
-  AnnouncementLoading,
-  AnnouncementEmptyAll,
   AnnouncementEmptyUnread,
   AnnouncementEmptyUrgent
 } from "./AnnouncementListState";
 import { CommunicationFilter } from "./CommunicationFilter";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { AnnouncementList } from "./AnnouncementList";
 import { DateRange } from "react-day-picker";
 
 interface CommunicationTabsProps {
@@ -67,35 +56,6 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
   const totalPages = Math.ceil(allFilteredAnnouncements.length / itemsPerPage);
 
-  const renderPagination = () => (
-    <Pagination>
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          />
-        </PaginationItem>
-        {Array.from({ length: totalPages }, (_, i) => (
-          <PaginationItem key={i + 1}>
-            <PaginationLink
-              isActive={currentPage === i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-            >
-              {i + 1}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
-        <PaginationItem>
-          <PaginationNext
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
-  );
-
   return (
     <Tabs defaultValue="all">
       <TabsList>
@@ -121,63 +81,44 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
       />
 
       <TabsContent value="all" className="space-y-4 mt-4">
-        {loading ? (
-          <AnnouncementLoading />
-        ) : allFilteredAnnouncements.length === 0 ? (
-          <AnnouncementEmptyAll />
-        ) : (
-          <>
-            {paginateAnnouncements(allFilteredAnnouncements).map(announcement => (
-              <AnnouncementCard
-                key={announcement.id}
-                announcement={announcement}
-                isRead={isRead(announcement)}
-                onMarkAsRead={() => markAsRead(announcement.id)}
-                showMarkAsRead={true}
-                getPriorityBadge={getPriorityBadge}
-              />
-            ))}
-            {allFilteredAnnouncements.length > itemsPerPage && renderPagination()}
-          </>
-        )}
+        <AnnouncementList
+          announcements={paginateAnnouncements(allFilteredAnnouncements)}
+          loading={loading}
+          isRead={isRead}
+          markAsRead={markAsRead}
+          getPriorityBadge={getPriorityBadge}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </TabsContent>
 
       <TabsContent value="unread" className="space-y-4 mt-4">
-        {loading ? (
-          <AnnouncementLoading />
-        ) : unreadAnnouncements.length > 0 ? (
-          unreadAnnouncements.map(announcement => (
-            <AnnouncementCard
-              key={announcement.id}
-              announcement={announcement}
-              isRead={false}
-              onMarkAsRead={() => markAsRead(announcement.id)}
-              showMarkAsRead={true}
-              getPriorityBadge={getPriorityBadge}
-            />
-          ))
-        ) : (
-          <AnnouncementEmptyUnread />
-        )}
+        <AnnouncementList
+          announcements={unreadAnnouncements}
+          loading={loading}
+          isRead={isRead}
+          markAsRead={markAsRead}
+          getPriorityBadge={getPriorityBadge}
+          currentPage={1}
+          totalPages={1}
+          onPageChange={() => {}}
+          emptyComponent={<AnnouncementEmptyUnread />}
+        />
       </TabsContent>
 
       <TabsContent value="urgent" className="space-y-4 mt-4">
-        {loading ? (
-          <AnnouncementLoading />
-        ) : urgentAnnouncements.length > 0 ? (
-          urgentAnnouncements.map(announcement => (
-            <AnnouncementCard
-              key={announcement.id}
-              announcement={announcement}
-              isRead={isRead(announcement)}
-              onMarkAsRead={() => markAsRead(announcement.id)}
-              showMarkAsRead={true}
-              getPriorityBadge={getPriorityBadge}
-            />
-          ))
-        ) : (
-          <AnnouncementEmptyUrgent />
-        )}
+        <AnnouncementList
+          announcements={urgentAnnouncements}
+          loading={loading}
+          isRead={isRead}
+          markAsRead={markAsRead}
+          getPriorityBadge={getPriorityBadge}
+          currentPage={1}
+          totalPages={1}
+          onPageChange={() => {}}
+          emptyComponent={<AnnouncementEmptyUrgent />}
+        />
       </TabsContent>
     </Tabs>
   );
