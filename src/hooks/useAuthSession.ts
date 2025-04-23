@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,9 +38,11 @@ export function useAuthSession() {
         
         console.log("Session check result:", data.session ? "Session exists" : "No session");
         
-        // If no session but we have a stored user, keep using that
+        // If no session but we have a stored user, clear it as it's stale
         if (!data.session?.user && currentUser) {
-          console.log("No session but has stored user - keeping current user");
+          console.log("No session but has stored user - clearing stale user");
+          setCurrentUser(null);
+          localStorage.removeItem("currentUser");
           setLoading(false);
           return;
         }
@@ -47,8 +50,8 @@ export function useAuthSession() {
         // If no session and no stored user, we're not authenticated
         if (!data.session?.user) {
           console.log("No session and no stored user - clearing auth state");
-          setCurrentUser(null); // Ensure currentUser is null when no session exists
-          localStorage.removeItem("currentUser"); // Clear localStorage to be safe
+          setCurrentUser(null); 
+          localStorage.removeItem("currentUser"); 
           setLoading(false);
           return;
         }
@@ -109,60 +112,61 @@ export function useAuthSession() {
       }
     };
     
-    // Initial session check
-    checkSession();
-    
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
+        console.log("Auth state changed:", event, session ? "Session exists" : "No session");
         
         if (event === 'SIGNED_IN' && session?.user) {
           console.log("User signed in event detected:", session.user.email);
-          try {
-            // Get user role
-            const { data: userRoleData, error: roleError } = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .single();
-            
-            if (roleError && roleError.code !== "PGRST116") {
-              console.error("Error fetching user role on auth state change:", roleError);
-            }
-            
-            const role = userRoleData?.role || "employee";
-            console.log("User role from auth change:", role);
-            
-            const userData: User = {
-              id: session.user.id,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
-              email: session.user.email || "",
-              role: role as "employee" | "admin" | "hr" | "manager",
-              department: session.user.user_metadata?.department || "",
-              position: session.user.user_metadata?.position || ""
-            };
-            
-            console.log("Setting user data from auth change:", userData);
-            setCurrentUser(userData);
-            localStorage.setItem("currentUser", JSON.stringify(userData));
-          } catch (err) {
-            console.error("Error processing auth state change:", err);
-            // Use basic user data as fallback
-            if (session?.user) {
-              const basicUserData: User = {
+          
+          // Use setTimeout to avoid blocking the auth state change handler
+          setTimeout(async () => {
+            try {
+              // Get user role
+              const { data: userRoleData, error: roleError } = await supabase
+                .from("user_roles")
+                .select("role")
+                .eq("user_id", session.user.id)
+                .single();
+              
+              if (roleError && roleError.code !== "PGRST116") {
+                console.error("Error fetching user role on auth state change:", roleError);
+              }
+              
+              const role = userRoleData?.role || "employee";
+              console.log("User role from auth change:", role);
+              
+              const userData: User = {
                 id: session.user.id,
-                name: session.user.email?.split('@')[0] || "User",
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
                 email: session.user.email || "",
-                role: "employee",
-                department: "",
-                position: ""
+                role: role as "employee" | "admin" | "hr" | "manager",
+                department: session.user.user_metadata?.department || "",
+                position: session.user.user_metadata?.position || ""
               };
-              console.log("Setting fallback user data from auth change:", basicUserData);
-              setCurrentUser(basicUserData);
-              localStorage.setItem("currentUser", JSON.stringify(basicUserData));
+              
+              console.log("Setting user data from auth change:", userData);
+              setCurrentUser(userData);
+              localStorage.setItem("currentUser", JSON.stringify(userData));
+            } catch (err) {
+              console.error("Error processing auth state change:", err);
+              // Use basic user data as fallback
+              if (session?.user) {
+                const basicUserData: User = {
+                  id: session.user.id,
+                  name: session.user.email?.split('@')[0] || "User",
+                  email: session.user.email || "",
+                  role: "employee",
+                  department: "",
+                  position: ""
+                };
+                console.log("Setting fallback user data from auth change:", basicUserData);
+                setCurrentUser(basicUserData);
+                localStorage.setItem("currentUser", JSON.stringify(basicUserData));
+              }
             }
-          }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out, clearing state and storage");
           setCurrentUser(null);
@@ -170,6 +174,9 @@ export function useAuthSession() {
         }
       }
     );
+
+    // Initial session check
+    checkSession();
 
     return () => {
       console.log("useAuthSession cleanup - unsubscribing from auth events");

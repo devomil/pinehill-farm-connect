@@ -32,12 +32,17 @@ export default function Login() {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const success = await login(email, password);
+      console.log("Login attempt result:", success);
+      
       if (success) {
         console.log("Login success, redirecting to dashboard");
+        toast.success("Login successful!");
         navigate("/dashboard");
       } else {
         console.log("Login failed");
+        toast.error("Login failed. Please check your credentials.");
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -49,7 +54,7 @@ export default function Login() {
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated && currentUser) {
-    console.log("Rendering redirect to dashboard");
+    console.log("Already authenticated, redirecting to dashboard");
     return <Navigate to="/dashboard" />;
   }
 
@@ -122,7 +127,7 @@ export default function Login() {
 
         <div className="px-8 pb-6 pt-2 text-center">
           <p className="text-xs text-muted-foreground">
-            Demo accounts: admin@pinehillfarm.co or john@pinehillfarm.co (any password)
+            Demo accounts: admin@pinehillfarm.co or ryan@pinehillfarm.co (password: password)
           </p>
         </div>
       </Card>

@@ -46,7 +46,7 @@ export function useAuthActions(
           .eq("user_id", data.user.id)
           .single();
         
-        if (roleError) {
+        if (roleError && roleError.code !== "PGRST116") {
           console.error("Error fetching user role:", roleError);
         }
         
