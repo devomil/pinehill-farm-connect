@@ -42,8 +42,8 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
           password: values.password,
           userData: {
             name: values.name,
-            department: values.department,
-            position: values.position,
+            department: values.department || '',
+            position: values.position || '',
           }
         }
       });
@@ -51,12 +51,20 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
       if (error) throw error;
       
       console.log("Employee created successfully:", data);
-      toast.success("Employee created successfully");
+      toast.success(`Employee ${values.name} created successfully`);
       form.reset();
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating employee:", error);
-      toast.error(error.message || "Failed to create employee");
+      
+      // More specific error handling
+      if (error.message.includes('User already exists')) {
+        toast.error("An employee with this email already exists");
+      } else if (error.message.includes('Invalid email')) {
+        toast.error("The email address is invalid");
+      } else {
+        toast.error(error.message || "Failed to create employee");
+      }
     }
   };
 
@@ -137,8 +145,8 @@ export function AddEmployeeForm({ onSuccess, onCancel }: AddEmployeeFormProps) {
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">
-            Create Employee
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'Creating...' : 'Create Employee'}
           </Button>
         </div>
       </form>
