@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -69,7 +70,8 @@ export interface Announcement {
   priority: "urgent" | "important" | "fyi";
   readBy: string[];
   hasQuiz?: boolean;
-  attachments?: string[];
+  requires_acknowledgment?: boolean;
+  attachments?: { name: string; type: string; url?: string }[];
 }
 
 export interface ShiftReport {

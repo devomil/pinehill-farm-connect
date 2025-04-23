@@ -22,27 +22,29 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       </DialogTrigger>
       <DialogContent className="max-w-4xl h-[80vh]">
         <div className="h-full overflow-auto p-4">
-          {isImage && (
+          {isImage && attachment.url && (
             <img 
               src={attachment.url} 
               alt={attachment.name}
               className="max-w-full h-auto"
             />
           )}
-          {isPdf && (
+          {isPdf && attachment.url && (
             <iframe
               src={attachment.url}
               className="w-full h-full"
               title={attachment.name}
             />
           )}
-          {!isImage && !isPdf && (
+          {(!isImage && !isPdf || !attachment.url) && (
             <div className="flex flex-col items-center justify-center gap-4">
               <p>Preview not available for this file type</p>
-              <Button onClick={() => window.open(attachment.url, '_blank')}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
+              {attachment.url && (
+                <Button onClick={() => window.open(attachment.url, '_blank')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              )}
             </div>
           )}
         </div>
