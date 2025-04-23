@@ -4,12 +4,36 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { MessageSquare, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementsCardProps {
   announcements: any[];
 }
 
 export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements }) => {
+  const { toast } = useToast();
+
+  const handleAttachmentAction = (attachment: any) => {
+    if (attachment.url) {
+      try {
+        window.open(attachment.url, '_blank');
+      } catch (error) {
+        console.error('Error opening attachment:', error);
+        toast({
+          title: "Failed to open attachment",
+          description: "There was a problem opening this attachment. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Attachment URL not available",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -53,11 +77,7 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
                           variant="outline"
                           size="sm"
                           className="h-7 text-xs flex items-center gap-1"
-                          onClick={() => {
-                            if (attachment.url) {
-                              window.open(attachment.url, '_blank');
-                            }
-                          }}
+                          onClick={() => handleAttachmentAction(attachment)}
                         >
                           <Paperclip className="h-3 w-3" />
                           {attachment.name}

@@ -7,8 +7,10 @@ import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommunicationHeader } from "@/components/communication/CommunicationHeader";
+import { useToast } from "@/hooks/use-toast";
 
 const Communication = () => {
+  const { toast } = useToast();
   const { currentUser } = useAuth();
   const [allEmployees, setAllEmployees] = useState<User[]>([]);
 
@@ -54,6 +56,27 @@ const Communication = () => {
 
   const isRead = (announcement: Announcement) => {
     return announcement.readBy.includes(currentUser?.id || "");
+  };
+
+  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+    if (attachment.url) {
+      try {
+        window.open(attachment.url, '_blank');
+      } catch (error) {
+        console.error('Error opening attachment:', error);
+        toast({
+          title: "Failed to open attachment",
+          description: "There was a problem opening this attachment. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Missing URL",
+        description: "This attachment doesn't have a valid URL.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getPriorityBadge = (priority: string) => {

@@ -1,14 +1,18 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Eye, Download, File } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AttachmentPreviewProps {
   attachment: { name: string; type: string; url?: string };
 }
 
 export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = ({ attachment }) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  
   const isImage = attachment.type?.startsWith('image/');
   const isPdf = attachment.type === 'application/pdf';
   const isWord = attachment.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
@@ -18,15 +22,51 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   const isCsv = attachment.type === 'text/csv';
 
   const handleDownload = () => {
-    if (attachment.url) {
-      window.open(attachment.url, '_blank');
+    if (!attachment.url) {
+      toast({
+        title: "Download failed",
+        description: "The attachment URL is missing",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    setLoading(true);
+    
+    // Create an anchor element and trigger download
+    const link = document.createElement('a');
+    link.href = attachment.url;
+    link.target = '_blank';
+    link.download = attachment.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setLoading(false);
+  };
+
+  const checkUrl = () => {
+    if (!attachment.url) {
+      toast({
+        title: "Preview failed",
+        description: "The attachment URL is missing",
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => checkUrl()}
+          disabled={loading}
+        >
           <Eye className="h-4 w-4" />
           Preview
         </Button>
@@ -34,12 +74,19 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       <DialogContent className="max-w-4xl h-[80vh]">
         <DialogTitle>Preview: {attachment.name}</DialogTitle>
         <DialogDescription>Viewing attachment</DialogDescription>
-        <div className="h-full overflow-auto p-4 mt-4">
+        <div className="h-full overflow-auto p-4 mt-4 flex flex-col">
           {isImage && attachment.url && (
             <img 
               src={attachment.url} 
               alt={attachment.name}
-              className="max-w-full h-auto"
+              className="max-w-full h-auto mx-auto"
+              onError={() => {
+                toast({
+                  title: "Image failed to load",
+                  description: "The image might be unavailable or the URL is incorrect",
+                  variant: "destructive"
+                });
+              }}
             />
           )}
           {isPdf && attachment.url && (
@@ -47,7 +94,15 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
               src={`${attachment.url}#toolbar=0&navpanes=0`}
               className="w-full h-full border-0"
               title={attachment.name}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
+              sandbox="allow-scripts allow-same-origin allow-forms"
+              onLoad={() => console.log("PDF loaded")}
+              onError={() => {
+                toast({
+                  title: "PDF failed to load",
+                  description: "The PDF might be unavailable or the URL is incorrect",
+                  variant: "destructive"
+                });
+              }}
             />
           )}
           {(isWord || isExcel || isCsv || (!isImage && !isPdf) || !attachment.url) && (
@@ -55,12 +110,13 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
               <File className="h-16 w-16 text-muted-foreground" />
               <p className="text-lg font-medium">Preview not available for {attachment.name}</p>
               <p className="text-muted-foreground mb-4">This file type cannot be previewed directly in the browser.</p>
-              {attachment.url && (
-                <Button onClick={handleDownload}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download File
-                </Button>
-              )}
+              <Button 
+                onClick={handleDownload} 
+                disabled={loading || !attachment.url}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download File
+              </Button>
             </div>
           )}
         </div>

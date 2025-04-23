@@ -3,17 +3,34 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip } from "lucide-react";
 import { AnnouncementAttachmentPreview } from "../AnnouncementAttachmentPreview";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementAttachmentsListProps {
   attachments: { name: string; type: string; url?: string }[];
-  onAttachmentAction: (attachment: { name: string; type: string; url?: string }) => void;
+  onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
 export const AnnouncementAttachmentsList = ({
   attachments,
   onAttachmentAction,
 }: AnnouncementAttachmentsListProps) => {
+  const { toast } = useToast();
+
   if (!attachments || attachments.length === 0) return null;
+
+  const handleAttachmentClick = (attachment: { name: string; type: string; url?: string }) => {
+    if (onAttachmentAction) {
+      onAttachmentAction(attachment);
+    } else if (attachment.url) {
+      window.open(attachment.url, '_blank');
+    } else {
+      toast({
+        title: "Could not open attachment",
+        description: "The attachment URL is missing",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-2 mb-4">
@@ -25,7 +42,7 @@ export const AnnouncementAttachmentsList = ({
               variant="outline"
               size="sm"
               className="h-8"
-              onClick={() => onAttachmentAction(attachment)}
+              onClick={() => handleAttachmentClick(attachment)}
             >
               <Paperclip className="h-3 w-3 mr-1" />
               {attachment.name}

@@ -39,7 +39,16 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
 
   const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
     if (attachment.url) {
-      window.open(attachment.url, '_blank');
+      try {
+        window.open(attachment.url, '_blank');
+      } catch (error) {
+        console.error('Error opening attachment:', error);
+        toast({
+          title: "Failed to open attachment",
+          description: "There was a problem opening this attachment. Please try again.",
+          variant: "destructive"
+        });
+      }
     } else {
       toast({
         title: "Error",
