@@ -179,6 +179,33 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          department: string | null
+          email: string | null
+          id: string
+          name: string | null
+          position: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          department?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          department?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       time_off_requests: {
         Row: {
           created_at: string | null

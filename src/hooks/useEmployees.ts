@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { User as UserType } from "@/types";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useEmployees() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -11,42 +12,22 @@ export function useEmployees() {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      // Demo data; replace with API call as needed
-      const mockEmployees: UserType[] = [
-        {
-          id: "1",
-          name: "John Doe",
-          email: "john@pinehillfarm.co",
-          role: "employee",
-          department: "Sales",
-          position: "Associate"
-        },
-        {
-          id: "2",
-          name: "Jane Smith",
-          email: "jane@pinehillfarm.co",
-          role: "employee",
-          department: "Production",
-          position: "Team Lead"
-        },
-        {
-          id: "3",
-          name: "Robert Johnson",
-          email: "robert@pinehillfarm.co",
-          role: "admin",
-          department: "Management",
-          position: "Operations Manager"
-        },
-        {
-          id: "4",
-          name: "Sarah Williams",
-          email: "sarah@pinehillfarm.co",
-          role: "employee",
-          department: "Customer Service",
-          position: "Representative"
-        }
-      ];
-      setEmployees(mockEmployees);
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) throw error;
+
+      const formattedEmployees: UserType[] = profiles.map(profile => ({
+        id: profile.id,
+        name: profile.name || '',
+        email: profile.email || '',
+        department: profile.department || '',
+        position: profile.position || '',
+        role: 'employee' // Default role, the actual role should be fetched from user_roles
+      }));
+
+      setEmployees(formattedEmployees);
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast.error("Failed to load employees");
