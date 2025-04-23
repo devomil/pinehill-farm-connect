@@ -4,18 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
-
-const formSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().optional(),
-  category: z.string().min(1, { message: "Category is required" }),
-  duration: z.coerce.number().min(1, { message: "Duration must be at least 1 minute" }),
-  expiresAfter: z.coerce.number().optional(),
-});
+import { TrainingFormValues } from "@/hooks/useTrainingForm";
 
 interface BasicTrainingInfoSectionProps {
-  form: UseFormReturn<z.infer<typeof formSchema>>;
+  form: UseFormReturn<TrainingFormValues>;
 }
 
 export const BasicTrainingInfoSection: React.FC<BasicTrainingInfoSectionProps> = ({

@@ -10,7 +10,7 @@ import { TrainingAttachmentsField } from "./TrainingAttachmentsField";
 import { TrainingQuizGenerator } from "./TrainingQuizGenerator";
 import { BasicTrainingInfoSection } from "./BasicTrainingInfoSection";
 import { RequiredDepartmentsSection } from "./RequiredDepartmentsSection";
-import { useTrainingForm } from "@/hooks/useTrainingForm";
+import { useTrainingForm, TrainingFormValues } from "@/hooks/useTrainingForm";
 
 interface AdminTrainingFormProps {
   open: boolean;
@@ -39,7 +39,7 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
     setOpen,
   });
 
-  const form = useForm({
+  const form = useForm<TrainingFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -56,7 +56,7 @@ export const AdminTrainingForm: React.FC<AdminTrainingFormProps> = ({
     },
   });
 
-  const onSubmit = (values: any) => {
+  const onSubmit = (values: TrainingFormValues) => {
     handleSubmit(values, hasQuiz);
   };
 

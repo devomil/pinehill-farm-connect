@@ -3,17 +3,10 @@ import React from "react";
 import { FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
-
-const formSchema = z.object({
-  requiredForAll: z.boolean().default(true),
-  requiredForRetail: z.boolean().default(false),
-  requiredForOperations: z.boolean().default(false),
-  requiredForManagement: z.boolean().default(false),
-});
+import { TrainingFormValues } from "@/hooks/useTrainingForm";
 
 interface RequiredDepartmentsSectionProps {
-  form: UseFormReturn<z.infer<typeof formSchema>>;
+  form: UseFormReturn<TrainingFormValues>;
   onRequiredForAllChange: (value: boolean) => void;
   onSpecificDepartmentChange: () => void;
 }
