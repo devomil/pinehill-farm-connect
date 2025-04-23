@@ -103,6 +103,13 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   const { announcements: unreadFiltered, totalPages: unreadTotalPages } = getFilteredAnnouncements("unread");
   const { announcements: importantFiltered, totalPages: importantTotalPages } = getFilteredAnnouncements("important");
 
+  // Handle attachment actions
+  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+    if (onAttachmentAction) {
+      onAttachmentAction(attachment);
+    }
+  };
+
   return (
     <Tabs defaultValue="all" onValueChange={value => { setActiveTab(value); setCurrentPage(1); }}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
@@ -135,7 +142,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
-          onAttachmentAction={onAttachmentAction}
+          onAttachmentAction={handleAttachmentAction}
         />
       </TabsContent>
 
@@ -158,7 +165,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
-          onAttachmentAction={onAttachmentAction}
+          onAttachmentAction={handleAttachmentAction}
         />
       </TabsContent>
 
@@ -181,10 +188,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           isAdmin={isAdmin}
-          onAttachmentAction={onAttachmentAction}
+          onAttachmentAction={handleAttachmentAction}
         />
       </TabsContent>
     </Tabs>
   );
 };
-

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -10,14 +9,13 @@ import { CommunicationHeader } from "@/components/communication/CommunicationHea
 import { useToast } from "@/hooks/use-toast";
 import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
 import { useEmployees } from "@/hooks/useEmployees";
-import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
+import { supabase } from "@/integrations/supabase/client";
 
 const Communication = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [previewAttachment, setPreviewAttachment] = useState<{ name: string; type: string; url?: string } | null>(null);
 
   const {
     announcements,
@@ -44,23 +42,40 @@ const Communication = () => {
     return announcement.readBy.includes(currentUser?.id || "");
   };
 
-  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+  const handleAttachmentAction = async (attachment: { name: string; type: string; url?: string }) => {
     console.log("Opening attachment:", attachment);
-    if (attachment.url) {
-      try {
+    
+    try {
+      // If we already have a URL, use it directly
+      if (attachment.url) {
         window.open(attachment.url, '_blank');
-      } catch (error) {
-        console.error('Error opening attachment:', error);
+        return;
+      }
+      
+      // Otherwise, attempt to get a signed URL for the attachment from storage
+      const { data: signedUrl, error } = await supabase
+        .storage
+        .from('announcements')
+        .createSignedUrl(`attachments/${attachment.name}`, 60); // 60 seconds expiry
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
         toast({
           title: "Failed to open attachment",
-          description: "There was a problem opening this attachment. Please try again.",
+          description: "Could not retrieve the attachment URL. Please try again.",
           variant: "destructive"
         });
+        return;
       }
-    } else {
+      
+      if (signedUrl) {
+        window.open(signedUrl.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error handling attachment:', error);
       toast({
-        title: "Missing URL",
-        description: "This attachment doesn't have a valid URL.",
+        title: "Failed to open attachment",
+        description: "There was a problem opening this attachment. Please try again.",
         variant: "destructive"
       });
     }

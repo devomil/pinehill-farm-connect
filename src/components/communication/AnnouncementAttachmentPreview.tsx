@@ -7,9 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AttachmentPreviewProps {
   attachment: { name: string; type: string; url?: string };
+  onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
-export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = ({ attachment }) => {
+export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = ({ 
+  attachment,
+  onAttachmentAction 
+}) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -22,6 +26,11 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   const isCsv = attachment.type === 'text/csv';
 
   const handleDownload = () => {
+    if (onAttachmentAction) {
+      onAttachmentAction(attachment);
+      return;
+    }
+    
     if (!attachment.url) {
       toast({
         title: "Download failed",
@@ -46,6 +55,10 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   };
 
   const checkUrl = () => {
+    if (onAttachmentAction) {
+      return true;
+    }
+    
     if (!attachment.url) {
       toast({
         title: "Preview failed",
@@ -112,7 +125,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
               <p className="text-muted-foreground mb-4">This file type cannot be previewed directly in the browser.</p>
               <Button 
                 onClick={handleDownload} 
-                disabled={loading || !attachment.url}
+                disabled={loading}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download File

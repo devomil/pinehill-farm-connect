@@ -6,7 +6,7 @@ import { AnnouncementAttachmentPreview } from "../AnnouncementAttachmentPreview"
 import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementAttachmentsListProps {
-  attachments: { name: string; type: string; url?: string }[];
+  attachments: { name: string; type: string; url?: string; size?: number }[];
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
 }
 
@@ -47,7 +47,10 @@ export const AnnouncementAttachmentsList = ({
               <Paperclip className="h-3 w-3 mr-1" />
               {attachment.name}
             </Button>
-            <AnnouncementAttachmentPreview attachment={attachment} />
+            <AnnouncementAttachmentPreview 
+              attachment={attachment} 
+              onAttachmentAction={onAttachmentAction}
+            />
           </div>
         ))}
       </div>
