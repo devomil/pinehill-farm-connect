@@ -4,10 +4,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle, FileText, Paperclip, Trash2, Edit } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Announcement } from "@/types";
 import { AnnouncementAttachmentPreview } from "./AnnouncementAttachmentPreview";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementCardProps {
   announcement: Announcement;
@@ -40,13 +49,6 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     if (!onDelete) return;
     
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .delete()
-        .eq('id', announcement.id);
-      
-      if (error) throw error;
-      
       onDelete(announcement.id);
       toast({
         title: "Success",
@@ -110,14 +112,31 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive"
-                  onClick={handleDelete}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Announcement</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this announcement? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <Button variant="destructive" onClick={handleDelete}>
+                        Delete
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </div>
