@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { QuizToggle } from "./QuizToggle";
 import { ExternalTestUrlInput } from "./ExternalTestUrlInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { QuizQuestion } from "@/types/quiz"; // Import the QuizQuestion type
 
 interface TrainingQuizGeneratorProps {
   hasQuiz: boolean;

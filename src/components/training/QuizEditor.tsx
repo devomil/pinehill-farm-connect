@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswer: number;
-}
+import { QuizQuestion } from "@/types/quiz";
 
 interface QuizEditorProps {
   questions: QuizQuestion[];
@@ -50,7 +44,6 @@ export const QuizEditor: React.FC<QuizEditorProps> = ({
     } else if (field === "correctAnswer") {
       updatedQuestions[index].correctAnswer = value as number;
     } else {
-      // @ts-ignore - This is safe since we're checking field is keyof QuizQuestion
       updatedQuestions[index][field] = value;
     }
     onQuestionsChange(updatedQuestions);
