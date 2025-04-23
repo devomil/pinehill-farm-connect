@@ -41,7 +41,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
       <div className="absolute bottom-0 left-0 w-full border-t">
         <Button
           variant="ghost"
-          className="justify-start font-normal w-full"
+          className="justify-start font-normal w-full p-3"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 mr-3" />
@@ -54,4 +54,4 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
       )}
     </div>
   );
-};
+}

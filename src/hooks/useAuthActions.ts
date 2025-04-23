@@ -54,18 +54,41 @@ export function useAuthActions(
 
       if (signInError) {
         setError(signInError.message);
+        toast.error(signInError.message);
         return false;
       }
       
       if (!data.session) {
         setError("Failed to authenticate");
+        toast.error("Failed to authenticate");
         return false;
       }
       
+      // Get user role and data
+      const { data: userRoleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .single();
+      
+      const role = userRoleData?.role || "employee";
+      
+      const userData: User = {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || "User",
+        email: data.user.email || "",
+        role: role as "employee" | "admin" | "hr" | "manager",
+        department: data.user.user_metadata?.department || "",
+        position: data.user.user_metadata?.position || ""
+      };
+      
+      setCurrentUser(userData);
+      localStorage.setItem("currentUser", JSON.stringify(userData));
       toast.success("Login successful");
       return true;
     } catch (err: any) {
       setError(err.message || "An error occurred during login");
+      toast.error(err.message || "An error occurred during login");
       return false;
     } finally {
       setLoading(false);
@@ -73,14 +96,22 @@ export function useAuthActions(
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
-      await supabase.auth.signOut();
-      setCurrentUser(null);
+      // Clear localStorage first
       localStorage.removeItem("currentUser");
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear state last
+      setCurrentUser(null);
       toast.success("Logged out successfully");
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Failed to log out");
+    } finally {
+      setLoading(false);
     }
   };
 

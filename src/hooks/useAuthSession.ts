@@ -9,6 +9,18 @@ export function useAuthSession() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // First check for user in localStorage
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser);
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+        localStorage.removeItem("currentUser");
+      }
+    }
+    
     // Check for existing session on load
     const checkSession = async () => {
       try {
@@ -42,6 +54,7 @@ export function useAuthSession() {
           };
           
           setCurrentUser(userData);
+          localStorage.setItem("currentUser", JSON.stringify(userData));
         }
       } catch (err) {
         console.error("Session check error:", err);
@@ -76,8 +89,10 @@ export function useAuthSession() {
           };
           
           setCurrentUser(userData);
+          localStorage.setItem("currentUser", JSON.stringify(userData));
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
+          localStorage.removeItem("currentUser");
         }
       }
     );
