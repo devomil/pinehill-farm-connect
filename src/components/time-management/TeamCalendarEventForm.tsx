@@ -11,18 +11,7 @@ import { TeamCalendarEventFormFields } from "./TeamCalendarEventFormFields";
 import { TeamCalendarEventNotifySelector } from "./TeamCalendarEventNotifySelector";
 import { useTeamCalendarEventForm } from "@/hooks/useTeamCalendarEventForm";
 import { TeamCalendarEventFormProps } from "./TeamCalendar.types";
-
-const formSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().optional(),
-  startDate: z.date(),
-  endDate: z.date(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  location: z.string().optional(),
-  attachments: z.any().optional(),
-  attendanceType: z.enum(["required", "optional", "would-like", "info-only"]),
-});
+import { teamCalendarEventFormSchema } from "./TeamCalendarEventFormSchema";
 
 export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
   open,
@@ -32,8 +21,8 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
 }) => {
   const { unfilteredEmployees, loading: employeesLoading } = useEmployees();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof teamCalendarEventFormSchema>>({
+    resolver: zodResolver(teamCalendarEventFormSchema),
     defaultValues: {
       title: "",
       description: "",
