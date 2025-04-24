@@ -30,3 +30,13 @@ export const AnnouncementEmptyUrgent: React.FC = () => (
   </div>
 );
 
+// Default export that we can import by name in AnnouncementList.tsx
+export const AnnouncementListState: React.FC = () => (
+  <div className="text-center py-12">
+    <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+    <h3 className="mt-4 text-lg font-medium">No announcements available</h3>
+    <p className="mt-2 text-sm text-muted-foreground">
+      There are no announcements to display at this time.
+    </p>
+  </div>
+);

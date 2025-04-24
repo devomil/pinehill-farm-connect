@@ -36,7 +36,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       if (currentUser) {
         const { data: reads, error: readsError } = await supabase
           .from("announcement_recipients")
-          .select("announcement_id, read_at")
+          .select("announcement_id, read_at, acknowledged_at")
           .eq("user_id", currentUser.id);
 
         if (readsError) {

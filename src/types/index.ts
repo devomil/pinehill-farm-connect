@@ -73,6 +73,8 @@ export interface Announcement {
   requires_acknowledgment?: boolean;
   attachments?: { name: string; type: string; url?: string }[];
   target_type?: "all" | "specific"; // Added missing property
+  acknowledgements?: string[];  // Array of user IDs who have acknowledged this announcement
+  currentUserId?: string;       // Current user ID for checking if user has acknowledged
 }
 
 export interface ShiftReport {

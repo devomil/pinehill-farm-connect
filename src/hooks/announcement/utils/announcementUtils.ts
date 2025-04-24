@@ -21,6 +21,7 @@ export const mapAnnouncementData = (annData: any[], allEmployees: User[]): Annou
       requires_acknowledgment: a.requires_acknowledgment || false,
       attachments: Array.isArray(a.attachments) ? a.attachments : [],
       target_type: a.target_type || "all",
+      acknowledgements: [] // Initialize empty array for acknowledgements
     };
   });
 };
@@ -35,10 +36,27 @@ export const updateAnnouncementReadStatus = (
     return announcements;
   }
   
-  return announcements.map(a => ({
-    ...a,
-    readBy: reads.some((rec: any) => rec.announcement_id === a.id && rec.read_at) 
+  return announcements.map(a => {
+    // Find recipients record for this announcement
+    const recipientRecord = reads.find((rec: any) => rec.announcement_id === a.id);
+    
+    // Set read status
+    const isRead = recipientRecord && recipientRecord.read_at;
+    const readBy = isRead 
       ? [currentUserId, ...(a.readBy || []).filter(id => id !== currentUserId)]
-      : (a.readBy || [])
-  }));
+      : (a.readBy || []);
+    
+    // Set acknowledgement status
+    const isAcknowledged = recipientRecord && recipientRecord.acknowledged_at;
+    const acknowledgements = isAcknowledged
+      ? [currentUserId, ...(a.acknowledgements || []).filter(id => id !== currentUserId)]
+      : (a.acknowledgements || []);
+    
+    return {
+      ...a,
+      readBy,
+      acknowledgements,
+      currentUserId // Add currentUserId to each announcement for easy access
+    };
+  });
 };
