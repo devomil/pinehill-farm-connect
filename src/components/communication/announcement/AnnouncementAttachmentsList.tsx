@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip } from "lucide-react";
@@ -23,15 +22,17 @@ export const AnnouncementAttachmentsList = ({
 
   const handleAttachmentClick = async (attachment: { name: string; type: string; url?: string }) => {
     try {
+      // If we have a URL, use it directly
       if (attachment.url) {
         window.open(attachment.url, '_blank');
         return;
       }
       
+      // Otherwise, get a signed URL from Supabase storage
       const { data, error } = await supabase
         .storage
         .from('announcements')
-        .createSignedUrl(`attachments/${attachment.name}`, 3600);
+        .createSignedUrl(`attachments/${attachment.name}`, 3600); // 1 hour expiry
       
       if (error) {
         console.error('Error creating signed URL:', error);

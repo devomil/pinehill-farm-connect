@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -68,9 +69,16 @@ const Communication = () => {
         return;
       }
       
-      if (data) {
+      if (data?.signedUrl) {
         console.log("Got signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
+      } else {
+        console.error('No signed URL returned');
+        toast({
+          title: "Failed to open attachment",
+          description: "Could not generate a preview URL for this attachment.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error handling attachment:', error);

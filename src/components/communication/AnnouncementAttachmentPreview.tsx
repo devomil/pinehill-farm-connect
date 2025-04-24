@@ -1,7 +1,7 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
-import { Eye, Download, File } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,11 +18,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   
-  const isImage = attachment.type?.startsWith('image/');
-  const isPdf = attachment.type === 'application/pdf';
-
   const handleDownload = async () => {
     setLoading(true);
     try {
@@ -40,12 +36,14 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         return;
       }
 
+      // If no URL provided, get from Supabase storage
       const { data, error } = await supabase
         .storage
         .from('announcements')
         .download(`attachments/${attachment.name}`);
 
       if (error) {
+        console.error("Download error:", error);
         throw error;
       }
 
@@ -72,27 +70,32 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   };
 
   const handlePreviewClick = async () => {
-    if (onAttachmentAction) {
-      onAttachmentAction(attachment);
-      return;
-    }
-
     try {
+      if (onAttachmentAction) {
+        onAttachmentAction(attachment);
+        return;
+      }
+      
       if (!attachment.url) {
+        // If no URL provided, get a signed URL from Supabase
         const { data, error } = await supabase
           .storage
           .from('announcements')
           .createSignedUrl(`attachments/${attachment.name}`, 3600);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Preview error:", error);
+          throw error;
+        }
         
-        if (data) {
+        if (data?.signedUrl) {
           window.open(data.signedUrl, '_blank');
           return;
         }
+      } else {
+        // Use the provided URL
+        window.open(attachment.url, '_blank');
       }
-
-      window.open(attachment.url, '_blank');
     } catch (error) {
       console.error('Preview error:', error);
       toast({

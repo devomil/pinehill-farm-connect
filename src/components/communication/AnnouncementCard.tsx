@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,10 +111,12 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       <CardContent className="pb-4">
         <p className="text-sm mb-4">{announcement.content}</p>
         
-        <AnnouncementAttachmentsList
-          attachments={announcement.attachments || []}
-          onAttachmentAction={handleAttachmentAction}
-        />
+        {announcement.attachments && announcement.attachments.length > 0 && (
+          <AnnouncementAttachmentsList
+            attachments={announcement.attachments}
+            onAttachmentAction={handleAttachmentAction}
+          />
+        )}
 
         {announcement.requires_acknowledgment && !isAdmin && (
           <AnnouncementAcknowledgment
