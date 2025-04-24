@@ -247,6 +247,7 @@ export type Database = {
       }
       shift_reports: {
         Row: {
+          assigned_to: string | null
           created_at: string
           date: string
           id: string
@@ -256,6 +257,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -265,6 +267,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           date?: string
           id?: string

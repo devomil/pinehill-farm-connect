@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -11,23 +10,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEmployees } from "@/hooks/useEmployees";
 
 const formSchema = z.object({
   date: z.string(),
   notes: z.string().min(1, "Notes are required"),
-  priority: z.enum(["high", "medium", "low"])
+  priority: z.enum(["high", "medium", "low"]),
+  assignedTo: z.string().optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export function ShiftReportForm() {
   const { currentUser } = useAuth();
+  const { employees } = useEmployees();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       notes: "",
-      priority: "medium"
+      priority: "medium",
+      assignedTo: ""
     }
   });
 
@@ -39,7 +42,8 @@ export function ShiftReportForm() {
           user_id: currentUser?.id,
           date: data.date,
           notes: data.notes,
-          priority: data.priority
+          priority: data.priority,
+          assigned_to: data.assignedTo || null
         });
 
       if (error) throw error;
@@ -103,6 +107,34 @@ export function ShiftReportForm() {
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="assignedTo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Assign To Employee</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an employee (optional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
