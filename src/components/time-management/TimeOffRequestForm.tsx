@@ -62,6 +62,11 @@ export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentU
               adminName: adminProfile.name,
               type: "timeoff",
               employeeName: currentUser.name || "An employee",
+              details: {
+                startDate,
+                endDate,
+                reason
+              }
             },
           });
         }

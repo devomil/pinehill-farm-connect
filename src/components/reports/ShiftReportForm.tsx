@@ -67,6 +67,11 @@ export function ShiftReportForm() {
               type: "report",
               priority: data.priority,
               employeeName: currentUser?.name || "An employee",
+              details: {
+                date: data.date,
+                notes: data.notes,
+                priority: data.priority
+              }
             },
           });
         }

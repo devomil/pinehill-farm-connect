@@ -15,6 +15,7 @@ interface NotificationRequest {
   type: "report" | "timeoff";
   priority?: string;
   employeeName: string;
+  details?: any;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,7 +24,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { adminEmail, adminName, type, priority, employeeName }: NotificationRequest = await req.json();
+    const { 
+      adminEmail, 
+      adminName, 
+      type, 
+      priority, 
+      employeeName, 
+      details 
+    }: NotificationRequest = await req.json();
 
     const subject = type === "report" 
       ? `New ${priority} Priority Report from ${employeeName}`
@@ -40,6 +48,8 @@ const handler = async (req: Request): Promise<Response> => {
       html: `
         <h2>Hello ${adminName},</h2>
         <p>${content}</p>
+        <p>Additional Details:</p>
+        <pre>${JSON.stringify(details, null, 2)}</pre>
         <p>Please log in to the system to review the details.</p>
       `,
     });
