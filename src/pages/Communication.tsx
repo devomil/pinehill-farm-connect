@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -140,12 +141,28 @@ const Communication = () => {
   const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
 
   const onEditAnnouncement = (announcement: Announcement) => {
+    console.log("Editing announcement:", announcement);
     setEditingAnnouncement(announcement);
   };
 
-  const handleSaveEdit = (updatedAnnouncement: Announcement) => {
-    handleEdit(updatedAnnouncement);
-    setEditingAnnouncement(null);
+  const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
+    const success = await handleEdit(updatedAnnouncement);
+    if (success) {
+      setEditingAnnouncement(null);
+      refreshAnnouncements(); // Refresh the list after successful edit
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    const success = await handleDelete(id);
+    if (success) {
+      refreshAnnouncements(); // Ensure the list is refreshed after deletion
+    }
+  };
+
+  const handleAnnouncementCreate = () => {
+    console.log("Announcement created, refreshing...");
+    refreshAnnouncements();
   };
 
   return (
@@ -154,7 +171,7 @@ const Communication = () => {
         <CommunicationHeader 
           isAdmin={isAdmin}
           allEmployees={allEmployees}
-          onAnnouncementCreate={refreshAnnouncements}
+          onAnnouncementCreate={handleAnnouncementCreate}
           loading={employeesLoading}
         />
         
@@ -166,19 +183,21 @@ const Communication = () => {
           getPriorityBadge={getPriorityBadge}
           currentUserId={currentUser?.id}
           onEdit={onEditAnnouncement}
-          onDelete={handleDelete}
+          onDelete={handleDeleteAnnouncement}
           isAdmin={isAdmin}
           onAttachmentAction={handleAttachmentAction}
           onAcknowledge={handleAcknowledge}
         />
 
-        <EditAnnouncementDialog
-          announcement={editingAnnouncement}
-          allEmployees={allEmployees}
-          onClose={() => setEditingAnnouncement(null)}
-          onSave={handleSaveEdit}
-          loading={employeesLoading}
-        />
+        {editingAnnouncement && (
+          <EditAnnouncementDialog
+            announcement={editingAnnouncement}
+            allEmployees={allEmployees}
+            onClose={() => setEditingAnnouncement(null)}
+            onSave={handleSaveEdit}
+            loading={employeesLoading}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

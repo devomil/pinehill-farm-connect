@@ -10,7 +10,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Announcement } from "@/types";
@@ -29,20 +28,39 @@ export const AnnouncementActions = ({
 }: AnnouncementActionsProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Edit clicked for announcement:", announcement.id);
+    onEdit(announcement);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    console.log("Deleting announcement:", announcement.id);
+    onDelete(announcement.id);
+    setShowDeleteDialog(false);
+  };
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(announcement)}>
+        <DropdownMenuItem onClick={handleEdit}>
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={() => setShowDeleteDialog(true)}
+          onClick={handleDeleteClick}
           className="text-red-600"
         >
           <Trash2 className="h-4 w-4 mr-2" />
@@ -61,10 +79,7 @@ export const AnnouncementActions = ({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                onDelete(announcement.id);
-                setShowDeleteDialog(false);
-              }}
+              onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700"
             >
               Delete

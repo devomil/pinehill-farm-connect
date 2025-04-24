@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { User } from "@/types";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 
@@ -17,10 +17,19 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
 }) => {
   const [open, setOpen] = useState(false);
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+  };
+
+  const handleCreateSuccess = () => {
+    setOpen(false);
+    onCreate();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Announcement
         </Button>
@@ -34,7 +43,7 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
         </DialogHeader>
         <AdminAnnouncementForm
           allEmployees={allEmployees}
-          onCreate={onCreate}
+          onCreate={handleCreateSuccess}
           closeDialog={() => setOpen(false)}
         />
       </DialogContent>
