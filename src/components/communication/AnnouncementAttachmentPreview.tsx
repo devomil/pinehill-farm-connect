@@ -82,12 +82,14 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
     console.log("Preview requested for:", attachment);
     
     try {
-      // If an action handler is provided, use that
+      // If an action handler is provided, use that instead of doing the preview here
       if (onAttachmentAction) {
         console.log("Using provided action handler");
         onAttachmentAction(attachment);
         return;
       }
+
+      setLoading(true);
       
       // If no URL provided, get a signed URL from Supabase
       if (!attachment.url) {
@@ -105,7 +107,6 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         if (data?.signedUrl) {
           console.log("Opening signed URL:", data.signedUrl);
           window.open(data.signedUrl, '_blank');
-          return;
         } else {
           console.error("No signed URL returned");
           throw new Error("No signed URL returned");
@@ -122,6 +123,8 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         description: "Could not load the preview",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,6 +135,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         size="sm"
         onClick={handlePreviewClick}
         className={`${compact ? 'px-2' : ''}`}
+        disabled={loading}
       >
         <Eye className="h-4 w-4" />
         {!compact && <span className="ml-2">Preview</span>}

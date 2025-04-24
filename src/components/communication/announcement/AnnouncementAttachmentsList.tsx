@@ -25,29 +25,15 @@ export const AnnouncementAttachmentsList = ({
     try {
       console.log("Handling attachment click:", attachment);
       
-      // If we have a URL, use it directly
-      if (attachment.url) {
-        window.open(attachment.url, '_blank');
+      // If onAttachmentAction is provided, use it
+      if (onAttachmentAction) {
+        onAttachmentAction(attachment);
         return;
       }
       
-      // Check if the file exists in Supabase storage
-      const { data: fileExists, error: checkError } = await supabase
-        .storage
-        .from('announcements')
-        .list('', {
-          search: attachment.name
-        });
-      
-      console.log("File check result:", fileExists);
-      
-      if (checkError) {
-        console.error('Error checking file existence:', checkError);
-        toast({
-          title: "Could not access attachment",
-          description: "There was an issue verifying the attachment",
-          variant: "destructive"
-        });
+      // If we have a URL, use it directly
+      if (attachment.url) {
+        window.open(attachment.url, '_blank');
         return;
       }
       
@@ -104,7 +90,7 @@ export const AnnouncementAttachmentsList = ({
             </Button>
             <AnnouncementAttachmentPreview 
               attachment={attachment} 
-              onAttachmentAction={onAttachmentAction}
+              onAttachmentAction={onAttachmentAction || handleAttachmentClick}
               compact={compact}
             />
           </div>
