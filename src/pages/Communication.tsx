@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -60,15 +59,12 @@ const Communication = () => {
         
       if (bucketError) {
         console.error('Error checking storage bucket:', bucketError);
-        // If bucket doesn't exist, it might be an error or the bucket name is different
-        if (bucketError.code === 'PGRST116') { // Not found
-          toast({
-            title: "Storage not configured",
-            description: "The storage for attachments is not properly configured.",
-            variant: "destructive"
-          });
-          return;
-        }
+        toast({
+          title: "Storage not configured",
+          description: "The storage for attachments is not properly configured.",
+          variant: "destructive"
+        });
+        return;
       }
       
       // List available files to debug
