@@ -1,10 +1,10 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnnouncementList } from "./AnnouncementList";
-import { CommunicationFilter } from "./CommunicationFilter";
+import React from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Announcement } from "@/types";
-import { DateRange } from "react-day-picker";
+import { CommunicationFilter } from "./CommunicationFilter";
+import { TabContent } from "./tabs/TabContent";
+import { useAnnouncementFilters } from "@/hooks/useAnnouncementFilters";
 
 interface CommunicationTabsProps {
   announcements: Announcement[];
@@ -26,91 +26,29 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   isRead,
   markAsRead,
   getPriorityBadge,
-  currentUserId,
   onEdit,
   onDelete,
   isAdmin,
   onAttachmentAction,
   onAcknowledge
 }) => {
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const itemsPerPage = 10;
+  const {
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    priorityFilter,
+    setPriorityFilter,
+    currentPage,
+    setCurrentPage,
+    dateRange,
+    setDateRange,
+    filterAnnouncements
+  } = useAnnouncementFilters(announcements);
 
-  const filterAnnouncements = (tabType: string) => {
-    let filtered = [...announcements];
-
-    // Apply tab filter
-    if (tabType === "unread") {
-      filtered = filtered.filter(a => !isRead(a));
-    } else if (tabType === "important") {
-      filtered = filtered.filter(a => a.priority === "important" || a.priority === "urgent");
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      const term = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        a => 
-          a.title.toLowerCase().includes(term) ||
-          a.content.toLowerCase().includes(term) ||
-          a.author.toLowerCase().includes(term)
-      );
-    }
-
-    // Apply priority filter
-    if (priorityFilter && priorityFilter !== 'all') {
-      filtered = filtered.filter(a => a.priority === priorityFilter);
-    }
-
-    // Apply date range filter
-    if (dateRange?.from) {
-      const fromDate = new Date(dateRange.from);
-      fromDate.setHours(0, 0, 0, 0);
-      
-      filtered = filtered.filter(a => {
-        const announcementDate = new Date(a.createdAt);
-        return announcementDate >= fromDate;
-      });
-    }
-
-    if (dateRange?.to) {
-      const toDate = new Date(dateRange.to);
-      toDate.setHours(23, 59, 59, 999);
-      
-      filtered = filtered.filter(a => {
-        const announcementDate = new Date(a.createdAt);
-        return announcementDate <= toDate;
-      });
-    }
-
-    return filtered;
-  };
-
-  const getFilteredAnnouncements = (tabType: string) => {
-    const filtered = filterAnnouncements(tabType);
-    const totalPages = Math.ceil(filtered.length / itemsPerPage);
-    
-    // Paginate
-    const start = (currentPage - 1) * itemsPerPage;
-    const paginated = filtered.slice(start, start + itemsPerPage);
-    
-    return { announcements: paginated, totalPages };
-  };
-
-  const { announcements: allFiltered, totalPages: allTotalPages } = getFilteredAnnouncements("all");
-  const { announcements: unreadFiltered, totalPages: unreadTotalPages } = getFilteredAnnouncements("unread");
-  const { announcements: importantFiltered, totalPages: importantTotalPages } = getFilteredAnnouncements("important");
-
-  // Handle attachment actions
-  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
-    if (onAttachmentAction) {
-      onAttachmentAction(attachment);
-    }
-  };
+  const { announcements: allFiltered, totalPages: allTotalPages } = filterAnnouncements("all");
+  const { announcements: unreadFiltered, totalPages: unreadTotalPages } = filterAnnouncements("unread");
+  const { announcements: importantFiltered, totalPages: importantTotalPages } = filterAnnouncements("important");
 
   return (
     <Tabs defaultValue="all" onValueChange={value => { setActiveTab(value); setCurrentPage(1); }}>
@@ -131,71 +69,68 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
         />
       </div>
 
-      <TabsContent value="all" className="mt-0">
-        <AnnouncementList
-          announcements={allFiltered}
-          loading={loading}
-          isRead={isRead}
-          markAsRead={markAsRead}
-          getPriorityBadge={getPriorityBadge}
-          currentPage={currentPage}
-          totalPages={allTotalPages}
-          onPageChange={setCurrentPage}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          isAdmin={isAdmin}
-          onAttachmentAction={handleAttachmentAction}
-          onAcknowledge={onAcknowledge}
-        />
-      </TabsContent>
+      <TabContent
+        value="all"
+        announcements={allFiltered}
+        loading={loading}
+        isRead={isRead}
+        markAsRead={markAsRead}
+        getPriorityBadge={getPriorityBadge}
+        currentPage={currentPage}
+        totalPages={allTotalPages}
+        onPageChange={setCurrentPage}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isAdmin={isAdmin}
+        onAttachmentAction={onAttachmentAction}
+        onAcknowledge={onAcknowledge}
+      />
 
-      <TabsContent value="unread" className="mt-0">
-        <AnnouncementList
-          announcements={unreadFiltered}
-          loading={loading}
-          isRead={isRead}
-          markAsRead={markAsRead}
-          getPriorityBadge={getPriorityBadge}
-          currentPage={currentPage}
-          totalPages={unreadTotalPages}
-          onPageChange={setCurrentPage}
-          emptyComponent={
-            <div className="text-center p-6">
-              <p className="text-lg font-medium">No unread announcements</p>
-              <p className="text-muted-foreground">You're all caught up!</p>
-            </div>
-          }
-          onEdit={onEdit}
-          onDelete={onDelete}
-          isAdmin={isAdmin}
-          onAttachmentAction={handleAttachmentAction}
-          onAcknowledge={onAcknowledge}
-        />
-      </TabsContent>
+      <TabContent
+        value="unread"
+        announcements={unreadFiltered}
+        loading={loading}
+        isRead={isRead}
+        markAsRead={markAsRead}
+        getPriorityBadge={getPriorityBadge}
+        currentPage={currentPage}
+        totalPages={unreadTotalPages}
+        onPageChange={setCurrentPage}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isAdmin={isAdmin}
+        onAttachmentAction={onAttachmentAction}
+        onAcknowledge={onAcknowledge}
+        emptyMessage={
+          <div className="text-center p-6">
+            <p className="text-lg font-medium">No unread announcements</p>
+            <p className="text-muted-foreground">You're all caught up!</p>
+          </div>
+        }
+      />
 
-      <TabsContent value="important" className="mt-0">
-        <AnnouncementList
-          announcements={importantFiltered}
-          loading={loading}
-          isRead={isRead}
-          markAsRead={markAsRead}
-          getPriorityBadge={getPriorityBadge}
-          currentPage={currentPage}
-          totalPages={importantTotalPages}
-          onPageChange={setCurrentPage}
-          emptyComponent={
-            <div className="text-center p-6">
-              <p className="text-lg font-medium">No important announcements</p>
-              <p className="text-muted-foreground">Check back later for important updates</p>
-            </div>
-          }
-          onEdit={onEdit}
-          onDelete={onDelete}
-          isAdmin={isAdmin}
-          onAttachmentAction={handleAttachmentAction}
-          onAcknowledge={onAcknowledge}
-        />
-      </TabsContent>
+      <TabContent
+        value="important"
+        announcements={importantFiltered}
+        loading={loading}
+        isRead={isRead}
+        markAsRead={markAsRead}
+        getPriorityBadge={getPriorityBadge}
+        currentPage={currentPage}
+        totalPages={importantTotalPages}
+        onPageChange={setCurrentPage}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isAdmin={isAdmin}
+        onAttachmentAction={onAttachmentAction}
+        onAcknowledge={onAcknowledge}
+        emptyMessage={
+          <div className="text-center p-6">
+            <p className="text-lg font-medium">No important announcements</p>
+            <p className="text-muted-foreground">Check back later for important updates</p>
+          </div>
+        }
+      />
     </Tabs>
   );
 };
