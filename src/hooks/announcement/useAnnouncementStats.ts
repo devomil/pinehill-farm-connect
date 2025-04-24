@@ -29,22 +29,31 @@ export const useAnnouncementStats = () => {
         // Process each announcement
         const processedAnnouncements = await Promise.all(announcements.map(async announcement => {
           // Get recipients for this announcement
-          const { data: recipients } = await supabase
+          const { data: recipients, error: recipientsError } = await supabase
             .from('announcement_recipients')
             .select('read_at, acknowledged_at, user_id')
             .eq('announcement_id', announcement.id);
+          
+          if (recipientsError) {
+            console.error("Error fetching recipients:", recipientsError);
+            return null;
+          }
 
           // Get user profiles for these recipients
           const userIds = recipients?.map(r => r.user_id) || [];
           
           let userProfiles = [];
           if (userIds.length > 0) {
-            const { data: profiles } = await supabase
+            const { data: profiles, error: profilesError } = await supabase
               .from('profiles')
               .select('id, name, avatar_url')
               .in('id', userIds);
             
-            userProfiles = profiles || [];
+            if (profilesError) {
+              console.error("Error fetching user profiles:", profilesError);
+            } else {
+              userProfiles = profiles || [];
+            }
           }
 
           // Map user data with read/acknowledged status
@@ -73,7 +82,8 @@ export const useAnnouncementStats = () => {
           };
         }));
 
-        return processedAnnouncements;
+        // Filter out any null results from processing errors
+        return processedAnnouncements.filter(Boolean) as AnnouncementData[];
       } catch (error) {
         console.error("Error fetching announcement stats:", error);
         throw error;

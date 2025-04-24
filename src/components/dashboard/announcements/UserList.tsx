@@ -26,6 +26,12 @@ export const UserList = ({ users, timestampKey }: UserListProps) => {
     return a.name.localeCompare(b.name);
   });
 
+  if (sortedUsers.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground p-4">No users in this category.</p>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {sortedUsers.map(user => (

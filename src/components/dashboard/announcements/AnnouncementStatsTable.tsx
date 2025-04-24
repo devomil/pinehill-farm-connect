@@ -52,10 +52,18 @@ export const AnnouncementStatsTable = ({ data }: AnnouncementStatsTableProps) =>
                 {stat.title}
               </TableCell>
               <TableCell>
-                <AvatarGroup users={stat.users.filter(user => user.read)} showTooltip />
+                <AvatarGroup 
+                  users={stat.users.filter(user => user.read)} 
+                  showTooltip
+                  emptyText={stat.read_count > 0 ? `${stat.read_count} users` : "None"}
+                />
               </TableCell>
               <TableCell>
-                <AvatarGroup users={stat.users.filter(user => user.acknowledged)} showTooltip />
+                <AvatarGroup 
+                  users={stat.users.filter(user => user.acknowledged)} 
+                  showTooltip
+                  emptyText={stat.acknowledged_count > 0 ? `${stat.acknowledged_count} users` : "None"}
+                />
               </TableCell>
             </TableRow>
             {expandedRows[stat.title] && (
