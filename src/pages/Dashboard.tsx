@@ -1,3 +1,4 @@
+
 import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,10 +47,6 @@ export default function Dashboard() {
           <AdminTimeOffCard count={pendingTimeOff.length || 0} />
         )}
 
-        {isAdmin && (
-          <AnnouncementStats />
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <CalendarContent
@@ -70,16 +67,24 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {assignedTrainings && assignedTrainings.length > 0 && (
-            <TrainingCard trainings={assignedTrainings} />
-          )}
+          <div className="lg:col-span-2 space-y-4">
+            {assignedTrainings && assignedTrainings.length > 0 && (
+              <TrainingCard trainings={assignedTrainings} />
+            )}
 
-          {userTimeOff && userTimeOff.length > 0 && (
-            <TimeOffRequestsCard requests={userTimeOff} />
-          )}
+            {userTimeOff && userTimeOff.length > 0 && (
+              <TimeOffRequestsCard requests={userTimeOff} />
+            )}
 
-          {announcements && announcements.length > 0 && (
-            <AnnouncementsCard announcements={announcements} />
+            {announcements && announcements.length > 0 && (
+              <AnnouncementsCard announcements={announcements} />
+            )}
+          </div>
+
+          {isAdmin && (
+            <div className="space-y-4">
+              <AnnouncementStats />
+            </div>
           )}
         </div>
 
@@ -90,3 +95,4 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+
