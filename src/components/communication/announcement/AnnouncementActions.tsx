@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, MoreVertical } from "lucide-react";
@@ -17,8 +18,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 interface AnnouncementActionsProps {
   announcement: Announcement;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  onEdit: (announcement: Announcement) => void;
+  onDelete: (id: string) => void;
 }
 
 export const AnnouncementActions = ({
@@ -36,7 +37,7 @@ export const AnnouncementActions = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(announcement.id)}>
+        <DropdownMenuItem onClick={() => onEdit(announcement)}>
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </DropdownMenuItem>
@@ -44,7 +45,7 @@ export const AnnouncementActions = ({
           onClick={() => setShowDeleteDialog(true)}
           className="text-red-600"
         >
-          <Trash className="h-4 w-4 mr-2" />
+          <Trash2 className="h-4 w-4 mr-2" />
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>

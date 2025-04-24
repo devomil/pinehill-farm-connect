@@ -1,14 +1,14 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Eye } from "lucide-react";
+import { Paperclip } from "lucide-react";
 import { AnnouncementAttachmentPreview } from "../AnnouncementAttachmentPreview";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementAttachmentsListProps {
   attachments: { name: string; type: string; url?: string; size?: number }[];
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
-  compact?: boolean; // Add a compact mode for dashboard display
+  compact?: boolean;
 }
 
 export const AnnouncementAttachmentsList = ({
@@ -20,24 +20,36 @@ export const AnnouncementAttachmentsList = ({
 
   if (!attachments || attachments.length === 0) return null;
 
-  const handleAttachmentClick = (attachment: { name: string; type: string; url?: string }) => {
-    if (onAttachmentAction) {
-      onAttachmentAction(attachment);
-    } else if (attachment.url) {
-      try {
+  const handleAttachmentClick = async (attachment: { name: string; type: string; url?: string }) => {
+    try {
+      if (attachment.url) {
         window.open(attachment.url, '_blank');
-      } catch (error) {
-        console.error('Error opening attachment:', error);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .storage
+        .from('announcements')
+        .createSignedUrl(`attachments/${attachment.name}`, 3600);
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
         toast({
           title: "Could not open attachment",
-          description: "There was an issue opening the attachment",
+          description: "There was an issue accessing the attachment",
           variant: "destructive"
         });
+        return;
       }
-    } else {
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error handling attachment:', error);
       toast({
         title: "Could not open attachment",
-        description: "The attachment URL is missing",
+        description: "There was an issue accessing the attachment",
         variant: "destructive"
       });
     }

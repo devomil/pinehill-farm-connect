@@ -1,13 +1,12 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Download, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AttachmentPreviewProps {
-  attachment: { name: string; type: string; url?: string };
+  attachment: { name: string; type: string; url?: string; size?: number };
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
   compact?: boolean;
 }
