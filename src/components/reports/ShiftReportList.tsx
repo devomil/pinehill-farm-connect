@@ -14,20 +14,26 @@ export function ShiftReportList() {
       const { data, error } = await supabase
         .from('shift_reports')
         .select(`
-          *,
-          user:user_id (
-            id,
-            name
-          ),
-          admin:admin_id (
-            id,
-            name
-          )
-        `)
-        .order('date', { ascending: false });
+          id,
+          user_id,
+          admin_id,
+          date,
+          notes,
+          priority,
+          created_at,
+          updated_at,
+          user_profile:profiles!user_id(id, name, email),
+          admin_profile:profiles!admin_id(id, name, email)
+        `);
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match the expected format
+      return data?.map(report => ({
+        ...report,
+        user: report.user_profile,
+        admin: report.admin_profile
+      }));
     }
   });
 

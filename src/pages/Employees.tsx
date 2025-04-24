@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
@@ -7,6 +8,7 @@ import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
 import { useEmployees } from "@/hooks/useEmployees";
 import { EmployeeContent } from "@/components/employee/EmployeeContent";
 import { EmployeeModals } from "@/components/employee/EmployeeModals";
+import { EmployeeAssignments } from "@/components/employee/EmployeeAssignments";
 import { toast } from "sonner";
 
 export default function Employees() {

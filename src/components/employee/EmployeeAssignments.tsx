@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,7 +45,7 @@ export function EmployeeAssignments() {
                   {assignment ? (
                     <>
                       <span className="text-sm text-muted-foreground mr-2">
-                        Assigned to: {assignment.admin?.name}
+                        Assigned to: {assignment.admin?.name || 'Unknown'}
                       </span>
                       <Button
                         variant="ghost"

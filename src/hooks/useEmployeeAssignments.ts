@@ -12,21 +12,22 @@ export function useEmployeeAssignments() {
       const { data, error } = await supabase
         .from('employee_assignments')
         .select(`
-          *,
-          employee:employee_id (
-            id,
-            name,
-            email
-          ),
-          admin:admin_id (
-            id,
-            name,
-            email
-          )
+          id,
+          employee_id,
+          admin_id,
+          created_at,
+          profiles!employee_id(id, name, email),
+          admin_profiles:profiles!admin_id(id, name, email)
         `);
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match expected format
+      return data?.map(item => ({
+        ...item,
+        employee: item.profiles,
+        admin: item.admin_profiles
+      }));
     }
   });
 
