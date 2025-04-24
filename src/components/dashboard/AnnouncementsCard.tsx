@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
@@ -19,10 +20,11 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
         return;
       }
       
+      // Note: Fixed path here - using just the name instead of attachments/name
       const { data, error } = await supabase
         .storage
         .from('announcements')
-        .createSignedUrl(`attachments/${attachment.name}`, 3600);
+        .createSignedUrl(`${attachment.name}`, 3600);
       
       if (error) {
         console.error('Error creating signed URL:', error);

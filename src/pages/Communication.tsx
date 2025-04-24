@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -57,7 +56,7 @@ const Communication = () => {
       const { data, error } = await supabase
         .storage
         .from('announcements')
-        .createSignedUrl(`attachments/${attachment.name}`, 3600); // 1 hour expiry
+        .createSignedUrl(`${attachment.name}`, 3600); // 1 hour expiry
       
       if (error) {
         console.error('Error creating signed URL:', error);

@@ -37,10 +37,11 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       }
 
       // If no URL provided, get from Supabase storage
+      // Note: Fixed path here - using just the name instead of attachments/name
       const { data, error } = await supabase
         .storage
         .from('announcements')
-        .download(`attachments/${attachment.name}`);
+        .download(`${attachment.name}`);
 
       if (error) {
         console.error("Download error:", error);
@@ -78,10 +79,11 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       
       if (!attachment.url) {
         // If no URL provided, get a signed URL from Supabase
+        // Note: Fixed path here - using just the name instead of attachments/name
         const { data, error } = await supabase
           .storage
           .from('announcements')
-          .createSignedUrl(`attachments/${attachment.name}`, 3600);
+          .createSignedUrl(`${attachment.name}`, 3600);
 
         if (error) {
           console.error("Preview error:", error);

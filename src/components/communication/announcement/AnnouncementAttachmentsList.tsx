@@ -29,10 +29,11 @@ export const AnnouncementAttachmentsList = ({
       }
       
       // Otherwise, get a signed URL from Supabase storage
+      // Note: Fixed path here - using just the name instead of attachments/name
       const { data, error } = await supabase
         .storage
         .from('announcements')
-        .createSignedUrl(`attachments/${attachment.name}`, 3600); // 1 hour expiry
+        .createSignedUrl(`${attachment.name}`, 3600); // 1 hour expiry
       
       if (error) {
         console.error('Error creating signed URL:', error);
