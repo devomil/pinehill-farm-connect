@@ -22,7 +22,16 @@ export const AnnouncementAttachmentsList = ({
     if (onAttachmentAction) {
       onAttachmentAction(attachment);
     } else if (attachment.url) {
-      window.open(attachment.url, '_blank');
+      try {
+        window.open(attachment.url, '_blank');
+      } catch (error) {
+        console.error('Error opening attachment:', error);
+        toast({
+          title: "Could not open attachment",
+          description: "There was an issue opening the attachment",
+          variant: "destructive"
+        });
+      }
     } else {
       toast({
         title: "Could not open attachment",

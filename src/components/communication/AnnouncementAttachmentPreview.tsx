@@ -16,6 +16,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   
   const isImage = attachment.type?.startsWith('image/');
   const isPdf = attachment.type === 'application/pdf';
@@ -54,6 +55,17 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
     setLoading(false);
   };
 
+  const handlePreviewClick = () => {
+    if (!checkUrl()) return;
+    
+    setIsOpen(true);
+    
+    // If using the parent-provided attachment action
+    if (onAttachmentAction && !attachment.url) {
+      onAttachmentAction(attachment);
+    }
+  };
+
   const checkUrl = () => {
     if (onAttachmentAction) {
       return true;
@@ -71,13 +83,13 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
           size="sm" 
           className="gap-2"
-          onClick={() => checkUrl()}
+          onClick={handlePreviewClick}
           disabled={loading}
         >
           <Eye className="h-4 w-4" />

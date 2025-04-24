@@ -53,10 +53,10 @@ const Communication = () => {
       }
       
       // Otherwise, attempt to get a signed URL for the attachment from storage
-      const { data: signedUrl, error } = await supabase
+      const { data, error } = await supabase
         .storage
         .from('announcements')
-        .createSignedUrl(`attachments/${attachment.name}`, 60); // 60 seconds expiry
+        .createSignedUrl(`attachments/${attachment.name}`, 3600); // 1 hour expiry
       
       if (error) {
         console.error('Error creating signed URL:', error);
@@ -68,8 +68,9 @@ const Communication = () => {
         return;
       }
       
-      if (signedUrl) {
-        window.open(signedUrl.signedUrl, '_blank');
+      if (data) {
+        console.log("Got signed URL:", data.signedUrl);
+        window.open(data.signedUrl, '_blank');
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
