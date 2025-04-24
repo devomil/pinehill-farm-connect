@@ -15,6 +15,23 @@ export function useEmployees() {
       setLoading(true);
       setError(null);
       
+      // First check if user profiles exists in the profiles table
+      const { count: profileCount, error: countError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+        
+      if (countError) throw countError;
+      
+      console.log("Profile count:", profileCount);
+      
+      if (profileCount === 0) {
+        console.log("No profiles found in the database");
+        toast.warning("No employee profiles found. Please check database setup.");
+        setEmployees([]);
+        setLoading(false);
+        return;
+      }
+      
       // Fetch profiles with proper role information
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -32,14 +49,6 @@ export function useEmployees() {
       if (rolesError) throw rolesError;
 
       console.log("Fetched user roles:", userRoles);
-
-      // If there are no profiles, try to fetch users directly and create profiles
-      if (!profiles || profiles.length === 0) {
-        console.log("No profiles found, attempting to fetch auth users");
-        
-        // We can't directly access auth.users from the client, so let's handle this case
-        toast.warning("No employee profiles found. Please check database setup.");
-      }
 
       // Map roles to profiles
       const formattedEmployees: UserType[] = (profiles || []).map(profile => {

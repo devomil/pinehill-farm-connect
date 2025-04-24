@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
@@ -19,15 +18,15 @@ export default function Employees() {
     closeModal
   } = useEmployeeModal();
 
-  const { 
-    searchQuery, 
-    setSearchQuery, 
-    employees, 
-    loading, 
-    error, 
-    refetch 
+  const {
+    searchQuery,
+    setSearchQuery,
+    employees,
+    loading,
+    error,
+    refetch,
   } = useEmployees();
-  
+
   const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -63,11 +62,14 @@ export default function Employees() {
   const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
 
   return (
-    <DashboardLayout requireAdmin={true}>
-      <EmployeeHeader onAddEmployee={handleAddEmployee} />
+    <DashboardLayout>
+      <EmployeeHeader 
+        onAddEmployee={handleAddEmployee} 
+        isAdmin={currentUser && currentUser.role === "admin"}
+      />
       
-      <EmployeeContent
-        searchQuery={searchQuery}
+      <EmployeeContent 
+        searchQuery={searchQuery} 
         setSearchQuery={setSearchQuery}
         employees={employees}
         loading={loading}
@@ -75,9 +77,10 @@ export default function Employees() {
         onDelete={handleDeleteEmployee}
         onResetPassword={handleResetPassword}
         isAdmin={currentUser && currentUser.role === "admin"}
+        error={error}
       />
 
-      <EmployeeModals
+      <EmployeeModals 
         selectedEmployee={selectedEmployee}
         isDetailModalOpen={isDetailModalOpen}
         closeDetailModal={closeModal}
