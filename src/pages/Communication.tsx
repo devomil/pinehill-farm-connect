@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
 import { useEmployees } from "@/hooks/useEmployees";
 import { supabase } from "@/integrations/supabase/client";
+import { useAnnouncementAcknowledge } from "@/hooks/announcement/useAnnouncementAcknowledge";
 
 const Communication = () => {
   const { toast } = useToast();
@@ -25,6 +26,15 @@ const Communication = () => {
     handleEdit,
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
+
+  const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
+
+  const handleAcknowledge = async (announcementId: string) => {
+    const success = await acknowledgeAnnouncement(announcementId);
+    if (success) {
+      refreshAnnouncements();
+    }
+  };
 
   useEffect(() => {
     console.log("Communication page - currentUser:", currentUser);
@@ -159,6 +169,7 @@ const Communication = () => {
           onDelete={handleDelete}
           isAdmin={isAdmin}
           onAttachmentAction={handleAttachmentAction}
+          onAcknowledge={handleAcknowledge}
         />
 
         <EditAnnouncementDialog
