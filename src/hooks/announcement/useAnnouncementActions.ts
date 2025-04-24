@@ -9,7 +9,7 @@ export const useAnnouncementActions = () => {
   const { handleDelete: deleteAnnouncement } = useAnnouncementDelete();
   const { toast } = useToast();
 
-  const handleEdit = async (announcement: Announcement) => {
+  const handleEdit = async (announcement: Announcement): Promise<boolean> => {
     try {
       console.log("Handling edit for announcement:", announcement.id);
       const success = await editAnnouncement(announcement);
@@ -33,7 +33,7 @@ export const useAnnouncementActions = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<boolean> => {
     try {
       console.log("Handling delete for announcement:", id);
       const success = await deleteAnnouncement(id);

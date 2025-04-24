@@ -146,6 +146,8 @@ const Communication = () => {
   };
 
   const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
+    console.log("Saving edited announcement:", updatedAnnouncement);
+    // Fix: We need to await the result and check if it's successful
     const success = await handleEdit(updatedAnnouncement);
     if (success) {
       setEditingAnnouncement(null);
@@ -154,6 +156,8 @@ const Communication = () => {
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
+    console.log("Deleting announcement:", id);
+    // Fix: We need to await the result and check if it's successful
     const success = await handleDelete(id);
     if (success) {
       refreshAnnouncements(); // Ensure the list is refreshed after deletion

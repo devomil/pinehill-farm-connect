@@ -81,24 +81,14 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     }
   };
 
-  const handleEdit = async (announcement: Announcement) => {
-    const success = await editAnnouncement(announcement);
-    if (success) {
-      setAnnouncements(prevAnnouncements =>
-        prevAnnouncements.map(a => 
-          a.id === announcement.id ? announcement : a
-        )
-      );
-    }
+  const handleEdit = async (announcement: Announcement): Promise<boolean> => {
+    // Forward the Promise<boolean> result
+    return await editAnnouncement(announcement);
   };
 
-  const handleDelete = async (id: string) => {
-    const success = await deleteAnnouncement(id);
-    if (success) {
-      setAnnouncements(prevAnnouncements => 
-        prevAnnouncements.filter(a => a.id !== id)
-      );
-    }
+  const handleDelete = async (id: string): Promise<boolean> => {
+    // Forward the Promise<boolean> result
+    return await deleteAnnouncement(id);
   };
 
   return {
