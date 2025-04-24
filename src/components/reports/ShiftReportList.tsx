@@ -15,8 +15,14 @@ export function ShiftReportList() {
         .from('shift_reports')
         .select(`
           *,
-          user: user_id(name),
-          assigned_user: assigned_to(name)
+          user:user_id (
+            id,
+            name
+          ),
+          admin:admin_id (
+            id,
+            name
+          )
         `)
         .order('date', { ascending: false });
 
@@ -41,7 +47,7 @@ export function ShiftReportList() {
             <CardTitle className="flex justify-between items-center">
               <span>{format(new Date(report.date), 'PPP')}</span>
               <span className="text-sm font-normal">
-                By: {report.user?.name || 'Unknown'}
+                By: {report?.user?.name || 'Unknown'}
               </span>
             </CardTitle>
           </CardHeader>
@@ -54,9 +60,9 @@ export function ShiftReportList() {
               }`}>
                 {report.priority.charAt(0).toUpperCase() + report.priority.slice(1)} Priority
               </span>
-              {report.assigned_to && (
+              {report.admin_id && (
                 <span className="text-sm text-muted-foreground">
-                  Assigned to: {report.assigned_user?.name || 'Unknown'}
+                  Assigned to admin: {report?.admin?.name || 'Unknown'}
                 </span>
               )}
             </div>

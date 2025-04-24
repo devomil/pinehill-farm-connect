@@ -116,6 +116,27 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_assignments: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          employee_id: string
+          id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          employee_id: string
+          id?: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       employee_hr: {
         Row: {
           address: string | null
@@ -247,7 +268,7 @@ export type Database = {
       }
       shift_reports: {
         Row: {
-          assigned_to: string | null
+          admin_id: string | null
           created_at: string
           date: string
           id: string
@@ -257,7 +278,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          assigned_to?: string | null
+          admin_id?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -267,7 +288,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          assigned_to?: string | null
+          admin_id?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -280,6 +301,7 @@ export type Database = {
       }
       time_off_requests: {
         Row: {
+          admin_id: string | null
           created_at: string | null
           end_date: string
           id: string
@@ -290,6 +312,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_id?: string | null
           created_at?: string | null
           end_date: string
           id?: string
@@ -300,6 +323,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_id?: string | null
           created_at?: string | null
           end_date?: string
           id?: string

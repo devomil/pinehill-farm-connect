@@ -11,6 +11,8 @@ import { toast } from "sonner";
 
 export default function Employees() {
   const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
+
   const {
     selectedEmployee,
     isDetailModalOpen,
@@ -63,23 +65,26 @@ export default function Employees() {
 
   return (
     <DashboardLayout>
-      <EmployeeHeader 
-        onAddEmployee={handleAddEmployee} 
-        isAdmin={currentUser && currentUser.role === "admin"}
-      />
-      
-      <EmployeeContent 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery}
-        employees={employees}
-        loading={loading}
-        onEdit={handleEditEmployee}
-        onDelete={handleDeleteEmployee}
-        onResetPassword={handleResetPassword}
-        isAdmin={currentUser && currentUser.role === "admin"}
-        error={error}
-      />
+      <div className="space-y-4 p-8">
+        <EmployeeHeader 
+          onAddEmployee={handleAddEmployee} 
+          isAdmin={isAdmin}
+        />
+        
+        <EmployeeContent 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery}
+          employees={employees}
+          loading={loading}
+          onEdit={handleEditEmployee}
+          onDelete={handleDeleteEmployee}
+          onResetPassword={handleResetPassword}
+          isAdmin={isAdmin}
+          error={error}
+        />
 
+        {isAdmin && <EmployeeAssignments />}
+      </div>
       <EmployeeModals 
         selectedEmployee={selectedEmployee}
         isDetailModalOpen={isDetailModalOpen}
