@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Paperclip } from "lucide-react";
-import { AnnouncementAttachmentPreview } from "../AnnouncementAttachmentPreview";
+import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
