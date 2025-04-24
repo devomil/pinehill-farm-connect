@@ -44,6 +44,21 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     }
   };
 
+  // Add a new function to handle acknowledgment by ID
+  const handleAcknowledge = async (announcementId: string) => {
+    // Find the announcement by ID
+    const announcement = announcements.find(a => a.id === announcementId);
+    if (announcement) {
+      // Update the announcement to mark it as acknowledged
+      const updatedAnnouncement = {
+        ...announcement,
+        acknowledgements: [...(announcement.acknowledgements || []), currentUser?.id || '']
+      };
+      // Save the updated announcement
+      await handleSaveEdit(updatedAnnouncement);
+    }
+  };
+
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "urgent":
@@ -71,7 +86,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
         onEdit={isAdmin ? (announcement) => setEditingAnnouncement(announcement) : undefined}
         onDelete={isAdmin ? handleDeleteAnnouncement : undefined}
         isAdmin={isAdmin}
-        onAcknowledge={handleSaveEdit}
+        onAcknowledge={handleAcknowledge}
       />
 
       {editingAnnouncement && (
