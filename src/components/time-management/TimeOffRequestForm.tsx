@@ -26,31 +26,59 @@ export const TimeOffRequestForm: React.FC<TimeOffRequestFormProps> = ({ currentU
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("time_off_requests")
-      .insert({
-        user_id: currentUser.id,
-        start_date: startDate,
-        end_date: endDate,
-        reason,
-        status: "pending",
-      });
+    try {
+      const { error } = await supabase
+        .from("time_off_requests")
+        .insert({
+          user_id: currentUser.id,
+          start_date: startDate,
+          end_date: endDate,
+          reason,
+          status: "pending"
+        });
 
-    if (error) {
-      toast.error("Failed to submit request: " + error.message);
+      if (error) throw error;
+
+      // Get the assigned admin from employee_assignments
+      const { data: assignment } = await supabase
+        .from('employee_assignments')
+        .select('admin_id')
+        .eq('employee_id', currentUser.id)
+        .single();
+
+      if (assignment?.admin_id) {
+        // Get admin's profile
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', assignment.admin_id)
+          .single();
+
+        if (adminProfile) {
+          // Send notification
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              adminEmail: adminProfile.email,
+              adminName: adminProfile.name,
+              type: "timeoff",
+              employeeName: currentUser.name || "An employee",
+            },
+          });
+        }
+      }
+
+      toast.success("Time off request submitted successfully");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+      setOpen(false);
+      if (onRequestSubmitted) onRequestSubmitted();
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast.error("Failed to submit time off request");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    toast.success("Request submitted!");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    setOpen(false);
-    setLoading(false);
-
-    if (onRequestSubmitted) onRequestSubmitted();
-    // Optionally: notifyManager edge function call here
   };
 
   return (

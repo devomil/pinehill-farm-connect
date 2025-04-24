@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,29 @@ export function ShiftReportForm() {
         });
 
       if (error) throw error;
+
+      // If the report is high or medium priority and has an assigned admin, send notification
+      if (data.assignedTo && (data.priority === "high" || data.priority === "medium")) {
+        // Get admin's profile
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', data.assignedTo)
+          .single();
+
+        if (adminProfile) {
+          // Send notification
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              adminEmail: adminProfile.email,
+              adminName: adminProfile.name,
+              type: "report",
+              priority: data.priority,
+              employeeName: currentUser?.name || "An employee",
+            },
+          });
+        }
+      }
 
       toast.success("Shift report submitted successfully");
       form.reset();
