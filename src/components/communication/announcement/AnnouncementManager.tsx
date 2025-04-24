@@ -7,6 +7,7 @@ import { EditAnnouncementDialog } from "@/components/communication/announcement/
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAnnouncementAcknowledge } from "@/hooks/announcement/useAnnouncementAcknowledge";
 
 interface AnnouncementManagerProps {
   currentUser: User | null;
@@ -30,6 +31,8 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
+  const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
+
   const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
     console.log("Saving edited announcement:", updatedAnnouncement);
     const success = await handleEdit(updatedAnnouncement);
@@ -47,18 +50,33 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     }
   };
 
-  // Add a new function to handle acknowledgment by ID
+  // Handle acknowledgment by ID
   const handleAcknowledge = async (announcementId: string) => {
-    // Find the announcement by ID
-    const announcement = announcements.find(a => a.id === announcementId);
-    if (announcement) {
-      // Update the announcement to mark it as acknowledged
-      const updatedAnnouncement = {
-        ...announcement,
-        acknowledgements: [...(announcement.acknowledgements || []), currentUser?.id || '']
-      };
-      // Save the updated announcement
-      await handleSaveEdit(updatedAnnouncement);
+    console.log("Acknowledging announcement:", announcementId);
+    if (!currentUser?.id) {
+      console.error("No current user ID available");
+      return;
+    }
+
+    try {
+      // Call the acknowledgeAnnouncement function from the hook
+      const success = await acknowledgeAnnouncement(announcementId);
+      
+      if (success) {
+        // Refresh announcements to update UI
+        await fetchAnnouncements();
+        toast({
+          title: "Announcement acknowledged",
+          description: "Thank you for acknowledging this announcement"
+        });
+      }
+    } catch (error) {
+      console.error("Error in handleAcknowledge:", error);
+      toast({
+        title: "Failed to acknowledge",
+        description: "There was an issue acknowledging this announcement",
+        variant: "destructive"
+      });
     }
   };
 
@@ -77,7 +95,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     return announcement.readBy.includes(currentUser?.id || "");
   };
 
-  const handleAttachmentAction = async (attachment: { name: string; type: string; url?: string }) => {
+  const handleAttachmentAction = async (attachment: { name: string; type: string; url?: string; size?: number }) => {
     try {
       console.log("Handling attachment action:", attachment);
       
