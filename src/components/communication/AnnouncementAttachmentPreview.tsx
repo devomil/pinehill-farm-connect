@@ -8,11 +8,13 @@ import { useToast } from "@/hooks/use-toast";
 interface AttachmentPreviewProps {
   attachment: { name: string; type: string; url?: string };
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
+  compact?: boolean;
 }
 
 export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = ({ 
   attachment,
-  onAttachmentAction 
+  onAttachmentAction,
+  compact = false
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -88,7 +90,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         <Button 
           variant="outline" 
           size="sm" 
-          className="gap-2"
+          className={`gap-2 ${compact ? 'w-auto' : ''}`}
           onClick={handlePreviewClick}
           disabled={loading}
         >

@@ -1,18 +1,20 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip } from "lucide-react";
+import { Paperclip, Eye } from "lucide-react";
 import { AnnouncementAttachmentPreview } from "../AnnouncementAttachmentPreview";
 import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementAttachmentsListProps {
   attachments: { name: string; type: string; url?: string; size?: number }[];
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
+  compact?: boolean; // Add a compact mode for dashboard display
 }
 
 export const AnnouncementAttachmentsList = ({
   attachments,
   onAttachmentAction,
+  compact = false,
 }: AnnouncementAttachmentsListProps) => {
   const { toast } = useToast();
 
@@ -44,9 +46,9 @@ export const AnnouncementAttachmentsList = ({
   return (
     <div className="space-y-2 mb-4">
       <h4 className="text-sm font-medium">Attachments:</h4>
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex flex-wrap gap-2 ${compact ? 'items-center' : ''}`}>
         {attachments.map((attachment, idx) => (
-          <div key={idx} className="flex items-center gap-2">
+          <div key={idx} className={`flex ${compact ? 'items-center w-full justify-between' : 'flex-col sm:flex-row items-start sm:items-center'} gap-2`}>
             <Button
               variant="outline"
               size="sm"
@@ -59,6 +61,7 @@ export const AnnouncementAttachmentsList = ({
             <AnnouncementAttachmentPreview 
               attachment={attachment} 
               onAttachmentAction={onAttachmentAction}
+              compact={compact}
             />
           </div>
         ))}

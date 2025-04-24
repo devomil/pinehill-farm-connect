@@ -1,11 +1,9 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { MessageSquare, Paperclip } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AnnouncementAttachmentPreview } from "@/components/communication/AnnouncementAttachmentPreview";
+import { MessageSquare } from "lucide-react";
 import { AnnouncementAttachmentsList } from "@/components/communication/announcement/AnnouncementAttachmentsList";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementsCardProps {
   announcements: any[];
@@ -14,22 +12,37 @@ interface AnnouncementsCardProps {
 export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements }) => {
   const { toast } = useToast();
 
-  const handleAttachmentAction = (attachment: any) => {
-    if (attachment.url) {
-      try {
+  const handleAttachmentAction = async (attachment: any) => {
+    try {
+      if (attachment.url) {
         window.open(attachment.url, '_blank');
-      } catch (error) {
-        console.error('Error opening attachment:', error);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .storage
+        .from('announcements')
+        .createSignedUrl(`attachments/${attachment.name}`, 3600);
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
         toast({
           title: "Failed to open attachment",
-          description: "There was a problem opening this attachment. Please try again.",
+          description: "Could not retrieve the attachment URL. Please try again.",
           variant: "destructive"
         });
+        return;
       }
-    } else {
+      
+      if (data) {
+        console.log("Got signed URL:", data.signedUrl);
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error handling attachment:', error);
       toast({
-        title: "Error",
-        description: "Attachment URL not available",
+        title: "Failed to open attachment",
+        description: "There was a problem opening this attachment. Please try again.",
         variant: "destructive"
       });
     }
@@ -68,12 +81,12 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
                 </span>
               </div>
               
-              {/* Attachments Section */}
               {announcement.attachments && announcement.attachments.length > 0 && (
                 <div className="mt-2">
                   <AnnouncementAttachmentsList 
                     attachments={announcement.attachments}
                     onAttachmentAction={handleAttachmentAction}
+                    compact={true}
                   />
                 </div>
               )}
