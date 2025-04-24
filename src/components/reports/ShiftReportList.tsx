@@ -11,29 +11,49 @@ export function ShiftReportList() {
   const { data: reports, isLoading } = useQuery({
     queryKey: ['shiftReports'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all shift reports
+      const { data: reportData, error: reportError } = await supabase
         .from('shift_reports')
-        .select(`
-          id,
-          user_id,
-          admin_id,
-          date,
-          notes,
-          priority,
-          created_at,
-          updated_at,
-          user_profile:profiles!user_id(id, name, email),
-          admin_profile:profiles!admin_id(id, name, email)
-        `);
+        .select('id, user_id, admin_id, date, notes, priority, created_at, updated_at')
+        .order('date', { ascending: false });
 
-      if (error) throw error;
-      
-      // Transform the data to match the expected format
-      return data?.map(report => ({
-        ...report,
-        user: report.user_profile,
-        admin: report.admin_profile
+      if (reportError) throw reportError;
+
+      // Then fetch user and admin profiles for each report
+      const result = await Promise.all((reportData || []).map(async (report) => {
+        // Get user profile
+        const { data: userProfile, error: userError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', report.user_id)
+          .maybeSingle();
+
+        if (userError) console.error('Error fetching user profile:', userError);
+
+        // Get admin profile if exists
+        let adminProfile = null;
+        if (report.admin_id) {
+          const { data: adminData, error: adminError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', report.admin_id)
+            .maybeSingle();
+
+          if (adminError) {
+            console.error('Error fetching admin profile:', adminError);
+          } else {
+            adminProfile = adminData;
+          }
+        }
+
+        return {
+          ...report,
+          user: userProfile || null,
+          admin: adminProfile || null
+        };
       }));
+
+      return result;
     }
   });
 

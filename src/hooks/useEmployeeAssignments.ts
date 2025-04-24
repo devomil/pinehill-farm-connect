@@ -9,25 +9,41 @@ export function useEmployeeAssignments() {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['employeeAssignments'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, get all employee assignments
+      const { data: assignmentData, error: assignmentError } = await supabase
         .from('employee_assignments')
-        .select(`
-          id,
-          employee_id,
-          admin_id,
-          created_at,
-          profiles!employee_id(id, name, email),
-          admin_profiles:profiles!admin_id(id, name, email)
-        `);
+        .select('id, employee_id, admin_id, created_at');
 
-      if (error) throw error;
-      
-      // Transform the data to match expected format
-      return data?.map(item => ({
-        ...item,
-        employee: item.profiles,
-        admin: item.admin_profiles
+      if (assignmentError) throw assignmentError;
+
+      // Then separately fetch the profile data for each
+      const result = await Promise.all((assignmentData || []).map(async (assignment) => {
+        // Get employee profile
+        const { data: employeeProfile, error: employeeError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', assignment.employee_id)
+          .single();
+
+        if (employeeError) console.error('Error fetching employee profile:', employeeError);
+
+        // Get admin profile
+        const { data: adminProfile, error: adminError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', assignment.admin_id)
+          .single();
+
+        if (adminError) console.error('Error fetching admin profile:', adminError);
+
+        return {
+          ...assignment,
+          employee: employeeProfile || null,
+          admin: adminProfile || null
+        };
       }));
+
+      return result;
     }
   });
 
