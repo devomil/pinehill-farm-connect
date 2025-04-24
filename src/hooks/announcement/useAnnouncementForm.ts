@@ -48,7 +48,8 @@ export const useAnnouncementForm = ({
         requiresAcknowledgment
       },
       selectedUserIds,
-      allEmployees
+      allEmployees,
+      attachments
     );
 
     if (success) {

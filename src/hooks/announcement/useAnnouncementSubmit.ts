@@ -32,7 +32,8 @@ export const useAnnouncementSubmit = ({
       requiresAcknowledgment: boolean;
     },
     selectedUserIds: string[],
-    allEmployees: User[]
+    allEmployees: User[],
+    files?: File[]
   ) => {
     setLoading(true);
 
@@ -55,6 +56,38 @@ export const useAnnouncementSubmit = ({
         return false;
       }
 
+      // Upload files to storage if provided
+      let processedAttachments = [...announcementData.attachments];
+      
+      if (files && files.length > 0) {
+        console.log("Uploading files to storage:", files);
+        
+        for (const file of files) {
+          try {
+            const { error: uploadError } = await supabase
+              .storage
+              .from('announcements')
+              .upload(`${file.name}`, file, {
+                cacheControl: '3600',
+                upsert: true
+              });
+
+            if (uploadError) {
+              console.error("Error uploading file:", uploadError);
+              toast({
+                title: "File upload failed",
+                description: `Could not upload ${file.name}: ${uploadError.message}`,
+                variant: "destructive"
+              });
+            } else {
+              console.log(`Successfully uploaded ${file.name}`);
+            }
+          } catch (err) {
+            console.error("Unexpected error during file upload:", err);
+          }
+        }
+      }
+
       const dbAnnouncementData = {
         title: announcementData.title,
         content: announcementData.content,
@@ -62,7 +95,7 @@ export const useAnnouncementSubmit = ({
         priority: announcementData.priority,
         has_quiz: announcementData.hasQuiz,
         target_type: announcementData.targetType,
-        attachments: announcementData.attachments,
+        attachments: processedAttachments,
         requires_acknowledgment: announcementData.requiresAcknowledgment
       };
 

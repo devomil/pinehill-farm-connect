@@ -21,8 +21,12 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   
   const handleDownload = async () => {
     setLoading(true);
+    console.log("Download requested for:", attachment);
+    
     try {
+      // If URL is provided, use it directly
       if (attachment.url) {
+        console.log("Using provided URL:", attachment.url);
         const response = await fetch(attachment.url);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -37,7 +41,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       }
 
       // If no URL provided, get from Supabase storage
-      // Note: Fixed path here - using just the name instead of attachments/name
+      console.log("Requesting file from storage:", attachment.name);
       const { data, error } = await supabase
         .storage
         .from('announcements')
@@ -49,6 +53,7 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       }
 
       if (data) {
+        console.log("File downloaded successfully, creating object URL");
         const url = window.URL.createObjectURL(data);
         const link = document.createElement('a');
         link.href = url;
@@ -57,6 +62,9 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+      } else {
+        console.error("No data returned from storage");
+        throw new Error("No data returned from storage");
       }
     } catch (error) {
       console.error('Download error:', error);
@@ -71,15 +79,19 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   };
 
   const handlePreviewClick = async () => {
+    console.log("Preview requested for:", attachment);
+    
     try {
+      // If an action handler is provided, use that
       if (onAttachmentAction) {
+        console.log("Using provided action handler");
         onAttachmentAction(attachment);
         return;
       }
       
+      // If no URL provided, get a signed URL from Supabase
       if (!attachment.url) {
-        // If no URL provided, get a signed URL from Supabase
-        // Note: Fixed path here - using just the name instead of attachments/name
+        console.log("Requesting signed URL for:", attachment.name);
         const { data, error } = await supabase
           .storage
           .from('announcements')
@@ -91,11 +103,16 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
         }
         
         if (data?.signedUrl) {
+          console.log("Opening signed URL:", data.signedUrl);
           window.open(data.signedUrl, '_blank');
           return;
+        } else {
+          console.error("No signed URL returned");
+          throw new Error("No signed URL returned");
         }
       } else {
         // Use the provided URL
+        console.log("Opening provided URL:", attachment.url);
         window.open(attachment.url, '_blank');
       }
     } catch (error) {

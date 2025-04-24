@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -52,7 +53,37 @@ const Communication = () => {
         return;
       }
       
-      // Otherwise, attempt to get a signed URL for the attachment from storage
+      // Check if storage is available
+      const { data: bucketData, error: bucketError } = await supabase
+        .storage
+        .getBucket('announcements');
+        
+      if (bucketError) {
+        console.error('Error checking storage bucket:', bucketError);
+        // If bucket doesn't exist, it might be an error or the bucket name is different
+        if (bucketError.code === 'PGRST116') { // Not found
+          toast({
+            title: "Storage not configured",
+            description: "The storage for attachments is not properly configured.",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+      
+      // List available files to debug
+      const { data: files, error: listError } = await supabase
+        .storage
+        .from('announcements')
+        .list();
+      
+      if (listError) {
+        console.error('Error listing files:', listError);
+      } else {
+        console.log("Available files in storage:", files);
+      }
+      
+      // Attempt to get a signed URL for the attachment from storage
       const { data, error } = await supabase
         .storage
         .from('announcements')

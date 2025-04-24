@@ -15,12 +15,27 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
 
   const handleAttachmentAction = async (attachment: any) => {
     try {
+      console.log("Dashboard - handling attachment action:", attachment);
+      
       if (attachment.url) {
         window.open(attachment.url, '_blank');
         return;
       }
       
-      // Note: Fixed path here - using just the name instead of attachments/name
+      // List available files to debug
+      const { data: files, error: listError } = await supabase
+        .storage
+        .from('announcements')
+        .list();
+      
+      if (listError) {
+        console.error('Error listing files:', listError);
+      } else {
+        console.log("Available files in storage:", files);
+        console.log("Looking for file:", attachment.name);
+      }
+      
+      // Get a signed URL from storage
       const { data, error } = await supabase
         .storage
         .from('announcements')
@@ -39,6 +54,12 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
       if (data) {
         console.log("Got signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
+      } else {
+        toast({
+          title: "Error",
+          description: "No URL was returned for this attachment",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
