@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,39 @@ export function ShiftReportForm() {
       assignedTo: ""
     }
   });
+
+  const sendTestNotification = async () => {
+    try {
+      // Find an admin to send the test notification to
+      const adminEmployees = employees.filter(e => e.role === 'admin');
+      if (adminEmployees.length === 0) {
+        toast.error("No admin found to send test notification");
+        return;
+      }
+
+      const admin = adminEmployees[0];
+      
+      await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          adminEmail: admin.email,
+          adminName: admin.name,
+          type: "report",
+          priority: "high",
+          employeeName: currentUser?.name || "Test User",
+          details: {
+            date: new Date().toISOString().split('T')[0],
+            notes: "This is a test notification",
+            priority: "high"
+          }
+        },
+      });
+
+      toast.success("Test notification email sent successfully");
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      toast.error("Failed to send test notification");
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -170,6 +202,15 @@ export function ShiftReportForm() {
             </FormItem>
           )}
         />
+
+        <Button 
+          type="button" 
+          variant="secondary" 
+          onClick={sendTestNotification}
+          className="mt-4"
+        >
+          Send Test Notification
+        </Button>
 
         <Button type="submit">Submit Report</Button>
       </form>
