@@ -62,7 +62,6 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
       <div className="space-y-4">
         {announcements.map((announcement) => {
           // Check if the current user has acknowledged this announcement
-          // We'll use the readBy array to check for acknowledgment status as a fallback
           const currentUserId = announcement.currentUserId || '';
           const acknowledgementsArray = announcement.acknowledgements || [];
           const isAcknowledged = acknowledgementsArray.includes(currentUserId);
