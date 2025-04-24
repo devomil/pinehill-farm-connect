@@ -55,7 +55,9 @@ export const useAnnouncementStats = () => {
               name: profile.name || 'Unknown User',
               avatar_url: profile.avatar_url,
               read: recipient ? !!recipient.read_at : false,
-              acknowledged: recipient ? !!recipient.acknowledged_at : false
+              acknowledged: recipient ? !!recipient.acknowledged_at : false,
+              read_at: recipient?.read_at,
+              acknowledged_at: recipient?.acknowledged_at
             };
           });
 
@@ -66,6 +68,7 @@ export const useAnnouncementStats = () => {
             acknowledged_count: announcement.requires_acknowledgment 
               ? recipients?.filter(r => r.acknowledged_at).length || 0 
               : null,
+            requires_acknowledgment: announcement.requires_acknowledgment,
             users
           };
         }));
