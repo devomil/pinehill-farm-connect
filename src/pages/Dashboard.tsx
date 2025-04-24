@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +13,7 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
 import { useState } from "react";
 import { addMonths, subMonths } from "date-fns";
+import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -44,6 +44,10 @@ export default function Dashboard() {
 
         {isAdmin && pendingTimeOff && (
           <AdminTimeOffCard count={pendingTimeOff.length || 0} />
+        )}
+
+        {isAdmin && (
+          <AnnouncementStats />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
