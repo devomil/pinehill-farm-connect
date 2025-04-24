@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { User } from "@/types";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 
@@ -21,11 +21,11 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <FileText className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-2" />
           New Announcement
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create Announcement</DialogTitle>
           <DialogDescription>
@@ -41,4 +41,3 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
     </Dialog>
   );
 };
-

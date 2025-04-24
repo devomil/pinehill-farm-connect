@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { AdminAnnouncementDialog } from "./AdminAnnouncementDialog";
+import { Loader2 } from "lucide-react";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -26,10 +27,17 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
         </p>
       </div>
       {isAdmin && (
-        <AdminAnnouncementDialog 
-          allEmployees={allEmployees} 
-          onCreate={onAnnouncementCreate}
-        />
+        loading ? (
+          <Button disabled>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Loading...
+          </Button>
+        ) : (
+          <AdminAnnouncementDialog 
+            allEmployees={allEmployees} 
+            onCreate={onAnnouncementCreate}
+          />
+        )
       )}
     </div>
   );
