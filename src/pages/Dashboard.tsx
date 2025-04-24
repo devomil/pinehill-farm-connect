@@ -77,15 +77,14 @@ export default function Dashboard() {
             )}
 
             {announcements && announcements.length > 0 && (
-              <AnnouncementsCard announcements={announcements} />
+              <>
+                <AnnouncementsCard announcements={announcements} />
+                {isAdmin && <AnnouncementStats />}
+              </>
             )}
           </div>
 
-          {isAdmin && (
-            <div className="space-y-4">
-              <AnnouncementStats />
-            </div>
-          )}
+          {/* Removed the separate admin section for AnnouncementStats */}
         </div>
 
         {assignedTrainings && assignedTrainings.length > 0 && (
@@ -95,4 +94,3 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
-
