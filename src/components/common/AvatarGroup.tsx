@@ -11,9 +11,14 @@ interface AvatarGroupProps {
     acknowledged_at?: string;
   }[];
   showTooltip?: boolean;
+  emptyText?: string;
 }
 
-export const AvatarGroup = ({ users, showTooltip = false }: AvatarGroupProps) => {
+export const AvatarGroup = ({ users, showTooltip = false, emptyText }: AvatarGroupProps) => {
+  if (users.length === 0 && emptyText) {
+    return <span className="text-sm text-muted-foreground">{emptyText}</span>;
+  }
+
   return (
     <div className="flex -space-x-2 overflow-hidden">
       {users.slice(0, 5).map(user => (
