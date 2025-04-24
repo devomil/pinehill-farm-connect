@@ -1,17 +1,15 @@
 
 import React from "react";
-import { Announcement } from "@/types";
 import { AnnouncementCard } from "./AnnouncementCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AnnouncementPagination } from "./AnnouncementPagination";
-import {
-  AnnouncementLoading,
-  AnnouncementEmptyAll,
-} from "./AnnouncementListState";
+import { AnnouncementListState } from "./AnnouncementListState";
+import { Announcement } from "@/types";
 
 interface AnnouncementListProps {
   announcements: Announcement[];
   loading: boolean;
-  isRead: (a: Announcement) => boolean;
+  isRead: (announcement: Announcement) => boolean;
   markAsRead: (id: string) => void;
   getPriorityBadge: (priority: string) => JSX.Element;
   currentPage: number;
@@ -22,6 +20,7 @@ interface AnnouncementListProps {
   onDelete?: (id: string) => void;
   isAdmin?: boolean;
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
+  onAcknowledge?: (announcementId: string) => Promise<void>;
 }
 
 export const AnnouncementList: React.FC<AnnouncementListProps> = ({
@@ -33,36 +32,59 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
   currentPage,
   totalPages,
   onPageChange,
-  emptyComponent = <AnnouncementEmptyAll />,
+  emptyComponent,
   onEdit,
   onDelete,
   isAdmin,
-  onAttachmentAction
+  onAttachmentAction,
+  onAcknowledge
 }) => {
   if (loading) {
-    return <AnnouncementLoading />;
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-4 rounded-md border">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/4 mb-4" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (announcements.length === 0) {
-    return <>{emptyComponent}</>;
+    return emptyComponent || <AnnouncementListState />;
   }
 
   return (
-    <div className="space-y-4">
-      {announcements.map(announcement => (
-        <AnnouncementCard
-          key={announcement.id}
-          announcement={announcement}
-          isRead={isRead(announcement)}
-          onMarkAsRead={() => markAsRead(announcement.id)}
-          showMarkAsRead={true}
-          getPriorityBadge={getPriorityBadge}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          isAdmin={isAdmin}
-          onAttachmentAction={onAttachmentAction}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="space-y-4">
+        {announcements.map((announcement) => {
+          const isAcknowledged = announcement.acknowledgements?.includes(announcement.currentUserId || '');
+          
+          return (
+            <AnnouncementCard
+              key={announcement.id}
+              announcement={announcement}
+              isRead={isRead(announcement)}
+              isAcknowledged={isAcknowledged}
+              onMarkAsRead={() => markAsRead(announcement.id)}
+              onAcknowledge={announcement.requires_acknowledgment && onAcknowledge ? 
+                () => onAcknowledge(announcement.id) : 
+                undefined
+              }
+              showMarkAsRead={true}
+              getPriorityBadge={getPriorityBadge}
+              isAdmin={isAdmin}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onAttachmentAction={onAttachmentAction}
+            />
+          );
+        })}
+      </div>
+      
       {totalPages > 1 && (
         <AnnouncementPagination
           currentPage={currentPage}

@@ -17,6 +17,7 @@ interface CommunicationTabsProps {
   onDelete?: (id: string) => void;
   isAdmin?: boolean;
   onAttachmentAction?: (attachment: { name: string; type: string; url?: string }) => void;
+  onAcknowledge?: (announcementId: string) => Promise<void>;
 }
 
 export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
@@ -29,7 +30,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onEdit,
   onDelete,
   isAdmin,
-  onAttachmentAction
+  onAttachmentAction,
+  onAcknowledge
 }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -143,6 +145,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onDelete={onDelete}
           isAdmin={isAdmin}
           onAttachmentAction={handleAttachmentAction}
+          onAcknowledge={onAcknowledge}
         />
       </TabsContent>
 
@@ -166,6 +169,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onDelete={onDelete}
           isAdmin={isAdmin}
           onAttachmentAction={handleAttachmentAction}
+          onAcknowledge={onAcknowledge}
         />
       </TabsContent>
 
@@ -189,6 +193,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onDelete={onDelete}
           isAdmin={isAdmin}
           onAttachmentAction={handleAttachmentAction}
+          onAcknowledge={onAcknowledge}
         />
       </TabsContent>
     </Tabs>
