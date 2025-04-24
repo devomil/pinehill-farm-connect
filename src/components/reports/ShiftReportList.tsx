@@ -9,13 +9,13 @@ export function ShiftReportList() {
   const { data: reports, isLoading } = useQuery({
     queryKey: ['shiftReports'],
     queryFn: async () => {
+      // The issue is with the join syntax - we need to use a foreign table reference
+      // that properly connects shift_reports with profiles
       const { data, error } = await supabase
         .from('shift_reports')
         .select(`
           *,
-          profiles:user_id (
-            name
-          )
+          profiles(name)
         `)
         .order('date', { ascending: false });
 
