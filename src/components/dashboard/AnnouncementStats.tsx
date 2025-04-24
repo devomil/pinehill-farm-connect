@@ -27,6 +27,12 @@ export const AnnouncementStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['announcement-stats'],
     queryFn: async () => {
+      // Get total user count first
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      // Fetch announcements with recipients and their profile data
       const { data: announcements, error } = await supabase
         .from('announcements')
         .select(`
@@ -36,8 +42,8 @@ export const AnnouncementStats = () => {
           announcement_recipients(
             read_at,
             acknowledged_at,
-            profiles:user_id (
-              id,
+            profiles:user_id(
+              id, 
               name,
               avatar_url
             )
@@ -46,27 +52,34 @@ export const AnnouncementStats = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching announcement stats:", error);
+        throw error;
+      }
 
-      const { data: totalUsers } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' });
+      // Process the data into the format needed for our component
+      return announcements?.map(announcement => {
+        // Make sure we have valid recipient data
+        const validRecipients = announcement.announcement_recipients.filter(
+          recipient => recipient.profiles && typeof recipient.profiles === 'object'
+        );
 
-      return announcements?.map(announcement => ({
-        title: announcement.title,
-        total_users: totalUsers?.length || 0,
-        read_count: announcement.announcement_recipients.filter(r => r.read_at).length,
-        acknowledged_count: announcement.requires_acknowledgment 
-          ? announcement.announcement_recipients.filter(r => r.acknowledged_at).length 
-          : null,
-        users: announcement.announcement_recipients.map(recipient => ({
-          id: recipient.profiles.id,
-          name: recipient.profiles.name,
-          avatar_url: recipient.profiles.avatar_url,
-          read: !!recipient.read_at,
-          acknowledged: !!recipient.acknowledged_at
-        }))
-      })) as AnnouncementData[];
+        return {
+          title: announcement.title,
+          total_users: totalUsers || 0,
+          read_count: validRecipients.filter(r => r.read_at).length,
+          acknowledged_count: announcement.requires_acknowledgment 
+            ? validRecipients.filter(r => r.acknowledged_at).length 
+            : null,
+          users: validRecipients.map(recipient => ({
+            id: recipient.profiles.id,
+            name: recipient.profiles.name,
+            avatar_url: recipient.profiles.avatar_url,
+            read: !!recipient.read_at,
+            acknowledged: !!recipient.acknowledged_at
+          }))
+        };
+      }) as AnnouncementData[];
     }
   });
 
@@ -88,14 +101,16 @@ export const AnnouncementStats = () => {
           }}
           className="h-[300px]"
         >
-          <BarChart data={stats}>
-            <XAxis dataKey="title" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="read_count" name="Read" fill="var(--color-read)" />
-            <Bar dataKey="acknowledged_count" name="Acknowledged" fill="var(--color-acknowledged)" />
-            <Bar dataKey="total_users" name="Total Users" fill="var(--color-total)" />
-          </BarChart>
+          <ResponsiveContainer>
+            <BarChart data={stats}>
+              <XAxis dataKey="title" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="read_count" name="Read" fill="var(--color-read)" />
+              <Bar dataKey="acknowledged_count" name="Acknowledged" fill="var(--color-acknowledged)" />
+              <Bar dataKey="total_users" name="Total Users" fill="var(--color-total)" />
+            </BarChart>
+          </ResponsiveContainer>
         </ChartContainer>
 
         <Table className="mt-4">
