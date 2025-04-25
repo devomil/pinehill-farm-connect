@@ -1,4 +1,3 @@
-
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Index from "./pages/Index";
@@ -15,6 +14,7 @@ import AdminTraining from "./pages/AdminTraining";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Communications from "./pages/Communications";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +63,10 @@ function App() {
     {
       path: "*",
       element: <NotFound />,
+    },
+    {
+      path: "/communications",
+      element: <Communications />,
     },
   ]);
 

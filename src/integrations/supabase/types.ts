@@ -137,6 +137,39 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_communications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+          status: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+          status?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+          status?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       employee_hr: {
         Row: {
           address: string | null
@@ -265,6 +298,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      shift_coverage_requests: {
+        Row: {
+          communication_id: string | null
+          covering_employee_id: string
+          created_at: string | null
+          id: string
+          original_employee_id: string
+          shift_date: string
+          shift_end: string
+          shift_start: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          communication_id?: string | null
+          covering_employee_id: string
+          created_at?: string | null
+          id?: string
+          original_employee_id: string
+          shift_date: string
+          shift_end: string
+          shift_start: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          communication_id?: string | null
+          covering_employee_id?: string
+          created_at?: string | null
+          id?: string
+          original_employee_id?: string
+          shift_date?: string
+          shift_end?: string
+          shift_start?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_coverage_requests_communication_id_fkey"
+            columns: ["communication_id"]
+            isOneToOne: false
+            referencedRelation: "employee_communications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shift_reports: {
         Row: {
