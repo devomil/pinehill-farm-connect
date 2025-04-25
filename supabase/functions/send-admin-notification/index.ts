@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Using fetch directly since we don't have a specific Deno package
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,23 +41,32 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${employeeName} has submitted a new ${priority} priority report that requires your attention.`
       : `${employeeName} has submitted a new time off request that requires your review.`;
 
-    const emailResponse = await resend.emails.send({
-      from: "HR System <onboarding@resend.dev>",
-      to: [adminEmail],
-      subject: subject,
-      html: `
-        <h2>Hello ${adminName},</h2>
-        <p>${content}</p>
-        <p>Additional Details:</p>
-        <pre>${JSON.stringify(details, null, 2)}</pre>
-        <p>Please log in to the system to review the details.</p>
-      `,
+    // Using the Resend API directly with fetch as shown in the Node.js example
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "HR System <onboarding@resend.dev>",
+        to: [adminEmail],
+        subject: subject,
+        html: `
+          <h2>Hello ${adminName},</h2>
+          <p>${content}</p>
+          <p>Additional Details:</p>
+          <pre>${JSON.stringify(details, null, 2)}</pre>
+          <p>Please log in to the system to review the details.</p>
+        `,
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    const responseData = await emailResponse.json();
+    console.log("Email response:", responseData);
 
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
+    return new Response(JSON.stringify(responseData), {
+      status: emailResponse.status,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error) {
