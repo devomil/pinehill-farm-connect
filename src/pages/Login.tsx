@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +15,6 @@ export default function Login() {
   const { login, error, isAuthenticated, currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Debug logged-in state
   useEffect(() => {
     console.log("Login page - isAuthenticated:", isAuthenticated);
     console.log("Login page - currentUser:", currentUser);
@@ -52,7 +50,6 @@ export default function Login() {
     }
   };
 
-  // If already logged in, redirect to dashboard
   if (isAuthenticated && currentUser) {
     console.log("Already authenticated, redirecting to dashboard");
     return <Navigate to="/dashboard" />;
@@ -69,11 +66,11 @@ export default function Login() {
           <div className="flex justify-center mb-2">
             <img 
               src="/lovable-uploads/010a26d1-93ce-48fa-a2f9-ffa39636566d.png" 
-              alt="PineHill Farm Logo" 
+              alt="Pine Hill Farm Logo" 
               className="w-48 h-24 object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold">PineHill Farm Connect</CardTitle>
+          <CardTitle className="text-2xl font-bold">Pine Hill Farm Connect</CardTitle>
           <CardDescription>Enter your credentials to access the intranet</CardDescription>
         </CardHeader>
         
