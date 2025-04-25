@@ -3,32 +3,28 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { User } from "@/types";
-
-interface NewMessageDialogProps {
-  employees: User[];
-  onSend: any;
-}
+import { RecipientSelect } from "./RecipientSelect";
+import { ShiftDetailsForm } from "./ShiftDetailsForm";
+import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/communications";
 
 export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
-  const form = useForm({
+  const form = useForm<NewMessageFormData>({
     defaultValues: {
       recipientId: "",
       message: "",
-      type: "general" as const,
+      type: "general",
       shiftDate: "",
       shiftStart: "",
       shiftEnd: ""
     }
   });
 
-  const type = form.watch("type");
+  const type = form.watch("type") as MessageType;
 
-  const onSubmit = (values: any) => {
+  const onSubmit = (values: NewMessageFormData) => {
     const shiftDetails = type === "shift_coverage" ? {
       shift_date: values.shiftDate,
       shift_start: values.shiftStart,
@@ -51,29 +47,7 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="recipientId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>To</FormLabel>
-                <Select onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an employee" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+          <RecipientSelect form={form} employees={employees} />
 
           <FormField
             control={form.control}
@@ -96,50 +70,7 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
             )}
           />
 
-          {type === "shift_coverage" && (
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="shiftDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Shift Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="shiftStart"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Time</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="shiftEnd"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Time</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          )}
+          {type === "shift_coverage" && <ShiftDetailsForm form={form} />}
 
           <FormField
             control={form.control}
