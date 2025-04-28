@@ -27,16 +27,11 @@ export function useEmployeeFiltering(
     
     console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
     
-    if (adminsAndManagers.length === 0) {
-      console.log("No admin/manager roles found (excluding current user)");
-      setAssignableEmployees([]);
-      return;
-    }
-    
-    // Start with admins/managers
-    const result = [...adminsAndManagers];
+    // Start with admins/managers (even if empty)
+    let result = [...adminsAndManagers];
     const assignableSet = new Set(adminsAndManagers.map(e => e.id));
 
+    // If there are assignments, add the assigned admin to the list
     if (currentUser && assignments && assignments.length > 0) {
       console.log(`Looking for assignments for ${currentUser.id}`, assignments);
       
@@ -56,6 +51,13 @@ export function useEmployeeFiltering(
       } else {
         console.log(`No assigned admin found for user ${currentUser.id}`);
       }
+    }
+
+    // If the current user is an admin/manager, they should see themselves in the list too
+    // This allows them to assign reports to themselves
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager') && !assignableSet.has(currentUser.id)) {
+      console.log(`Adding current user (${currentUser.role}) to assignable list`);
+      result.push(currentUser);
     }
     
     setAssignableEmployees(result);

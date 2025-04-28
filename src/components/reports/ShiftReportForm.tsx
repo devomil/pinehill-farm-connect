@@ -24,7 +24,7 @@ export function ShiftReportForm() {
           <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 text-orange-900">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription>
-              No admin/manager was found. Click "Fix Assignments" to assign Ryan as your admin.
+              No admin/manager users found. Click "Fix Assignments" to create an admin role and set up assignments automatically.
             </AlertDescription>
           </Alert>
         )}
