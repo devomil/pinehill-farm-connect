@@ -21,8 +21,8 @@ export function ShiftReportForm() {
         />
 
         {assignableEmployees.length === 0 && (
-          <Alert variant="warning" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
+          <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 text-orange-900">
+            <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription>
               No admin/manager was found. Click "Fix Assignments" to assign Ryan as your admin.
             </AlertDescription>
@@ -59,3 +59,4 @@ export function ShiftReportForm() {
     </Form>
   );
 }
+
