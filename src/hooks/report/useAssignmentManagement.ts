@@ -21,19 +21,20 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
         return;
       }
       
-      // First, look for an existing admin/manager in the system
-      const adminOrManager = employees.find(e => 
-        e.role === 'admin' || 
-        e.role === 'manager'
+      // Look specifically for admin users (not the current user)
+      const availableAdmins = employees.filter(e => 
+        (e.role === 'admin' || e.role === 'manager') && 
+        e.id !== currentUser.id
       );
       
-      // If no admin/manager found, create a self-assignment as fallback
-      const assignToUser = adminOrManager || currentUser;
-      
-      if (!adminOrManager) {
-        console.log("No admin or manager found, using current user as fallback");
-        toast.info("No admin or manager found. Creating a self-assignment as fallback.");
+      // If no appropriate admin found, show a clear message
+      if (availableAdmins.length === 0) {
+        toast.error("No admin or manager found to assign to. Please add an admin user to the system.");
+        return null;
       }
+      
+      // Select the first available admin
+      const adminToAssign = availableAdmins[0];
       
       const { data: existingAssignments, error: fetchError } = await supabase
         .from('employee_assignments')
@@ -45,7 +46,7 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
       const existingAssignment = existingAssignments && existingAssignments[0];
       
       if (existingAssignment) {
-        toast.info(`Assignment already exists - updating to ${assignToUser.name}`);
+        toast.info(`Assignment already exists - updating to admin: ${adminToAssign.name}`);
       }
       
       const { error } = await supabase
@@ -53,15 +54,15 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
         .upsert({ 
           id: existingAssignment?.id || undefined,
           employee_id: currentUser.id, 
-          admin_id: assignToUser.id
+          admin_id: adminToAssign.id
         });
         
       if (error) {
         throw error;
       }
       
-      toast.success(`Assignment created successfully for ${currentUser.name}`);
-      return assignToUser;
+      toast.success(`Successfully assigned ${currentUser.name} to admin: ${adminToAssign.name}`);
+      return adminToAssign;
     } catch (error) {
       console.error('Error creating assignment:', error);
       toast.error(`Failed to create assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);

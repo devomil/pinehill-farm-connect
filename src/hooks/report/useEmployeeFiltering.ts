@@ -19,23 +19,23 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // Get admins and managers from employees list
+    // Get admins and managers from employees list, excluding current user
     const adminsAndManagers = employees.filter(e => 
-      e.role === 'admin' || e.role === 'manager'
+      (e.role === 'admin' || e.role === 'manager') &&
+      (!currentUser || e.id !== currentUser.id) // Exclude current user
     );
     
     console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
     
-    // Start with admins/managers or empty array if none
+    if (adminsAndManagers.length === 0) {
+      console.log("No admin/manager roles found (excluding current user)");
+      setAssignableEmployees([]);
+      return;
+    }
+    
+    // Start with admins/managers
     const result = [...adminsAndManagers];
     const assignableSet = new Set(adminsAndManagers.map(e => e.id));
-    
-    // If no admins/managers but we have a current user, include the current user as a fallback option
-    if (adminsAndManagers.length === 0 && currentUser && !assignableSet.has(currentUser.id)) {
-      console.log("No admin/manager roles found, adding current user as fallback option");
-      result.push(currentUser);
-      assignableSet.add(currentUser.id);
-    }
 
     if (currentUser && assignments && assignments.length > 0) {
       console.log(`Looking for assignments for ${currentUser.id}`, assignments);
