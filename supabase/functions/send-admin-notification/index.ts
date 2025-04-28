@@ -66,9 +66,9 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Using the Resend API with proper templating
+    // Using the Resend API with proper templating and your verified domain
     const emailResponse = await resend.emails.send({
-      from: `HR System <notifications@pinehillfarm.co>`,
+      from: `HR System <notifications@send.notifications.pinehillfarm.co>`,
       to: [adminEmail],
       subject: subject,
       html: `

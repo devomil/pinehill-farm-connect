@@ -1,7 +1,7 @@
 
 import { User } from "@/types";
 
-export type MessageType = 'general' | 'shift_coverage';
+export type MessageType = 'general' | 'shift_coverage' | 'urgent';
 export type MessageStatus = 'pending' | 'accepted' | 'declined';
 
 export interface ShiftDetails {
@@ -17,9 +17,25 @@ export interface NewMessageFormData {
   shiftDate?: string;
   shiftStart?: string;
   shiftEnd?: string;
+  priority?: 'normal' | 'high';
 }
 
 export interface NewMessageDialogProps {
   employees: User[];
   onSend: any;
+}
+
+export interface MessageNotification {
+  id: string;
+  userId: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  type: MessageType;
+  sender: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  shiftDetails?: ShiftDetails;
 }
