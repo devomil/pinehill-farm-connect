@@ -1,7 +1,12 @@
 
-export async function notifyManager(actionType: string, actor: { id: string; name: string; email: string }, details: any) {
+export async function notifyManager(
+  actionType: string, 
+  actor: { id: string; name: string; email: string }, 
+  details: any,
+  assignedTo?: { id: string; name: string; email: string }
+) {
   try {
-    console.log(`[NotifyManager] Sending notification for ${actionType}`, { actor, details });
+    console.log(`[NotifyManager] Sending notification for ${actionType}`, { actor, details, assignedTo });
     
     // Add validation to prevent sending to the actor's own email
     if (actionType === "shift_report") {
@@ -16,7 +21,7 @@ export async function notifyManager(actionType: string, actor: { id: string; nam
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actionType, actor, details }),
+        body: JSON.stringify({ actionType, actor, details, assignedTo }),
       }
     );
     

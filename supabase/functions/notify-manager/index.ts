@@ -21,7 +21,11 @@ serve(async (req) => {
 
   try {
     const request: NotificationRequest = await req.json();
-    console.log(`Processing notification: ${request.actionType}`, { actor: request.actor, details: request.details });
+    console.log(`Processing notification: ${request.actionType}`, { 
+      actor: request.actor, 
+      details: request.details,
+      assignedTo: request.assignedTo || 'none'
+    });
     
     if (request.actionType === "shift_report") {
       const result = await handleShiftReport(supabase, request);

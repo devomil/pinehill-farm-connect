@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { ManagerProfile, NotificationRequest } from "./notificationTypes.ts";
 
@@ -8,8 +7,13 @@ export async function handleShiftReport(
 ): Promise<{ success: boolean; notifiedManagers?: ManagerProfile[]; error?: string }> {
   let validManagerIds: string[] = [];
   
-  // First, check for direct assignments
-  if (request.actor?.id) {
+  // If there's a specific assignee, prioritize them
+  if (request.assignedTo?.id) {
+    console.log(`Report specifically assigned to user ${request.assignedTo.id}`);
+    validManagerIds = [request.assignedTo.id];
+  }
+  // Otherwise check for direct assignments
+  else if (request.actor?.id) {
     console.log(`Looking for assignments for user ${request.actor.id}`);
     
     const { data: assignments, error: assignError } = await supabase

@@ -7,6 +7,20 @@ export function createNotifications(
 ) {
   switch (request.actionType) {
     case "shift_report":
+      // If there's an assignedTo field, create notification specifically for that person
+      if (request.assignedTo && request.assignedTo.id) {
+        const assignedManager = managerProfiles.find(m => m.id === request.assignedTo?.id);
+        if (assignedManager) {
+          return [{
+            user_id: assignedManager.id,
+            type: request.actionType,
+            message: `Employee ${request.actor.name} assigned you a ${request.details.priority || "high"} priority report.`,
+            data: { actor: request.actor, details: request.details, assigned: true },
+          }];
+        }
+      }
+      
+      // Default case: notify all managers
       return managerProfiles.map(manager => ({
         user_id: manager.id,
         type: request.actionType,

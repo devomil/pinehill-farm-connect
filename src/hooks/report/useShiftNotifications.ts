@@ -28,7 +28,8 @@ export function useShiftNotifications() {
             date: new Date().toISOString().split('T')[0],
             notes: "This is a test notification",
             priority: "high"
-          }
+          },
+          admin // Pass the assigned admin
         );
         
         if (result.success) {

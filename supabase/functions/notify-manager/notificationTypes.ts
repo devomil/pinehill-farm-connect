@@ -7,6 +7,11 @@ export interface NotificationRequest {
     email: string;
   };
   details: any;
+  assignedTo?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface ManagerProfile {
