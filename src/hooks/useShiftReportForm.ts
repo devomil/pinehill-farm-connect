@@ -35,23 +35,34 @@ export function useShiftReportForm() {
 
   const getAssignableEmployees = () => {
     if (!employees || employees.length === 0) {
+      console.log("No employees available for assignment");
       return [];
     }
     
-    if (!currentUser || !assignments) {
-      return employees.filter(e => e.role === 'admin' || e.role === 'manager');
-    }
+    // Always include admins and managers as assignable
+    const adminsAndManagers = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+    console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
     
-    const currentUserAssignment = assignments?.find(a => a.employee_id === currentUser?.id);
-    
-    if (currentUserAssignment) {
-      const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
-      if (assignedAdmin) {
-        return [assignedAdmin];
+    // If we have assignments and a current user, find their admin
+    if (currentUser && assignments && assignments.length > 0) {
+      const currentUserAssignment = assignments.find(a => a.employee_id === currentUser.id);
+      
+      if (currentUserAssignment && currentUserAssignment.admin_id) {
+        const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
+        if (assignedAdmin) {
+          // Make sure the assigned admin is in the list and not duplicated
+          const combinedAssignables = [...adminsAndManagers];
+          if (!combinedAssignables.some(e => e.id === assignedAdmin.id)) {
+            combinedAssignables.push(assignedAdmin);
+          }
+          console.log(`User has assigned admin: ${assignedAdmin.name}`, combinedAssignables);
+          return combinedAssignables;
+        }
       }
     }
     
-    return employees.filter(e => e.role === 'admin' || e.role === 'manager');
+    // Return admins and managers if no specific assignment
+    return adminsAndManagers;
   };
 
   const assignableEmployees = getAssignableEmployees();
@@ -111,17 +122,22 @@ export function useShiftReportForm() {
 
   const sendTestNotification = async () => {
     try {
+      console.log("Starting test notification with assignable employees:", assignableEmployees.length);
+      
       // First try to find an admin from assignable employees
-      if (assignableEmployees.length > 0) {
+      if (assignableEmployees && assignableEmployees.length > 0) {
         const admin = assignableEmployees[0];
         console.log("Using assignable employee for notification:", admin);
         await sendNotificationToAdmin(admin);
         return;
+      } else {
+        console.log("No assignable employees available, checking all employees");
       }
       
       // Then try all employees with admin or manager role
       if (employees && employees.length > 0) {
         const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+        console.log(`Found ${adminEmployees.length} admin/manager employees for notification`);
         
         if (adminEmployees.length > 0) {
           const admin = adminEmployees[0];

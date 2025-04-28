@@ -14,6 +14,8 @@ interface ShiftReportFormFieldsProps {
 }
 
 export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReportFormFieldsProps) {
+  console.log("Rendering form fields with assignable employees:", assignableEmployees);
+  
   return (
     <>
       <FormField
@@ -87,10 +89,10 @@ export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReport
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {assignableEmployees.length > 0 ? (
+                {assignableEmployees && assignableEmployees.length > 0 ? (
                   assignableEmployees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name}
+                      {employee.name} ({employee.role})
                     </SelectItem>
                   ))
                 ) : (

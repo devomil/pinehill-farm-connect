@@ -7,6 +7,8 @@ import { useShiftReportForm } from "@/hooks/useShiftReportForm";
 
 export function ShiftReportForm() {
   const { form, onSubmit, sendTestNotification, assignableEmployees } = useShiftReportForm();
+  
+  console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees);
 
   return (
     <Form {...form}>
@@ -16,16 +18,23 @@ export function ShiftReportForm() {
           assignableEmployees={assignableEmployees}
         />
 
-        <Button 
-          type="button" 
-          variant="secondary" 
-          onClick={sendTestNotification}
-          className="mt-4"
-        >
-          Send Test Notification
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 pt-2">
+          <Button 
+            type="button" 
+            variant="secondary" 
+            onClick={sendTestNotification}
+            className="w-full sm:w-auto"
+          >
+            Send Test Notification
+          </Button>
 
-        <Button type="submit">Submit Report</Button>
+          <Button 
+            type="submit"
+            className="w-full sm:w-auto"
+          >
+            Submit Report
+          </Button>
+        </div>
       </form>
     </Form>
   );
