@@ -15,9 +15,15 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
         return;
       }
       
-      const ryan = employees.find(e => e.name.toLowerCase().includes('ryan'));
-      if (!ryan) {
-        toast.error("Ryan not found in employees list");
+      // Find an admin or manager user to assign (instead of specifically looking for Ryan)
+      const adminOrManager = employees.find(e => 
+        e.role === 'admin' || 
+        e.role === 'manager' ||
+        e.name.toLowerCase().includes('ryan')
+      );
+      
+      if (!adminOrManager) {
+        toast.error("No admin or manager found in the system. Please add an admin user first.");
         return;
       }
       
@@ -31,7 +37,7 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
       const existingAssignment = existingAssignments && existingAssignments[0];
       
       if (existingAssignment) {
-        toast.info("Assignment already exists - updating to Ryan");
+        toast.info(`Assignment already exists - updating to ${adminOrManager.name}`);
       }
       
       const { error } = await supabase
@@ -39,15 +45,15 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
         .upsert({ 
           id: existingAssignment?.id || undefined,
           employee_id: currentUser.id, 
-          admin_id: ryan.id
+          admin_id: adminOrManager.id
         });
         
       if (error) {
         throw error;
       }
       
-      toast.success(`Assigned ${currentUser.name} to Ryan Sorensen`);
-      return ryan;
+      toast.success(`Assigned ${currentUser.name} to ${adminOrManager.name}`);
+      return adminOrManager;
     } catch (error) {
       console.error('Error creating test assignment:', error);
       toast.error(`Failed to create assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
