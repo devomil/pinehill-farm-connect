@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UseFormReturn } from "react-hook-form";
 import { User } from "@/types";
 import { NewMessageFormData } from "@/types/communications";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, UserCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RecipientSelectProps {
@@ -14,6 +14,9 @@ interface RecipientSelectProps {
 }
 
 export function RecipientSelect({ form, employees }: RecipientSelectProps) {
+  // Filter out the current user from the recipients list (optional)
+  // const filteredEmployees = employees.filter(e => e.id !== currentUser?.id);
+
   return (
     <FormField
       control={form.control}
@@ -22,20 +25,28 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
         <FormItem>
           <FormLabel>To</FormLabel>
           {employees.length > 0 ? (
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an employee" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name || employee.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an employee" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name || employee.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {employees.length > 1 && (
+                <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                  <UserCheck className="h-3 w-3 mr-1" /> 
+                  All employees can communicate with each other
+                </div>
+              )}
+            </>
           ) : (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />

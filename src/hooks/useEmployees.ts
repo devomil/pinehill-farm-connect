@@ -71,15 +71,15 @@ export function useEmployees() {
         }
       }
       
-      // Fetch all profiles regardless of previous steps - NO FILTERING BY CURRENT USER
-      // This ensures all employees can see each other
+      // Fetch all profiles - ALWAYS fetch all profiles regardless of role
+      // CRUCIAL CHANGE: No filtering by role or current user here
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
       if (profilesError) throw profilesError;
 
-      console.log("Fetched profiles:", profiles);
+      console.log("Fetched profiles:", profiles?.length);
 
       // Fetch user roles to combine with profiles
       const { data: userRoles, error: rolesError } = await supabase
@@ -88,9 +88,9 @@ export function useEmployees() {
 
       if (rolesError) throw rolesError;
 
-      console.log("Fetched user roles:", userRoles);
+      console.log("Fetched user roles:", userRoles?.length);
 
-      // Map roles to profiles
+      // Map roles to profiles - include ALL profiles regardless of role
       const formattedEmployees: UserType[] = (profiles || []).map(profile => {
         // Find the role for this user
         const userRole = userRoles?.find(role => role.user_id === profile.id);
@@ -111,7 +111,7 @@ export function useEmployees() {
         setEmployees([currentUser]);
       } else {
         setEmployees(formattedEmployees);
-        console.log("Formatted employees:", formattedEmployees);
+        console.log("Formatted employees:", formattedEmployees.length);
       }
       
     } catch (error: any) {

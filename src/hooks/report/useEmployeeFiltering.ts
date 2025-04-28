@@ -4,6 +4,7 @@ import { User } from "@/types";
 
 /**
  * Hook for filtering employees based on role and assignments
+ * UPDATED: Removed role-based filtering to allow all employees to see each other
  */
 export function useEmployeeFiltering(
   employees: User[],
@@ -25,8 +26,8 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // By default, all employees should be available for assignment
-    // We're removing the role-based filtering to allow all employees to see and message each other
+    // IMPORTANT: Include ALL employees regardless of role
+    // This ensures every employee can see and message every other employee
     const result = [...employees];
     
     // If the current user is not in the list (which shouldn't happen), add them

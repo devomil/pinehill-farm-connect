@@ -4,7 +4,7 @@ import { User as UserType } from "@/types";
 import { EmployeeSearchBar } from "./EmployeeSearchBar";
 import { EmployeeTable } from "./EmployeeTable";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { DatabaseIcon } from "lucide-react";
+import { DatabaseIcon, UserCheck } from "lucide-react";
 
 interface EmployeeContentProps {
   searchQuery: string;
@@ -32,7 +32,15 @@ export function EmployeeContent({
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle>Employees Directory</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Employees Directory
+          {employees.length > 1 && (
+            <span className="text-sm font-normal text-muted-foreground ml-2 flex items-center">
+              <UserCheck className="h-4 w-4 mr-1" />
+              All employees can see and communicate with each other
+            </span>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {error && (
