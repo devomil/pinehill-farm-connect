@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useEmployees } from "./useEmployees";
 import { useEmployeeAssignments } from "./useEmployeeAssignments";
+import { notifyManager } from "@/utils/notifyManager";
 
 const formSchema = z.object({
   date: z.string(),
@@ -58,6 +59,34 @@ export function useShiftReportForm() {
   const sendNotificationToAdmin = async (admin: any) => {
     try {
       console.log("Sending notification to admin:", admin);
+      
+      // First try using the notifyManager utility
+      try {
+        const result = await notifyManager("shift_report", 
+          { 
+            id: currentUser?.id || "unknown", 
+            name: currentUser?.name || "Unknown User", 
+            email: currentUser?.email || "unknown" 
+          }, 
+          {
+            date: new Date().toISOString().split('T')[0],
+            notes: "This is a test notification",
+            priority: "high"
+          }
+        );
+        
+        if (result.success) {
+          console.log("Notification sent via notifyManager:", result);
+          toast.success("Test notification sent successfully via manager notification system");
+          return;
+        } else {
+          console.warn("notifyManager failed, falling back to direct function invoke:", result.error);
+        }
+      } catch (notifyError) {
+        console.error("Error using notifyManager, falling back to direct function:", notifyError);
+      }
+      
+      // Fallback to direct function invocation
       await supabase.functions.invoke('send-admin-notification', {
         body: {
           adminEmail: admin.email,
@@ -76,12 +105,13 @@ export function useShiftReportForm() {
       toast.success("Test notification email sent successfully");
     } catch (error) {
       console.error('Error in sendNotificationToAdmin:', error);
-      throw error;
+      toast.error(`Failed to send notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const sendTestNotification = async () => {
     try {
+      // First try to find an admin from assignable employees
       if (assignableEmployees.length > 0) {
         const admin = assignableEmployees[0];
         console.log("Using assignable employee for notification:", admin);
@@ -89,20 +119,31 @@ export function useShiftReportForm() {
         return;
       }
       
-      const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+      // Then try all employees with admin or manager role
+      if (employees && employees.length > 0) {
+        const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+        
+        if (adminEmployees.length > 0) {
+          const admin = adminEmployees[0];
+          console.log("Using admin/manager from all employees for notification:", admin);
+          await sendNotificationToAdmin(admin);
+          return;
+        }
+      }
       
-      if (adminEmployees.length > 0) {
-        const admin = adminEmployees[0];
-        console.log("Using admin/manager from all employees for notification:", admin);
-        await sendNotificationToAdmin(admin);
+      // If we get here, try with the first employee as a last resort
+      if (employees && employees.length > 0) {
+        const firstEmployee = employees[0];
+        console.log("No admin found. Trying first available employee as fallback:", firstEmployee);
+        await sendNotificationToAdmin(firstEmployee);
         return;
       }
       
-      console.log("No admin found to send notification");
-      toast.error("No admin found to send test notification");
+      console.log("No admin or employee found to send notification");
+      toast.error("No admin found to send test notification. Please add an admin or manager to the system.");
     } catch (error) {
       console.error('Error sending test notification:', error);
-      toast.error("Failed to send test notification");
+      toast.error(`Failed to send test notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
