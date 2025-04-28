@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 import { User as UserType } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useEmployees() {
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currentUser } = useAuth();
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -26,6 +28,15 @@ export function useEmployees() {
       
       if (profileCount === 0) {
         console.log("No profiles found in the database");
+        
+        // If no profiles but we have the current logged-in user, use that instead
+        if (currentUser) {
+          console.log("Using current user as fallback:", currentUser);
+          setEmployees([currentUser]);
+          setLoading(false);
+          return;
+        }
+        
         toast.warning("No employee profiles found. Please check database setup.");
         setEmployees([]);
         setLoading(false);
@@ -79,7 +90,7 @@ export function useEmployees() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     fetchEmployees();
