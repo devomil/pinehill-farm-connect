@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
-// Using fetch directly since we don't have a specific Deno package
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,32 +41,109 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${employeeName} has submitted a new ${priority} priority report that requires your attention.`
       : `${employeeName} has submitted a new time off request that requires your review.`;
 
-    // Using the Resend API directly with fetch as shown in the Node.js example
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "HR System <onboarding@resend.dev>",
-        to: [adminEmail],
-        subject: subject,
-        html: `
-          <h2>Hello ${adminName},</h2>
-          <p>${content}</p>
-          <p>Additional Details:</p>
-          <pre>${JSON.stringify(details, null, 2)}</pre>
-          <p>Please log in to the system to review the details.</p>
-        `,
-      }),
+    // Format details as a readable HTML table if they exist
+    let detailsHtml = '';
+    if (details) {
+      detailsHtml = `
+        <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-radius: 5px; border: 1px solid #eee;">
+          <h3 style="margin-top: 0;">Request Details:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+      `;
+      
+      for (const [key, value] of Object.entries(details)) {
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        detailsHtml += `
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${formattedKey}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${value}</td>
+          </tr>
+        `;
+      }
+      
+      detailsHtml += `
+          </table>
+        </div>
+      `;
+    }
+
+    // Using the Resend API with proper templating
+    const emailResponse = await resend.emails.send({
+      from: `HR System <notifications@pinehillfarm.co>`,
+      to: [adminEmail],
+      subject: subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>${subject}</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .header { 
+                background-color: #3b82f6;
+                color: white;
+                padding: 20px;
+                text-align: center;
+                border-radius: 5px 5px 0 0;
+              }
+              .content {
+                padding: 20px;
+                background-color: #fff;
+                border: 1px solid #ddd;
+                border-top: none;
+                border-radius: 0 0 5px 5px;
+              }
+              .button {
+                display: inline-block;
+                background-color: #3b82f6;
+                color: white;
+                padding: 10px 20px;
+                margin: 20px 0;
+                text-decoration: none;
+                border-radius: 5px;
+              }
+              .footer {
+                margin-top: 20px;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>${subject}</h2>
+            </div>
+            <div class="content">
+              <p>Hello ${adminName},</p>
+              <p>${content}</p>
+              
+              ${detailsHtml}
+              
+              <a href="https://pinehillfarm-connect.lovable.dev" class="button">Log in to review</a>
+              
+              <p>Thank you,<br>Pine Hill Farm HR System</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated message from the Pine Hill Farm HR System.</p>
+            </div>
+          </body>
+        </html>
+      `,
     });
 
-    const responseData = await emailResponse.json();
-    console.log("Email response:", responseData);
+    console.log("Email response:", emailResponse);
 
-    return new Response(JSON.stringify(responseData), {
-      status: emailResponse.status,
+    return new Response(JSON.stringify(emailResponse), {
+      status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error) {
