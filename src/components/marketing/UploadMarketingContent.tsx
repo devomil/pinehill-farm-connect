@@ -15,13 +15,34 @@ interface UploadMarketingContentProps {
 export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ onUploadComplete }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [contentType, setContentType] = useState<"image" | "video">("image");
+  const [contentType, setContentType] = useState<"image" | "video" | "audio">("image");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Maximum file sizes in bytes (100MB for videos, 50MB for audio, 10MB for images)
+  const MAX_FILE_SIZES = {
+    video: 100 * 1024 * 1024,
+    audio: 50 * 1024 * 1024,
+    image: 10 * 1024 * 1024
+  };
+
+  const ACCEPTED_TYPES = {
+    image: "image/*",
+    video: "video/*",
+    audio: "audio/*"
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      const maxSize = MAX_FILE_SIZES[contentType];
+
+      if (selectedFile.size > maxSize) {
+        const sizeMB = Math.round(maxSize / (1024 * 1024));
+        toast.error(`File size exceeds the ${sizeMB}MB limit for ${contentType} files`);
+        return;
+      }
+
       setFile(selectedFile);
     }
   };
@@ -43,7 +64,10 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
 
       const { error: uploadError, data } = await supabase.storage
         .from('marketing_content')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -85,13 +109,14 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
     <form onSubmit={handleUpload} className="space-y-4">
       <div>
         <label className="block text-sm font-medium mb-1">Content Type</label>
-        <Select value={contentType} onValueChange={(value: "image" | "video") => setContentType(value)}>
+        <Select value={contentType} onValueChange={(value: "image" | "video" | "audio") => setContentType(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select content type" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="image">Image</SelectItem>
             <SelectItem value="video">Video</SelectItem>
+            <SelectItem value="audio">Audio</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -117,10 +142,13 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
 
       <div>
         <label className="block text-sm font-medium mb-1">File</label>
+        <div className="text-sm text-muted-foreground mb-2">
+          Max file size: {contentType === 'video' ? '100MB' : contentType === 'audio' ? '50MB' : '10MB'}
+        </div>
         <Input
           required
           type="file"
-          accept={contentType === "image" ? "image/*" : "video/*"}
+          accept={ACCEPTED_TYPES[contentType]}
           onChange={handleFileChange}
         />
       </div>

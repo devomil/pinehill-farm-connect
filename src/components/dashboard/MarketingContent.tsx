@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, Image, Plus } from "lucide-react";
+import { Video, Image, Music, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UploadMarketingContent } from "@/components/marketing/UploadMarketingContent";
@@ -37,6 +37,17 @@ export const MarketingContent: React.FC = () => {
           >
             Your browser does not support the video tag.
           </video>
+        );
+      case 'audio':
+        return (
+          <audio
+            controls
+            className="w-full mt-2"
+            src={content.url}
+            title={content.title}
+          >
+            Your browser does not support the audio tag.
+          </audio>
         );
       case 'image':
         return (
@@ -81,6 +92,8 @@ export const MarketingContent: React.FC = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {content.content_type === 'video' ? (
                   <Video className="h-4 w-4" />
+                ) : content.content_type === 'audio' ? (
+                  <Music className="h-4 w-4" />
                 ) : (
                   <Image className="h-4 w-4" />
                 )}
