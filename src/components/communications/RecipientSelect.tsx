@@ -14,8 +14,8 @@ interface RecipientSelectProps {
 }
 
 export function RecipientSelect({ form, employees }: RecipientSelectProps) {
-  // Filter out the current user from the recipients list (optional)
-  // const filteredEmployees = employees.filter(e => e.id !== currentUser?.id);
+  // We don't need to filter out the current user anymore - everyone can message everyone
+  // But we could if needed with: employees.filter(e => e.id !== currentUser?.id)
 
   return (
     <FormField

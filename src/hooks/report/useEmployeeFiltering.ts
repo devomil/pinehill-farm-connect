@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { User } from "@/types";
 
 /**
- * Hook for filtering employees based on role and assignments
- * UPDATED: Removed role-based filtering to allow all employees to see each other
+ * Hook for filtering employees based on assignments
+ * UPDATED: All employees can see each other - no filtering by role or assignments
  */
 export function useEmployeeFiltering(
   employees: User[],
@@ -26,8 +26,8 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // IMPORTANT: Include ALL employees regardless of role
-    // This ensures every employee can see and message every other employee
+    // Include ALL employees regardless of role or assignments
+    // This ensures every employee can see and interact with every other employee
     const result = [...employees];
     
     // If the current user is not in the list (which shouldn't happen), add them
@@ -36,7 +36,7 @@ export function useEmployeeFiltering(
       result.push(currentUser);
     }
     
-    console.log(`Found ${result.length} employees for assignment`);
+    console.log(`Found ${result.length} employees for assignment/communication`);
     setAssignableEmployees(result);
   }, [employees, assignments, currentUser]);
 
