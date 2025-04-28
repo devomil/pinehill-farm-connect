@@ -25,53 +25,17 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // Get admins and managers from employees list, including current user if they are admin/manager
-    const adminsAndManagers = employees.filter(e => 
-      (e.role === 'admin' || e.role === 'manager')
-    );
+    // By default, all employees should be available for assignment
+    // We're removing the role-based filtering to allow all employees to see and message each other
+    const result = [...employees];
     
-    console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
-    
-    // Start with admins/managers (even if empty)
-    let result = [...adminsAndManagers];
-    const assignableSet = new Set(adminsAndManagers.map(e => e.id));
-
-    // If there are assignments, add the assigned admin to the list
-    if (currentUser && assignments && assignments.length > 0) {
-      console.log(`Looking for assignments for ${currentUser.id}`, assignments);
-      
-      const currentUserAssignment = assignments.find(a => 
-        a.employee_id === currentUser.id && a.admin_id
-      );
-      
-      if (currentUserAssignment && currentUserAssignment.admin_id) {
-        console.log(`Found assignment: user ${currentUser.id} is assigned to admin ${currentUserAssignment.admin_id}`);
-        
-        const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
-        if (assignedAdmin && !assignableSet.has(assignedAdmin.id)) {
-          console.log(`Adding assigned admin to list: ${assignedAdmin.name}`);
-          result.push(assignedAdmin);
-          assignableSet.add(assignedAdmin.id);
-        }
-      } else {
-        console.log(`No assigned admin found for user ${currentUser.id}`);
-      }
-    }
-
-    // If the current user is an admin/manager, they should see themselves in the list too
-    // This allows them to assign reports to themselves
-    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager') && !assignableSet.has(currentUser.id)) {
-      console.log(`Adding current user (${currentUser.role}) to assignable list`);
-      result.push(currentUser);
-      assignableSet.add(currentUser.id);
-    }
-    
-    // If we still have no assignable employees, add current user as a fallback
-    if (result.length === 0 && currentUser) {
-      console.log("No assignable employees found - adding current user as fallback");
+    // If the current user is not in the list (which shouldn't happen), add them
+    if (currentUser && !result.some(e => e.id === currentUser.id)) {
+      console.log(`Adding current user (${currentUser.name}) to assignable list`);
       result.push(currentUser);
     }
     
+    console.log(`Found ${result.length} employees for assignment`);
     setAssignableEmployees(result);
   }, [employees, assignments, currentUser]);
 

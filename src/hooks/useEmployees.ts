@@ -71,7 +71,8 @@ export function useEmployees() {
         }
       }
       
-      // Fetch all profiles regardless of previous steps
+      // Fetch all profiles regardless of previous steps - NO FILTERING BY CURRENT USER
+      // This ensures all employees can see each other
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
