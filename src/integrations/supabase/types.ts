@@ -214,6 +214,9 @@ export type Database = {
           content_type: string
           created_at: string | null
           description: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
           id: string
           is_active: boolean | null
           title: string
@@ -224,6 +227,9 @@ export type Database = {
           content_type: string
           created_at?: string | null
           description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           is_active?: boolean | null
           title: string
@@ -234,6 +240,9 @@ export type Database = {
           content_type?: string
           created_at?: string | null
           description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           is_active?: boolean | null
           title?: string

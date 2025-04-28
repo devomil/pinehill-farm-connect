@@ -3,10 +3,15 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, Image } from "lucide-react";
+import { Video, Image, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { UploadMarketingContent } from "@/components/marketing/UploadMarketingContent";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const MarketingContent: React.FC = () => {
-  const { data: marketingContent } = useQuery({
+  const { currentUser } = useAuth();
+  const { data: marketingContent, refetch } = useQuery({
     queryKey: ['marketingContent'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -49,7 +54,25 @@ export const MarketingContent: React.FC = () => {
   return (
     <Card className="col-span-full lg:col-span-2">
       <CardHeader>
-        <CardTitle>Latest Marketing Content</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>Latest Marketing Content</CardTitle>
+          {currentUser?.role === "admin" && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Content
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Marketing Content</DialogTitle>
+                </DialogHeader>
+                <UploadMarketingContent onUploadComplete={refetch} />
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
