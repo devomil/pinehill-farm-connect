@@ -8,6 +8,7 @@ import { useEmployeeAssignments } from "./useEmployeeAssignments";
 import { useShiftNotifications } from "./report/useShiftNotifications";
 import { useShiftAssignments } from "./report/useShiftAssignments";
 import { useShiftSubmission, ShiftFormValues } from "./report/useShiftSubmission";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   date: z.string(),
@@ -75,7 +76,15 @@ export function useShiftReportForm() {
   };
 
   const handleSubmit = form.handleSubmit((data) => {
-    submitShiftReport(data, () => {
+    // Ensure data matches ShiftFormValues shape
+    const formData: ShiftFormValues = {
+      date: data.date,
+      notes: data.notes,
+      priority: data.priority,
+      assignedTo: data.assignedTo
+    };
+    
+    submitShiftReport(formData, () => {
       form.reset({
         date: new Date().toISOString().split('T')[0],
         notes: "",
