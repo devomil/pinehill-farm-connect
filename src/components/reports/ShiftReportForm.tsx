@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ShiftReportFormFields } from "./ShiftReportFormFields";
 import { useShiftReportForm } from "@/hooks/useShiftReportForm";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function ShiftReportForm() {
-  const { form, onSubmit, sendTestNotification, assignableEmployees } = useShiftReportForm();
+  const { form, onSubmit, sendTestNotification, assignableEmployees, createTestAssignment } = useShiftReportForm();
   
   console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees);
 
@@ -18,6 +20,15 @@ export function ShiftReportForm() {
           assignableEmployees={assignableEmployees}
         />
 
+        {assignableEmployees.length === 0 && (
+          <Alert variant="warning" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No admin/manager was found. Click "Fix Assignments" to assign Ryan as your admin.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4 pt-2">
           <Button 
             type="button" 
@@ -26,6 +37,15 @@ export function ShiftReportForm() {
             className="w-full sm:w-auto"
           >
             Send Test Notification
+          </Button>
+
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={createTestAssignment}
+            className="w-full sm:w-auto"
+          >
+            Fix Assignments
           </Button>
 
           <Button 

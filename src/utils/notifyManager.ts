@@ -8,6 +8,9 @@ export async function notifyManager(actionType: string, actor: { id: string; nam
       details.senderEmail = actor.email; // Add sender email for validation
     }
     
+    // Add more debugging to help trace issues
+    console.log(`[NotifyManager] Making request to notify-manager function with actor: ${actor.name} (${actor.email})`);
+    
     const res = await fetch(
       "https://pdeaxfhsodenefeckabm.functions.supabase.co/notify-manager",
       {

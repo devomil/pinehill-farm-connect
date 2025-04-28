@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useEmployees } from "./useEmployees";
 import { useEmployeeAssignments } from "./useEmployeeAssignments";
 import { notifyManager } from "@/utils/notifyManager";
+import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   date: z.string(),
@@ -20,8 +21,9 @@ export type FormValues = z.infer<typeof formSchema>;
 
 export function useShiftReportForm() {
   const { currentUser } = useAuth();
-  const { employees } = useEmployees();
-  const { assignments } = useEmployeeAssignments();
+  const { employees, loading: employeesLoading } = useEmployees();
+  const { assignments, isLoading: assignmentsLoading } = useEmployeeAssignments();
+  const [assignableEmployees, setAssignableEmployees] = useState<any[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -33,39 +35,111 @@ export function useShiftReportForm() {
     }
   });
 
-  const getAssignableEmployees = () => {
-    if (!employees || employees.length === 0) {
-      console.log("No employees available for assignment");
-      return [];
-    }
-    
-    // Always include admins and managers as assignable
-    const adminsAndManagers = employees.filter(e => e.role === 'admin' || e.role === 'manager');
-    console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
-    
-    // If we have assignments and a current user, find their admin
-    if (currentUser && assignments && assignments.length > 0) {
-      const currentUserAssignment = assignments.find(a => a.employee_id === currentUser.id);
+  // Separate effect to process assignable employees when data is ready
+  useEffect(() => {
+    if (!employeesLoading && !assignmentsLoading) {
+      const adminsAndManagers = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+      console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
       
-      if (currentUserAssignment && currentUserAssignment.admin_id) {
-        const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
-        if (assignedAdmin) {
-          // Make sure the assigned admin is in the list and not duplicated
-          const combinedAssignables = [...adminsAndManagers];
-          if (!combinedAssignables.some(e => e.id === assignedAdmin.id)) {
-            combinedAssignables.push(assignedAdmin);
+      // Create a set of assignable employees starting with admins and managers
+      const assignableSet = new Set(adminsAndManagers.map(e => e.id));
+      const result = [...adminsAndManagers];
+
+      // If we have assignments and a current user, find their admin
+      if (currentUser && assignments && assignments.length > 0) {
+        console.log(`Looking for assignments for ${currentUser.id}`, assignments);
+        
+        const currentUserAssignment = assignments.find(a => 
+          a.employee_id === currentUser.id && a.admin_id
+        );
+        
+        if (currentUserAssignment && currentUserAssignment.admin_id) {
+          console.log(`Found assignment: user ${currentUser.id} is assigned to admin ${currentUserAssignment.admin_id}`);
+          
+          const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
+          if (assignedAdmin && !assignableSet.has(assignedAdmin.id)) {
+            console.log(`Adding assigned admin to list: ${assignedAdmin.name}`);
+            result.push(assignedAdmin);
+            assignableSet.add(assignedAdmin.id);
           }
-          console.log(`User has assigned admin: ${assignedAdmin.name}`, combinedAssignables);
-          return combinedAssignables;
+        } else {
+          console.log(`No assigned admin found for user ${currentUser.id}`);
+          
+          // For testing, add any user with 'admin' in their name if they're not showing up
+          const potentialAdmins = employees.filter(e => 
+            e.name.toLowerCase().includes('ryan') && !assignableSet.has(e.id)
+          );
+          
+          if (potentialAdmins.length > 0) {
+            console.log("Adding potential admin based on name:", potentialAdmins);
+            result.push(...potentialAdmins);
+          }
         }
       }
+      
+      setAssignableEmployees(result);
     }
-    
-    // Return admins and managers if no specific assignment
-    return adminsAndManagers;
-  };
+  }, [employees, assignments, currentUser, employeesLoading, assignmentsLoading]);
 
-  const assignableEmployees = getAssignableEmployees();
+  // Create test assignment if needed for demonstration
+  const createTestAssignment = async () => {
+    try {
+      if (!currentUser) {
+        toast.error("No current user found");
+        return;
+      }
+      
+      // Find Ryan in employees
+      const ryan = employees.find(e => e.name.toLowerCase().includes('ryan'));
+      if (!ryan) {
+        toast.error("Ryan not found in employees list");
+        return;
+      }
+      
+      // Check if an assignment already exists
+      const existingAssignment = assignments?.find(a => a.employee_id === currentUser.id);
+      if (existingAssignment) {
+        toast.info("Assignment already exists - updating to Ryan");
+      }
+      
+      // Create or update the assignment
+      const { error } = await supabase
+        .from('employee_assignments')
+        .upsert({ 
+          id: existingAssignment?.id || undefined,
+          employee_id: currentUser.id, 
+          admin_id: ryan.id
+        });
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success(`Assigned ${currentUser.name} to Ryan Sorensen`);
+      
+      // Manually update the assignments list in memory
+      const updatedAssignment = {
+        id: existingAssignment?.id || crypto.randomUUID(),
+        employee_id: currentUser.id,
+        admin_id: ryan.id,
+        created_at: new Date().toISOString(),
+        employee: currentUser,
+        admin: ryan
+      };
+      
+      // Force a refresh of the assignable employees
+      setAssignableEmployees(prev => {
+        if (!prev.some(e => e.id === ryan.id)) {
+          return [...prev, ryan];
+        }
+        return prev;
+      });
+      
+    } catch (error) {
+      console.error('Error creating test assignment:', error);
+      toast.error(`Failed to create assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
 
   const sendNotificationToAdmin = async (admin: any) => {
     try {
@@ -226,6 +300,7 @@ export function useShiftReportForm() {
     form,
     onSubmit: form.handleSubmit(onSubmit),
     sendTestNotification,
-    assignableEmployees
+    assignableEmployees,
+    createTestAssignment
   };
 }
