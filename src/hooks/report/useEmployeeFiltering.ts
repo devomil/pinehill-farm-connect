@@ -15,14 +15,19 @@ export function useEmployeeFiltering(
   useEffect(() => {
     if (!employees || employees.length === 0) {
       console.log("No employees available for filtering");
-      setAssignableEmployees([]);
+      if (currentUser) {
+        // If no other employees but we have current user, make them assignable to themselves
+        console.log("No employees but have current user - making them self-assignable");
+        setAssignableEmployees([currentUser]);
+      } else {
+        setAssignableEmployees([]);
+      }
       return;
     }
     
-    // Get admins and managers from employees list, excluding current user
+    // Get admins and managers from employees list, including current user if they are admin/manager
     const adminsAndManagers = employees.filter(e => 
-      (e.role === 'admin' || e.role === 'manager') &&
-      (!currentUser || e.id !== currentUser.id) // Exclude current user
+      (e.role === 'admin' || e.role === 'manager')
     );
     
     console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
@@ -57,6 +62,13 @@ export function useEmployeeFiltering(
     // This allows them to assign reports to themselves
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'manager') && !assignableSet.has(currentUser.id)) {
       console.log(`Adding current user (${currentUser.role}) to assignable list`);
+      result.push(currentUser);
+      assignableSet.add(currentUser.id);
+    }
+    
+    // If we still have no assignable employees, add current user as a fallback
+    if (result.length === 0 && currentUser) {
+      console.log("No assignable employees found - adding current user as fallback");
       result.push(currentUser);
     }
     

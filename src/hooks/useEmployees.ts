@@ -26,24 +26,52 @@ export function useEmployees() {
       
       console.log("Profile count:", profileCount);
       
-      if (profileCount === 0) {
-        console.log("No profiles found in the database");
+      // If we have a current user but no profiles, create a profile for the current user
+      if (profileCount === 0 && currentUser) {
+        console.log("No profiles found - creating profile for current user:", currentUser);
         
-        // If no profiles but we have the current logged-in user, use that instead
-        if (currentUser) {
-          console.log("Using current user as fallback:", currentUser);
-          setEmployees([currentUser]);
-          setLoading(false);
-          return;
+        // Create profile for current user
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: currentUser.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            department: currentUser.department || '',
+            position: currentUser.position || ''
+          });
+          
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          // Continue with the current user as fallback even if profile creation fails
+        } else {
+          console.log("Created profile for current user");
+          
+          // Check if the user has a role, if not set a default role
+          const { data: existingRole } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+            
+          if (!existingRole) {
+            console.log("No role found for current user, creating default role");
+            
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: currentUser.id,
+                role: 'employee'
+              });
+              
+            if (roleError) {
+              console.error("Error creating user role:", roleError);
+            }
+          }
         }
-        
-        toast.warning("No employee profiles found. Please check database setup.");
-        setEmployees([]);
-        setLoading(false);
-        return;
       }
       
-      // Fetch profiles with proper role information
+      // Fetch all profiles regardless of previous steps
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -76,17 +104,26 @@ export function useEmployees() {
         };
       });
 
-      setEmployees(formattedEmployees);
-      console.log("Formatted employees:", formattedEmployees);
-      
-      if (formattedEmployees.length === 0) {
-        console.log("No employees found after formatting");
+      // If still no employees after all attempts but we have current user, use that
+      if (formattedEmployees.length === 0 && currentUser) {
+        console.log("No employees found after all attempts - using current user as fallback");
+        setEmployees([currentUser]);
+      } else {
+        setEmployees(formattedEmployees);
+        console.log("Formatted employees:", formattedEmployees);
       }
       
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       setError(error.message);
-      toast.error("Failed to load employees");
+      
+      // Even if there's an error, if we have the current user, use it as a fallback
+      if (currentUser) {
+        console.log("Error occurred but using current user as fallback");
+        setEmployees([currentUser]);
+      } else {
+        toast.error("Failed to load employees");
+      }
     } finally {
       setLoading(false);
     }

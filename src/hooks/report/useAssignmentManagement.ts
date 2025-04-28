@@ -17,8 +17,22 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
       
       // Check if there are any employees in the system
       if (!employees || employees.length === 0) {
-        toast.error("No employees found in the system");
-        return;
+        console.log("No employees found in the system, creating test profile");
+        
+        // Create test profile if none exists
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: currentUser.id,
+            name: currentUser.name || 'Test User',
+            email: currentUser.email || 'test@example.com'
+          });
+          
+        if (profileError) {
+          console.error("Error creating test profile:", profileError);
+          toast.error("Failed to create test profile");
+          return null;
+        }
       }
       
       // First attempt: look for existing admin/manager users (not the current user)
@@ -51,34 +65,30 @@ export function useAssignmentManagement(employees: User[], currentUser: User | n
         }
       }
       
-      // Final fallback: Create a new admin role for a user in the system
+      // Final fallback: Create a new admin role for the current user if no other admins exist
       if (!adminToAssign) {
-        console.log("No existing admin/manager found, creating admin role for a user");
+        console.log("No existing admin/manager found, promoting current user to admin");
         
-        // Get another user that's not the current user
-        const userToPromote = employees.find(e => e.id !== currentUser.id);
+        // Promote current user to admin
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({ 
+            user_id: currentUser.id,
+            role: 'admin'
+          });
         
-        if (userToPromote) {
-          // Promote user to admin
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .upsert({ 
-              user_id: userToPromote.id,
-              role: 'admin'
-            });
-          
-          if (roleError) {
-            console.error("Error updating user role:", roleError);
-            toast.error("Failed to create admin role");
-            return null;
-          }
-          
-          toast.success(`Promoted ${userToPromote.name} to admin role`);
-          adminToAssign = { ...userToPromote, role: 'admin' };
-        } else {
-          toast.error("No users available to promote to admin");
+        if (roleError) {
+          console.error("Error updating user role:", roleError);
+          toast.error("Failed to create admin role");
           return null;
         }
+        
+        toast.success(`Promoted you (${currentUser.name}) to admin role`);
+        adminToAssign = { ...currentUser, role: 'admin' };
+        
+        // No need to create an assignment if we're promoting the current user to admin
+        // The user can now assign reports to themselves
+        return adminToAssign;
       }
       
       // If we still don't have an admin to assign to
