@@ -38,61 +38,84 @@ export function ShiftReportForm() {
   });
 
   const getAssignableEmployees = () => {
-    const currentUserAssignment = assignments?.find(a => a.employee_id === currentUser?.id);
+    // If no employees data is available yet, return empty array
+    if (!employees || employees.length === 0) {
+      return [];
+    }
     
-    if (currentUserAssignment?.admin) {
-      const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
-      return assignedAdmin ? [assignedAdmin] : [];
-    } else {
+    // If not logged in user or no assignments data, just return admin and manager roles
+    if (!currentUser || !assignments) {
       return employees.filter(e => e.role === 'admin' || e.role === 'manager');
     }
+    
+    const currentUserAssignment = assignments?.find(a => a.employee_id === currentUser?.id);
+    
+    if (currentUserAssignment) {
+      // If the employee is assigned to an admin, include that admin
+      const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
+      if (assignedAdmin) {
+        return [assignedAdmin];
+      }
+    }
+    
+    // Default to all admin and manager employees
+    return employees.filter(e => e.role === 'admin' || e.role === 'manager');
   };
 
   const assignableEmployees = getAssignableEmployees();
 
+  const sendNotificationToAdmin = async (admin: any) => {
+    try {
+      console.log("Sending notification to admin:", admin);
+      await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          adminEmail: admin.email,
+          adminName: admin.name,
+          type: "report",
+          priority: "high",
+          employeeName: currentUser?.name || "Test User",
+          details: {
+            date: new Date().toISOString().split('T')[0],
+            notes: "This is a test notification",
+            priority: "high"
+          }
+        },
+      });
+
+      toast.success("Test notification email sent successfully");
+    } catch (error) {
+      console.error('Error in sendNotificationToAdmin:', error);
+      throw error;
+    }
+  };
+
   const sendTestNotification = async () => {
     try {
-      // Find managers or admins from our filtered list
-      const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
-      
-      if (adminEmployees.length === 0) {
-        // If no admins in employees list, try to use an assignable employee
-        if (assignableEmployees.length > 0) {
-          const admin = assignableEmployees[0];
-          await sendNotificationToAdmin(admin);
-          return;
-        }
-        
-        toast.error("No admin found to send test notification");
+      // First, try to use one of the assignable employees (admin or manager)
+      if (assignableEmployees.length > 0) {
+        const admin = assignableEmployees[0];
+        console.log("Using assignable employee for notification:", admin);
+        await sendNotificationToAdmin(admin);
         return;
       }
-
-      const admin = adminEmployees[0];
-      await sendNotificationToAdmin(admin);
       
+      // If no assignable employees, try to find any admin or manager from all employees
+      const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+      
+      if (adminEmployees.length > 0) {
+        const admin = adminEmployees[0];
+        console.log("Using admin/manager from all employees for notification:", admin);
+        await sendNotificationToAdmin(admin);
+        return;
+      }
+      
+      // If still no admin found
+      console.log("No admin found to send notification");
+      toast.error("No admin found to send test notification");
     } catch (error) {
       console.error('Error sending test notification:', error);
       toast.error("Failed to send test notification");
     }
-  };
-
-  const sendNotificationToAdmin = async (admin: any) => {
-    await supabase.functions.invoke('send-admin-notification', {
-      body: {
-        adminEmail: admin.email,
-        adminName: admin.name,
-        type: "report",
-        priority: "high",
-        employeeName: currentUser?.name || "Test User",
-        details: {
-          date: new Date().toISOString().split('T')[0],
-          notes: "This is a test notification",
-          priority: "high"
-        }
-      },
-    });
-
-    toast.success("Test notification email sent successfully");
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -110,32 +133,23 @@ export function ShiftReportForm() {
       if (error) throw error;
 
       if (data.assignedTo && (data.priority === "high" || data.priority === "medium")) {
-        const { data: adminProfile } = await supabase
-          .from('profiles')
-          .select('name, email')
-          .eq('id', data.assignedTo)
-          .single();
-
-        if (adminProfile) {
-          await supabase.functions.invoke('send-admin-notification', {
-            body: {
-              adminEmail: adminProfile.email,
-              adminName: adminProfile.name,
-              type: "report",
-              priority: data.priority,
-              employeeName: currentUser?.name || "An employee",
-              details: {
-                date: data.date,
-                notes: data.notes,
-                priority: data.priority
-              }
-            },
+        const selectedAdmin = employees.find(e => e.id === data.assignedTo);
+        
+        if (selectedAdmin) {
+          await sendNotificationToAdmin({
+            email: selectedAdmin.email,
+            name: selectedAdmin.name
           });
         }
       }
 
       toast.success("Shift report submitted successfully");
-      form.reset();
+      form.reset({
+        date: new Date().toISOString().split('T')[0],
+        notes: "",
+        priority: "medium",
+        assignedTo: ""
+      });
     } catch (error) {
       console.error('Error submitting shift report:', error);
       toast.error("Failed to submit shift report");
@@ -223,7 +237,7 @@ export function ShiftReportForm() {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="no-admins" disabled>No admins/managers available</SelectItem>
+                    <SelectItem value="no-admins-available" disabled>No admins/managers available</SelectItem>
                   )}
                 </SelectContent>
               </Select>
