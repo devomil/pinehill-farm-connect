@@ -33,6 +33,17 @@ const handler = async (req: Request): Promise<Response> => {
       details 
     }: NotificationRequest = await req.json();
 
+    console.log(`Processing notification to ${adminName} (${adminEmail}) from ${employeeName}`);
+
+    // Verify we're not accidentally sending to the same person who created the report
+    if (adminEmail === details?.senderEmail) {
+      console.warn(`Warning: Notification would be sent to the same person who created it (${adminEmail}). Aborting.`);
+      return new Response(
+        JSON.stringify({ error: "Cannot send notification to the report creator" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const subject = type === "report" 
       ? `New ${priority} Priority Report from ${employeeName}`
       : `New Time Off Request from ${employeeName}`;
@@ -51,6 +62,9 @@ const handler = async (req: Request): Promise<Response> => {
       `;
       
       for (const [key, value] of Object.entries(details)) {
+        // Skip the senderEmail field as it's just for validation
+        if (key === 'senderEmail') continue;
+        
         const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
         detailsHtml += `
           <tr>

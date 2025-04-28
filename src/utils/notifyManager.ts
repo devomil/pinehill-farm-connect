@@ -3,6 +3,11 @@ export async function notifyManager(actionType: string, actor: { id: string; nam
   try {
     console.log(`[NotifyManager] Sending notification for ${actionType}`, { actor, details });
     
+    // Add validation to prevent sending to the actor's own email
+    if (actionType === "shift_report") {
+      details.senderEmail = actor.email; // Add sender email for validation
+    }
+    
     const res = await fetch(
       "https://pdeaxfhsodenefeckabm.functions.supabase.co/notify-manager",
       {

@@ -6,9 +6,18 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -16,10 +25,96 @@ serve(async (req) => {
     
     console.log(`Processing notification: ${actionType}`, { actor, details });
     
-    // Different actions require different notification targets
-    let notifications = [];
-    
-    if (actionType === "time_off_request") {
+    if (actionType === "shift_report") {
+      // Get all managers and admins
+      const { data: managers, error: mgrErr } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["manager", "admin"]);
+
+      if (mgrErr) throw mgrErr;
+      
+      if (!managers || managers.length === 0) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "No managers or admins found" 
+        }), {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        });
+      }
+      
+      // Filter out the sender
+      const validManagerIds = managers
+        .map(mgr => mgr.user_id)
+        .filter(id => id !== actor.id);
+        
+      if (validManagerIds.length === 0) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "No eligible managers found (excluding the sender)" 
+        }), {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        });
+      }
+      
+      // Get profiles for the managers
+      const { data: managerProfiles, error: profilesErr } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", validManagerIds);
+        
+      if (profilesErr) throw profilesErr;
+      
+      if (!managerProfiles || managerProfiles.length === 0) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "No manager profiles found" 
+        }), {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        });
+      }
+      
+      // Create notifications for all valid managers
+      const notifications = managerProfiles.map(manager => ({
+        user_id: manager.id,
+        type: actionType,
+        message: `Employee ${actor.name} submitted a ${details.priority || "high"} priority report.`,
+        data: { actor, details },
+      }));
+      
+      // Insert notifications
+      const { error: insertErr } = await supabase
+        .from("notifications")
+        .insert(notifications);
+
+      if (insertErr) throw insertErr;
+      
+      console.log(`Successfully created ${notifications.length} notifications`);
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: `Successfully sent ${notifications.length} notifications to managers/admins` 
+      }), { 
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      });
+    } 
+    else if (actionType === "time_off_request") {
       // Find manager(s) in the same department (for demo: any user with role "manager")
       const { data: managers, error: mgrErr } = await supabase
         .from("user_roles")
@@ -89,7 +184,13 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: false, 
         message: `Unhandled action type: ${actionType}` 
-      }), { status: 400 });
+      }), { 
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      });
     }
     
     if (notifications.length === 0) {
@@ -111,6 +212,14 @@ serve(async (req) => {
     }), { status: 200 });
   } catch (e) {
     console.error("Error processing notification:", e);
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      error: e.message 
+    }), { 
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders
+      }
+    });
   }
 });

@@ -69,6 +69,15 @@ export function useShiftReportForm() {
 
   const sendNotificationToAdmin = async (admin: any) => {
     try {
+      if (!admin || !admin.email) {
+        throw new Error("Invalid admin data provided");
+      }
+      
+      // Make sure we're not sending a notification to ourselves
+      if (currentUser && admin.email === currentUser.email) {
+        throw new Error("Cannot send notification to yourself");
+      }
+      
       console.log("Sending notification to admin:", admin);
       
       // First try using the notifyManager utility
@@ -106,6 +115,7 @@ export function useShiftReportForm() {
           priority: "high",
           employeeName: currentUser?.name || "Test User",
           details: {
+            senderEmail: currentUser?.email || "", // Add sender email for validation
             date: new Date().toISOString().split('T')[0],
             notes: "This is a test notification",
             priority: "high"
@@ -131,17 +141,29 @@ export function useShiftReportForm() {
       
       // First try to find an admin from assignable employees
       if (assignableEmployees && assignableEmployees.length > 0) {
-        const admin = assignableEmployees[0];
-        console.log("Using assignable employee for notification:", admin);
-        await sendNotificationToAdmin(admin);
-        return;
+        // Find the first admin/manager that is not the current user
+        const nonCurrentUserAdmin = assignableEmployees.find(emp => 
+          emp.id !== currentUser?.id
+        );
+        
+        if (nonCurrentUserAdmin) {
+          console.log("Using assignable admin/manager for notification:", nonCurrentUserAdmin);
+          await sendNotificationToAdmin(nonCurrentUserAdmin);
+          return;
+        } else {
+          console.log("Found only the current user as assignable employee, looking for others");
+        }
       } else {
         console.log("No assignable employees available, checking all employees");
       }
       
       // Then try all employees with admin or manager role
       if (employees && employees.length > 0) {
-        const adminEmployees = employees.filter(e => e.role === 'admin' || e.role === 'manager');
+        const adminEmployees = employees.filter(e => 
+          (e.role === 'admin' || e.role === 'manager') && 
+          e.id !== currentUser?.id
+        );
+        
         console.log(`Found ${adminEmployees.length} admin/manager employees for notification`);
         
         if (adminEmployees.length > 0) {
@@ -152,16 +174,9 @@ export function useShiftReportForm() {
         }
       }
       
-      // If we get here, try with the first employee as a last resort
-      if (employees && employees.length > 0) {
-        const firstEmployee = employees[0];
-        console.log("No admin found. Trying first available employee as fallback:", firstEmployee);
-        await sendNotificationToAdmin(firstEmployee);
-        return;
-      }
-      
-      console.log("No admin or employee found to send notification");
-      toast.error("No admin found to send test notification. Please add an admin or manager to the system.");
+      // If we get here, we couldn't find a suitable admin/manager
+      console.log("No suitable admin or manager found to send notification");
+      toast.error("No admin or manager found to send test notification. Please add an admin or manager to the system.");
     } catch (error) {
       console.error('Error sending test notification:', error);
       toast.error(`Failed to send test notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -185,8 +200,9 @@ export function useShiftReportForm() {
       if (data.assignedTo && (data.priority === "high" || data.priority === "medium")) {
         const selectedAdmin = employees.find(e => e.id === data.assignedTo);
         
-        if (selectedAdmin) {
+        if (selectedAdmin && selectedAdmin.id !== currentUser?.id) {
           await sendNotificationToAdmin({
+            id: selectedAdmin.id,
             email: selectedAdmin.email,
             name: selectedAdmin.name
           });
