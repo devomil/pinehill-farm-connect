@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -7,6 +8,7 @@ import {
   CalendarIcon, 
   Home, 
   Inbox, 
+  MessageSquare,
   Users, 
   BookOpenCheck,
   BookOpen
@@ -71,13 +73,27 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
         variant="ghost"
         className={cn(
           "justify-start font-normal",
-          pathname.includes("/communication") && "bg-accent"
+          pathname === "/communication" && "bg-accent"
         )}
         asChild
       >
         <Link to="/communication">
           <Inbox className="h-5 w-5 mr-3" />
-          <span className={!collapsed ? "block" : "hidden"}>Communication</span>
+          <span className={!collapsed ? "block" : "hidden"}>Announcements</span>
+        </Link>
+      </Button>
+
+      <Button
+        variant="ghost"
+        className={cn(
+          "justify-start font-normal",
+          pathname === "/communications" && "bg-accent"
+        )}
+        asChild
+      >
+        <Link to="/communications">
+          <MessageSquare className="h-5 w-5 mr-3" />
+          <span className={!collapsed ? "block" : "hidden"}>Messaging</span>
         </Link>
       </Button>
 
