@@ -98,7 +98,7 @@ export function useShiftReportForm() {
       }
       
       // Fallback to direct function invocation
-      await supabase.functions.invoke('send-admin-notification', {
+      const response = await supabase.functions.invoke('send-admin-notification', {
         body: {
           adminEmail: admin.email,
           adminName: admin.name,
@@ -113,6 +113,11 @@ export function useShiftReportForm() {
         },
       });
 
+      if (response.error) {
+        throw new Error(`Function error: ${response.error.message}`);
+      }
+
+      console.log("Email function response:", response.data);
       toast.success("Test notification email sent successfully");
     } catch (error) {
       console.error('Error in sendNotificationToAdmin:', error);
