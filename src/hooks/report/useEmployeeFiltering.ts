@@ -26,14 +26,16 @@ export function useEmployeeFiltering(
     
     console.log(`Found ${adminsAndManagers.length} admins/managers for assignment`, adminsAndManagers);
     
-    if (adminsAndManagers.length === 0 && employees.length > 0) {
-      // If no admins/managers are found but we have employees, log this issue
-      console.log("No admin/manager roles found among employees. Available roles:", 
-        [...new Set(employees.map(e => e.role))]);
-    }
-    
-    const assignableSet = new Set(adminsAndManagers.map(e => e.id));
+    // Start with admins/managers or empty array if none
     const result = [...adminsAndManagers];
+    const assignableSet = new Set(adminsAndManagers.map(e => e.id));
+    
+    // If no admins/managers but we have a current user, include the current user as a fallback option
+    if (adminsAndManagers.length === 0 && currentUser && !assignableSet.has(currentUser.id)) {
+      console.log("No admin/manager roles found, adding current user as fallback option");
+      result.push(currentUser);
+      assignableSet.add(currentUser.id);
+    }
 
     if (currentUser && assignments && assignments.length > 0) {
       console.log(`Looking for assignments for ${currentUser.id}`, assignments);
