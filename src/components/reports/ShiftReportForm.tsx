@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 
 const formSchema = z.object({
   date: z.string(),
@@ -24,6 +25,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function ShiftReportForm() {
   const { currentUser } = useAuth();
   const { employees } = useEmployees();
+  const { assignments } = useEmployeeAssignments();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,9 +36,21 @@ export function ShiftReportForm() {
     }
   });
 
+  const getAssignableEmployees = () => {
+    const currentUserAssignment = assignments?.find(a => a.employee_id === currentUser?.id);
+    
+    if (currentUserAssignment?.admin) {
+      const assignedAdmin = employees.find(e => e.id === currentUserAssignment.admin_id);
+      return assignedAdmin ? [assignedAdmin] : [];
+    } else {
+      return employees.filter(e => e.role === 'admin' || e.role === 'manager');
+    }
+  };
+
+  const assignableEmployees = getAssignableEmployees();
+
   const sendTestNotification = async () => {
     try {
-      // Find an admin to send the test notification to
       const adminEmployees = employees.filter(e => e.role === 'admin');
       if (adminEmployees.length === 0) {
         toast.error("No admin found to send test notification");
@@ -81,9 +95,7 @@ export function ShiftReportForm() {
 
       if (error) throw error;
 
-      // If the report is high or medium priority and has an assigned admin, send notification
       if (data.assignedTo && (data.priority === "high" || data.priority === "medium")) {
-        // Get admin's profile
         const { data: adminProfile } = await supabase
           .from('profiles')
           .select('name, email')
@@ -91,7 +103,6 @@ export function ShiftReportForm() {
           .single();
 
         if (adminProfile) {
-          // Send notification
           await supabase.functions.invoke('send-admin-notification', {
             body: {
               adminEmail: adminProfile.email,
@@ -180,22 +191,26 @@ export function ShiftReportForm() {
           name="assignedTo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Assign To Employee</FormLabel>
+              <FormLabel>Assign To</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an employee (optional)" />
+                    <SelectValue placeholder="Select admin/manager to assign (optional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
+                  {assignableEmployees.length > 0 ? (
+                    assignableEmployees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>No admins/managers available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
