@@ -209,7 +209,7 @@ export function ShiftReportForm() {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>No admins/managers available</SelectItem>
+                    <SelectItem value="no-admins" disabled>No admins/managers available</SelectItem>
                   )}
                 </SelectContent>
               </Select>
