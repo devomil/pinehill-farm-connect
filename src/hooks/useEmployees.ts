@@ -17,35 +17,58 @@ export function useEmployees() {
       setLoading(true);
       setError(null);
       
+      console.log("Fetching employees, current user:", currentUser?.email);
+      
       // First check if user profiles exists in the profiles table
       const { count: profileCount, error: countError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
         
-      if (countError) throw countError;
+      if (countError) {
+        console.error("Error counting profiles:", countError);
+        throw countError;
+      }
       
       console.log("Profile count:", profileCount);
       
       // If we have a current user but no profiles, create a profile for the current user
+      // This might fail due to RLS policies
       if ((profileCount === 0 || !profileCount) && currentUser) {
         console.log("No profiles found - creating profile for current user:", currentUser);
         
-        // Create profile for current user
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: currentUser.id,
-            name: currentUser.name || currentUser.email.split('@')[0],
-            email: currentUser.email,
-            department: currentUser.department || '',
-            position: currentUser.position || ''
-          });
-          
-        if (createError) {
-          console.error("Error creating profile:", createError);
-          // Continue with the current user as fallback even if profile creation fails
-        } else {
-          console.log("Created profile for current user");
+        try {
+          // Try to create profile for current user
+          const { data: existingProfile, error: checkError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+            
+          if (checkError) {
+            console.error("Error checking existing profile:", checkError);
+          }
+            
+          if (!existingProfile) {
+            // Create profile for current user
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: currentUser.id,
+                name: currentUser.name || currentUser.email.split('@')[0],
+                email: currentUser.email,
+                department: currentUser.department || '',
+                position: currentUser.position || ''
+              });
+              
+            if (createError) {
+              console.error("Error creating profile:", createError);
+              // We'll continue anyway and try to use available data
+            } else {
+              console.log("Created profile for current user");
+            }
+          } else {
+            console.log("Profile already exists for current user");
+          }
           
           // Check if the user has a role, if not set a default role
           const { data: existingRole } = await supabase
@@ -66,8 +89,13 @@ export function useEmployees() {
               
             if (roleError) {
               console.error("Error creating user role:", roleError);
+            } else {
+              console.log("Created default role for user");
             }
           }
+        } catch (insertError) {
+          console.error("Error in profile creation process:", insertError);
+          // Continue to next steps - we'll handle with fallbacks
         }
       }
       
@@ -76,7 +104,10 @@ export function useEmployees() {
         .from('profiles')
         .select('*');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
 
       console.log("Fetched profiles:", profiles?.length);
 
@@ -93,7 +124,10 @@ export function useEmployees() {
         .from('user_roles')
         .select('*');
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error("Error fetching user roles:", rolesError);
+        throw rolesError;
+      }
 
       console.log("Fetched user roles:", userRoles?.length);
 

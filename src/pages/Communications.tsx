@@ -1,9 +1,22 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function Communications() {
+  const { currentUser } = useAuth();
+  const { loading, error, refetch } = useEmployees();
+
+  useEffect(() => {
+    console.log("Communications page loaded with user:", currentUser?.email);
+    // Attempt to load employees when page loads
+    refetch();
+  }, [currentUser, refetch]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -13,7 +26,24 @@ export default function Communications() {
             Communicate with your colleagues and manage shift coverage requests
           </p>
         </div>
-        <EmployeeCommunications />
+        
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Error loading employees: {error}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading employee data...</span>
+          </div>
+        ) : (
+          <EmployeeCommunications />
+        )}
       </div>
     </DashboardLayout>
   );
