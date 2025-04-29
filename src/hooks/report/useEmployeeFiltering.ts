@@ -5,7 +5,6 @@ import { User } from "@/types";
 /**
  * Hook for filtering employees based on assignments
  * Updated: All employees can see each other - no filtering by role or assignments
- * Further updated: Added debugging and improved fallback measures
  */
 export function useEmployeeFiltering(
   employees: User[],
@@ -15,9 +14,7 @@ export function useEmployeeFiltering(
   const [assignableEmployees, setAssignableEmployees] = useState<User[]>([]);
 
   useEffect(() => {
-    // Always log the current state of data for debugging
     console.log(`useEmployeeFiltering called with ${employees?.length || 0} employees and ${assignments?.length || 0} assignments`);
-    console.log("Current user:", currentUser);
     
     if (!employees || employees.length === 0) {
       console.log("No employees available for filtering");
@@ -32,7 +29,7 @@ export function useEmployeeFiltering(
     }
     
     // Include ALL employees without any filtering
-    console.log(`Found ${employees.length} employees - including ALL without filtering`);
+    console.log(`Including all ${employees.length} employees without filtering`);
     
     // Make a copy of all employees array to avoid mutation
     const result = [...employees];
@@ -44,7 +41,6 @@ export function useEmployeeFiltering(
     }
     
     console.log(`Final assignable employees count: ${result.length}`);
-    console.log("Final assignable employees:", result);
     setAssignableEmployees(result);
   }, [employees, assignments, currentUser]);
 
