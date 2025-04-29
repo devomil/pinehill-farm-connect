@@ -1,0 +1,25 @@
+
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@/types";
+import { Communication } from "@/types/communications";
+
+export function useGetCommunications(currentUser: User | null) {
+  return useQuery({
+    queryKey: ['communications', currentUser?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_communications')
+        .select(`
+          *,
+          shift_coverage_requests(*)
+        `)
+        .or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentUser?.id,
+  });
+}

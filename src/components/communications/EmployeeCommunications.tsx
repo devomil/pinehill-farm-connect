@@ -10,6 +10,7 @@ import { MessageList } from "./MessageList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { RespondToShiftRequestParams } from "@/types/communications";
 
 export function EmployeeCommunications() {
   const { currentUser } = useAuth();
@@ -26,8 +27,8 @@ export function EmployeeCommunications() {
   }, [messages, currentUser]);
 
   // Create a handler function that calls the mutation's mutate function
-  const handleRespondToShiftRequest = (data: { communicationId: string; shiftRequestId: string; accept: boolean; senderId: string }) => {
-    respondToShiftRequest.mutate(data);
+  const handleRespondToShiftRequest = (data: RespondToShiftRequestParams) => {
+    respondToShiftRequest(data);
   };
 
   return (
