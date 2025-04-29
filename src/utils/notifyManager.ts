@@ -6,11 +6,29 @@ export async function notifyManager(
   assignedTo?: { id: string; name: string; email: string }
 ) {
   try {
-    console.log(`[NotifyManager] Sending notification for ${actionType}`, { actor, details, assignedTo });
+    console.log(`[NotifyManager] Sending notification for ${actionType}`, { 
+      actor, 
+      details, 
+      assignedTo: assignedTo ? {
+        id: assignedTo.id,
+        name: assignedTo.name,
+        email: assignedTo.email
+      } : 'none'
+    });
     
     // Add validation to prevent sending to the actor's own email
     if (actionType === "shift_report") {
       details.senderEmail = actor.email; // Add sender email for validation
+    }
+    
+    // Validate assignedTo email if present
+    if (assignedTo && (!assignedTo.email || !assignedTo.email.includes('@'))) {
+      console.error(`[NotifyManager] Invalid email for assignedTo: ${assignedTo.email}`);
+      return { 
+        success: false, 
+        error: `Invalid email format for assigned user: ${assignedTo.email}`,
+        invalidEmail: true
+      };
     }
     
     // Add more debugging to help trace issues

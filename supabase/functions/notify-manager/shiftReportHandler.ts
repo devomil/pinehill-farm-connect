@@ -1,3 +1,4 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { ManagerProfile, NotificationRequest } from "./notificationTypes.ts";
 
@@ -78,6 +79,21 @@ export async function handleShiftReport(
   if (!managerProfiles || managerProfiles.length === 0) {
     return { success: false, error: "No manager profiles found" };
   }
+
+  // Validate emails in profiles - log warning for any invalid emails
+  const validProfiles = managerProfiles.filter(profile => {
+    const isValid = profile.email && profile.email.includes('@');
+    if (!isValid) {
+      console.warn(`Manager profile ${profile.id} (${profile.name}) has invalid email: ${profile.email}`);
+    }
+    return isValid;
+  });
   
-  return { success: true, notifiedManagers: managerProfiles };
+  if (validProfiles.length === 0) {
+    return { success: false, error: "No manager profiles with valid emails found" };
+  }
+  
+  console.log(`Found ${validProfiles.length} manager profiles with valid emails`);
+  
+  return { success: true, notifiedManagers: validProfiles };
 }

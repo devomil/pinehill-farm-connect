@@ -35,6 +35,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing notification to ${adminName} (${adminEmail}) from ${employeeName}`);
 
+    // Verify that adminEmail is actually an email address
+    if (!adminEmail || !adminEmail.includes('@')) {
+      console.error(`Invalid email address provided: "${adminEmail}"`);
+      return new Response(
+        JSON.stringify({ error: "Invalid email address format", providedEmail: adminEmail }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Verify we're not accidentally sending to the same person who created the report
     if (adminEmail === details?.senderEmail) {
       console.warn(`Warning: Notification would be sent to the same person who created it (${adminEmail}). Aborting.`);
@@ -79,6 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `;
     }
+
+    console.log(`Sending email notification to: ${adminEmail}`);
 
     // Using the Resend API with proper templating and your verified domain
     const emailResponse = await resend.emails.send({

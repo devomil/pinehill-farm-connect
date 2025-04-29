@@ -102,10 +102,20 @@ export function useEmployees() {
         // Find the role for this user
         const userRole = userRoles?.find(role => role.user_id === profile.id);
         
+        // Ensure the email is valid
+        let email = profile.email || '';
+        if (!email.includes('@')) {
+          console.warn(`Profile ${profile.id} has invalid email: ${email}`);
+          // Use a default email domain if one isn't present
+          if (email && email.trim() !== '') {
+            email = `${email}@pinehillfarm.co`;
+          }
+        }
+        
         return {
           id: profile.id,
           name: profile.name || profile.email?.split('@')[0] || '',
-          email: profile.email || '',
+          email: email,
           department: profile.department || '',
           position: profile.position || '',
           role: userRole?.role || 'employee'
@@ -114,14 +124,27 @@ export function useEmployees() {
 
       // Make sure the current user is included in the list
       if (currentUser && !formattedEmployees.some(emp => emp.id === currentUser.id)) {
+        // Ensure current user has a valid email
+        let currentUserEmail = currentUser.email || '';
+        if (!currentUserEmail.includes('@') && currentUserEmail.trim() !== '') {
+          currentUserEmail = `${currentUserEmail}@pinehillfarm.co`;
+        }
+        
         formattedEmployees.push({
           id: currentUser.id,
           name: currentUser.name || currentUser.email?.split('@')[0] || 'Current User',
-          email: currentUser.email || '',
+          email: currentUserEmail,
           department: currentUser.department || '',
           position: currentUser.position || '',
           role: currentUser.role || 'employee'
         });
+      }
+
+      // Log any profiles with invalid emails as a warning
+      const invalidEmails = formattedEmployees.filter(emp => !emp.email || !emp.email.includes('@'));
+      if (invalidEmails.length > 0) {
+        console.warn(`Found ${invalidEmails.length} employees with invalid emails:`, 
+          invalidEmails.map(e => `${e.name} (${e.email})`));
       }
 
       setEmployees(formattedEmployees);

@@ -17,7 +17,13 @@ export function useShiftSubmission(currentUser: User | null, employees: User[]) 
 
   const onSubmit = async (data: ShiftFormValues, resetForm: () => void) => {
     try {
-      const { error } = await supabase
+      // First, validate the report data
+      if (!data.notes || !data.date || !data.priority) {
+        throw new Error("Missing required fields in report");
+      }
+      
+      // Create the shift report
+      const { data: reportData, error } = await supabase
         .from('shift_reports')
         .insert({
           user_id: currentUser?.id,
@@ -25,34 +31,54 @@ export function useShiftSubmission(currentUser: User | null, employees: User[]) 
           notes: data.notes,
           priority: data.priority,
           assigned_to: data.assignedTo || null
-        });
+        })
+        .select();
 
       if (error) throw error;
 
+      // If the report is assigned to someone, send a notification
       if (data.assignedTo) {
+        // Find the assigned employee with complete profile data
         const selectedAdmin = employees.find(e => e.id === data.assignedTo);
         
         if (selectedAdmin && selectedAdmin.id !== currentUser?.id) {
-          // Use the notifyManager utility directly for actual report submissions
-          // This ensures the assignedTo information is included
-          await notifyManager(
-            "shift_report", 
-            {
-              id: currentUser?.id || "unknown",
-              name: currentUser?.name || "Unknown User",
-              email: currentUser?.email || "unknown"
-            },
-            {
-              date: data.date,
-              notes: data.notes,
-              priority: data.priority
-            },
-            selectedAdmin
-          );
+          console.log(`Sending notification for assigned report to: ${selectedAdmin.name} (${selectedAdmin.email})`);
+          
+          // Validate the assigned user's email
+          if (!selectedAdmin.email || !selectedAdmin.email.includes('@')) {
+            console.error(`Invalid email for assigned user: ${selectedAdmin.email}`);
+            toast.error("Notification could not be sent due to invalid email address");
+          } else {
+            // Use the notifyManager utility directly for actual report submissions
+            // This ensures the assignedTo information is included
+            const notifyResult = await notifyManager(
+              "shift_report", 
+              {
+                id: currentUser?.id || "unknown",
+                name: currentUser?.name || "Unknown User",
+                email: currentUser?.email || "unknown"
+              },
+              {
+                date: data.date,
+                notes: data.notes,
+                priority: data.priority,
+                reportId: reportData?.[0]?.id
+              },
+              selectedAdmin
+            );
+            
+            if (!notifyResult.success) {
+              console.error("Failed to send notification:", notifyResult.error);
+              toast.error("Report was submitted but notification failed to send");
+            } else {
+              toast.success("Report submitted and notification sent successfully");
+            }
+          }
         }
+      } else {
+        toast.success("Shift report submitted successfully");
       }
-
-      toast.success("Shift report submitted successfully");
+      
       resetForm();
     } catch (error) {
       console.error('Error submitting shift report:', error);

@@ -30,17 +30,32 @@ serve(async (req) => {
     // Use the service role to bypass RLS
     const { data, error } = await supabaseClient
       .from('profiles')
-      .select('*')
-      .not('email', 'is', null);
+      .select('*');
 
     if (error) {
       console.error('Error fetching profiles:', error);
       throw error;
     }
 
-    console.log(`Successfully fetched ${data?.length || 0} profiles`);
+    // Validate and enhance profile data
+    const enhancedProfiles = data.map(profile => {
+      // Check if the profile has an email with an @ symbol
+      if (!profile.email || !profile.email.includes('@')) {
+        console.warn(`Profile ${profile.id} (${profile.name}) has invalid email: ${profile.email}`);
+        
+        // Only add domain if there's some text in the email field
+        if (profile.email && profile.email.trim() !== '') {
+          console.log(`Adding domain to email for ${profile.name}: ${profile.email}@pinehillfarm.co`);
+          profile.email = `${profile.email}@pinehillfarm.co`;
+        }
+      }
+      
+      return profile;
+    });
+
+    console.log(`Successfully fetched and enhanced ${enhancedProfiles?.length || 0} profiles`);
     
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(enhancedProfiles), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
