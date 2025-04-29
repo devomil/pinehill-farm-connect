@@ -22,7 +22,16 @@ export interface NewMessageFormData {
 
 export interface NewMessageDialogProps {
   employees: User[];
-  onSend: any;
+  onSend: (data: {
+    recipientId: string;
+    message: string;
+    type: MessageType;
+    shiftDetails?: {
+      shift_date: string;
+      shift_start: string;
+      shift_end: string;
+    };
+  }) => void;
 }
 
 export interface MessageNotification {

@@ -31,7 +31,8 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
       shift_end: values.shiftEnd
     } : undefined;
 
-    onSend.mutate({
+    // Call the function directly instead of using .mutate
+    onSend({
       recipientId: values.recipientId,
       message: values.message,
       type: values.type,
