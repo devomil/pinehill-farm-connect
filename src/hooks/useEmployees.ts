@@ -19,11 +19,12 @@ export function useEmployees() {
       
       console.log("Fetching employees, current user:", currentUser?.email);
       
-      // Fetch all profiles without any row-level security filtering
+      // Fetch all profiles without using the .is() method with non-boolean value
+      // Instead, use .not() with 'null' which is better supported by TypeScript
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .is('email', 'not.null'); // Only get valid profiles with email
+        .not('email', 'is', null); // Only get valid profiles with email
 
       if (profilesError) {
         // If we get an RLS error, use an alternative approach
