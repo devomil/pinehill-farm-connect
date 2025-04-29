@@ -11,18 +11,27 @@ export function useShiftNotifications() {
         throw new Error("Invalid admin data provided");
       }
       
+      // Ensure email has domain
+      let adminEmail = admin.email;
+      if (admin.email && !admin.email.includes('@')) {
+        adminEmail = `${admin.email}@pinehillfarm.co`;
+        console.log(`Formatting email address: ${admin.email} -> ${adminEmail}`);
+      }
+      
       // Make sure the admin has a valid email format
-      if (!admin.email.includes('@')) {
-        console.error(`Invalid email format for admin: ${admin.email}`);
+      if (!adminEmail.includes('@')) {
+        console.error(`Invalid email format for admin: ${adminEmail}`);
         toast.error(`Cannot send notification: Invalid email format for ${admin.name}`);
         return;
       }
       
-      if (currentUser && admin.email === currentUser.email) {
-        throw new Error("Cannot send notification to yourself");
+      // Prevent self-notifications
+      if (currentUser && (adminEmail === currentUser.email || admin.id === currentUser.id)) {
+        toast.error("Cannot send notification to yourself");
+        return;
       }
       
-      console.log("Sending notification to admin:", admin);
+      console.log("Sending notification to admin:", { ...admin, email: adminEmail });
       
       try {
         const result = await notifyManager("shift_report", 
@@ -36,7 +45,7 @@ export function useShiftNotifications() {
             notes: "This is a test notification",
             priority: "high"
           },
-          admin // Pass the assigned admin
+          { ...admin, email: adminEmail } // Pass the assigned admin with formatted email
         );
         
         if (result.success) {
@@ -60,9 +69,10 @@ export function useShiftNotifications() {
         console.error("Error using notifyManager, falling back to direct function:", notifyError);
       }
       
+      // Fallback mechanism - direct function invocation
       const response = await supabase.functions.invoke('send-admin-notification', {
         body: {
-          adminEmail: admin.email,
+          adminEmail: adminEmail,
           adminName: admin.name,
           type: "report",
           priority: "high",

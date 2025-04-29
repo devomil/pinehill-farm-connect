@@ -23,6 +23,12 @@ export async function notifyManager(
     
     // Validate assignedTo email if present
     if (assignedTo) {
+      // Ensure email has a domain
+      if (assignedTo.email && !assignedTo.email.includes('@')) {
+        console.log(`[NotifyManager] Email missing domain, adding domain: ${assignedTo.email} -> ${assignedTo.email}@pinehillfarm.co`);
+        assignedTo.email = `${assignedTo.email}@pinehillfarm.co`;
+      }
+      
       // Validate email format
       if (!assignedTo.email || !assignedTo.email.includes('@')) {
         console.error(`[NotifyManager] Invalid email for assignedTo: ${assignedTo.email}`);
@@ -36,7 +42,7 @@ export async function notifyManager(
       }
       
       // Verify we're not sending to the actor's own email
-      if (assignedTo.email === actor.email) {
+      if (assignedTo.email === actor.email || assignedTo.id === actor.id) {
         console.error(`[NotifyManager] Cannot send notification to yourself: ${actor.email}`);
         return { 
           success: false, 

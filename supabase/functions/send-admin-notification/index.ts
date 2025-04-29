@@ -121,11 +121,11 @@ This is an automated message from the Pine Hill Farm HR System.
 
     // Record the sending time for troubleshooting
     const sendingTime = new Date().toISOString();
-    console.log(`[${sendingTime}] Sending email via Resend API to ${adminEmail}`);
+    console.log(`[${sendingTime}] Sending email via Resend API to ${adminEmail} using verified domain notifications.pinehillfarm.co`);
     
-    // Use onboarding@resend.dev for the email to avoid domain verification issues
+    // Use the verified domain for sending emails
     const emailResponse = await resend.emails.send({
-      from: `HR System <onboarding@resend.dev>`,
+      from: `HR System <hr@notifications.pinehillfarm.co>`,
       to: [adminEmail],
       subject: subject,
       html: `
@@ -196,6 +196,7 @@ This is an automated message from the Pine Hill Farm HR System.
         </html>
       `,
       text: plainTextContent,
+      reply_to: "notifications@pinehillfarm.co",
     });
 
     console.log(`[${sendingTime}] Email API response:`, JSON.stringify(emailResponse, null, 2));

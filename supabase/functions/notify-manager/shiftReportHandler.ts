@@ -7,7 +7,10 @@ export async function handleShiftReport(
   request: NotificationRequest
 ) {
   const { actor, details, assignedTo } = request;
-  console.log("Processing shift report notification", { actor, assignedTo });
+  console.log("Processing shift report notification", { 
+    actor: { id: actor.id, name: actor.name, email: actor.email }, 
+    assignedTo: assignedTo ? { id: assignedTo.id, name: assignedTo.name, email: assignedTo.email } : null 
+  });
 
   // Case 1: If we have a specific assignee, use their email directly
   if (assignedTo) {
@@ -19,6 +22,16 @@ export async function handleShiftReport(
       return { 
         success: false, 
         error: `Invalid email format for assigned user: ${assignedTo.email}` 
+      };
+    }
+    
+    // Verify we're not sending to the actor's own email
+    if (actor.id === assignedTo.id || actor.email === assignedTo.email) {
+      console.error(`Cannot send notification to yourself (${actor.email} = ${assignedTo.email})`);
+      return { 
+        success: false, 
+        error: `Cannot send notification to yourself`, 
+        selfNotification: true 
       };
     }
     
@@ -88,17 +101,26 @@ export async function handleShiftReport(
   console.log(`Found ${profiles.length} admin profiles`);
   console.log("Admin profiles:", profiles.map(p => `${p.name} (${p.email})`));
   
-  // Ensure all emails are valid
+  // Ensure all emails are valid and add domain if missing
   const validProfiles: ManagerProfile[] = profiles
+    .map(profile => {
+      // Add domain if missing
+      if (profile.email && !profile.email.includes('@')) {
+        const emailWithDomain = `${profile.email}@pinehillfarm.co`;
+        console.log(`Adding domain to email for ${profile.name}: ${profile.email} -> ${emailWithDomain}`);
+        return { ...profile, email: emailWithDomain };
+      }
+      return profile;
+    })
     .filter(profile => profile.email && profile.email.includes('@'))
-    .filter(profile => profile.id !== actor.id); // Don't notify the actor
+    .filter(profile => profile.id !== actor.id && profile.email !== actor.email); // Don't notify the actor
   
   if (validProfiles.length === 0) {
     console.error("No admin profiles with valid emails found");
     return { success: false, error: "No admin profiles with valid emails found" };
   }
   
-  console.log(`Found ${validProfiles.length} valid admin profiles to notify`);
+  console.log(`Found ${validProfiles.length} valid admin profiles to notify:`, validProfiles.map(p => `${p.name} (${p.email})`));
   
   // Send notifications to all admins
   const notificationResults = await Promise.all(
@@ -127,7 +149,7 @@ async function sendAdminNotification(
   try {
     console.log(`Sending admin notification to ${admin.name} (${admin.email})`);
     
-    // Check for self-notification
+    // Double-check for self-notification
     if (admin.id === actor.id || admin.email === actor.email) {
       console.warn(`Skipping self-notification for ${actor.email}`);
       return { success: false, error: "Cannot send notification to yourself" };
