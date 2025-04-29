@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Mail } from "lucide-react";
+import { AlertCircle, Loader2, Mail, WifiOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageList } from "@/components/communications/MessageList";
@@ -20,13 +20,14 @@ export default function Communications() {
   const { currentUser } = useAuth();
   const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees, unfilteredEmployees: allEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
-  const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages } = useCommunications();
+  const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages, error: messagesError } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("inbox");
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const loading = employeesLoading || assignmentsLoading || messagesLoading;
-  const error = employeeError; // Only use the error from useEmployeeDirectory
+  const error = employeeError || messagesError; // Combine errors from both hooks
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
@@ -38,7 +39,7 @@ export default function Communications() {
     }, 30000);
     
     return () => clearInterval(refreshInterval);
-  }, [currentUser, refetchEmployees, refreshMessages]);
+  }, [currentUser, refetchEmployees, refreshMessages, retryCount]);
 
   const handleNewMessageSend = (data: any) => {
     sendMessage(data);
@@ -50,6 +51,14 @@ export default function Communications() {
     setActiveTab("conversation");
   };
 
+  const handleRetry = () => {
+    // Increment the retry count to trigger the useEffect
+    setRetryCount(prev => prev + 1);
+    // Run manual refetch operations
+    refetchEmployees();
+    refreshMessages();
+  };
+
   const messagesWithCurrentUser = React.useMemo(() => {
     if (!messages || !currentUser) return [];
     return messages.map(msg => ({
@@ -57,6 +66,8 @@ export default function Communications() {
       current_user_id: currentUser.id
     }));
   }, [messages, currentUser]);
+
+  const isConnectionError = error && error.includes("Failed to fetch");
 
   return (
     <DashboardLayout>
@@ -68,14 +79,29 @@ export default function Communications() {
           </p>
         </div>
         
-        {error && (
+        {isConnectionError ? (
+          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+            <WifiOff className="h-4 w-4 text-amber-800" />
+            <AlertDescription className="text-amber-800 flex flex-col space-y-2">
+              <p>There seems to be a connection issue. Unable to load messages.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-fit mt-2 border-amber-500 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
+                onClick={handleRetry}
+              >
+                Retry Connection
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : error ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Error loading employees: {error}
+              Error loading data: {error}
             </AlertDescription>
           </Alert>
-        )}
+        ) : null}
         
         {loading ? (
           <div className="flex items-center justify-center p-8">
@@ -132,7 +158,10 @@ export default function Communications() {
                 
                 <TabsContent value="conversation">
                   <Card className="p-4">
-                    <EmployeeCommunications />
+                    <EmployeeCommunications
+                      selectedEmployee={selectedEmployee}
+                      setSelectedEmployee={setSelectedEmployee}
+                    />
                   </Card>
                 </TabsContent>
               </Tabs>

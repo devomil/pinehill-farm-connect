@@ -15,15 +15,30 @@ import { EmployeeList } from "./EmployeeList";
 import { MessageConversation } from "./MessageConversation";
 import { supabase } from "@/integrations/supabase/client";
 
-export function EmployeeCommunications() {
+interface EmployeeCommunicationsProps {
+  selectedEmployee?: User | null;
+  setSelectedEmployee?: (employee: User | null) => void;
+}
+
+export function EmployeeCommunications({ 
+  selectedEmployee: propSelectedEmployee, 
+  setSelectedEmployee: propSetSelectedEmployee 
+}: EmployeeCommunicationsProps = {}) {
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
   const { assignments } = useEmployeeAssignments();
   const { messages, isLoading, sendMessage, respondToShiftRequest, unreadMessages } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileView, setIsMobileView] = useState(false);
+
+  // Sync with parent component if props are provided
+  useEffect(() => {
+    if (propSelectedEmployee !== undefined) {
+      setSelectedEmployee(propSelectedEmployee);
+    }
+  }, [propSelectedEmployee]);
 
   // Check for mobile view
   useEffect(() => {
@@ -65,7 +80,7 @@ export function EmployeeCommunications() {
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = useCallback((message: string) => {
     if (selectedEmployee) {
       sendMessage({
         recipientId: selectedEmployee.id,
@@ -73,13 +88,17 @@ export function EmployeeCommunications() {
         type: "general",
       });
     }
-  };
+  }, [selectedEmployee, sendMessage]);
 
   const handleSelectEmployee = useCallback((employee: User) => {
     setSelectedEmployee(employee);
-  }, []);
+    // Update parent component if callback provided
+    if (propSetSelectedEmployee) {
+      propSetSelectedEmployee(employee);
+    }
+  }, [propSetSelectedEmployee]);
 
-  const handleNewMessageSend = (data: any) => {
+  const handleNewMessageSend = useCallback((data: any) => {
     sendMessage(data);
     setDialogOpen(false);
     
@@ -87,10 +106,10 @@ export function EmployeeCommunications() {
     if (allEmployees) {
       const recipient = allEmployees.find(emp => emp.id === data.recipientId);
       if (recipient) {
-        setSelectedEmployee(recipient);
+        handleSelectEmployee(recipient);
       }
     }
-  };
+  }, [sendMessage, allEmployees, handleSelectEmployee]);
   
   // Show mobile layout or desktop layout based on screen size and selection
   const showMessageList = !isMobileView || (isMobileView && !selectedEmployee);
@@ -148,7 +167,12 @@ export function EmployeeCommunications() {
               messages={messages || []}
               isLoading={isLoading}
               onSendMessage={handleSendMessage}
-              onBack={() => setSelectedEmployee(null)}
+              onBack={() => {
+                setSelectedEmployee(null);
+                if (propSetSelectedEmployee) {
+                  propSetSelectedEmployee(null);
+                }
+              }}
             />
           </Card>
         )}
