@@ -67,11 +67,35 @@ export default function Communications() {
     }));
   }, [messages, currentUser]);
 
-  // Fixed TypeScript issue: Properly check error type before using string methods
-  const isConnectionError = error ? 
-    (typeof error === 'string' && error.includes("Failed to fetch")) || 
-    (error instanceof Error && error.message.includes("Failed to fetch")) 
-    : false;
+  // Check if it's a connection error using safe type checking
+  const isConnectionError = (): boolean => {
+    if (!error) return false;
+    
+    if (typeof error === 'string') {
+      return error.includes("Failed to fetch");
+    }
+    
+    if (error instanceof Error) {
+      return error.message.includes("Failed to fetch");
+    }
+    
+    return false;
+  };
+
+  // Format error message for display
+  const formatErrorMessage = (): string => {
+    if (!error) return "Unknown error";
+    
+    if (typeof error === 'string') {
+      return error;
+    }
+    
+    if (error instanceof Error) {
+      return error.message;
+    }
+    
+    return "Unknown error";
+  };
 
   return (
     <DashboardLayout>
@@ -83,7 +107,7 @@ export default function Communications() {
           </p>
         </div>
         
-        {isConnectionError ? (
+        {isConnectionError() ? (
           <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <WifiOff className="h-4 w-4 text-amber-800" />
             <AlertDescription className="text-amber-800 flex flex-col space-y-2">
@@ -102,12 +126,7 @@ export default function Communications() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {/* Fixed TypeScript issue: Properly format error for display */}
-              Error loading data: {typeof error === 'string' 
-                ? error 
-                : error instanceof Error 
-                  ? error.message 
-                  : 'Unknown error'}
+              Error loading data: {formatErrorMessage()}
             </AlertDescription>
           </Alert>
         ) : null}
