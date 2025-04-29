@@ -4,16 +4,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, ArrowRight } from "lucide-react";
 
 interface MessageListProps {
   messages: any[];
   isLoading: boolean;
   onRespond: (data: { communicationId: string; shiftRequestId: string; accept: boolean; senderId: string }) => void;
   employees: User[];
+  onViewConversation?: (employee: User) => void; // Add prop for viewing conversation
 }
 
-export function MessageList({ messages, isLoading, onRespond, employees }: MessageListProps) {
+export function MessageList({ messages, isLoading, onRespond, employees, onViewConversation }: MessageListProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -44,6 +45,10 @@ export function MessageList({ messages, isLoading, onRespond, employees }: Messa
   const getEmployeeName = (id: string) => {
     const employee = employees.find((e) => e.id === id);
     return employee?.name || "Unknown User";
+  };
+
+  const getEmployeeById = (id: string) => {
+    return employees.find((e) => e.id === id);
   };
 
   const renderMessageStatus = (status: string, type: string, shiftRequest: any, message: any) => {
@@ -136,6 +141,11 @@ export function MessageList({ messages, isLoading, onRespond, employees }: Messa
         const isIncoming = message.recipient_id === message.current_user_id;
         const shiftRequest = message.shift_coverage_requests?.[0];
         
+        // Determine which user to show in the conversation link
+        const conversationUser = isIncoming 
+          ? getEmployeeById(message.sender_id)
+          : getEmployeeById(message.recipient_id);
+        
         return (
           <div
             key={message.id}
@@ -172,7 +182,22 @@ export function MessageList({ messages, isLoading, onRespond, employees }: Messa
             )}
 
             {renderMessageStatus(message.status, message.type, shiftRequest, message)}
-            {renderResponseButtons(message)}
+            
+            <div className="flex justify-between items-center mt-4">
+              {renderResponseButtons(message)}
+              
+              {onViewConversation && conversationUser && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-auto"
+                  onClick={() => onViewConversation(conversationUser)}
+                >
+                  View Conversation 
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}

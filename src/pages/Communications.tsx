@@ -1,26 +1,62 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Mail } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageList } from "@/components/communications/MessageList";
+import { useCommunications } from "@/hooks/useCommunications";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { NewMessageDialog } from "@/components/communications/NewMessageDialog";
+import { User } from "@/types";
 
 export default function Communications() {
   const { currentUser } = useAuth();
-  const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployeeDirectory();
+  const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees, unfilteredEmployees: allEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
+  const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages } = useCommunications();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("inbox");
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   
-  const loading = employeesLoading || assignmentsLoading;
+  const loading = employeesLoading || assignmentsLoading || messagesLoading;
   const error = employeeError; // Only use the error from useEmployeeDirectory
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
     // Attempt to load employees when page loads
     refetchEmployees();
-  }, [currentUser, refetchEmployees]);
+    // Set a refresh interval for messages (every 30 seconds)
+    const refreshInterval = setInterval(() => {
+      refreshMessages();
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
+  }, [currentUser, refetchEmployees, refreshMessages]);
+
+  const handleNewMessageSend = (data: any) => {
+    sendMessage(data);
+    setDialogOpen(false);
+  };
+
+  const handleViewConversation = (employee: User) => {
+    setSelectedEmployee(employee);
+    setActiveTab("conversation");
+  };
+
+  const messagesWithCurrentUser = React.useMemo(() => {
+    if (!messages || !currentUser) return [];
+    return messages.map(msg => ({
+      ...msg,
+      current_user_id: currentUser.id
+    }));
+  }, [messages, currentUser]);
 
   return (
     <DashboardLayout>
@@ -47,7 +83,59 @@ export default function Communications() {
             <span className="ml-2">Loading employee data...</span>
           </div>
         ) : (
-          <EmployeeCommunications />
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="flex justify-between items-center">
+                  <TabsList>
+                    <TabsTrigger value="inbox">
+                      Inbox
+                      {unreadMessages.length > 0 && (
+                        <span className="ml-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                          {unreadMessages.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    {selectedEmployee && (
+                      <TabsTrigger value="conversation">
+                        Conversation with {selectedEmployee.name}
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                  
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Mail className="h-4 w-4 mr-2" />
+                        New Message
+                      </Button>
+                    </DialogTrigger>
+                    <NewMessageDialog
+                      employees={allEmployees || []}
+                      onSend={handleNewMessageSend}
+                      onClose={() => setDialogOpen(false)}
+                    />
+                  </Dialog>
+                </div>
+              </Tabs>
+            </div>
+            
+            <Card className="p-4">
+              <TabsContent value="inbox">
+                <MessageList
+                  messages={messagesWithCurrentUser}
+                  isLoading={loading}
+                  onRespond={respondToShiftRequest}
+                  employees={allEmployees || []}
+                  onViewConversation={handleViewConversation}
+                />
+              </TabsContent>
+              
+              <TabsContent value="conversation">
+                <EmployeeCommunications />
+              </TabsContent>
+            </Card>
+          </div>
         )}
       </div>
     </DashboardLayout>

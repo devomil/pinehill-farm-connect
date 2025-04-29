@@ -5,9 +5,11 @@ import { useMemo } from "react";
 import { useSendMessage } from "./communications/useSendMessage";
 import { useRespondToShiftRequest } from "./communications/useRespondToShiftRequest";
 import { SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useCommunications = () => {
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { data: messages, isLoading, error } = useGetCommunications(currentUser);
   const sendMessageMutation = useSendMessage(currentUser);
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
@@ -31,12 +33,19 @@ export const useCommunications = () => {
     return respondToShiftRequestMutation.mutate(params);
   };
   
+  // Function to refresh messages
+  const refreshMessages = () => {
+    queryClient.invalidateQueries({ queryKey: ['communications'] });
+  };
+
   return {
     messages,
     unreadMessages,
     isLoading,
     error,
     sendMessage,
-    respondToShiftRequest
+    respondToShiftRequest,
+    refreshMessages
   };
 };
+
