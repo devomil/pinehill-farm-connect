@@ -5,9 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmployees } from "@/hooks/useEmployees";
 import { AnnouncementManager } from "@/components/communication/announcement/AnnouncementManager";
 import { AnnouncementHeader } from "@/components/communication/announcement/AnnouncementHeader";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Communication = () => {
@@ -29,22 +26,6 @@ const Communication = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <Alert className="bg-blue-50 border-blue-200">
-          <MessageSquare className="h-4 w-4 text-blue-500" />
-          <AlertDescription className="flex justify-between items-center">
-            <span>Looking for direct messages? Go to the Direct Messages page.</span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="border-blue-500 text-blue-700 hover:bg-blue-100"
-              onClick={() => navigate('/communications')}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Direct Messages
-            </Button>
-          </AlertDescription>
-        </Alert>
-        
         <AnnouncementHeader 
           isAdmin={isAdmin}
           allEmployees={allEmployees}
