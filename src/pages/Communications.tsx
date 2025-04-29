@@ -67,10 +67,11 @@ export default function Communications() {
     }));
   }, [messages, currentUser]);
 
-  // Check if it's a connection error by safely checking if the error string includes "Failed to fetch"
-  const isConnectionError = error && 
-    (typeof error === 'string' ? error.includes("Failed to fetch") : 
-    error instanceof Error ? error.message.includes("Failed to fetch") : false);
+  // Fixed TypeScript issue: Properly check error type before using string methods
+  const isConnectionError = error ? 
+    (typeof error === 'string' && error.includes("Failed to fetch")) || 
+    (error instanceof Error && error.message.includes("Failed to fetch")) 
+    : false;
 
   return (
     <DashboardLayout>
@@ -101,7 +102,12 @@ export default function Communications() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Error loading data: {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
+              {/* Fixed TypeScript issue: Properly format error for display */}
+              Error loading data: {typeof error === 'string' 
+                ? error 
+                : error instanceof Error 
+                  ? error.message 
+                  : 'Unknown error'}
             </AlertDescription>
           </Alert>
         ) : null}
