@@ -22,17 +22,32 @@ export async function notifyManager(
     }
     
     // Validate assignedTo email if present
-    if (assignedTo && (!assignedTo.email || !assignedTo.email.includes('@'))) {
-      console.error(`[NotifyManager] Invalid email for assignedTo: ${assignedTo.email}`);
-      return { 
-        success: false, 
-        error: `Invalid email format for assigned user: ${assignedTo.email}`,
-        invalidEmail: true
-      };
+    if (assignedTo) {
+      // Validate email format
+      if (!assignedTo.email || !assignedTo.email.includes('@')) {
+        console.error(`[NotifyManager] Invalid email for assignedTo: ${assignedTo.email}`);
+        
+        // Don't attempt to auto-fix emails at this level, just return an error
+        return { 
+          success: false, 
+          error: `Invalid email format for assigned user: ${assignedTo.email}`,
+          invalidEmail: true
+        };
+      }
+      
+      // Verify we're not sending to the actor's own email
+      if (assignedTo.email === actor.email) {
+        console.error(`[NotifyManager] Cannot send notification to yourself: ${actor.email}`);
+        return { 
+          success: false, 
+          error: `Cannot send notification to yourself`,
+          selfNotification: true
+        };
+      }
     }
     
     // Add more debugging to help trace issues
-    console.log(`[NotifyManager] Making request to notify-manager function with actor: ${actor.name} (${actor.email})`);
+    console.log(`[NotifyManager] Making request to notify-manager function with actor: ${actor.name} (${actor.email}), sending to: ${assignedTo?.email || 'none'}`);
     
     const res = await fetch(
       "https://pdeaxfhsodenefeckabm.functions.supabase.co/notify-manager",

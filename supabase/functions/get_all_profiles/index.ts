@@ -43,10 +43,23 @@ serve(async (req) => {
       if (!profile.email || !profile.email.includes('@')) {
         console.warn(`Profile ${profile.id} (${profile.name}) has invalid email: ${profile.email}`);
         
-        // Only add domain if there's some text in the email field
+        // Add standard domain to emails without @ symbol
         if (profile.email && profile.email.trim() !== '') {
-          console.log(`Adding domain to email for ${profile.name}: ${profile.email}@pinehillfarm.co`);
-          profile.email = `${profile.email}@pinehillfarm.co`;
+          const emailWithDomain = `${profile.email}@pinehillfarm.co`;
+          console.log(`Adding domain to email for ${profile.name}: ${profile.email} -> ${emailWithDomain}`);
+          profile.email = emailWithDomain;
+        } else {
+          // If no email is provided, create one based on the name
+          if (profile.name && profile.name.trim() !== '') {
+            const generatedEmail = `${profile.name.toLowerCase().replace(/\s+/g, '.')}@pinehillfarm.co`;
+            console.log(`Generating email for ${profile.name}: ${generatedEmail}`);
+            profile.email = generatedEmail;
+          } else {
+            // If all else fails, use a placeholder with the ID
+            const fallbackEmail = `user.${profile.id.substring(0, 8)}@pinehillfarm.co`;
+            console.log(`Using fallback email for profile ${profile.id}: ${fallbackEmail}`);
+            profile.email = fallbackEmail;
+          }
         }
       }
       

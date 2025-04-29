@@ -91,9 +91,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending email notification to: ${adminEmail}`);
 
-    // Using the Resend API with proper templating and your verified domain
+    // Generate plain text version of the email
+    const plainTextContent = `
+Hello ${adminName},
+
+${content}
+
+Request Details:
+${details ? Object.entries(details)
+  .filter(([key]) => key !== 'senderEmail')
+  .map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
+  .join('\n') : ''}
+
+Log in to review: https://pinehillfarm.co/hr
+
+Thank you,
+Pine Hill Farm HR System
+
+This is an automated message from the Pine Hill Farm HR System.
+    `;
+
+    // Use the matching domain for the button URL (pinehillfarm.co instead of lovable.dev)
     const emailResponse = await resend.emails.send({
-      from: `HR System <notifications@notifications.pinehillfarm.co>`,
+      from: `HR System <notifications@pinehillfarm.co>`,
       to: [adminEmail],
       subject: subject,
       html: `
@@ -153,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
               
               ${detailsHtml}
               
-              <a href="https://pinehillfarm-connect.lovable.dev" class="button">Log in to review</a>
+              <a href="https://pinehillfarm.co/hr" class="button">Log in to review</a>
               
               <p>Thank you,<br>Pine Hill Farm HR System</p>
             </div>
@@ -163,6 +183,7 @@ const handler = async (req: Request): Promise<Response> => {
           </body>
         </html>
       `,
+      text: plainTextContent,
     });
 
     console.log("Email response:", emailResponse);

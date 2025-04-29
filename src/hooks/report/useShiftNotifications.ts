@@ -11,6 +11,13 @@ export function useShiftNotifications() {
         throw new Error("Invalid admin data provided");
       }
       
+      // Make sure the admin has a valid email format
+      if (!admin.email.includes('@')) {
+        console.error(`Invalid email format for admin: ${admin.email}`);
+        toast.error(`Cannot send notification: Invalid email format for ${admin.name}`);
+        return;
+      }
+      
       if (currentUser && admin.email === currentUser.email) {
         throw new Error("Cannot send notification to yourself");
       }
@@ -37,6 +44,16 @@ export function useShiftNotifications() {
           toast.success("Test notification sent successfully via manager notification system");
           return;
         } else {
+          if (result.invalidEmail) {
+            toast.error(`Failed to send notification: Invalid email address for ${admin.name}`);
+            return;
+          }
+          
+          if (result.selfNotification) {
+            toast.error("Cannot send notification to yourself");
+            return;
+          }
+          
           console.warn("notifyManager failed, falling back to direct function invoke:", result.error);
         }
       } catch (notifyError) {
