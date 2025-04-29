@@ -6,19 +6,18 @@ import { ShiftReportFormFields } from "./ShiftReportFormFields";
 import { useShiftReportForm } from "@/hooks/useShiftReportForm";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 export function ShiftReportForm() {
-  const { form, onSubmit, sendTestNotification, assignableEmployees, createTestAssignment } = useShiftReportForm();
+  const { form, onSubmit, sendTestNotification, createTestAssignment } = useShiftReportForm();
+  const { unfilteredEmployees: assignableEmployees } = useEmployeeDirectory();
   
   console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees?.length || 0);
 
   return (
     <Form {...form}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <ShiftReportFormFields 
-          form={form} 
-          assignableEmployees={assignableEmployees}
-        />
+        <ShiftReportFormFields form={form} />
 
         {(!assignableEmployees || assignableEmployees.length === 0) && (
           <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 text-orange-900">

@@ -4,12 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function ShiftReportList() {
-  const { employees, error: employeeError } = useEmployees();
+  const { employees, error: employeeError } = useEmployeeDirectory();
   const { data: reports, isLoading } = useQuery({
     queryKey: ['shiftReports'],
     queryFn: async () => {

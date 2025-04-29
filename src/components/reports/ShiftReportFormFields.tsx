@@ -9,13 +9,15 @@ import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "@/hooks/useShiftReportForm";
 import { AlertCircle, UserCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 interface ShiftReportFormFieldsProps {
   form: UseFormReturn<FormValues>;
-  assignableEmployees: User[];
 }
 
-export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReportFormFieldsProps) {
+export function ShiftReportFormFields({ form }: ShiftReportFormFieldsProps) {
+  const { unfilteredEmployees: assignableEmployees } = useEmployeeDirectory();
+  
   console.log("Rendering form fields with assignable employees:", assignableEmployees?.length || 0);
   
   return (

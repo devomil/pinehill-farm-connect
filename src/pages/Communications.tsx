@@ -2,19 +2,19 @@
 import React, { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
-import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function Communications() {
   const { currentUser } = useAuth();
-  const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployees();
+  const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
   
   const loading = employeesLoading || assignmentsLoading;
-  const error = employeeError; // Only use the error from useEmployees
+  const error = employeeError; // Only use the error from useEmployeeDirectory
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UseFormReturn } from "react-hook-form";
 import { User } from "@/types";
 import { NewMessageFormData } from "@/types/communications";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RecipientSelectProps {
   form: UseFormReturn<NewMessageFormData>;
@@ -12,6 +13,8 @@ interface RecipientSelectProps {
 }
 
 export function RecipientSelect({ form, employees }: RecipientSelectProps) {
+  const { currentUser } = useAuth();
+  
   useEffect(() => {
     // Reset the recipient if the currently selected one is removed from the list
     const currentRecipientId = form.getValues("recipientId");
@@ -21,9 +24,9 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
   }, [employees, form]);
 
   // Filter out the current user from the employee list
-  const availableRecipients = employees.filter(employee => 
-    employee.id !== employee.id // Replace with currentUser.id when available
-  );
+  const availableRecipients = currentUser ? employees.filter(employee => 
+    employee.id !== currentUser.id
+  ) : employees;
 
   // Check if we have any valid recipients
   const hasRecipients = availableRecipients.length > 0;

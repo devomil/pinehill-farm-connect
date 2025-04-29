@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { useEmployees } from "@/hooks/useEmployees";
 import { useCommunications } from "@/hooks/useCommunications";
 import { NewMessageDialog } from "./NewMessageDialog";
 import { MessageList } from "./MessageList";
@@ -11,18 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
-import { useEmployeeFiltering } from "@/hooks/report/useEmployeeFiltering";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 
 export function EmployeeCommunications() {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
   const { assignments } = useEmployeeAssignments();
-  const { assignableEmployees } = useEmployeeFiltering(
-    allEmployees, 
-    assignments, 
-    currentUser
-  );
   const { messages, isLoading, sendMessage, respondToShiftRequest } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -50,9 +44,9 @@ export function EmployeeCommunications() {
       <div className="flex justify-between items-center">
         <div className="text-sm text-muted-foreground flex items-center">
           <UserCheck className="h-4 w-4 mr-1" />
-          {assignableEmployees?.length > 0 ? (
+          {allEmployees?.length > 0 ? (
             <span>
-              {assignableEmployees.length} employee{assignableEmployees.length !== 1 ? 's' : ''} available for communication
+              {allEmployees.length} employee{allEmployees.length !== 1 ? 's' : ''} available for communication
             </span>
           ) : (
             <span>No other employees found</span>
@@ -63,14 +57,14 @@ export function EmployeeCommunications() {
             <Button>New Message</Button>
           </DialogTrigger>
           <NewMessageDialog
-            employees={assignableEmployees || []}
+            employees={allEmployees || []}
             onSend={handleSendMessage}
             onClose={() => setDialogOpen(false)}
           />
         </Dialog>
       </div>
 
-      {assignableEmployees?.length <= 1 && (
+      {allEmployees?.length <= 1 && (
         <Alert className="bg-amber-50 border-amber-300">
           <AlertCircle className="h-4 w-4 text-amber-800" />
           <AlertDescription className="text-amber-800">
@@ -84,7 +78,7 @@ export function EmployeeCommunications() {
           messages={messagesWithCurrentUser}
           isLoading={isLoading || employeesLoading}
           onRespond={handleRespondToShiftRequest}
-          employees={assignableEmployees || []}
+          employees={allEmployees || []}
         />
       </Card>
     </div>

@@ -4,12 +4,12 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ShiftReportForm } from "@/components/reports/ShiftReportForm";
 import { ShiftReportList } from "@/components/reports/ShiftReportList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 export default function Reports() {
-  const { loading, error } = useEmployees();
+  const { loading, error } = useEmployeeDirectory();
 
   return (
     <DashboardLayout>

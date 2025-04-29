@@ -5,7 +5,7 @@ import { User as UserType } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeModal } from "@/hooks/useEmployeeModal";
 import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { EmployeeContent } from "@/components/employee/EmployeeContent";
 import { EmployeeModals } from "@/components/employee/EmployeeModals";
 import { EmployeeAssignments } from "@/components/employee/EmployeeAssignments";
@@ -29,7 +29,7 @@ export default function Employees() {
     loading,
     error,
     refetch,
-  } = useEmployees();
+  } = useEmployeeDirectory();
 
   const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);

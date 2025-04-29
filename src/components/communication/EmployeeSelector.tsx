@@ -1,28 +1,24 @@
 
 import React, { useState } from "react";
-import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { User } from "@/types";
 import { Loader2 } from "lucide-react";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 interface EmployeeSelectorProps {
   selectedUserIds: string[];
   setSelectedUserIds: (ids: string[]) => void;
-  allEmployees: User[];
-  loading?: boolean;
 }
 
 export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   selectedUserIds,
   setSelectedUserIds,
-  allEmployees,
-  loading
 }) => {
   const [filter, setFilter] = useState("");
+  const { unfilteredEmployees: allEmployees, loading } = useEmployeeDirectory();
 
   const filtered = allEmployees.filter(e =>
-    e.name.toLowerCase().includes(filter.toLowerCase()) || e.email.toLowerCase().includes(filter.toLowerCase())
+    e.name?.toLowerCase().includes(filter.toLowerCase()) || e.email?.toLowerCase().includes(filter.toLowerCase())
   );
 
   const toggleUser = (id: string) => {
