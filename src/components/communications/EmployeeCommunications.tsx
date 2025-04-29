@@ -1,12 +1,6 @@
-
 import React, { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { useCommunications } from "@/hooks/useCommunications";
-import { NewMessageDialog } from "./NewMessageDialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -14,6 +8,8 @@ import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { EmployeeList } from "./EmployeeList";
 import { MessageConversation } from "./MessageConversation";
 import { supabase } from "@/integrations/supabase/client";
+import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
+import { EmployeeAlert } from "./EmployeeAlert";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -117,31 +113,14 @@ export function EmployeeCommunications({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-muted-foreground flex items-center">
-          <MessageSquare className="h-4 w-4 mr-1" />
-          <span>Direct messages</span>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>New Message</Button>
-          </DialogTrigger>
-          <NewMessageDialog
-            employees={allEmployees || []}
-            onSend={handleNewMessageSend}
-            onClose={() => setDialogOpen(false)}
-          />
-        </Dialog>
-      </div>
+      <EmployeeCommunicationsHeader 
+        setDialogOpen={setDialogOpen}
+        dialogOpen={dialogOpen}
+        handleNewMessageSend={handleNewMessageSend}
+        allEmployees={allEmployees || []}
+      />
 
-      {allEmployees?.length <= 1 && (
-        <Alert className="bg-amber-50 border-amber-300">
-          <AlertCircle className="h-4 w-4 text-amber-800" />
-          <AlertDescription className="text-amber-800">
-            You can only see yourself in the employee list. This is likely due to a database permission issue or because no other employees have been created yet. Try clicking "Fix Assignments" in the Reports page.
-          </AlertDescription>
-        </Alert>
-      )}
+      {allEmployees?.length <= 1 && <EmployeeAlert />}
 
       <div className="grid md:grid-cols-3 gap-4">
         {/* Employee List Column */}
