@@ -19,26 +19,55 @@ export function useEmployees() {
       
       console.log("Fetching employees, current user:", currentUser?.email);
       
-      // Fetch all profiles without using the .is() method with non-boolean value
-      // Instead, use .not() with 'null' which is better supported by TypeScript
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .not('email', 'is', null); // Only get valid profiles with email
+      // Create a public RLS bypass function call to fetch all profiles
+      const { data: publicProfiles, error: publicProfilesError } = await supabase
+        .rpc('get_all_profiles');
 
-      if (profilesError) {
-        // If we get an RLS error, use an alternative approach
-        console.error("Error fetching profiles:", profilesError);
-        throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
-      }
-
-      console.log("Fetched profiles:", profiles?.length || 0);
-      
-      if ((!profiles || profiles.length === 0) && currentUser) {
-        // If no profiles found but we have a current user, use that as fallback
-        console.log("No profiles found - using current user as fallback");
+      if (publicProfilesError) {
+        console.error("Error fetching profiles with RPC:", publicProfilesError);
         
-        // Create a minimal list with just the current user
+        // Fall back to regular profile query
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .not('email', 'is', null); // Only get valid profiles with email
+
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+          throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+        }
+        
+        if ((!profiles || profiles.length === 0) && currentUser) {
+          // If no profiles found but we have a current user, use that as fallback
+          console.log("No profiles found - using current user as fallback");
+          
+          setEmployees([{
+            id: currentUser.id,
+            name: currentUser.name || currentUser.email?.split('@')[0] || 'Current User',
+            email: currentUser.email || '',
+            department: currentUser.department || '',
+            position: currentUser.position || '',
+            role: currentUser.role || 'employee'
+          }]);
+          
+          setLoading(false);
+          return;
+        }
+        
+        // Process regular profiles
+        processProfileData(profiles);
+      } else {
+        // Process profiles from the RPC function
+        console.log("Successfully fetched profiles with bypass function:", publicProfiles?.length || 0);
+        processProfileData(publicProfiles);
+      }
+    } catch (error: any) {
+      console.error("Error in useEmployees:", error);
+      setError(error.message);
+      
+      // Even if there's an error, if we have the current user, use it as a fallback
+      if (currentUser) {
+        console.log("Error occurred but using current user as fallback");
         setEmployees([{
           id: currentUser.id,
           name: currentUser.name || currentUser.email?.split('@')[0] || 'Current User',
@@ -47,11 +76,17 @@ export function useEmployees() {
           position: currentUser.position || '',
           role: currentUser.role || 'employee'
         }]);
-        
-        setLoading(false);
-        return;
+      } else {
+        toast.error("Failed to load employees");
       }
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
+  // Helper function to process profile data
+  const processProfileData = async (profiles: any[]) => {
+    try {
       // Fetch user roles separately
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -90,28 +125,11 @@ export function useEmployees() {
       }
 
       setEmployees(formattedEmployees);
-    } catch (error: any) {
-      console.error("Error in useEmployees:", error);
-      setError(error.message);
-      
-      // Even if there's an error, if we have the current user, use it as a fallback
-      if (currentUser) {
-        console.log("Error occurred but using current user as fallback");
-        setEmployees([{
-          id: currentUser.id,
-          name: currentUser.name || currentUser.email?.split('@')[0] || 'Current User',
-          email: currentUser.email || '',
-          department: currentUser.department || '',
-          position: currentUser.position || '',
-          role: currentUser.role || 'employee'
-        }]);
-      } else {
-        toast.error("Failed to load employees");
-      }
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Error processing profile data:", err);
+      throw err;
     }
-  }, [currentUser]);
+  };
 
   useEffect(() => {
     fetchEmployees();
