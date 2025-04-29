@@ -7,7 +7,7 @@ import {
   BarChart3, 
   CalendarIcon, 
   Home, 
-  Inbox, 
+  Megaphone, 
   MessageSquare,
   Users, 
   BookOpenCheck,
@@ -78,7 +78,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
         asChild
       >
         <Link to="/communication">
-          <Inbox className="h-5 w-5 mr-3" />
+          <Megaphone className="h-5 w-5 mr-3" />
           <span className={!collapsed ? "block" : "hidden"}>Announcements</span>
         </Link>
       </Button>
@@ -93,7 +93,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
       >
         <Link to="/communications">
           <MessageSquare className="h-5 w-5 mr-3" />
-          <span className={!collapsed ? "block" : "hidden"}>Messaging</span>
+          <span className={!collapsed ? "block" : "hidden"}>Direct Messages</span>
         </Link>
       </Button>
 
