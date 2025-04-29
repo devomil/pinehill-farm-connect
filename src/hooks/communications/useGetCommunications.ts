@@ -30,7 +30,12 @@ export function useGetCommunications(currentUser: User | null) {
           throw error;
         }
         
-        console.log(`Retrieved ${data?.length || 0} communications`);
+        if (!data) {
+          console.log("No communications data returned");
+          return [];
+        }
+        
+        console.log(`Retrieved ${data.length} communications`);
         return data;
       } catch (err) {
         console.error("Error in communications query:", err);
@@ -38,5 +43,10 @@ export function useGetCommunications(currentUser: User | null) {
       }
     },
     enabled: !!currentUser?.id,
+    // Add retry configuration
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Increase stale time to reduce unnecessary refetches
+    staleTime: 30000,
   });
 }

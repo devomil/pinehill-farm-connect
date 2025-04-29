@@ -13,6 +13,7 @@ interface CommunicationsLayoutProps {
   loading?: boolean;
   onRetry?: () => void;
   isConnectionError?: boolean;
+  retryCount?: number;
 }
 
 export const CommunicationsLayout: React.FC<CommunicationsLayoutProps> = ({
@@ -23,6 +24,7 @@ export const CommunicationsLayout: React.FC<CommunicationsLayoutProps> = ({
   loading,
   onRetry,
   isConnectionError = false,
+  retryCount = 0,
 }) => {
   const formatErrorMessage = (error: Error | string | null): string => {
     if (!error) return "Unknown error";
@@ -51,6 +53,9 @@ export const CommunicationsLayout: React.FC<CommunicationsLayoutProps> = ({
             <WifiOff className="h-4 w-4 text-amber-800" />
             <AlertDescription className="text-amber-800 flex flex-col space-y-2">
               <p>There seems to be a connection issue. Unable to load messages.</p>
+              {retryCount > 0 && (
+                <p className="text-xs text-amber-700">Attempted {retryCount} {retryCount === 1 ? 'retry' : 'retries'}</p>
+              )}
               {onRetry && (
                 <Button 
                   variant="outline" 
@@ -75,7 +80,7 @@ export const CommunicationsLayout: React.FC<CommunicationsLayoutProps> = ({
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading employee data...</span>
+            <span className="ml-2">Loading message data...</span>
           </div>
         ) : (
           children

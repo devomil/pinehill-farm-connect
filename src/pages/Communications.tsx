@@ -7,6 +7,7 @@ import { useCommunications } from "@/hooks/useCommunications";
 import { CommunicationsLayout } from "@/components/communications/CommunicationsLayout";
 import { ConversationTabs } from "@/components/communications/ConversationTabs";
 import { useErrorHandling } from "@/hooks/communications/useErrorHandling";
+import { toast } from "sonner";
 
 export default function Communications() {
   const { currentUser } = useAuth();
@@ -22,16 +23,33 @@ export default function Communications() {
     console.log("Communications page loaded with user:", currentUser?.email);
     // Attempt to load employees when page loads
     refetchEmployees();
-    // Set a refresh interval for messages (every 30 seconds)
+    
+    // Set a refresh interval for messages (every 60 seconds)
     const refreshInterval = setInterval(() => {
-      refreshMessages();
-    }, 30000);
+      if (!isConnectionError(error)) {
+        console.log("Auto-refreshing messages");
+        refreshMessages();
+      }
+    }, 60000);
     
     return () => clearInterval(refreshInterval);
-  }, [currentUser, refetchEmployees, refreshMessages, retryCount]);
+  }, [currentUser, refetchEmployees, refreshMessages, error, isConnectionError]);
+
+  // Attempt auto-retry when connection errors occur
+  useEffect(() => {
+    if (isConnectionError(error) && retryCount < 3) {
+      const timer = setTimeout(() => {
+        console.log("Auto-retrying connection");
+        handleRetryConnection();
+      }, 5000 * (retryCount + 1)); // Exponential backoff
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error, retryCount, isConnectionError]);
 
   const handleRetryConnection = () => {
-    handleRetry();
+    const newRetryCount = handleRetry();
+    toast.info(`Retrying connection (attempt ${newRetryCount})...`);
     refetchEmployees();
     refreshMessages();
   };
@@ -43,7 +61,9 @@ export default function Communications() {
     messagesCount: messages?.length || 0,
     unreadCount: unreadMessages?.length || 0,
     isLoading: loading,
-    error: error ? formatErrorMessage(error) : "No error"
+    retryCount,
+    error: error ? formatErrorMessage(error) : "No error",
+    isConnectionError: isConnectionError(error)
   });
 
   // Ensure messages is always an array even if it's undefined
@@ -61,6 +81,7 @@ export default function Communications() {
       loading={loading}
       isConnectionError={isConnectionError(error)}
       onRetry={handleRetryConnection}
+      retryCount={retryCount}
     >
       {!loading && (
         <ConversationTabs
