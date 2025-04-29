@@ -10,7 +10,7 @@ import { MessageList } from "./MessageList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { RespondToShiftRequestParams } from "@/types/communications";
+import { RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
 
 export function EmployeeCommunications() {
   const { currentUser } = useAuth();

@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
-import { Communication } from "@/types/communications";
+import { Communication } from "@/types/communications/communicationTypes";
 
 export function useGetCommunications(currentUser: User | null) {
   return useQuery({

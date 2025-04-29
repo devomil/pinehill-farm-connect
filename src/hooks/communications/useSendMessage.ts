@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { notifyManager } from "@/utils/notifyManager";
-import { SendMessageParams } from "@/types/communications";
+import { SendMessageParams } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 
 export function useSendMessage(currentUser: User | null) {

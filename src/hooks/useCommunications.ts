@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useSendMessage } from "./communications/useSendMessage";
 import { useRespondToShiftRequest } from "./communications/useRespondToShiftRequest";
-import { SendMessageParams, RespondToShiftRequestParams } from "@/types/communications";
+import { SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
 
 export function useCommunications() {
   const { currentUser } = useAuth();
