@@ -25,6 +25,11 @@ export function EmployeeCommunications() {
     }));
   }, [messages, currentUser]);
 
+  // Create a handler function that calls the mutation's mutate function
+  const handleRespondToShiftRequest = (data: { communicationId: string; shiftRequestId: string; accept: boolean; senderId: string }) => {
+    respondToShiftRequest.mutate(data);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -62,7 +67,7 @@ export function EmployeeCommunications() {
         <MessageList
           messages={messagesWithCurrentUser}
           isLoading={isLoading || loading}
-          onRespond={respondToShiftRequest}
+          onRespond={handleRespondToShiftRequest}
           employees={unfilteredEmployees}
         />
       </Card>
