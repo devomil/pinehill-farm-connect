@@ -39,7 +39,7 @@ export function EmployeeCommunications() {
       </div>
 
       {unfilteredEmployees.length <= 1 && (
-        <Alert variant="warning" className="bg-amber-50 border-amber-300">
+        <Alert className="bg-amber-50 border-amber-300">
           <AlertCircle className="h-4 w-4 text-amber-800" />
           <AlertDescription className="text-amber-800">
             You can only see yourself in the employee list. This is likely due to a database permission issue or because no other employees have been created yet. Try clicking "Fix Assignments" in the Reports page.
