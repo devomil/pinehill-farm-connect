@@ -14,8 +14,6 @@ interface RecipientSelectProps {
 }
 
 export function RecipientSelect({ form, employees }: RecipientSelectProps) {
-  // Display all employees without filtering
-  
   return (
     <FormField
       control={form.control}

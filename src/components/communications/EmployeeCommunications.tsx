@@ -11,10 +11,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
+import { useEmployeeFiltering } from "@/hooks/report/useEmployeeFiltering";
+import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 
 export function EmployeeCommunications() {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees, loading } = useEmployees();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
+  const { assignments } = useEmployeeAssignments();
+  const { assignableEmployees } = useEmployeeFiltering(
+    allEmployees, 
+    assignments, 
+    currentUser
+  );
   const { messages, isLoading, sendMessage, respondToShiftRequest } = useCommunications();
 
   // Add the current user ID to each message object for the MessageList component
@@ -36,9 +44,9 @@ export function EmployeeCommunications() {
       <div className="flex justify-between items-center">
         <div className="text-sm text-muted-foreground flex items-center">
           <UserCheck className="h-4 w-4 mr-1" />
-          {unfilteredEmployees.length > 0 ? (
+          {assignableEmployees?.length > 0 ? (
             <span>
-              {unfilteredEmployees.length} employee{unfilteredEmployees.length !== 1 ? 's' : ''} available for communication
+              {assignableEmployees.length} employee{assignableEmployees.length !== 1 ? 's' : ''} available for communication
             </span>
           ) : (
             <span>No other employees found</span>
@@ -49,13 +57,13 @@ export function EmployeeCommunications() {
             <Button>New Message</Button>
           </DialogTrigger>
           <NewMessageDialog
-            employees={unfilteredEmployees}
+            employees={assignableEmployees || []}
             onSend={sendMessage}
           />
         </Dialog>
       </div>
 
-      {unfilteredEmployees.length <= 1 && (
+      {assignableEmployees?.length <= 1 && (
         <Alert className="bg-amber-50 border-amber-300">
           <AlertCircle className="h-4 w-4 text-amber-800" />
           <AlertDescription className="text-amber-800">
@@ -67,9 +75,9 @@ export function EmployeeCommunications() {
       <Card className="p-4">
         <MessageList
           messages={messagesWithCurrentUser}
-          isLoading={isLoading || loading}
+          isLoading={isLoading || employeesLoading}
           onRespond={handleRespondToShiftRequest}
-          employees={unfilteredEmployees}
+          employees={assignableEmployees || []}
         />
       </Card>
     </div>

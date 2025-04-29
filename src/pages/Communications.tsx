@@ -4,18 +4,23 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function Communications() {
   const { currentUser } = useAuth();
-  const { loading, error, refetch } = useEmployees();
+  const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployees();
+  const { isLoading: assignmentsLoading, error: assignmentsError } = useEmployeeAssignments();
+  
+  const loading = employeesLoading || assignmentsLoading;
+  const error = employeeError || assignmentsError;
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
     // Attempt to load employees when page loads
-    refetch();
-  }, [currentUser, refetch]);
+    refetchEmployees();
+  }, [currentUser, refetchEmployees]);
 
   return (
     <DashboardLayout>
