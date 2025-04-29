@@ -95,7 +95,7 @@ export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReport
                   <SelectContent>
                     {assignableEmployees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name || employee.email} {employee.role ? `(${employee.role})` : ''}
+                        {employee.name || employee.email}
                       </SelectItem>
                     ))}
                   </SelectContent>
