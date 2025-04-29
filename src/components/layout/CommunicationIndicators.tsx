@@ -7,14 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Megaphone, MessageSquare, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const CommunicationIndicators: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const { announcements } = useDashboardData();
   const { unreadMessages } = useCommunications();
   
-  // Count unread announcements (this is a placeholder, implement based on your data structure)
-  const unreadAnnouncements = announcements?.filter(a => !a.read_by?.includes(a.user_id)).length || 0;
+  // Count unread announcements - check if the announcement is unread (implementation depends on your data structure)
+  // Since we don't have read_by and user_id properties, we'll need to adjust this logic
+  const unreadAnnouncements = announcements?.filter(a => {
+    // This is a simplified check. Adjust based on how you track read status
+    // For example, if you have a separate table or field to track read status
+    return !a.requires_acknowledgment;  // Just an example, replace with actual logic
+  }).length || 0;
   
   // Count of unread direct messages (from useCommunications hook)
   const unreadMessageCount = unreadMessages?.length || 0;
