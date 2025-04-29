@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,16 +60,24 @@ export function useCommunications() {
       type: 'general' | 'shift_coverage';
       shiftDetails?: Omit<ShiftCoverageRequest, 'id' | 'communication_id' | 'status'>;
     }) => {
+      // Use maybeSingle instead of single to prevent an error if no recipient is found
       const { data: recipientData, error: recipientError } = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('id', recipientId)
-        .single();
+        .maybeSingle();
 
-      if (recipientError || !recipientData) {
+      if (recipientError) {
         console.error("Error fetching recipient data:", recipientError);
+        throw new Error("Database error when finding recipient");
+      }
+      
+      if (!recipientData) {
+        console.error("No recipient found with ID:", recipientId);
         throw new Error("Could not find recipient information");
       }
+
+      console.log("Found recipient:", recipientData);
 
       const { data: communicationData, error: communicationError } = await supabase
         .from('employee_communications')
