@@ -38,6 +38,9 @@ export function useShiftNotifications() {
       });
       
       try {
+        // First, attempt to use the notifyManager utility with detailed logging
+        console.log(`Sending test notification to: ${admin.name} (${adminEmail}) with ID: ${admin.id}`);
+        
         const result = await notifyManager("shift_report", 
           { 
             id: currentUser?.id || "unknown", 
@@ -77,11 +80,14 @@ export function useShiftNotifications() {
         console.error("Error using notifyManager, falling back to direct function:", notifyError);
       }
       
-      // Fallback mechanism - direct function invocation
+      // Fallback mechanism - direct function invocation with detailed logging
+      console.log(`Falling back to direct function invocation for: ${admin.name} (${adminEmail}) with ID: ${admin.id}`);
+      
       const response = await supabase.functions.invoke('send-admin-notification', {
         body: {
           adminEmail: adminEmail,
           adminName: admin.name,
+          adminId: admin.id, // Include the admin ID to help with tracking
           type: "report",
           priority: "high",
           employeeName: currentUser?.name || "Test User",

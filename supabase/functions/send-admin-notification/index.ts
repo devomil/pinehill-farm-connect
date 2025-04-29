@@ -12,6 +12,7 @@ const corsHeaders = {
 interface NotificationRequest {
   adminEmail: string;
   adminName: string;
+  adminId?: string;
   type: "report" | "timeoff";
   priority?: string;
   employeeName: string;
@@ -26,17 +27,19 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { 
       adminEmail, 
-      adminName, 
+      adminName,
+      adminId,
       type, 
       priority, 
       employeeName, 
       details 
     }: NotificationRequest = await req.json();
 
-    console.log(`Processing notification to ${adminName} (${adminEmail}) from ${employeeName}`);
+    console.log(`Processing notification to ${adminName} (${adminEmail}) ID: ${adminId || 'unknown'} from ${employeeName}`);
     console.log(`Full notification details:`, JSON.stringify({ 
       adminEmail, 
-      adminName, 
+      adminName,
+      adminId,
       type, 
       priority, 
       employeeName, 

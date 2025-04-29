@@ -50,6 +50,9 @@ export async function notifyManager(
           selfNotification: true
         };
       }
+      
+      // Ensure we're using the correct recipient
+      console.log(`[NotifyManager] Using specified recipient: ${assignedTo.name} (${assignedTo.email}) with ID: ${assignedTo.id}`);
     }
     
     // Add more debugging to help trace issues

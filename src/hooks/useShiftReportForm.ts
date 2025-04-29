@@ -39,8 +39,24 @@ export function useShiftReportForm() {
 
   const sendTestNotification = async () => {
     try {
-      console.log("Starting test notification with assignable employees:", assignableEmployees.length);
+      console.log("Starting test notification with assignable employees:", assignableEmployees?.length);
       
+      // First check if there's a selected recipient in the form
+      const selectedRecipientId = form.getValues("assignedTo");
+      console.log("Selected recipient ID from form:", selectedRecipientId);
+      
+      if (selectedRecipientId && assignableEmployees) {
+        // Find the selected recipient from assignable employees
+        const selectedRecipient = assignableEmployees.find(emp => emp.id === selectedRecipientId);
+        
+        if (selectedRecipient) {
+          console.log("Using selected recipient for test notification:", selectedRecipient);
+          await sendNotificationToAdmin(selectedRecipient, currentUser);
+          return;
+        }
+      }
+      
+      // Fallback to previous behavior if no recipient is selected
       if (assignableEmployees && assignableEmployees.length > 0) {
         const nonCurrentUserAdmin = assignableEmployees.find(emp => 
           emp.id !== currentUser?.id

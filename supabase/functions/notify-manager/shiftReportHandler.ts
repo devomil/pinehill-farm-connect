@@ -14,7 +14,7 @@ export async function handleShiftReport(
 
   // Case 1: If we have a specific assignee, use their email directly
   if (assignedTo) {
-    console.log(`Using direct assignment to: ${assignedTo.name} (${assignedTo.email})`);
+    console.log(`Using direct assignment to: ${assignedTo.name} (${assignedTo.email}) with ID: ${assignedTo.id}`);
     
     // Verify the email is valid
     if (!assignedTo.email || !assignedTo.email.includes('@')) {
@@ -147,7 +147,7 @@ async function sendAdminNotification(
   details: NotificationRequest["details"]
 ) {
   try {
-    console.log(`Sending admin notification to ${admin.name} (${admin.email})`);
+    console.log(`Sending admin notification to ${admin.name} (${admin.email}) with ID: ${admin.id}`);
     
     // Double-check for self-notification
     if (admin.id === actor.id || admin.email === actor.email) {
@@ -158,6 +158,7 @@ async function sendAdminNotification(
     console.log(`Invoking send-admin-notification for ${admin.email} with details:`, JSON.stringify({
       adminEmail: admin.email,
       adminName: admin.name,
+      adminId: admin.id,
       type: "report",
       priority: details.priority || "high",
       employeeName: actor.name,
@@ -171,6 +172,7 @@ async function sendAdminNotification(
       body: {
         adminEmail: admin.email,
         adminName: admin.name,
+        adminId: admin.id,
         type: "report",
         priority: details.priority || "high",
         employeeName: actor.name,
