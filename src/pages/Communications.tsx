@@ -117,24 +117,26 @@ export default function Communications() {
                     />
                   </Dialog>
                 </div>
+                
+                <TabsContent value="inbox">
+                  <Card className="p-4">
+                    <MessageList
+                      messages={messagesWithCurrentUser}
+                      isLoading={loading}
+                      onRespond={respondToShiftRequest}
+                      employees={allEmployees || []}
+                      onViewConversation={handleViewConversation}
+                    />
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="conversation">
+                  <Card className="p-4">
+                    <EmployeeCommunications />
+                  </Card>
+                </TabsContent>
               </Tabs>
             </div>
-            
-            <Card className="p-4">
-              <TabsContent value="inbox">
-                <MessageList
-                  messages={messagesWithCurrentUser}
-                  isLoading={loading}
-                  onRespond={respondToShiftRequest}
-                  employees={allEmployees || []}
-                  onViewConversation={handleViewConversation}
-                />
-              </TabsContent>
-              
-              <TabsContent value="conversation">
-                <EmployeeCommunications />
-              </TabsContent>
-            </Card>
           </div>
         )}
       </div>
