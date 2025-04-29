@@ -60,6 +60,87 @@ serve(async (req) => {
       });
     } 
     
+    // Handle message notifications (new_message, shift_coverage_request, shift_coverage_response)
+    // These go directly to the assigned individual
+    if (request.actionType === "new_message" || 
+        request.actionType === "shift_coverage_request" ||
+        request.actionType === "shift_coverage_response") {
+      
+      // Validate the assignedTo property
+      if (!request.assignedTo || !request.assignedTo.id) {
+        console.error("Missing recipient information for message notification");
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Missing recipient information" 
+        }), { 
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        });
+      }
+      
+      // Create notifications directly using the assigned recipient
+      const notifications = createNotifications(request, [request.assignedTo]);
+      
+      console.log(`Creating message notification for: ${request.assignedTo.name} (${request.assignedTo.email})`, notifications);
+      
+      // Insert notifications
+      if (notifications.length > 0) {
+        const { error: insertErr } = await supabase
+          .from("notifications")
+          .insert(notifications);
+          
+        if (insertErr) {
+          console.error("Error inserting message notifications:", insertErr);
+          throw insertErr;
+        }
+        
+        console.log(`Successfully created ${notifications.length} message notifications`);
+      }
+      
+      // Send email notification for messages
+      try {
+        // Only attempt to send email if there's a valid recipient email
+        if (request.assignedTo.email && request.assignedTo.email.includes("@")) {
+          console.log(`Sending email notification to ${request.assignedTo.name} (${request.assignedTo.email})`);
+          
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              adminEmail: request.assignedTo.email,
+              adminName: request.assignedTo.name,
+              adminId: request.assignedTo.id,
+              type: "message",
+              priority: request.actionType === "shift_coverage_request" ? "high" : "normal",
+              employeeName: request.actor.name,
+              details: {
+                senderEmail: request.actor.email,
+                message: request.details.message || "New message",
+                messageType: request.actionType,
+                communicationId: request.details.communicationId,
+                ...request.details // Include all other details like shift dates if present
+              }
+            }
+          });
+          
+          if (emailError) {
+            console.error("Email notification error:", emailError);
+          } else {
+            console.log("Email notification sent successfully:", emailData);
+          }
+        }
+      } catch (emailErr) {
+        console.error("Failed to send email notification:", emailErr);
+        // Continue, as we still want to return success for the DB notification
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: `Successfully created notification for ${request.assignedTo.name}`
+      }), { 
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+    
     // Handle other notification types
     let notifications = createNotifications(request, []);
     

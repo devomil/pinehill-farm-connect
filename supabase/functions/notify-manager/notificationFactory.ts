@@ -62,6 +62,58 @@ export function createNotifications(
         },
       }));
       
+    case "new_message":
+      // For direct messages, create a notification for the assigned recipient
+      if (request.assignedTo && request.assignedTo.id) {
+        return [{
+          user_id: request.assignedTo.id,
+          type: request.actionType,
+          message: `You have a new message from ${request.actor.name}.`,
+          data: { 
+            actor: request.actor, 
+            message: request.details.message,
+            communicationId: request.details.communicationId
+          },
+        }];
+      }
+      return [];
+      
+    case "shift_coverage_request":
+      // For shift coverage requests, create a notification for the assigned recipient
+      if (request.assignedTo && request.assignedTo.id) {
+        return [{
+          user_id: request.assignedTo.id,
+          type: request.actionType,
+          message: `${request.actor.name} has requested shift coverage.`,
+          data: { 
+            actor: request.actor, 
+            message: request.details.message,
+            communicationId: request.details.communicationId,
+            shiftDate: request.details.shift_date,
+            shiftStart: request.details.shift_start,
+            shiftEnd: request.details.shift_end
+          },
+        }];
+      }
+      return [];
+    
+    case "shift_coverage_response":
+      // For shift coverage responses, create a notification for the original requester
+      if (request.assignedTo && request.assignedTo.id) {
+        const responseStatus = request.details.response === 'accepted' ? 'accepted' : 'declined';
+        return [{
+          user_id: request.assignedTo.id,
+          type: request.actionType,
+          message: `${request.actor.name} has ${responseStatus} your shift coverage request.`,
+          data: { 
+            actor: request.actor, 
+            response: responseStatus,
+            communicationId: request.details.communicationId
+          },
+        }];
+      }
+      return [];
+    
     default:
       throw new Error(`Unhandled action type: ${request.actionType}`);
   }

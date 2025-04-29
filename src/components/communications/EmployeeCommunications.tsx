@@ -9,10 +9,21 @@ import { NewMessageDialog } from "./NewMessageDialog";
 import { MessageList } from "./MessageList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserCheck } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function EmployeeCommunications() {
+  const { currentUser } = useAuth();
   const { unfilteredEmployees, loading } = useEmployees();
   const { messages, isLoading, sendMessage, respondToShiftRequest } = useCommunications();
+
+  // Add the current user ID to each message object for the MessageList component
+  const messagesWithCurrentUser = React.useMemo(() => {
+    if (!messages || !currentUser) return [];
+    return messages.map(msg => ({
+      ...msg,
+      current_user_id: currentUser.id
+    }));
+  }, [messages, currentUser]);
 
   return (
     <div className="space-y-4">
@@ -49,7 +60,7 @@ export function EmployeeCommunications() {
 
       <Card className="p-4">
         <MessageList
-          messages={messages || []}
+          messages={messagesWithCurrentUser}
           isLoading={isLoading || loading}
           onRespond={respondToShiftRequest}
           employees={unfilteredEmployees}

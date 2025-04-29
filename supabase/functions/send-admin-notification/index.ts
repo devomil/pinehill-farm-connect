@@ -13,7 +13,7 @@ interface NotificationRequest {
   adminEmail: string;
   adminName: string;
   adminId?: string;
-  type: "report" | "timeoff";
+  type: "report" | "timeoff" | "message";
   priority?: string;
   employeeName: string;
   details?: any;
@@ -55,35 +55,55 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify we're not accidentally sending to the same person who created the report
+    // Verify we're not accidentally sending to the same person who created the notification
     if (adminEmail === details?.senderEmail) {
       console.warn(`Warning: Notification would be sent to the same person who created it (${adminEmail}). Aborting.`);
       return new Response(
-        JSON.stringify({ error: "Cannot send notification to the report creator" }),
+        JSON.stringify({ error: "Cannot send notification to the notification creator" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const subject = type === "report" 
-      ? `New ${priority} Priority Report from ${employeeName}`
-      : `New Time Off Request from ${employeeName}`;
-
-    const content = type === "report"
-      ? `${employeeName} has submitted a new ${priority} priority report that requires your attention.`
-      : `${employeeName} has submitted a new time off request that requires your review.`;
+    // Set subject and content based on notification type
+    let subject, content;
+    
+    if (type === "report") {
+      subject = `New ${priority} Priority Report from ${employeeName}`;
+      content = `${employeeName} has submitted a new ${priority} priority report that requires your attention.`;
+    } else if (type === "timeoff") {
+      subject = `New Time Off Request from ${employeeName}`;
+      content = `${employeeName} has submitted a new time off request that requires your review.`;
+    } else if (type === "message") {
+      const messageType = details?.messageType || "new_message";
+      
+      if (messageType === "shift_coverage_request") {
+        subject = `Shift Coverage Request from ${employeeName}`;
+        content = `${employeeName} has requested coverage for a shift and needs your response.`;
+      } else if (messageType === "shift_coverage_response") {
+        const response = details?.response === "accepted" ? "accepted" : "declined";
+        subject = `Shift Coverage ${response === "accepted" ? "Accepted" : "Declined"} by ${employeeName}`;
+        content = `${employeeName} has ${response} your request for shift coverage.`;
+      } else {
+        subject = `New Message from ${employeeName}`;
+        content = `${employeeName} has sent you a new message.`;
+      }
+    } else {
+      subject = `New Notification from ${employeeName}`;
+      content = `${employeeName} has sent you a notification that requires your attention.`;
+    }
 
     // Format details as a readable HTML table if they exist
     let detailsHtml = '';
     if (details) {
       detailsHtml = `
         <div style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-radius: 5px; border: 1px solid #eee;">
-          <h3 style="margin-top: 0;">Request Details:</h3>
+          <h3 style="margin-top: 0;">Details:</h3>
           <table style="width: 100%; border-collapse: collapse;">
       `;
       
       for (const [key, value] of Object.entries(details)) {
-        // Skip the senderEmail field as it's just for validation
-        if (key === 'senderEmail') continue;
+        // Skip internal fields
+        if (key === 'senderEmail' || key === 'messageType') continue;
         
         const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
         detailsHtml += `
@@ -106,9 +126,9 @@ Hello ${adminName},
 
 ${content}
 
-Request Details:
+Details:
 ${details ? Object.entries(details)
-  .filter(([key]) => key !== 'senderEmail')
+  .filter(([key]) => key !== 'senderEmail' && key !== 'messageType')
   .map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
   .join('\n') : ''}
 
