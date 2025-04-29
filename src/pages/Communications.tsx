@@ -67,7 +67,10 @@ export default function Communications() {
     }));
   }, [messages, currentUser]);
 
-  const isConnectionError = error && error.includes("Failed to fetch");
+  // Check if it's a connection error by safely checking if the error string includes "Failed to fetch"
+  const isConnectionError = error && 
+    (typeof error === 'string' ? error.includes("Failed to fetch") : 
+    error instanceof Error ? error.message.includes("Failed to fetch") : false);
 
   return (
     <DashboardLayout>
@@ -98,7 +101,7 @@ export default function Communications() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Error loading data: {error}
+              Error loading data: {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
             </AlertDescription>
           </Alert>
         ) : null}
