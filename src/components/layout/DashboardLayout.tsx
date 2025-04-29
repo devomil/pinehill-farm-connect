@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { CommunicationIndicators } from "./CommunicationIndicators";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,8 +25,11 @@ export function DashboardLayout({ children, requireAdmin = false }: DashboardLay
   return (
     <div className="flex h-screen bg-background">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-7xl mx-auto">{children}</div>
+      <main className="flex-1 overflow-y-auto p-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <CommunicationIndicators />
+          {children}
+        </div>
       </main>
     </div>
   );
