@@ -4,7 +4,7 @@ import { User } from "@/types";
 
 /**
  * Hook for filtering employees based on assignments
- * UPDATED: All employees can see each other - no filtering by role or assignments
+ * Updated: All employees can see each other - no filtering by role or assignments
  */
 export function useEmployeeFiltering(
   employees: User[],
@@ -26,8 +26,10 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // Include ALL employees regardless of role or assignments
-    // This ensures every employee can see and interact with every other employee
+    // Include ALL employees
+    console.log(`Found ${employees.length} employees before filtering`);
+    
+    // Ensure all employees are included without any filtering
     const result = [...employees];
     
     // If the current user is not in the list (which shouldn't happen), add them
@@ -36,7 +38,7 @@ export function useEmployeeFiltering(
       result.push(currentUser);
     }
     
-    console.log(`Found ${result.length} employees for assignment/communication`);
+    console.log(`Final assignable employees count: ${result.length}`);
     setAssignableEmployees(result);
   }, [employees, assignments, currentUser]);
 

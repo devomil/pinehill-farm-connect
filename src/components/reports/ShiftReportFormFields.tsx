@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { User } from "@/types";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "@/hooks/useShiftReportForm";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ShiftReportFormFieldsProps {
   form: UseFormReturn<FormValues>;
@@ -79,29 +81,32 @@ export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReport
         render={({ field }) => (
           <FormItem>
             <FormLabel>Assign To</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select admin/manager to assign (optional)" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {assignableEmployees && assignableEmployees.length > 0 ? (
-                  assignableEmployees.map((employee) => (
+            {assignableEmployees && assignableEmployees.length > 0 ? (
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee to assign (optional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {assignableEmployees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name} ({employee.role})
+                      {employee.name || employee.email} {employee.role ? `(${employee.role})` : ''}
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-admins" disabled>
-                    No admins/managers available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Alert variant="default" className="border-orange-500 bg-orange-50 text-orange-900">
+                <AlertCircle className="h-4 w-4 text-orange-500" />
+                <AlertDescription>
+                  No employees found. Please try refreshing the page or click "Fix Assignments" button below.
+                </AlertDescription>
+              </Alert>
+            )}
             <FormMessage />
           </FormItem>
         )}

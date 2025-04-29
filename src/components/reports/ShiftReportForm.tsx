@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export function ShiftReportForm() {
   const { form, onSubmit, sendTestNotification, assignableEmployees, createTestAssignment } = useShiftReportForm();
   
-  console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees);
+  console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees?.length || 0);
 
   return (
     <Form {...form}>
@@ -20,11 +20,11 @@ export function ShiftReportForm() {
           assignableEmployees={assignableEmployees}
         />
 
-        {assignableEmployees.length === 0 && (
+        {(!assignableEmployees || assignableEmployees.length === 0) && (
           <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 text-orange-900">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription>
-              No admin/manager users found. Click "Fix Assignments" to create an admin role and set up assignments automatically.
+              No employees found in the system. Click "Fix Assignments" to create employee profiles automatically.
             </AlertDescription>
           </Alert>
         )}
@@ -35,6 +35,7 @@ export function ShiftReportForm() {
             variant="secondary" 
             onClick={sendTestNotification}
             className="w-full sm:w-auto"
+            disabled={!assignableEmployees || assignableEmployees.length === 0}
           >
             Send Test Notification
           </Button>
@@ -51,6 +52,7 @@ export function ShiftReportForm() {
           <Button 
             type="submit"
             className="w-full sm:w-auto"
+            disabled={!assignableEmployees || assignableEmployees.length === 0}
           >
             Submit Report
           </Button>
