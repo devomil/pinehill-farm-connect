@@ -4,18 +4,27 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
+import { User } from "@/types";
 
 interface EmployeeSelectorProps {
   selectedUserIds: string[];
   setSelectedUserIds: (ids: string[]) => void;
+  allEmployees?: User[];
+  loading?: boolean;
 }
 
 export const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   selectedUserIds,
   setSelectedUserIds,
+  allEmployees: propEmployees,
+  loading: propLoading,
 }) => {
   const [filter, setFilter] = useState("");
-  const { unfilteredEmployees: allEmployees, loading } = useEmployeeDirectory();
+  const { unfilteredEmployees, loading: hookLoading } = useEmployeeDirectory();
+  
+  // Use provided employees if available, otherwise use from the hook
+  const allEmployees = propEmployees || unfilteredEmployees;
+  const loading = propLoading !== undefined ? propLoading : hookLoading;
 
   const filtered = allEmployees.filter(e =>
     e.name?.toLowerCase().includes(filter.toLowerCase()) || e.email?.toLowerCase().includes(filter.toLowerCase())

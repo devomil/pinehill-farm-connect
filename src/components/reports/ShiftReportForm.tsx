@@ -9,14 +9,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 export function ShiftReportForm() {
-  const { form, onSubmit, sendTestNotification, createTestAssignment } = useShiftReportForm();
+  const { form, onSubmit: handleSubmitValues, sendTestNotification, createTestAssignment } = useShiftReportForm();
   const { unfilteredEmployees: assignableEmployees } = useEmployeeDirectory();
   
   console.log("ShiftReportForm rendering with assignable employees:", assignableEmployees?.length || 0);
 
+  // Create a form event handler that will call our submit function
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit(handleSubmitValues)(e);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <ShiftReportFormFields form={form} />
 
         {(!assignableEmployees || assignableEmployees.length === 0) && (
