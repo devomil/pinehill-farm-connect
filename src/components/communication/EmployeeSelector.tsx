@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { User } from "@/types";
 
-interface EmployeeSelectorProps {
+export interface EmployeeSelectorProps {
   selectedUserIds: string[];
   setSelectedUserIds: (ids: string[]) => void;
   allEmployees?: User[];
