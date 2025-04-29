@@ -32,6 +32,7 @@ export interface NewMessageDialogProps {
       shift_end: string;
     };
   }) => void;
+  onClose?: () => void;
 }
 
 export interface MessageNotification {

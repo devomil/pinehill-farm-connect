@@ -16,6 +16,12 @@ export function useSendMessage(currentUser: User | null) {
       type,
       shiftDetails 
     }: SendMessageParams) => {
+      if (!currentUser?.id) {
+        throw new Error("You must be logged in to send messages");
+      }
+
+      console.log(`Attempting to send message to recipient ID: ${recipientId}`);
+      
       // Use maybeSingle instead of single to prevent an error if no recipient is found
       const { data: recipientData, error: recipientError } = await supabase
         .from('profiles')
@@ -30,7 +36,7 @@ export function useSendMessage(currentUser: User | null) {
       
       if (!recipientData) {
         console.error("No recipient found with ID:", recipientId);
-        throw new Error("Could not find recipient information");
+        throw new Error(`Recipient not found. Please refresh and try again.`);
       }
 
       console.log("Found recipient:", recipientData);
@@ -38,10 +44,11 @@ export function useSendMessage(currentUser: User | null) {
       const { data: communicationData, error: communicationError } = await supabase
         .from('employee_communications')
         .insert({
-          sender_id: currentUser?.id,
+          sender_id: currentUser.id,
           recipient_id: recipientId,
           message,
-          type
+          type,
+          status: 'pending'
         })
         .select()
         .single();
@@ -54,9 +61,10 @@ export function useSendMessage(currentUser: User | null) {
           .from('shift_coverage_requests')
           .insert({
             communication_id: communicationData.id,
-            original_employee_id: currentUser?.id,
+            original_employee_id: currentUser.id,
             covering_employee_id: recipientId,
-            ...shiftDetails
+            ...shiftDetails,
+            status: 'pending'
           });
 
         if (shiftError) throw shiftError;
@@ -71,9 +79,9 @@ export function useSendMessage(currentUser: User | null) {
         const notifyResult = await notifyManager(
           actionType,
           {
-            id: currentUser?.id || "unknown",
-            name: currentUser?.name || "Unknown User",
-            email: currentUser?.email || "unknown"
+            id: currentUser.id || "unknown",
+            name: currentUser.name || "Unknown User",
+            email: currentUser.email || "unknown"
           },
           {
             message,

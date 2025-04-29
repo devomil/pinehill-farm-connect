@@ -1,16 +1,18 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RecipientSelect } from "./RecipientSelect";
 import { ShiftDetailsForm } from "./ShiftDetailsForm";
 import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/communications";
+import { useAuth } from "@/contexts/AuthContext";
 
-export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
+export function NewMessageDialog({ employees, onSend, onClose }: NewMessageDialogProps) {
+  const { currentUser } = useAuth();
   const form = useForm<NewMessageFormData>({
     defaultValues: {
       recipientId: "",
@@ -23,8 +25,37 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
   });
 
   const type = form.watch("type") as MessageType;
+  
+  // Filter out the current user to avoid sending messages to self
+  const filteredEmployees = React.useMemo(() => {
+    if (!currentUser) return employees;
+    return employees.filter(emp => emp.id !== currentUser.id);
+  }, [employees, currentUser]);
+
+  // Reset form when dialog is opened
+  useEffect(() => {
+    form.reset({
+      recipientId: "",
+      message: "",
+      type: "general",
+      shiftDate: "",
+      shiftStart: "",
+      shiftEnd: ""
+    });
+  }, [form]);
 
   const onSubmit = (values: NewMessageFormData) => {
+    // Add validation to ensure recipient exists
+    const recipientExists = filteredEmployees.some(emp => emp.id === values.recipientId);
+    
+    if (!recipientExists) {
+      form.setError("recipientId", { 
+        type: "manual", 
+        message: "Please select a valid recipient" 
+      });
+      return;
+    }
+    
     const shiftDetails = type === "shift_coverage" ? {
       shift_date: values.shiftDate,
       shift_start: values.shiftStart,
@@ -37,17 +68,23 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
       type: values.type,
       shiftDetails
     });
+    
+    // Close dialog on successful submission
+    if (onClose) onClose();
   };
 
   return (
     <DialogContent>
       <DialogHeader>
         <DialogTitle>New Message</DialogTitle>
+        <DialogDescription>
+          Send a direct message to another employee
+        </DialogDescription>
       </DialogHeader>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <RecipientSelect form={form} employees={employees} />
+          <RecipientSelect form={form} employees={filteredEmployees} />
 
           <FormField
             control={form.control}
@@ -66,6 +103,7 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
                     <SelectItem value="shift_coverage">Shift Coverage Request</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -75,6 +113,7 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
           <FormField
             control={form.control}
             name="message"
+            rules={{ required: "Message is required" }}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Message</FormLabel>
@@ -88,6 +127,7 @@ export function NewMessageDialog({ employees, onSend }: NewMessageDialogProps) {
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />

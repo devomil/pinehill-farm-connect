@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -24,6 +24,7 @@ export function EmployeeCommunications() {
     currentUser
   );
   const { messages, isLoading, sendMessage, respondToShiftRequest } = useCommunications();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Add the current user ID to each message object for the MessageList component
   const messagesWithCurrentUser = React.useMemo(() => {
@@ -39,6 +40,11 @@ export function EmployeeCommunications() {
     respondToShiftRequest(data);
   };
 
+  const handleSendMessage = (data: any) => {
+    sendMessage(data);
+    setDialogOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -52,13 +58,14 @@ export function EmployeeCommunications() {
             <span>No other employees found</span>
           )}
         </div>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>New Message</Button>
           </DialogTrigger>
           <NewMessageDialog
             employees={assignableEmployees || []}
-            onSend={sendMessage}
+            onSend={handleSendMessage}
+            onClose={() => setDialogOpen(false)}
           />
         </Dialog>
       </div>
