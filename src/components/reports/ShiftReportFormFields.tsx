@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { User } from "@/types";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "@/hooks/useShiftReportForm";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, UserCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ShiftReportFormFieldsProps {
@@ -16,7 +16,7 @@ interface ShiftReportFormFieldsProps {
 }
 
 export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReportFormFieldsProps) {
-  console.log("Rendering form fields with assignable employees:", assignableEmployees);
+  console.log("Rendering form fields with assignable employees:", assignableEmployees?.length || 0);
   
   return (
     <>
@@ -82,23 +82,29 @@ export function ShiftReportFormFields({ form, assignableEmployees }: ShiftReport
           <FormItem>
             <FormLabel>Assign To</FormLabel>
             {assignableEmployees && assignableEmployees.length > 0 ? (
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select employee to assign (optional)" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {assignableEmployees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name || employee.email} {employee.role ? `(${employee.role})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee to assign (optional)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {assignableEmployees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name || employee.email} {employee.role ? `(${employee.role})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                  <UserCheck className="h-3 w-3 mr-1" /> 
+                  All employees and admins can be assigned reports
+                </div>
+              </>
             ) : (
               <Alert variant="default" className="border-orange-500 bg-orange-50 text-orange-900">
                 <AlertCircle className="h-4 w-4 text-orange-500" />

@@ -14,9 +14,8 @@ interface RecipientSelectProps {
 }
 
 export function RecipientSelect({ form, employees }: RecipientSelectProps) {
-  // We don't need to filter out the current user anymore - everyone can message everyone
-  // But we could if needed with: employees.filter(e => e.id !== currentUser?.id)
-
+  // Display all employees without filtering
+  
   return (
     <FormField
       control={form.control}
@@ -35,23 +34,21 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
                 <SelectContent>
                   {employees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name || employee.email}
+                      {employee.name || employee.email} {employee.role ? `(${employee.role})` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {employees.length > 1 && (
-                <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                  <UserCheck className="h-3 w-3 mr-1" /> 
-                  All employees can communicate with each other
-                </div>
-              )}
+              <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                <UserCheck className="h-3 w-3 mr-1" /> 
+                All employees and admins can communicate with each other
+              </div>
             </>
           ) : (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No employees found. Try refreshing the page or contact your administrator.
+                No employees found. Try clicking "Fix Assignments" in the Reports page or contact your administrator.
               </AlertDescription>
             </Alert>
           )}

@@ -26,10 +26,10 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // Include ALL employees
-    console.log(`Found ${employees.length} employees before filtering`);
+    // Include ALL employees without any filtering
+    console.log(`Found ${employees.length} employees - including ALL without filtering`);
     
-    // Ensure all employees are included without any filtering
+    // Make a copy of all employees array to avoid mutation
     const result = [...employees];
     
     // If the current user is not in the list (which shouldn't happen), add them

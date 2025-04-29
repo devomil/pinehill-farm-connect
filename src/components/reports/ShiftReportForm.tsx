@@ -24,7 +24,7 @@ export function ShiftReportForm() {
           <Alert variant="default" className="mb-4 border-orange-500 bg-orange-50 text-orange-900">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription>
-              No employees found in the system. Click "Fix Assignments" to create employee profiles automatically.
+              No employee profiles found. Click "Fix Assignments" below to create employee profiles automatically.
             </AlertDescription>
           </Alert>
         )}
