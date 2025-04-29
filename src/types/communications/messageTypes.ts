@@ -35,3 +35,16 @@ export interface MessageListProps {
   employees: User[];
   onViewConversation: (employee: User) => void;
 }
+
+export interface MessageItemProps {
+  message: MessageData;
+  recipient: User;
+  isOutgoing: boolean;
+  onRespond: (data: {
+    communicationId: string;
+    shiftRequestId: string;
+    accept: boolean;
+    senderId: string;
+  }) => void;
+  onViewConversation?: () => void;
+}

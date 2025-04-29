@@ -10,32 +10,31 @@ import { User } from "@/types";
 interface MessageItemProps {
   message: any;
   onRespond: (data: { communicationId: string; shiftRequestId: string; accept: boolean; senderId: string }) => void;
-  getEmployeeName: (id: string) => string;
-  onViewConversation?: (employee: User) => void;
-  conversationUser: User | undefined;
+  recipient: User;
+  isOutgoing: boolean;
+  onViewConversation?: () => void;
 }
 
 export function MessageItem({ 
   message, 
   onRespond, 
-  getEmployeeName, 
-  onViewConversation,
-  conversationUser
+  recipient,
+  isOutgoing,
+  onViewConversation
 }: MessageItemProps) {
-  const isIncoming = message.recipient_id === message.current_user_id;
   const shiftRequest = message.shift_coverage_requests?.[0];
 
   return (
     <div
       className={`p-4 border rounded-md ${
-        isIncoming ? "bg-blue-50" : ""
+        !isOutgoing ? "bg-blue-50" : ""
       }`}
     >
       <div className="flex justify-between mb-2">
         <div className="font-medium">
-          {isIncoming
-            ? `From: ${getEmployeeName(message.sender_id)}`
-            : `To: ${getEmployeeName(message.recipient_id)}`}
+          {!isOutgoing
+            ? `From: ${recipient.name}`
+            : `To: ${recipient.name}`}
         </div>
         <div className="text-sm text-muted-foreground">
           {format(new Date(message.created_at), "MMM d, h:mm a")}
@@ -68,12 +67,12 @@ export function MessageItem({
       <div className="flex justify-between items-center mt-4">
         <MessageResponseButtons message={message} onRespond={onRespond} />
         
-        {onViewConversation && conversationUser && (
+        {onViewConversation && (
           <Button 
             variant="ghost" 
             size="sm" 
             className="ml-auto"
-            onClick={() => onViewConversation(conversationUser)}
+            onClick={onViewConversation}
           >
             View Conversation 
             <ArrowRight className="h-3 w-3 ml-1" />
