@@ -35,7 +35,7 @@ export async function handleShiftReport(
       };
     }
     
-    // Send to the specific assignee
+    // Send to the specific assignee - THIS IS THE KEY FIX
     console.log(`Sending direct notification to ${assignedTo.name} at ${assignedTo.email}`);
     const result = await sendAdminNotification(
       supabase,

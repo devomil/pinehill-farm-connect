@@ -81,7 +81,7 @@ export function useShiftSubmission(currentUser: User | null, employees: User[]) 
                 toast.error("Report was submitted but notification failed to send");
               }
             } else {
-              toast.success("Report submitted and notification sent successfully");
+              toast.success(`Report submitted and notification sent successfully to ${selectedEmployee.name}`);
             }
           }
         } else if (selectedEmployee && selectedEmployee.id === currentUser?.id) {

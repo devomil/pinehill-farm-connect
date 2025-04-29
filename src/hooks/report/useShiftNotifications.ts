@@ -31,7 +31,11 @@ export function useShiftNotifications() {
         return;
       }
       
-      console.log("Sending notification to admin:", { ...admin, email: adminEmail });
+      console.log("Sending notification to admin:", { 
+        id: admin.id,
+        name: admin.name, 
+        email: adminEmail 
+      });
       
       try {
         const result = await notifyManager("shift_report", 
@@ -45,12 +49,16 @@ export function useShiftNotifications() {
             notes: "This is a test notification",
             priority: "high"
           },
-          { ...admin, email: adminEmail } // Pass the assigned admin with formatted email
+          { 
+            id: admin.id, 
+            name: admin.name, 
+            email: adminEmail 
+          } // Pass the assigned admin with formatted email
         );
         
         if (result.success) {
           console.log("Notification sent via notifyManager:", result);
-          toast.success("Test notification sent successfully via manager notification system");
+          toast.success(`Test notification sent successfully to ${admin.name} (${adminEmail})`);
           return;
         } else {
           if (result.invalidEmail) {
@@ -91,7 +99,7 @@ export function useShiftNotifications() {
       }
 
       console.log("Email function response:", response.data);
-      toast.success("Test notification email sent successfully");
+      toast.success(`Test notification email sent successfully to ${admin.name} (${adminEmail})`);
     } catch (error) {
       console.error('Error in sendNotificationToAdmin:', error);
       toast.error(`Failed to send notification: ${error instanceof Error ? error.message : 'Unknown error'}`);

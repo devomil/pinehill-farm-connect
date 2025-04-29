@@ -97,8 +97,6 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    console.log(`Attempting to send email notification to: ${adminEmail}`);
-
     // Generate plain text version of the email
     const plainTextContent = `
 Hello ${adminName},
@@ -121,7 +119,7 @@ This is an automated message from the Pine Hill Farm HR System.
 
     // Record the sending time for troubleshooting
     const sendingTime = new Date().toISOString();
-    console.log(`[${sendingTime}] Sending email via Resend API to ${adminEmail} using verified domain notifications.pinehillfarm.co`);
+    console.log(`[${sendingTime}] Attempting to send email notification to: ${adminEmail}`);
     
     // Use the verified domain for sending emails
     const emailResponse = await resend.emails.send({
