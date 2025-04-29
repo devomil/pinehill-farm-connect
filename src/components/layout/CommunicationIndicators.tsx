@@ -29,8 +29,6 @@ export const CommunicationIndicators: React.FC = () => {
   return (
     <div className="fixed top-4 right-6 z-10 flex items-center space-x-2">
       <TooltipProvider>
-        {/* Removed the "New" combined notifications button */}
-        
         {/* Announcements */}
         <Tooltip>
           <TooltipTrigger asChild>

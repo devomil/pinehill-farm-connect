@@ -1,6 +1,6 @@
 
 import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -64,10 +64,10 @@ function App() {
       path: "*",
       element: <NotFound />,
     },
-    // Redirecting old /communications route to /communication
+    // Redirecting old communications route to communication
     {
       path: "/communications",
-      element: <Communication />,
+      element: <Navigate to="/communication?tab=messages" replace />,
     },
   ]);
 

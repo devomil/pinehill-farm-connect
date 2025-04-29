@@ -50,13 +50,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
     {
       to: "/communication",
       icon: <Megaphone className="h-5 w-5 mr-3" />,
-      label: "Announcements",
-      showIf: true,
-    },
-    {
-      to: "/communications",
-      icon: <MessageSquare className="h-5 w-5 mr-3" />,
-      label: "Direct Messages",
+      label: "Communication",
       showIf: true,
     }
   ];

@@ -7,25 +7,61 @@ import { AnnouncementManager } from "@/components/communication/announcement/Ann
 import { AnnouncementHeader } from "@/components/communication/announcement/AnnouncementHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCommunications } from "@/hooks/useCommunications";
-import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
 import { Card } from "@/components/ui/card";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Communication = () => {
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
-  const { unreadMessages } = useCommunications();
-  const [activeTab, setActiveTab] = useState<string>("announcements");
+  const { unreadMessages, refreshMessages } = useCommunications();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get tab from URL params
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromUrl = searchParams.get("tab") || "announcements";
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl);
+  
+  useEffect(() => {
+    // Set active tab based on URL parameter
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
   
   useEffect(() => {
     console.log("Communication page loaded - currentUser:", currentUser);
     console.log("Communication page - employees:", allEmployees);
-  }, [currentUser, allEmployees]);
+    
+    // Refresh messages when the page loads
+    if (activeTab === "messages") {
+      refreshMessages();
+    }
+  }, [currentUser, allEmployees, activeTab, refreshMessages]);
 
   const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
 
   const handleAnnouncementCreate = () => {
     console.log("Announcement created, refreshing...");
+  };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Update URL to reflect active tab without reloading the page
+    const newSearchParams = new URLSearchParams(location.search);
+    if (value === "announcements") {
+      newSearchParams.delete("tab");
+    } else {
+      newSearchParams.set("tab", value);
+    }
+    navigate({
+      pathname: location.pathname,
+      search: newSearchParams.toString()
+    }, { replace: true });
+    
+    // Refresh messages when switching to messages tab
+    if (value === "messages") {
+      refreshMessages();
+    }
   };
 
   return (
@@ -38,7 +74,7 @@ const Communication = () => {
           loading={employeesLoading}
         />
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="announcements">Company Announcements</TabsTrigger>
             <TabsTrigger value="messages">
