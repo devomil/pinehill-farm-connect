@@ -14,6 +14,17 @@ export const useCommunications = () => {
   const sendMessageMutation = useSendMessage(currentUser);
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
   
+  // Add console logging for debugging
+  if (error) {
+    console.error("Error loading communications:", error);
+  }
+  
+  if (messages) {
+    console.log("Communications loaded successfully:", messages.length);
+  } else if (!isLoading && !error) {
+    console.log("No communications data found but no error reported");
+  }
+  
   const unreadMessages = useMemo(() => {
     if (!messages || !currentUser) return [];
     
@@ -35,6 +46,7 @@ export const useCommunications = () => {
   
   // Function to refresh messages
   const refreshMessages = () => {
+    console.log("Manually refreshing messages");
     queryClient.invalidateQueries({ queryKey: ['communications'] });
   };
 

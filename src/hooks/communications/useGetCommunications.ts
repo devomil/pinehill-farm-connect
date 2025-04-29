@@ -8,19 +8,34 @@ export function useGetCommunications(currentUser: User | null) {
   return useQuery({
     queryKey: ['communications', currentUser?.id],
     queryFn: async () => {
-      if (!currentUser?.id) throw new Error("User must be logged in");
+      if (!currentUser?.id) {
+        console.log("User not logged in, cannot fetch communications");
+        throw new Error("User must be logged in");
+      }
       
-      const { data, error } = await supabase
-        .from('employee_communications')
-        .select(`
-          *,
-          shift_coverage_requests(*)
-        `)
-        .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
-        .order('created_at', { ascending: false });
+      console.log(`Fetching communications for user: ${currentUser.id}`);
+      
+      try {
+        const { data, error } = await supabase
+          .from('employee_communications')
+          .select(`
+            *,
+            shift_coverage_requests(*)
+          `)
+          .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          console.error("Supabase query error:", error);
+          throw error;
+        }
+        
+        console.log(`Retrieved ${data?.length || 0} communications`);
+        return data;
+      } catch (err) {
+        console.error("Error in communications query:", err);
+        throw err;
+      }
     },
     enabled: !!currentUser?.id,
   });

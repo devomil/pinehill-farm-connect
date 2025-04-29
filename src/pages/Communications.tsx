@@ -52,6 +52,7 @@ export default function Communications() {
   };
 
   const handleRetry = () => {
+    console.log("Retrying connection...");
     // Increment the retry count to trigger the useEffect
     setRetryCount(prev => prev + 1);
     // Run manual refetch operations
@@ -96,6 +97,16 @@ export default function Communications() {
     
     return "Unknown error";
   };
+
+  // Debug information
+  console.log({
+    currentUser: currentUser?.id,
+    employeesCount: allEmployees?.length || 0,
+    messagesCount: messages?.length || 0,
+    unreadCount: unreadMessages?.length || 0,
+    isLoading: loading,
+    error: error ? formatErrorMessage() : "No error"
+  });
 
   return (
     <DashboardLayout>
