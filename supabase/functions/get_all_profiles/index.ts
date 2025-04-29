@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
 };
 
 serve(async (req) => {
@@ -33,14 +33,19 @@ serve(async (req) => {
       .select('*')
       .not('email', 'is', null);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching profiles:', error);
+      throw error;
+    }
 
+    console.log(`Successfully fetched ${data?.length || 0} profiles`);
+    
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in get_all_profiles function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
