@@ -11,10 +11,10 @@ import { AlertCircle, Loader2 } from "lucide-react";
 export default function Communications() {
   const { currentUser } = useAuth();
   const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployees();
-  const { isLoading: assignmentsLoading, error: assignmentsError } = useEmployeeAssignments();
+  const { isLoading: assignmentsLoading } = useEmployeeAssignments();
   
   const loading = employeesLoading || assignmentsLoading;
-  const error = employeeError || assignmentsError;
+  const error = employeeError; // Only use the error from useEmployees
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
