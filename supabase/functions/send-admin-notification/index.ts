@@ -34,6 +34,14 @@ const handler = async (req: Request): Promise<Response> => {
     }: NotificationRequest = await req.json();
 
     console.log(`Processing notification to ${adminName} (${adminEmail}) from ${employeeName}`);
+    console.log(`Full notification details:`, JSON.stringify({ 
+      adminEmail, 
+      adminName, 
+      type, 
+      priority, 
+      employeeName, 
+      details 
+    }, null, 2));
 
     // Verify that adminEmail is actually an email address
     if (!adminEmail || !adminEmail.includes('@')) {
@@ -89,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    console.log(`Sending email notification to: ${adminEmail}`);
+    console.log(`Attempting to send email notification to: ${adminEmail}`);
 
     // Generate plain text version of the email
     const plainTextContent = `
@@ -111,9 +119,13 @@ Pine Hill Farm HR System
 This is an automated message from the Pine Hill Farm HR System.
     `;
 
-    // Use the matching domain for the button URL (pinehillfarm.co instead of lovable.dev)
+    // Record the sending time for troubleshooting
+    const sendingTime = new Date().toISOString();
+    console.log(`[${sendingTime}] Sending email via Resend API to ${adminEmail}`);
+    
+    // Use onboarding@resend.dev for the email to avoid domain verification issues
     const emailResponse = await resend.emails.send({
-      from: `HR System <notifications@pinehillfarm.co>`,
+      from: `HR System <onboarding@resend.dev>`,
       to: [adminEmail],
       subject: subject,
       html: `
@@ -186,7 +198,7 @@ This is an automated message from the Pine Hill Farm HR System.
       text: plainTextContent,
     });
 
-    console.log("Email response:", emailResponse);
+    console.log(`[${sendingTime}] Email API response:`, JSON.stringify(emailResponse, null, 2));
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

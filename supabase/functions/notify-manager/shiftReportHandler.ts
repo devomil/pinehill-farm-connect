@@ -23,6 +23,7 @@ export async function handleShiftReport(
     }
     
     // Send to the specific assignee
+    console.log(`Sending direct notification to ${assignedTo.name} at ${assignedTo.email}`);
     const result = await sendAdminNotification(
       supabase,
       {
@@ -35,9 +36,11 @@ export async function handleShiftReport(
     );
     
     if (!result.success) {
+      console.error(`Failed to send notification to ${assignedTo.email}:`, result.error);
       return result;
     }
     
+    console.log(`Successfully sent notification to ${assignedTo.email}`);
     return { 
       success: true,
       notifiedManagers: [{ id: assignedTo.id, name: assignedTo.name, email: assignedTo.email }]
@@ -83,6 +86,7 @@ export async function handleShiftReport(
   }
   
   console.log(`Found ${profiles.length} admin profiles`);
+  console.log("Admin profiles:", profiles.map(p => `${p.name} (${p.email})`));
   
   // Ensure all emails are valid
   const validProfiles: ManagerProfile[] = profiles
@@ -129,6 +133,18 @@ async function sendAdminNotification(
       return { success: false, error: "Cannot send notification to yourself" };
     }
     
+    console.log(`Invoking send-admin-notification for ${admin.email} with details:`, JSON.stringify({
+      adminEmail: admin.email,
+      adminName: admin.name,
+      type: "report",
+      priority: details.priority || "high",
+      employeeName: actor.name,
+      details: {
+        ...details,
+        senderEmail: actor.email
+      }
+    }, null, 2));
+    
     const response = await supabase.functions.invoke("send-admin-notification", {
       body: {
         adminEmail: admin.email,
@@ -148,7 +164,7 @@ async function sendAdminNotification(
       return { success: false, error: response.error.message };
     }
     
-    console.log(`Successfully sent notification to ${admin.email}`);
+    console.log(`Successfully sent notification to ${admin.email}:`, response.data);
     return { success: true };
   } catch (error) {
     console.error(`Error sending notification to ${admin.email}:`, error);

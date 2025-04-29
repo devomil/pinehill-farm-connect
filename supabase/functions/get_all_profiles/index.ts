@@ -43,6 +43,9 @@ serve(async (req) => {
       if (!profile.email || !profile.email.includes('@')) {
         console.warn(`Profile ${profile.id} (${profile.name}) has invalid email: ${profile.email}`);
         
+        // Print the original email for debugging
+        console.log(`Original email value: "${profile.email}"`);
+        
         // Add standard domain to emails without @ symbol
         if (profile.email && profile.email.trim() !== '') {
           const emailWithDomain = `${profile.email}@pinehillfarm.co`;
@@ -51,7 +54,9 @@ serve(async (req) => {
         } else {
           // If no email is provided, create one based on the name
           if (profile.name && profile.name.trim() !== '') {
-            const generatedEmail = `${profile.name.toLowerCase().replace(/\s+/g, '.')}@pinehillfarm.co`;
+            // Create a sanitized name for the email (lowercase, spaces to dots)
+            const sanitizedName = profile.name.toLowerCase().replace(/\s+/g, '.');
+            const generatedEmail = `${sanitizedName}@pinehillfarm.co`;
             console.log(`Generating email for ${profile.name}: ${generatedEmail}`);
             profile.email = generatedEmail;
           } else {
@@ -67,6 +72,11 @@ serve(async (req) => {
     });
 
     console.log(`Successfully fetched and enhanced ${enhancedProfiles?.length || 0} profiles`);
+    
+    // Log each profile's email for debugging
+    enhancedProfiles.forEach(profile => {
+      console.log(`Profile: ${profile.name} | Email: ${profile.email}`);
+    });
     
     return new Response(JSON.stringify(enhancedProfiles), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

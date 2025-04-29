@@ -49,6 +49,14 @@ export async function notifyManager(
     // Add more debugging to help trace issues
     console.log(`[NotifyManager] Making request to notify-manager function with actor: ${actor.name} (${actor.email}), sending to: ${assignedTo?.email || 'none'}`);
     
+    // Log the full request payload
+    console.log(`[NotifyManager] Request payload:`, JSON.stringify({ 
+      actionType, 
+      actor, 
+      details, 
+      assignedTo 
+    }, null, 2));
+    
     const res = await fetch(
       "https://pdeaxfhsodenefeckabm.functions.supabase.co/notify-manager",
       {
