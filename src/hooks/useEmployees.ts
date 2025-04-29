@@ -27,7 +27,7 @@ export function useEmployees() {
       console.log("Profile count:", profileCount);
       
       // If we have a current user but no profiles, create a profile for the current user
-      if (profileCount === 0 && currentUser) {
+      if ((profileCount === 0 || !profileCount) && currentUser) {
         console.log("No profiles found - creating profile for current user:", currentUser);
         
         // Create profile for current user
@@ -35,7 +35,7 @@ export function useEmployees() {
           .from('profiles')
           .insert({
             id: currentUser.id,
-            name: currentUser.name,
+            name: currentUser.name || currentUser.email.split('@')[0],
             email: currentUser.email,
             department: currentUser.department || '',
             position: currentUser.position || ''
@@ -72,7 +72,6 @@ export function useEmployees() {
       }
       
       // Fetch all profiles - ALWAYS fetch all profiles regardless of role
-      // CRUCIAL CHANGE: No filtering by role or current user here
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -80,6 +79,14 @@ export function useEmployees() {
       if (profilesError) throw profilesError;
 
       console.log("Fetched profiles:", profiles?.length);
+
+      // If still no profiles but we have current user, create a profile on the fly
+      if ((!profiles || profiles.length === 0) && currentUser) {
+        console.log("Still no profiles found - using current user as fallback");
+        setEmployees([currentUser]);
+        setLoading(false);
+        return;
+      }
 
       // Fetch user roles to combine with profiles
       const { data: userRoles, error: rolesError } = await supabase
@@ -97,7 +104,7 @@ export function useEmployees() {
         
         return {
           id: profile.id,
-          name: profile.name || '',
+          name: profile.name || profile.email?.split('@')[0] || '',
           email: profile.email || '',
           department: profile.department || '',
           position: profile.position || '',

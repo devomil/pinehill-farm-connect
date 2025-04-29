@@ -5,9 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useEmployees } from "@/hooks/useEmployees";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function ShiftReportList() {
-  const { employees } = useEmployees();
+  const { employees, error: employeeError } = useEmployees();
   const { data: reports, isLoading } = useQuery({
     queryKey: ['shiftReports'],
     queryFn: async () => {
@@ -58,9 +60,25 @@ export function ShiftReportList() {
   });
 
   if (isLoading) return <div>Loading reports...</div>;
+  
+  if (reports?.length === 0) {
+    return (
+      <Alert className="my-4 bg-blue-50 text-blue-800">
+        <AlertCircle className="h-4 w-4 text-blue-600" />
+        <AlertDescription>No reports found. Create a new report to get started.</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-4">
+      {employeeError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{employeeError}</AlertDescription>
+        </Alert>
+      )}
+      
       {reports?.map((report) => (
         <Card 
           key={report.id} 
