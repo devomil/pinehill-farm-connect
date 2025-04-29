@@ -25,8 +25,6 @@ export const CommunicationIndicators: React.FC = () => {
   
   // Count of unread direct messages (from useCommunications hook)
   const unreadMessageCount = unreadMessages?.length || 0;
-  
-  const hasUnread = unreadAnnouncements > 0 || unreadMessageCount > 0;
 
   return (
     <div className="fixed top-4 right-6 z-10 flex items-center space-x-2">
@@ -61,7 +59,7 @@ export const CommunicationIndicators: React.FC = () => {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate("/communications")}
+              onClick={() => navigate("/communication?tab=messages")}
               className="relative"
             >
               <MessageSquare className="h-5 w-5" />

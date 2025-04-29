@@ -24,18 +24,21 @@ export default function Communications() {
     // Attempt to load employees when page loads
     refetchEmployees();
     
-    // Set a refresh interval for messages (every 60 seconds)
-    const refreshInterval = setInterval(() => {
-      if (!isConnectionError(error)) {
+    // Only set up refresh interval if there's no error
+    let refreshInterval;
+    if (!error) {
+      refreshInterval = setInterval(() => {
         console.log("Auto-refreshing messages");
         refreshMessages();
-      }
-    }, 60000);
+      }, 60000); // Refresh every minute instead of continuously
+    }
     
-    return () => clearInterval(refreshInterval);
-  }, [currentUser, refetchEmployees, refreshMessages, error, isConnectionError]);
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, [currentUser, refetchEmployees, refreshMessages, error]);
 
-  // Attempt auto-retry when connection errors occur
+  // Only attempt auto-retry when connection errors occur and limit to 3 attempts
   useEffect(() => {
     if (isConnectionError(error) && retryCount < 3) {
       const timer = setTimeout(() => {

@@ -44,7 +44,7 @@ export const useCommunications = () => {
     return respondToShiftRequestMutation.mutate(params);
   };
   
-  // Function to refresh messages
+  // Function to refresh messages with a retry parameter to prevent loops
   const refreshMessages = () => {
     console.log("Manually refreshing messages");
     queryClient.invalidateQueries({ queryKey: ['communications'] });

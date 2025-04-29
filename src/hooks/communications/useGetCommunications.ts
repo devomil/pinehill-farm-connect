@@ -43,10 +43,12 @@ export function useGetCommunications(currentUser: User | null) {
       }
     },
     enabled: !!currentUser?.id,
-    // Add retry configuration
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Add retry configuration but limit to avoid loops
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     // Increase stale time to reduce unnecessary refetches
-    staleTime: 30000,
+    staleTime: 60000,
+    // Add caching time to prevent frequent refetches
+    gcTime: 300000,
   });
 }
