@@ -21,10 +21,10 @@ export function useEmployees() {
       
       // Create a public RLS bypass function call to fetch all profiles
       const { data: publicProfiles, error: publicProfilesError } = await supabase
-        .rpc('get_all_profiles');
+        .functions.invoke('get_all_profiles');
 
       if (publicProfilesError) {
-        console.error("Error fetching profiles with RPC:", publicProfilesError);
+        console.error("Error fetching profiles with function:", publicProfilesError);
         
         // Fall back to regular profile query
         const { data: profiles, error: profilesError } = await supabase
@@ -57,7 +57,7 @@ export function useEmployees() {
         // Process regular profiles
         processProfileData(profiles);
       } else {
-        // Process profiles from the RPC function
+        // Process profiles from the edge function
         console.log("Successfully fetched profiles with bypass function:", publicProfiles?.length || 0);
         processProfileData(publicProfiles);
       }
