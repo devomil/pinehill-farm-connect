@@ -63,7 +63,7 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use explicit type casting to break circular dependencies
+      // Simplify the query result handling to avoid TypeScript recursion
       const { data, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
@@ -74,18 +74,22 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Cast to simple array of AdminBasicInfo to avoid deep nesting
-      const admins = (data || []) as AdminBasicInfo[];
+      // Use a simple array type with explicit type assertion
+      const adminArray = Array.isArray(data) ? data : [];
       
-      if (admins.length === 0) {
+      if (adminArray.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Process notifications one at a time to avoid complex type nesting
-        for (const admin of admins) {
+        // Process notifications with primitive values to avoid complex type nesting
+        for (const admin of adminArray) {
+          const adminId = admin.id as string;
+          const adminName = (admin.name as string) || 'Admin';
+          const adminEmail = (admin.email as string) || '';
+          
           await notifyAdmin(
-            admin.id,
-            admin.name || 'Admin',
-            admin.email || '',
+            adminId,
+            adminName,
+            adminEmail,
             shiftReport.id,
             reportData.priority
           );
@@ -140,7 +144,7 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use mutation with explicitly typed parameters
+  // Explicitly type the error parameter in the mutation
   const mutation = useMutation({
     mutationFn: submitShiftReport,
     onSuccess: () => {
