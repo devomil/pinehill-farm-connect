@@ -39,16 +39,36 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Simple admin interface without nested types
-interface AdminProfile {
-  id: string;
-  name: string | null;
-  email: string | null;
-}
-
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
+
+  // Completely separate function to fetch admins, avoiding type nesting
+  const fetchAdmins = async () => {
+    // Use raw fetch call instead of Supabase client to avoid type complexity
+    const supabaseUrl = "https://pdeaxfhsodenefeckabm.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA";
+    
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/profiles?select=id,name,email&role=eq.admin`, {
+        method: 'GET',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch admins');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+      return [];
+    }
+  };
 
   const submitShiftReport = async (reportData: ShiftReportInput): Promise<DBShiftReport> => {
     setIsSubmitting(true);
@@ -57,8 +77,8 @@ export const useShiftSubmission = () => {
         throw new Error("User not authenticated.");
       }
 
-      // Define the data to insert with explicit typing
-      const reportToInsert = {
+      // Create a report payload without complex type transformations
+      const reportPayload = {
         ...reportData,
         user_id: currentUser.id,
         submitted_by: currentUser.name || currentUser.email,
@@ -66,50 +86,49 @@ export const useShiftSubmission = () => {
         status: 'submitted',
       };
 
-      // Insert the report with explicit typing for the response
-      const { data, error: shiftReportError } = await supabase
+      // Insert the report and get the result
+      const { data, error: insertError } = await supabase
         .from('shift_reports')
-        .insert([reportToInsert])
-        .select();
+        .insert([reportPayload]);
 
-      if (shiftReportError) {
-        console.error("Error submitting shift report:", shiftReportError);
-        throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
+      if (insertError) {
+        console.error("Error submitting shift report:", insertError);
+        throw new Error(`Failed to submit shift report: ${insertError.message}`);
       }
 
-      // Get the first report from the data array
-      const shiftReport = data?.[0] as DBShiftReport;
+      // Separate query to get the inserted report
+      const { data: reportData, error: fetchError } = await supabase
+        .from('shift_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .eq('user_id', currentUser.id);
+
+      if (fetchError) {
+        throw new Error(`Failed to retrieve report: ${fetchError.message}`);
+      }
+
+      const shiftReport = reportData?.[0] as DBShiftReport;
       if (!shiftReport) {
         throw new Error("Failed to retrieve the created shift report");
       }
 
-      // Use specific types and explicit field selection without chaining
-      // This breaks the deep type inference chain that causes TS2589
-      const profilesResponse = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .eq('role', 'admin');
-
-      // Handle and parse the response explicitly
-      const adminsError = profilesResponse.error;
-      const admins = profilesResponse.data as AdminProfile[] | null;
-
-      if (adminsError) {
-        console.error("Error fetching admins:", adminsError);
-        throw new Error(`Failed to fetch admins: ${adminsError.message}`);
-      }
-
-      // Process admins using a simple array
+      // Use our separate function to fetch admins
+      const admins = await fetchAdmins();
+      
+      // Notify admins without complex type handling
       if (admins && admins.length > 0) {
-        // Notify each admin
-        for (const admin of admins) {
-          await notifyAdmin(
-            admin.id,
-            admin.name || 'Admin',
-            admin.email || '',
-            shiftReport.id,
-            reportData.priority
-          );
+        for (let i = 0; i < admins.length; i++) {
+          const admin = admins[i];
+          if (admin && admin.id) {
+            await notifyAdmin(
+              admin.id,
+              admin.name || 'Admin',
+              admin.email || '',
+              shiftReport.id,
+              reportData.priority
+            );
+          }
         }
       } else {
         console.warn("No admins found to notify.");
@@ -127,7 +146,7 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use only primitives to avoid complex type relationships
+  // Notification logic with primitive types only
   const notifyAdmin = async (
     adminId: string,
     adminName: string,
@@ -163,12 +182,9 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use DBShiftReport for the mutation return type to be explicit
+  // Explicitly type the mutation return type
   const mutation = useMutation<DBShiftReport, Error, ShiftReportInput>({
     mutationFn: submitShiftReport,
-    onSuccess: () => {
-      // Handle success if needed
-    },
     onError: (error) => {
       console.error("Mutation error:", error);
     }
