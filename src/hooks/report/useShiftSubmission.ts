@@ -26,7 +26,7 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Simple admin type with just the necessary fields
+// Define a simpler admin type to avoid deep type instantiation
 interface AdminUserBasic {
   id: string;
   name?: string;
@@ -63,7 +63,7 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Fetch admins to send notifications - specify exact fields to reduce type complexity
+      // Use explicit typing for admins to prevent type recursion
       const { data: admins, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
@@ -74,11 +74,14 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      if (!admins || admins.length === 0) {
+      // Ensure admins is treated as a simple array of AdminUserBasic
+      const typedAdmins: AdminUserBasic[] = admins || [];
+      
+      if (typedAdmins.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Send notifications to admins - one by one to avoid complex type issues
-        for (const admin of admins) {
+        // Process notifications sequentially with explicit type handling
+        for (const admin of typedAdmins) {
           await notifyAdmin(admin, shiftReport.id, reportData.priority);
         }
       }
@@ -95,8 +98,12 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Simplified notification function that takes simple parameters
-  const notifyAdmin = async (admin: AdminUserBasic, shiftReportId: string, priority: string): Promise<boolean> => {
+  // Simplified notification function with explicit parameter typing
+  const notifyAdmin = async (
+    admin: AdminUserBasic,
+    shiftReportId: string,
+    priority: string
+  ): Promise<boolean> => {
     try {
       if (!currentUser || !admin.id) return false;
       
