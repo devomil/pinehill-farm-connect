@@ -29,10 +29,10 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
     saveEmployeeRoles
   } = useEmployeeRoles(employee);
 
-  const saveEmployeeData = async () => {
+  const saveEmployeeData = async (): Promise<boolean> => {
     if (!employeeData) {
       toast.error("No employee data to save");
-      return;
+      return false;
     }
     
     setIsLoading(true);
@@ -68,11 +68,11 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
       console.log("Roles saved successfully");
 
       toast.success('Employee data saved successfully');
-      onEmployeeUpdate();
-      onClose();
+      return true;
     } catch (error) {
       console.error('Error saving employee data:', error);
       toast.error('Failed to save employee data: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      return false;
     } finally {
       setIsLoading(false);
     }

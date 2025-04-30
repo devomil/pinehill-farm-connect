@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -112,18 +111,10 @@ export function EmployeeDetailModal({
         setEmployeeHR({...employeeHR});
       }
       
-      // Save basic info and HR data
+      // Save employee data (now returns boolean)
       const basicInfoSaved = await saveEmployeeData();
-
-      // Save role changes if the employee exists and is properly identified
-      let rolesSaved = false;
-      if (employee && employee.id) {
-        rolesSaved = await saveEmployeeRoles(employee.id);
-      } else {
-        rolesSaved = true; // If no employee ID, consider it successful
-      }
       
-      if (basicInfoSaved && rolesSaved) {
+      if (basicInfoSaved) {
         onEmployeeUpdate();
         onClose();
       }
