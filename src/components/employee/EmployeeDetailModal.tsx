@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema, EmployeeFormValues } from "./schemas/employeeFormSchema";
 import { toast } from "sonner";
+import { EmploymentType } from "./hooks/useEmployeeHRData";
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export function EmployeeDetailModal({
       startDate: employeeHR?.startDate,
       endDate: employeeHR?.endDate,
       salary: employeeHR?.salary,
-      employmentType: (employeeHR?.employmentType as "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern") || '',
+      employmentType: (employeeHR?.employmentType as EmploymentType) || '',
       address: employeeHR?.address || '',
       phone: employeeHR?.phone || '',
       emergencyContact: employeeHR?.emergencyContact || '',
@@ -67,7 +68,7 @@ export function EmployeeDetailModal({
       form.setValue('startDate', employeeHR.startDate);
       form.setValue('endDate', employeeHR.endDate);
       form.setValue('salary', employeeHR.salary);
-      form.setValue('employmentType', (employeeHR.employmentType as "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern") || '');
+      form.setValue('employmentType', employeeHR.employmentType as EmploymentType);
       form.setValue('address', employeeHR.address || '');
       form.setValue('phone', employeeHR.phone || '');
       form.setValue('emergencyContact', employeeHR.emergencyContact || '');
@@ -77,9 +78,10 @@ export function EmployeeDetailModal({
 
   if (!employeeData) return null;
 
-  const onSubmit = (data: EmployeeFormValues) => {
+  const onSubmit = async (data: EmployeeFormValues) => {
     try {
-      saveEmployeeData();
+      console.log("Form submission with data:", data);
+      await saveEmployeeData();
     } catch (error) {
       toast.error("Failed to save employee data");
       console.error("Form submission error:", error);
@@ -122,7 +124,7 @@ export function EmployeeDetailModal({
                 />
               </TabsContent>
             </Tabs>
-            <DialogFooter>
+            <DialogFooter className="mt-4">
               <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save Changes'}

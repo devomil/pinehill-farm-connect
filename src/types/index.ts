@@ -79,7 +79,6 @@ export interface Notification {
   link?: string;
 }
 
-// Adding missing interfaces
 export interface Announcement {
   id: string;
   title: string;
@@ -141,4 +140,3 @@ export interface TrainingProgress {
   lastAttempt?: Date;
   status: "not-started" | "in-progress" | "completed" | "failed" | "expired";
 }
-

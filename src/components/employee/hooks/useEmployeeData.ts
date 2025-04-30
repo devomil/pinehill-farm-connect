@@ -15,6 +15,7 @@ export function useEmployeeData(employee: User | null) {
 
   const handleBasicInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!employeeData) return;
+    
     setEmployeeData({
       ...employeeData,
       [e.target.name]: e.target.value,
@@ -22,9 +23,15 @@ export function useEmployeeData(employee: User | null) {
   };
 
   const saveEmployeeBasicInfo = async () => {
-    if (!employeeData) return;
+    if (!employeeData) return false;
     
     try {
+      console.log("Updating profile with data:", {
+        name: employeeData.name,
+        department: employeeData.department,
+        position: employeeData.position
+      });
+      
       // Update the basic profile information
       const { error: profileError } = await supabase
         .from('profiles')
@@ -40,6 +47,7 @@ export function useEmployeeData(employee: User | null) {
         throw profileError;
       }
       
+      console.log("Profile updated successfully");
       return true;
     } catch (error) {
       console.error('Error saving employee data:', error);

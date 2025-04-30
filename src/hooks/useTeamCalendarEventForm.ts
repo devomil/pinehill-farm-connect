@@ -74,7 +74,7 @@ export const useTeamCalendarEventForm = ({
             {
               id: currentUser.id,
               name: currentUser.name || "Unknown User",
-              email: currentUser.email
+              email: currentUser.email || ""
             }, 
             {
               event: newEvent,
@@ -87,7 +87,7 @@ export const useTeamCalendarEventForm = ({
             {
               id: currentUser.id,
               name: currentUser.name || "Unknown User", 
-              email: currentUser.email
+              email: currentUser.email || ""
             }, 
             {
               event: newEvent,

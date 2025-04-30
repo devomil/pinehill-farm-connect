@@ -4,7 +4,7 @@ import { EmployeeHR, User } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
+export type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
 
 export function useEmployeeHRData(employee: User | null) {
   const [employeeHR, setEmployeeHR] = useState<EmployeeHR | null>(null);
@@ -20,13 +20,21 @@ export function useEmployeeHRData(employee: User | null) {
     if (!employeeId) return;
     try {
       setIsLoading(true);
+      console.log("Fetching HR data for employee:", employeeId);
+      
       const { data, error } = await supabase
         .from('employee_hr')
         .select('*')
         .eq('user_id', employeeId)
         .maybeSingle();
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error fetching employee HR data:', error);
+        throw error;
+      }
+      
       if (data) {
+        console.log("HR data found:", data);
         const transformedData: EmployeeHR = {
           id: data.id,
           userId: data.user_id,
@@ -41,6 +49,7 @@ export function useEmployeeHRData(employee: User | null) {
         };
         setEmployeeHR(transformedData);
       } else {
+        console.log("No HR data found, creating empty record");
         setEmployeeHR({
           id: '',
           userId: employeeId,
@@ -80,6 +89,8 @@ export function useEmployeeHRData(employee: User | null) {
     if (!employeeHR) return false;
     
     try {
+      console.log("Saving HR data for employee:", employeeId, employeeHR);
+      
       const hrData = {
         user_id: employeeId,
         start_date: employeeHR.startDate ? employeeHR.startDate.toISOString().split('T')[0] : null,
@@ -92,19 +103,27 @@ export function useEmployeeHRData(employee: User | null) {
         notes: employeeHR.notes
       };
       
+      let result;
+      
       if (employeeHR.id) {
-        const { error } = await supabase
+        console.log("Updating existing HR record:", employeeHR.id);
+        result = await supabase
           .from('employee_hr')
           .update(hrData)
           .eq('id', employeeHR.id);
-        if (error) throw error;
       } else {
-        const { error } = await supabase
+        console.log("Inserting new HR record");
+        result = await supabase
           .from('employee_hr')
           .insert([hrData]);
-        if (error) throw error;
       }
       
+      if (result.error) {
+        console.error('Error saving employee HR data:', result.error);
+        throw result.error;
+      }
+      
+      console.log("HR data saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving employee HR data:', error);

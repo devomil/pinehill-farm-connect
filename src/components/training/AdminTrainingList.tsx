@@ -26,18 +26,24 @@ export const AdminTrainingList: React.FC = () => {
       }
 
       // Map database fields to our Training type
-      const mappedTrainings = data.map(training => ({
+      const mappedTrainings: Training[] = data.map(training => ({
         id: training.id,
         title: training.title,
         description: training.description || "",
-        category: training.category || "",
+        category: training.category || "Other",
         requiredFor: training.required_for || [],
         duration: training.duration,
         expiresAfter: training.expires_after,
         hasQuiz: training.has_quiz || false,
-        attachments: training.attachments || [],
-        externalTestUrl: training.external_test_url
-      })) as Training[];
+        attachments: Array.isArray(training.attachments) 
+          ? training.attachments.map((a: any) => ({
+              name: a.name || "Unnamed",
+              type: a.type || "unknown",
+              url: a.url
+            }))
+          : [],
+        external_test_url: training.external_test_url
+      }));
 
       setTrainings(mappedTrainings);
     } catch (error) {
@@ -77,7 +83,7 @@ export const AdminTrainingList: React.FC = () => {
       return <Badge className="bg-green-500">Auto Quiz</Badge>;
     }
     
-    if (training.externalTestUrl) {
+    if (training.external_test_url) {
       return (
         <Badge variant="outline" className="flex items-center gap-1">
           <LinkIcon className="h-3 w-3" />

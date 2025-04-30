@@ -30,28 +30,49 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
   } = useEmployeeRoles(employee);
 
   const saveEmployeeData = async () => {
-    if (!employeeData) return;
+    if (!employeeData) {
+      toast.error("No employee data to save");
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
+      console.log("Saving employee data for:", employeeData.name);
+      
       // First, save the basic profile information
       const basicInfoSuccess = await saveEmployeeBasicInfo();
-      if (!basicInfoSuccess) throw new Error("Failed to save basic info");
+      if (!basicInfoSuccess) {
+        console.error("Failed to save basic info");
+        throw new Error("Failed to save basic info");
+      }
+      
+      console.log("Basic info saved successfully");
       
       // Continue with updating HR data
       const hrSuccess = await saveEmployeeHRData(employeeData.id);
-      if (!hrSuccess) throw new Error("Failed to save HR data");
+      if (!hrSuccess) {
+        console.error("Failed to save HR data");
+        throw new Error("Failed to save HR data");
+      }
+      
+      console.log("HR data saved successfully");
 
       // Update user roles
       const rolesSuccess = await saveEmployeeRoles(employeeData.id);
-      if (!rolesSuccess) throw new Error("Failed to save roles");
+      if (!rolesSuccess) {
+        console.error("Failed to save roles");
+        throw new Error("Failed to save roles");
+      }
+      
+      console.log("Roles saved successfully");
 
       toast.success('Employee data saved successfully');
       onEmployeeUpdate();
       onClose();
     } catch (error) {
       console.error('Error saving employee data:', error);
-      toast.error('Failed to save employee data');
+      toast.error('Failed to save employee data: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
