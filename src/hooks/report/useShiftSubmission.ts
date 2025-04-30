@@ -27,11 +27,11 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Define an interface for admin users to avoid deep type nesting
-interface AdminUser {
+// Simple admin type with just the necessary fields
+interface AdminUserBasic {
   id: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
 }
 
 export const useShiftSubmission = () => {
@@ -67,7 +67,7 @@ export const useShiftSubmission = () => {
       // Fetch admins to send notifications
       const { data: admins, error: adminsError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email')
         .eq('role', 'admin');
 
       if (adminsError) {
@@ -78,10 +78,10 @@ export const useShiftSubmission = () => {
       if (!admins || admins.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Send notifications to admins - simplified to avoid deep type issues
-        await Promise.all(
-          admins.map((admin) => sendNotification(admin, shiftReport.id, reportData.priority))
-        );
+        // Send notifications to admins - one by one to avoid complex type issues
+        for (const admin of admins) {
+          await notifyAdmin(admin, shiftReport.id, reportData.priority);
+        }
       }
 
       toast.success('Shift report submitted successfully!');
@@ -96,22 +96,18 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Simplified notification function to avoid deep type nesting
-  const sendNotification = async (admin: any, shiftReportId: string, priority: string) => {
+  // Simplified notification function that takes simple parameters
+  const notifyAdmin = async (admin: AdminUserBasic, shiftReportId: string, priority: string): Promise<boolean> => {
     try {
-      if (!currentUser) return false;
-      
-      // Create a simple admin object with only the necessary properties
-      // This avoids deep type nesting that could cause the TypeScript error
-      const adminUser: AdminUser = {
-        id: admin.id,
-        name: admin.name || 'Admin',
-        email: admin.email || ''
-      };
+      if (!currentUser || !admin.id) return false;
       
       const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
         body: { 
-          admin: adminUser, 
+          admin: {
+            id: admin.id,
+            name: admin.name || 'Admin',
+            email: admin.email || ''
+          },
           reportId: shiftReportId, 
           priority, 
           reportUserName: currentUser.name || 'Employee'
