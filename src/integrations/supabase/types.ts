@@ -139,6 +139,7 @@ export type Database = {
       }
       employee_communications: {
         Row: {
+          admin_cc: string | null
           created_at: string | null
           id: string
           message: string
@@ -149,6 +150,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          admin_cc?: string | null
           created_at?: string | null
           id?: string
           message: string
@@ -159,6 +161,7 @@ export type Database = {
           type: string
         }
         Update: {
+          admin_cc?: string | null
           created_at?: string | null
           id?: string
           message?: string
