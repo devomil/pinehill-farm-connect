@@ -1,23 +1,22 @@
 
-import { User as UserType } from "@/types";
+import React from "react";
+import { User } from "@/types";
 import { EmployeeDetailModal } from "./EmployeeDetailModal";
 import { EmployeeResetPasswordDialog } from "./EmployeeResetPasswordDialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AddEmployeeForm } from "./AddEmployeeForm";
 import { EditEmployeeModal } from "./EditEmployeeModal";
 
 interface EmployeeModalsProps {
-  selectedEmployee: UserType | null;
+  selectedEmployee: User | null;
   isDetailModalOpen: boolean;
   closeDetailModal: () => void;
   handleEmployeeUpdate: () => void;
-  resetEmployee: UserType | null;
-  setResetEmployee: (employee: UserType | null) => void;
+  resetEmployee: User | null;
+  setResetEmployee: React.Dispatch<React.SetStateAction<User | null>>;
   isAddModalOpen: boolean;
-  setIsAddModalOpen: (open: boolean) => void;
+  setIsAddModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   handleEmployeeCreated: () => void;
-  isEditModalOpen?: boolean;
-  closeEditModal?: () => void;
+  isEditModalOpen: boolean;
+  closeEditModal: () => void;
 }
 
 export function EmployeeModals({
@@ -30,42 +29,39 @@ export function EmployeeModals({
   isAddModalOpen,
   setIsAddModalOpen,
   handleEmployeeCreated,
-  isEditModalOpen = false,
-  closeEditModal = () => {},
+  isEditModalOpen,
+  closeEditModal,
 }: EmployeeModalsProps) {
   return (
     <>
-      <EmployeeDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        employee={selectedEmployee}
-        onEmployeeUpdate={handleEmployeeUpdate}
-      />
+      {/* View Employee Details Modal */}
+      {isDetailModalOpen && (
+        <EmployeeDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={closeDetailModal}
+          employee={selectedEmployee}
+          onEmployeeUpdate={handleEmployeeUpdate}
+        />
+      )}
 
-      <EditEmployeeModal
-        isOpen={isEditModalOpen}
-        onClose={closeEditModal}
-        employee={selectedEmployee}
-        onEmployeeUpdate={handleEmployeeUpdate}
-      />
+      {/* Edit Employee Modal */}
+      {isEditModalOpen && (
+        <EditEmployeeModal 
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+          employee={selectedEmployee}
+          onEmployeeUpdate={handleEmployeeUpdate}
+        />
+      )}
 
-      <EmployeeResetPasswordDialog
-        employee={resetEmployee}
-        open={!!resetEmployee}
-        setOpen={open => !open ? setResetEmployee(null) : void 0}
-      />
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Employee</DialogTitle>
-          </DialogHeader>
-          <AddEmployeeForm
-            onSuccess={handleEmployeeCreated}
-            onCancel={() => setIsAddModalOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Password Reset Dialog */}
+      {resetEmployee && (
+        <EmployeeResetPasswordDialog
+          isOpen={!!resetEmployee}
+          onClose={() => setResetEmployee(null)}
+          employee={resetEmployee}
+        />
+      )}
     </>
   );
 }

@@ -1,76 +1,64 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User as UserType } from "@/types";
+import React from "react";
 import { EmployeeSearchBar } from "./EmployeeSearchBar";
 import { EmployeeTable } from "./EmployeeTable";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { DatabaseIcon, UserCheck } from "lucide-react";
+import { User } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface EmployeeContentProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  employees: UserType[];
+  employees: User[];
   loading: boolean;
-  onEdit: (employee: UserType) => void;
+  onEdit: (employee: User) => void;
   onDelete: (id: string) => void;
-  onResetPassword: (employee: UserType) => void;
+  onResetPassword: (employee: User) => void;
+  onView?: (employee: User) => void;
   isAdmin: boolean;
-  error?: string | null;
+  error: string | null;
 }
 
-export function EmployeeContent({
-  searchQuery,
-  setSearchQuery,
-  employees,
-  loading,
-  onEdit,
-  onDelete,
-  onResetPassword,
+export function EmployeeContent({ 
+  searchQuery, 
+  setSearchQuery, 
+  employees, 
+  loading, 
+  onEdit, 
+  onDelete, 
+  onResetPassword, 
+  onView,
   isAdmin,
-  error,
+  error 
 }: EmployeeContentProps) {
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Employees Directory
-          {employees.length > 1 && (
-            <span className="text-sm font-normal text-muted-foreground ml-2 flex items-center">
-              <UserCheck className="h-4 w-4 mr-1" />
-              All employees can see and communicate with each other
-            </span>
+    <Card>
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <EmployeeSearchBar 
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery} 
+          />
+          
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <DatabaseIcon className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {!loading && employees.length === 0 && !error && (
-          <Alert className="mb-4">
-            <DatabaseIcon className="h-4 w-4" />
-            <AlertTitle>No Employees Found</AlertTitle>
-            <AlertDescription>
-              There are no employee profiles in the database. If you're an administrator, 
-              try adding employee profiles.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <EmployeeSearchBar value={searchQuery} onChange={setSearchQuery} />
-        <EmployeeTable
-          employees={employees}
-          loading={loading}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onResetPassword={onResetPassword}
-          isAdmin={isAdmin}
-        />
+          
+          <EmployeeTable 
+            employees={employees} 
+            loading={loading} 
+            onEdit={onEdit} 
+            onDelete={onDelete} 
+            onResetPassword={onResetPassword}
+            onView={onView}
+            isAdmin={isAdmin}
+          />
+        </div>
       </CardContent>
     </Card>
   );

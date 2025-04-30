@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
@@ -59,6 +58,7 @@ export default function Employees() {
   };
 
   const handleEditEmployee = (employee: UserType) => {
+    console.log("Editing employee:", employee);
     setEditingEmployee(employee);
     setIsEditModalOpen(true);
   };
@@ -93,6 +93,7 @@ export default function Employees() {
           onEdit={handleEditEmployee}
           onDelete={handleDeleteEmployee}
           onResetPassword={handleResetPassword}
+          onView={handleViewEmployee}
           isAdmin={isAdmin}
           error={error}
         />
