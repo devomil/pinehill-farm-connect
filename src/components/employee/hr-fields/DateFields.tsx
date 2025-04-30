@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "../schemas/employeeFormSchema";
-import { EmployeeHR } from "@/types";
 
 interface DateFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
