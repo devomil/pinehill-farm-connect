@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -21,9 +22,9 @@ export function EmployeeCommunications({
   setSelectedEmployee: propSetSelectedEmployee 
 }: EmployeeCommunicationsProps = {}) {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
   const { assignments } = useEmployeeAssignments();
-  const { messages, isLoading, sendMessage, respondToShiftRequest, unreadMessages } = useCommunications();
+  const { messages, isLoading, sendMessage, respondToShiftRequest, unreadMessages, refreshMessages } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,6 +108,13 @@ export function EmployeeCommunications({
     }
   }, [sendMessage, allEmployees, handleSelectEmployee]);
   
+  // Combined refresh function
+  const handleRefresh = useCallback(() => {
+    console.log("Refreshing employee data and messages");
+    refetchEmployees();
+    refreshMessages();
+  }, [refetchEmployees, refreshMessages]);
+  
   // Show mobile layout or desktop layout based on screen size and selection
   const showMessageList = !isMobileView || (isMobileView && !selectedEmployee);
   const showConversation = !isMobileView || (isMobileView && selectedEmployee);
@@ -118,6 +126,7 @@ export function EmployeeCommunications({
         dialogOpen={dialogOpen}
         handleNewMessageSend={handleNewMessageSend}
         allEmployees={allEmployees || []}
+        onRefresh={handleRefresh}
       />
 
       {allEmployees?.length <= 1 && <EmployeeAlert />}
@@ -134,6 +143,7 @@ export function EmployeeCommunications({
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               unreadMessages={unreadMessages}
+              onRefresh={handleRefresh}
             />
           </Card>
         )}

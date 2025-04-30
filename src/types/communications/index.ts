@@ -7,6 +7,7 @@ export interface NewMessageDialogProps {
   employees: Array<any>;
   onSend: (data: any) => void;
   onClose?: () => void;
+  onRefresh?: () => void; // Add refresh function
 }
 
 export type MessageType = 'general' | 'shift_coverage';

@@ -1,12 +1,10 @@
 
 import React from "react";
-import { User } from "@/types";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { User as UserIcon, Search, UserCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { User } from "@/types";
+import { Loader2, MessageCircle, RefreshCcw, Search, User as UserIcon } from "lucide-react";
+import { Communication } from "@/types/communications/communicationTypes";
 
 interface EmployeeListProps {
   employees: User[];
@@ -15,7 +13,8 @@ interface EmployeeListProps {
   selectedEmployee: User | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  unreadMessages: any[];
+  unreadMessages?: Communication[];
+  onRefresh?: () => void;
 }
 
 export function EmployeeList({
@@ -25,98 +24,103 @@ export function EmployeeList({
   selectedEmployee,
   searchQuery,
   setSearchQuery,
-  unreadMessages
+  unreadMessages = [],
+  onRefresh,
 }: EmployeeListProps) {
-  const { currentUser } = useAuth();
-  
-  // Filter out the current user and apply search
-  const filteredEmployees = employees
-    .filter(emp => 
-      emp.id !== currentUser?.id && 
-      (emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       emp.email?.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  // Count unread messages per sender
-  const unreadCounts: Record<string, number> = {};
-  unreadMessages.forEach(msg => {
-    if (unreadCounts[msg.sender_id]) {
-      unreadCounts[msg.sender_id]++;
-    } else {
-      unreadCounts[msg.sender_id] = 1;
-    }
-  });
-
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-full mb-4" />
-        {[1, 2, 3, 4].map(i => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
-      </div>
-    );
-  }
+  // Count unread messages per employee
+  const getUnreadCount = (employeeId: string): number => {
+    return unreadMessages.filter((msg) => msg.sender_id === employeeId).length;
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search employees..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-8"
-        />
+    <div className="flex flex-col h-full">
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search employees"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        {onRefresh && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            title="Refresh employee list"
+            className="flex-shrink-0"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
-      <div className="text-sm text-muted-foreground flex items-center mb-2">
-        <UserCheck className="h-4 w-4 mr-1" />
-        <span>{filteredEmployees.length} {filteredEmployees.length === 1 ? 'employee' : 'employees'} available</span>
-      </div>
-
-      <ScrollArea className="h-[60vh]">
-        <div className="space-y-1">
-          {filteredEmployees.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <UserIcon className="mx-auto h-8 w-8 mb-2" />
-              <p>No employees found</p>
-            </div>
-          ) : (
-            filteredEmployees.map((employee) => {
-              const isSelected = selectedEmployee?.id === employee.id;
-              const hasUnread = unreadCounts[employee.id] > 0;
-
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="ml-2">Loading employees...</span>
+        </div>
+      ) : filteredEmployees.length > 0 ? (
+        <div className="overflow-y-auto flex-1 -mx-4 px-4">
+          <div className="space-y-2">
+            {filteredEmployees.map((employee) => {
+              const unreadCount = getUnreadCount(employee.id);
+              const isActive = selectedEmployee?.id === employee.id;
+              
               return (
-                <button
+                <div
                   key={employee.id}
                   onClick={() => onSelectEmployee(employee)}
-                  className={`w-full text-left p-3 rounded-md transition-colors flex justify-between items-center ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground"
-                      : hasUnread
-                      ? "bg-muted/80 hover:bg-muted"
-                      : "hover:bg-muted"
+                  className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-accent transition-colors ${
+                    isActive ? "bg-accent" : ""
                   }`}
                 >
-                  <div>
-                    <div className="font-medium">{employee.name}</div>
-                    <div className={`text-xs ${isSelected ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {employee.email}
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary mr-3">
+                      <UserIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{employee.name || "Unknown"}</div>
+                      <div className="text-sm text-muted-foreground truncate max-w-[160px]">
+                        {employee.email || "No email"}
+                      </div>
                     </div>
                   </div>
-                  
-                  {hasUnread && !isSelected && (
-                    <Badge className="bg-primary text-primary-foreground">
-                      {unreadCounts[employee.id]}
-                    </Badge>
+                  {unreadCount > 0 && (
+                    <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-1.5 rounded-full text-xs font-medium">
+                      <MessageCircle className="h-3 w-3 mr-1" />
+                      {unreadCount}
+                    </div>
                   )}
-                </button>
+                </div>
               );
-            })
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8 text-center flex-1 text-muted-foreground">
+          <UserIcon className="h-10 w-10 mb-3 opacity-20" />
+          <p>No employees found</p>
+          <p className="text-sm">Try adjusting your search or</p>
+          {onRefresh && (
+            <Button 
+              variant="link" 
+              onClick={onRefresh}
+              className="mt-1"
+            >
+              refresh the list
+            </Button>
           )}
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
 }

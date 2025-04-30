@@ -24,30 +24,25 @@ export function useSendMessage(currentUser: User | null) {
       
       // First check if the recipient exists in the employee directory
       try {
-        // Use select() instead of maybeSingle() for better error handling
+        // First, fetch full profile data from the database
         const { data: recipientData, error: recipientError } = await supabase
           .from('profiles')
           .select('id, name, email')
-          .eq('id', recipientId)
-          .single();
-  
+          .eq('id', recipientId);
+
         if (recipientError) {
           console.error("Error fetching recipient data:", recipientError);
-          
-          if (recipientError.code === 'PGRST116') {
-            console.error(`No recipient found with ID: ${recipientId}`);
-            throw new Error(`Recipient not found. Please refresh and try again.`);
-          } else {
-            throw new Error("Database error when finding recipient");
-          }
+          throw new Error(`Database error when finding recipient: ${recipientError.message}`);
         }
   
-        if (!recipientData) {
-          console.error("No recipient data returned:", recipientId);
+        if (!recipientData || recipientData.length === 0) {
+          console.error(`No recipient found with ID: ${recipientId}`);
           throw new Error(`Recipient not found. Please refresh and try again.`);
         }
-  
-        console.log("Found recipient:", recipientData);
+        
+        // Use first matching recipient
+        const recipient = recipientData[0];
+        console.log("Found recipient:", recipient);
 
         // Get requester's admin if this is a shift coverage request
         let adminData = null;
@@ -57,7 +52,7 @@ export function useSendMessage(currentUser: User | null) {
             .from('employee_assignments')
             .select('admin_id, admin:profiles!employee_assignments_admin_id_fkey(id, name, email)')
             .eq('employee_id', currentUser.id)
-            .single();
+            .maybeSingle();
 
           if (!adminError && adminAssignment?.admin) {
             adminData = adminAssignment.admin;
@@ -99,7 +94,7 @@ export function useSendMessage(currentUser: User | null) {
   
         // Send notification to recipient using notifyManager
         try {
-          console.log(`Sending notification to ${recipientData.name} (${recipientData.email}) with ID: ${recipientId}`);
+          console.log(`Sending notification to ${recipient.name} (${recipient.email}) with ID: ${recipientId}`);
           
           const actionType = type === 'shift_coverage' ? 'shift_coverage_request' : 'new_message';
           
@@ -121,9 +116,9 @@ export function useSendMessage(currentUser: User | null) {
               ...(shiftDetails || {})
             },
             {
-              id: recipientData.id,
-              name: recipientData.name,
-              email: recipientData.email
+              id: recipient.id,
+              name: recipient.name,
+              email: recipient.email
             }
           );
   

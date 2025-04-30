@@ -31,7 +31,7 @@ export default function Communications() {
       console.log("Auto-refreshing communications data");
       refetchEmployees();  // Refresh employee data too to keep recipient lists current
       refreshMessages();
-    }, 60000); // Refresh every minute
+    }, 30000); // Refresh every 30 seconds (increased frequency)
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
@@ -57,6 +57,13 @@ export default function Communications() {
     refreshMessages();
   };
 
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    toast.info("Refreshing employee and message data...");
+    refetchEmployees();
+    refreshMessages();
+  };
+
   // Debug information
   console.log({
     currentUser: currentUser?.id,
@@ -77,13 +84,6 @@ export default function Communications() {
     ...msg,
     current_user_id: currentUser.id
   })) : safeMessages;
-
-  // Force refresh function for manual retries
-  const handleManualRefresh = () => {
-    toast.info("Refreshing employee and message data...");
-    refetchEmployees();
-    refreshMessages();
-  };
 
   return (
     <CommunicationsLayout

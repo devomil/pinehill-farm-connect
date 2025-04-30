@@ -12,7 +12,7 @@ import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-export function NewMessageDialog({ employees, onSend, onClose }: NewMessageDialogProps) {
+export function NewMessageDialog({ employees, onSend, onClose, onRefresh }: NewMessageDialogProps) {
   const { currentUser } = useAuth();
   const form = useForm<NewMessageFormData>({
     defaultValues: {
@@ -130,7 +130,11 @@ export function NewMessageDialog({ employees, onSend, onClose }: NewMessageDialo
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <RecipientSelect form={form} employees={filteredEmployees} />
+          <RecipientSelect 
+            form={form} 
+            employees={filteredEmployees}
+            onRefresh={onRefresh} 
+          />
 
           <FormField
             control={form.control}

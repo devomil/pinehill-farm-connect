@@ -10,9 +10,10 @@ import { useAuth } from "@/contexts/AuthContext";
 interface RecipientSelectProps {
   form: UseFormReturn<NewMessageFormData>;
   employees: User[];
+  onRefresh?: () => void; // Optional callback to refresh employee list
 }
 
-export function RecipientSelect({ form, employees }: RecipientSelectProps) {
+export function RecipientSelect({ form, employees, onRefresh }: RecipientSelectProps) {
   const { currentUser } = useAuth();
   
   useEffect(() => {
@@ -42,7 +43,21 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
       name="recipientId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Recipient</FormLabel>
+          <FormLabel className="flex justify-between">
+            <span>Recipient</span>
+            {onRefresh && (
+              <button 
+                type="button" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRefresh();
+                }}
+                className="text-xs text-primary hover:underline"
+              >
+                Refresh list
+              </button>
+            )}
+          </FormLabel>
           <Select 
             onValueChange={field.onChange} 
             defaultValue={field.value}
