@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
 
 interface ShiftReport {
   id: string;
@@ -64,7 +63,7 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Fetch admins to send notifications
+      // Fetch admins to send notifications - specify exact fields to reduce type complexity
       const { data: admins, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
