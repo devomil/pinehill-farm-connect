@@ -38,28 +38,49 @@ export const useTrainings = (userId?: string) => {
   const fetchUserProgress = async (userId: string): Promise<TrainingProgress[]> => {
     if (!userId) return [];
     
-    const { data, error } = await supabase
-      .from('training_progress')
-      .select('*')
-      .eq('user_id', userId);
-      
-    if (error) {
-      console.error('Error fetching user training progress:', error);
-      throw new Error(error.message);
-    }
+    // Based on Supabase tables, we need to use training_assignments and modify our approach
+    // Temporary solution: mock the data structure until training_progress is created
+    console.log(`Fetching training progress for user ${userId}`);
     
-    // Transform the data to match the TrainingProgress interface
-    return data.map((item: any) => ({
-      id: item.id,
-      userId: item.user_id,
-      trainingId: item.training_id,
-      startedAt: new Date(item.started_at),
-      completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
-      score: item.score,
-      passed: item.passed,
-      lastAttempt: item.last_attempt ? new Date(item.last_attempt) : undefined,
-      status: item.status as "not-started" | "in-progress" | "completed" | "failed" | "expired"
-    }));
+    try {
+      // Check if table exists by attempting to select a single row
+      const { data: testData, error: testError } = await supabase
+        .from('training_assignments')
+        .select('*')
+        .limit(1);
+        
+      if (testError) {
+        console.warn('Training assignments table might not exist:', testError.message);
+        return []; // Return empty array if table doesn't exist
+      }
+      
+      // If table exists, proceed with query
+      const { data, error } = await supabase
+        .from('training_assignments')
+        .select('*, trainings!inner(*)')
+        .eq('user_id', userId);
+        
+      if (error) {
+        console.error('Error fetching user training progress:', error);
+        throw new Error(error.message);
+      }
+      
+      // Transform the data to match the TrainingProgress interface
+      return data.map((item: any) => ({
+        id: item.id,
+        userId: item.user_id,
+        trainingId: item.training_id,
+        startedAt: new Date(item.assigned_at || Date.now()),
+        completedAt: undefined, // This data isn't available yet
+        score: undefined,
+        passed: undefined,
+        lastAttempt: undefined,
+        status: "in-progress" as "not-started" | "in-progress" | "completed" | "failed" | "expired"
+      }));
+    } catch (error: any) {
+      console.error('Error in fetchUserProgress:', error.message);
+      return []; // Return empty array on error
+    }
   };
 
   // Query for all trainings

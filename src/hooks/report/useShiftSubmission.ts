@@ -1,3 +1,4 @@
+
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -26,12 +27,12 @@ interface ShiftReport {
 
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { currentUser } = useAuth(); // Fix: use currentUser instead of user
 
   const submitShiftReport = async (reportData: Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>) => {
     setIsSubmitting(true);
     try {
-      if (!user) {
+      if (!currentUser) { // Fix: use currentUser
         throw new Error("User not authenticated.");
       }
 
@@ -40,8 +41,8 @@ export const useShiftSubmission = () => {
         .insert([
           {
             ...reportData,
-            user_id: user.id,
-            submitted_by: user.name || user.email,
+            user_id: currentUser.id, // Fix: use currentUser
+            submitted_by: currentUser.name || currentUser.email, // Fix: use currentUser
             submitted_at: new Date().toISOString(),
             status: 'submitted',
           }
@@ -88,7 +89,7 @@ export const useShiftSubmission = () => {
     try {
       // Prepare notification content
       const notificationTitle = `New Shift Report Submitted - Priority: ${priority}`;
-      const notificationMessage = `A new shift report has been submitted by ${user?.name || 'Employee'}. Check it out!`;
+      const notificationMessage = `A new shift report has been submitted by ${currentUser?.name || 'Employee'}. Check it out!`; // Fix: use currentUser
 
       // Create notifications for each admin
       for (const admin of admins) {
@@ -101,7 +102,12 @@ export const useShiftSubmission = () => {
 
         // Send admin notification
         const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
-          body: { admin: adminUser, reportId: shiftReportId, priority, reportUserName: user?.name || 'Employee' }
+          body: { 
+            admin: adminUser, 
+            reportId: shiftReportId, 
+            priority, 
+            reportUserName: currentUser?.name || 'Employee' // Fix: use currentUser
+          }
         });
 
         if (notifyError) {
@@ -117,7 +123,16 @@ export const useShiftSubmission = () => {
     }
   };
 
-  const mutation = useMutation(submitShiftReport);
+  // Use properly typed mutation
+  const mutation = useMutation({
+    mutationFn: submitShiftReport,
+    onSuccess: () => {
+      // Handle success if needed
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
+    }
+  });
 
   return {
     submitShiftReport,

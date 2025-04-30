@@ -44,18 +44,44 @@ export const TeamCalendarEventForm: React.FC<TeamCalendarEventFormProps> = ({
     setNotifyAll,
     selectedUserIds,
     setSelectedUserIds,
-    onSubmit
-  } = useTeamCalendarEventForm({
-    currentUser,
-    onEventCreated,
-    setOpen,
-    form,
+    onSubmit: calendarEventSubmit,
+    isSaving
+  } = useTeamCalendarEventForm(() => {
+    onEventCreated();
+    setOpen(false);
   });
+
+  // Create a wrapper function to handle the form submission
+  // and convert the string time values to Date objects
+  const handleSubmit = (data: z.infer<typeof teamCalendarEventFormSchema>) => {
+    // Convert string times to Date objects
+    const startDateTime = new Date(data.startDate);
+    const endDateTime = new Date(data.endDate);
+    
+    if (data.startTime) {
+      const [hours, minutes] = data.startTime.split(':').map(Number);
+      startDateTime.setHours(hours, minutes);
+    }
+    
+    if (data.endTime) {
+      const [hours, minutes] = data.endTime.split(':').map(Number);
+      endDateTime.setHours(hours, minutes);
+    }
+    
+    // Call the onSubmit function with properly formatted data
+    calendarEventSubmit({
+      title: data.title,
+      description: data.description,
+      location: data.location,
+      startTime: startDateTime,
+      endTime: endDateTime,
+    });
+  };
 
   return (
     <TeamCalendarEventFormDialog open={open} setOpen={setOpen}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2">
           <TeamCalendarEventFormFields form={form} />
 
           <TeamCalendarEventNotifySelector
