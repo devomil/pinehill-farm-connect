@@ -76,14 +76,11 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use an explicit type annotation for the query and avoid deep type inference
-      const adminsQuery = await supabase
+      // Avoid type inference by using simple query and explicit types
+      const { data, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('role', 'admin');
-        
-      const adminsData = adminsQuery.data as Array<{id: string, name?: string, email?: string}> | null;
-      const adminsError = adminsQuery.error;
 
       if (adminsError) {
         console.error("Error fetching admins:", adminsError);
@@ -93,8 +90,9 @@ export const useShiftSubmission = () => {
       // Process admins with primitive types and simple objects
       const adminsList: AdminBasicInfo[] = [];
       
-      if (adminsData) {
-        for (const admin of adminsData) {
+      if (data) {
+        // Use for...of loop to avoid complex type inference
+        for (const admin of data) {
           adminsList.push({
             id: admin.id || '',
             name: admin.name || 'Admin',
