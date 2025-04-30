@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   email: string;
@@ -77,3 +78,67 @@ export interface Notification {
   createdAt: Date;
   link?: string;
 }
+
+// Adding missing interfaces
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  author: string;
+  priority: "urgent" | "important" | "fyi";
+  readBy: string[];
+  hasQuiz?: boolean;
+  requires_acknowledgment?: boolean;
+  attachments?: Array<{
+    name: string;
+    type: string;
+    url?: string;
+    size?: number;
+  }>;
+  target_type?: "all" | "specific";
+  acknowledgements?: string[];
+  currentUserId?: string;
+}
+
+export interface TimeOffRequest {
+  id: string;
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  notes?: string;
+  approvedBy?: string;
+  approvedAt?: Date;
+}
+
+export interface Training {
+  id: string;
+  title: string;
+  description: string;
+  category: "CBD101" | "HIPAA" | "SaltGenerator" | "OpeningClosing" | "Other";
+  duration: number;  // in minutes
+  requiredFor: string[];
+  expiresAfter?: number;  // in days
+  hasQuiz?: boolean;
+  attachments?: Array<{
+    name: string;
+    type: string;
+    url?: string;
+  }>;
+  external_test_url?: string;
+}
+
+export interface TrainingProgress {
+  id: string;
+  userId: string;
+  trainingId: string;
+  startedAt: Date;
+  completedAt?: Date;
+  score?: number;
+  passed?: boolean;
+  lastAttempt?: Date;
+  status: "not-started" | "in-progress" | "completed" | "failed" | "expired";
+}
+

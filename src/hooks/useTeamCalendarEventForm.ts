@@ -70,17 +70,31 @@ export const useTeamCalendarEventForm = ({
       toast.success("Event created successfully");
       if (sendNotifications) {
         if (notifyAll) {
-          await notifyManager("event_created", currentUser, {
-            event: newEvent,
-            notificationType: "team_calendar",
-            recipients: "all",
-          });
+          await notifyManager("event_created", 
+            {
+              id: currentUser.id,
+              name: currentUser.name || "Unknown User",
+              email: currentUser.email
+            }, 
+            {
+              event: newEvent,
+              notificationType: "team_calendar",
+              recipients: "all",
+            }
+          );
         } else {
-          await notifyManager("event_created", currentUser, {
-            event: newEvent,
-            notificationType: "team_calendar",
-            recipients: selectedUserIds,
-          });
+          await notifyManager("event_created", 
+            {
+              id: currentUser.id,
+              name: currentUser.name || "Unknown User", 
+              email: currentUser.email
+            }, 
+            {
+              event: newEvent,
+              notificationType: "team_calendar",
+              recipients: selectedUserIds,
+            }
+          );
         }
         toast.success("Notifications sent");
       }

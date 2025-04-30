@@ -47,7 +47,7 @@ export function useShiftSubmission(currentUser: User | null, employees: User[]) 
           // Validate the assigned user's email
           if (!selectedEmployee.email || !selectedEmployee.email.includes('@')) {
             console.error(`Invalid email for assigned user: ${selectedEmployee.email}`);
-            toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name}`);
+            toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name || 'user'}`);
           } else if (selectedEmployee.email === currentUser?.email) {
             console.error("Cannot send notification to yourself");
             toast.error("Report submitted, but notification was not sent as you cannot notify yourself");
@@ -67,21 +67,25 @@ export function useShiftSubmission(currentUser: User | null, employees: User[]) 
                 priority: data.priority,
                 reportId: reportData?.[0]?.id
               },
-              selectedEmployee
+              {
+                id: selectedEmployee.id,
+                name: selectedEmployee.name || "Unknown User",
+                email: selectedEmployee.email
+              }
             );
             
             if (!notifyResult.success) {
               console.error("Failed to send notification:", notifyResult.error);
               
               if (notifyResult.invalidEmail) {
-                toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name}`);
+                toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name || 'user'}`);
               } else if (notifyResult.selfNotification) {
                 toast.error("Report submitted, but notification was not sent as you cannot notify yourself");
               } else {
                 toast.error("Report was submitted but notification failed to send");
               }
             } else {
-              toast.success(`Report submitted and notification sent successfully to ${selectedEmployee.name}`);
+              toast.success(`Report submitted and notification sent successfully to ${selectedEmployee.name || 'user'}`);
             }
           }
         } else if (selectedEmployee && selectedEmployee.id === currentUser?.id) {

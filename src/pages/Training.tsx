@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +30,7 @@ export default function TrainingPortal() {
         if (trainingError) throw trainingError;
         
         // Map the training data from snake_case to camelCase to match our Training interface
-        const mappedTrainings: Training[] = (trainingData || []).map(training => ({
+        const mappedTrainings: Training[] = (trainingData || []).map((training: any) => ({
           id: training.id,
           title: training.title,
           description: training.description || "",
@@ -41,31 +40,20 @@ export default function TrainingPortal() {
           expiresAfter: training.expires_after,
         }));
 
-        // For assigned trainings, we would fetch from training_assignments
-        // But for demo, we'll use mock progress data
-        const mockProgress: TrainingProgress[] = [
-          {
-            userId: currentUser?.id || "",
-            trainingId: mappedTrainings[0]?.id || "",
-            completed: true,
-            completedDate: new Date("2023-03-15"),
-            score: 95,
-          }
-        ];
-
+        // For now, we'll use mock progress data since we don't have actual data
+        const mockProgress: TrainingProgress[] = [];
+        
         setTrainings(mappedTrainings);
         setTrainingProgress(mockProgress);
-      } catch (err) {
-        console.error("Error fetching data:", err);
+      } catch (error) {
+        console.error("Error fetching training data:", error);
         toast.error("Failed to load training data");
       } finally {
         setLoading(false);
       }
     };
 
-    if (currentUser) {
-      fetchData();
-    }
+    fetchData();
   }, [currentUser]);
 
   const getUserProgress = (trainingId: string) => {
