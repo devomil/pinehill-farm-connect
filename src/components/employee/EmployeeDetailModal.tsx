@@ -142,6 +142,22 @@ export function EmployeeDetailModal({
     if (!employeeData) return;
     setIsLoading(true);
     try {
+      // UPDATE: First, save the basic profile information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: employeeData.name,
+          department: employeeData.department,
+          position: employeeData.position
+        })
+        .eq('id', employeeData.id);
+        
+      if (profileError) {
+        console.error('Error updating employee profile:', profileError);
+        throw profileError;
+      }
+      
+      // Continue with updating HR data
       if (employeeHR) {
         const hrData = {
           user_id: employeeData.id,
@@ -154,6 +170,7 @@ export function EmployeeDetailModal({
           emergency_contact: employeeHR.emergencyContact,
           notes: employeeHR.notes
         };
+        
         if (employeeHR.id) {
           const { error } = await supabase
             .from('employee_hr')
@@ -168,6 +185,7 @@ export function EmployeeDetailModal({
         }
       }
 
+      // Update user roles
       const currentRoles = userRoles.map(r => r.role);
       const newRoles: ("admin" | "employee" | "hr" | "manager")[] = [];
       Object.entries(selectedRoles).forEach(([role, selected]) => {
