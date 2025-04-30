@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { User, UserRole } from "@/types";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ export function useEmployeeRoles(employee: User | null) {
           role: role.role as "admin" | "employee" | "hr" | "manager"
         })));
         
+        // Default roles
         const roleMap = {
           admin: false,
           employee: true, // Default to employee role
@@ -65,10 +67,24 @@ export function useEmployeeRoles(employee: User | null) {
 
   const handleRoleChange = (role: string, checked: boolean) => {
     console.log(`Changing role ${role} to ${checked}`);
-    setSelectedRoles({
-      ...selectedRoles,
-      [role]: checked
-    });
+    
+    // For radio button behavior
+    if (role === 'admin' && checked) {
+      setSelectedRoles({
+        admin: true,
+        employee: false
+      });
+    } else if (role === 'employee' && checked) {
+      setSelectedRoles({
+        admin: false,
+        employee: true
+      });
+    } else {
+      setSelectedRoles(prev => ({
+        ...prev,
+        [role]: checked
+      }));
+    }
   };
 
   const saveEmployeeRoles = async (employeeId: string) => {

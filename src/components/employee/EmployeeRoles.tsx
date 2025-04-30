@@ -16,6 +16,17 @@ export function EmployeeRoles({ selectedRoles, handleRoleChange, employee }: Emp
   const { currentUser } = useAuth();
   const isCurrentUser = employee && currentUser && employee.id === currentUser.id;
   
+  // Function to handle radio selection
+  const handleRadioChange = (value: string) => {
+    if (value === "admin") {
+      handleRoleChange('admin', true);
+      handleRoleChange('employee', false);
+    } else {
+      handleRoleChange('admin', false);
+      handleRoleChange('employee', true);
+    }
+  };
+  
   return (
     <div className="space-y-4 py-4">
       <div className="space-y-4">
@@ -39,15 +50,7 @@ export function EmployeeRoles({ selectedRoles, handleRoleChange, employee }: Emp
       
       <RadioGroup 
         value={selectedRoles.admin ? "admin" : "employee"} 
-        onValueChange={(value) => {
-          if (value === "admin") {
-            handleRoleChange('admin', true);
-            handleRoleChange('employee', false);
-          } else {
-            handleRoleChange('admin', false);
-            handleRoleChange('employee', true);
-          }
-        }}
+        onValueChange={handleRadioChange}
         className="space-y-3"
       >
         <div className="flex items-start space-x-2">

@@ -55,10 +55,23 @@ export function useEmployeeRoles(employee: User | null) {
   };
 
   const handleRoleChange = (role: string, checked: boolean) => {
-    setSelectedRoles({
-      ...selectedRoles,
-      [role]: checked
-    });
+    // For radio button behavior
+    if (role === 'admin' && checked) {
+      setSelectedRoles({
+        admin: true,
+        employee: false
+      });
+    } else if (role === 'employee' && checked) {
+      setSelectedRoles({
+        admin: false,
+        employee: true
+      });
+    } else {
+      setSelectedRoles(prev => ({
+        ...prev,
+        [role]: checked
+      }));
+    }
   };
 
   const saveEmployeeRoles = async (employeeId: string) => {
