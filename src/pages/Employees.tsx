@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
@@ -71,11 +72,18 @@ export default function Employees() {
     import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`));
   
   const handleEmployeeUpdate = () => {
+    console.log("Employee updated - refreshing list");
     refetch();
     setIsEditModalOpen(false);
+    setEditingEmployee(null);
   };
   
   const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingEmployee(null);
+  };
 
   return (
     <DashboardLayout>
@@ -111,7 +119,7 @@ export default function Employees() {
         setIsAddModalOpen={setIsAddModalOpen}
         handleEmployeeCreated={handleEmployeeCreated}
         isEditModalOpen={isEditModalOpen}
-        closeEditModal={() => setIsEditModalOpen(false)}
+        closeEditModal={closeEditModal}
       />
     </DashboardLayout>
   );

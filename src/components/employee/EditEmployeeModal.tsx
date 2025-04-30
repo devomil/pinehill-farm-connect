@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,38 +48,41 @@ export function EditEmployeeModal({
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
-      name: employee?.name || "",
-      department: employee?.department || "",
-      position: employee?.position || "",
-      startDate: employeeHR?.startDate,
-      endDate: employeeHR?.endDate,
-      salary: employeeHR?.salary,
-      employmentType: employeeHR?.employmentType,
-      address: employeeHR?.address || "",
-      phone: employeeHR?.phone || "",
-      emergencyContact: employeeHR?.emergencyContact || "",
-      notes: employeeHR?.notes || "",
+      name: "",
+      department: "",
+      position: "",
+      startDate: undefined,
+      endDate: undefined,
+      salary: undefined,
+      employmentType: undefined,
+      address: "",
+      phone: "",
+      emergencyContact: "",
+      notes: "",
     }
   });
 
-  // Update form when employee data changes
-  React.useEffect(() => {
-    if (employee) {
-      form.setValue('name', employee.name || '');
-      form.setValue('department', employee.department || '');
-      form.setValue('position', employee.position || '');
+  // Reset form when employee changes or modal opens/closes
+  useEffect(() => {
+    if (isOpen && employee) {
+      form.reset({
+        name: employee.name || '',
+        department: employee.department || '',
+        position: employee.position || '',
+        startDate: employeeHR?.startDate,
+        endDate: employeeHR?.endDate,
+        salary: employeeHR?.salary,
+        employmentType: employeeHR?.employmentType,
+        address: employeeHR?.address || '',
+        phone: employeeHR?.phone || '',
+        emergencyContact: employeeHR?.emergencyContact || '',
+        notes: employeeHR?.notes || '',
+      });
+    } else if (!isOpen) {
+      // Reset form when modal closes
+      form.reset();
     }
-    if (employeeHR) {
-      form.setValue('startDate', employeeHR.startDate);
-      form.setValue('endDate', employeeHR.endDate);
-      form.setValue('salary', employeeHR.salary);
-      form.setValue('employmentType', employeeHR.employmentType);
-      form.setValue('address', employeeHR.address || '');
-      form.setValue('phone', employeeHR.phone || '');
-      form.setValue('emergencyContact', employeeHR.emergencyContact || '');
-      form.setValue('notes', employeeHR.notes || '');
-    }
-  }, [employee, employeeHR, form]);
+  }, [employee, employeeHR, form, isOpen]);
 
   const handleSubmit = async (data: EmployeeFormValues) => {
     if (!employee) return;
@@ -109,14 +112,19 @@ export function EditEmployeeModal({
     
     if (success) {
       onEmployeeUpdate();
-      onClose();
+      handleClose();
     }
+  };
+
+  const handleClose = () => {
+    form.reset();
+    onClose();
   };
 
   if (!employee) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Employee: {employee.name}</DialogTitle>
@@ -162,7 +170,7 @@ export function EditEmployeeModal({
             )}
             
             <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>

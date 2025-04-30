@@ -15,6 +15,13 @@ export function useEmployeeRoles(employee: User | null) {
   useEffect(() => {
     if (employee) {
       fetchEmployeeRoles(employee.id);
+    } else {
+      // Reset state when employee is null
+      setSelectedRoles({
+        admin: false,
+        employee: true
+      });
+      setUserRoles([]);
     }
   }, [employee]);
 
@@ -55,6 +62,8 @@ export function useEmployeeRoles(employee: User | null) {
   };
 
   const handleRoleChange = (role: string, checked: boolean) => {
+    console.log(`Changing role ${role} to ${checked}`);
+    
     // For radio button behavior
     if (role === 'admin' && checked) {
       setSelectedRoles({
@@ -77,6 +86,7 @@ export function useEmployeeRoles(employee: User | null) {
   const saveEmployeeRoles = async (employeeId: string) => {
     try {
       setIsLoading(true);
+      console.log(`Saving roles for employee ${employeeId}:`, selectedRoles);
       // Get all current roles for this user
       const { data: existingRoles, error: fetchError } = await supabase
         .from('user_roles')
