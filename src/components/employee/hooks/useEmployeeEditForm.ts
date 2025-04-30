@@ -128,6 +128,7 @@ export function useEmployeeEditForm(
     handleRoleChange,
     handleSubmit,
     handleClose,
-    resetFormWithEmployeeData
+    resetFormWithEmployeeData,
+    setEmployeeHR // Add setEmployeeHR to the return object
   };
 }

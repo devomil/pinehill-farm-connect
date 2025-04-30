@@ -29,7 +29,8 @@ export function EditEmployeeModal({
     handleRoleChange,
     handleSubmit,
     handleClose,
-    resetFormWithEmployeeData
+    resetFormWithEmployeeData,
+    setEmployeeHR
   } = useEmployeeEditForm(employee, onEmployeeUpdate, onClose);
 
   // Reset form when employee changes or modal opens/closes
