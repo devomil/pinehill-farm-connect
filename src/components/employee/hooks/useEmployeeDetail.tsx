@@ -106,9 +106,23 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
 
   const handleHRDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!employeeHR) return;
+    
+    // Handle different input types appropriately
+    let value: string | number | Date | undefined = e.target.value;
+    
+    // Process date fields
+    if (e.target.type === 'date' && value) {
+      value = new Date(value);
+    }
+    
+    // Process number fields
+    if (e.target.type === 'number' && value) {
+      value = Number(value);
+    }
+    
     setEmployeeHR({
       ...employeeHR,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
