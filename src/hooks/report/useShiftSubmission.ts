@@ -76,12 +76,14 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use explicit typing and avoid complex type inference
-      // Type the query response as any to avoid deep type analysis
-      const { data: adminsData, error: adminsError } = await supabase
+      // Use an explicit type annotation for the query and avoid deep type inference
+      const adminsQuery = await supabase
         .from('profiles')
         .select('id, name, email')
-        .eq('role', 'admin') as { data: any[], error: any };
+        .eq('role', 'admin');
+        
+      const adminsData = adminsQuery.data as Array<{id: string, name?: string, email?: string}> | null;
+      const adminsError = adminsQuery.error;
 
       if (adminsError) {
         console.error("Error fetching admins:", adminsError);
