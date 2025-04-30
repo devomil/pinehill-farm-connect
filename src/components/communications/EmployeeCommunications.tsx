@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -77,6 +76,12 @@ export function EmployeeCommunications({
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
+  // Type assertion to ensure compatibility with Communication type
+  const typedMessages = messages ? messages.map(msg => ({
+    ...msg,
+    type: msg.type as 'general' | 'shift_coverage'
+  })) : [];
+
   const handleSendMessage = useCallback((message: string) => {
     if (selectedEmployee) {
       sendMessage({
@@ -153,7 +158,7 @@ export function EmployeeCommunications({
           <Card className="md:col-span-2">
             <MessageConversation
               selectedEmployee={selectedEmployee}
-              messages={messages || []}
+              messages={typedMessages}
               isLoading={isLoading}
               onSendMessage={handleSendMessage}
               onBack={() => {
