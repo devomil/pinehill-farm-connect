@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { User as UserType } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,48 +50,53 @@ export default function Employees() {
     setIsAddModalOpen(true);
   };
 
-  const handleEmployeeCreated = () => {
+  const handleEmployeeCreated = useCallback(() => {
     setIsAddModalOpen(false);
     console.log("Employee created - refreshing list...");
     // Run the refetch with a slight delay to ensure database updates are complete
     setTimeout(() => {
       refetch();
     }, 500);
-  };
+  }, [refetch]);
 
-  const handleEditEmployee = (employee: UserType) => {
+  const handleEditEmployee = useCallback((employee: UserType) => {
     console.log("Editing employee:", employee);
     setEditingEmployee(employee);
     setIsEditModalOpen(true);
-  };
+  }, []);
   
-  const handleViewEmployee = (employee: UserType) => {
+  const handleViewEmployee = useCallback((employee: UserType) => {
     openModal(employee);
-  };
+  }, [openModal]);
   
-  const handleDeleteEmployee = (id: string) =>
-    import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`));
+  const handleDeleteEmployee = useCallback((id: string) =>
+    import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`)), []);
   
-  const handleEmployeeUpdate = () => {
+  const handleEmployeeUpdate = useCallback(() => {
     console.log("Employee updated - refreshing list");
     setIsUpdating(true);
     
     // Use a timeout to avoid UI freezing during state updates
     setTimeout(() => {
       refetch().finally(() => {
-        setIsEditModalOpen(false);
-        setEditingEmployee(null);
-        setIsUpdating(false);
+        setTimeout(() => {
+          setIsEditModalOpen(false);
+          setEditingEmployee(null);
+          setIsUpdating(false);
+        }, 50);
       });
     }, 300);
-  };
+  }, [refetch]);
   
-  const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
+  const handleResetPassword = useCallback((employee: UserType) => setResetEmployee(employee), []);
 
-  const closeEditModal = () => {
+  const closeEditModal = useCallback(() => {
     setIsEditModalOpen(false);
-    setEditingEmployee(null);
-  };
+    // Small delay before clearing the employee data to prevent UI jank
+    setTimeout(() => {
+      setEditingEmployee(null);
+    }, 100);
+  }, []);
 
   return (
     <DashboardLayout>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User } from "@/types";
 import { useEmployeeDetail } from "./useEmployeeDetail";
 import { EmployeeFormValues } from "../schemas/employeeFormSchema";
@@ -47,27 +47,34 @@ export function useEmployeeEditForm(
     }
   });
 
-  // Reset form with employee data
-  const resetFormWithEmployeeData = () => {
-    if (employee) {
-      form.reset({
-        name: employee.name || '',
-        department: employee.department || '',
-        position: employee.position || '',
-        employeeId: employee.employeeId || '',
-        startDate: employeeHR?.startDate,
-        endDate: employeeHR?.endDate,
-        salary: employeeHR?.salary,
-        employmentType: employeeHR?.employmentType,
-        address: employeeHR?.address || '',
-        phone: employeeHR?.phone || '',
-        emergencyContact: employeeHR?.emergencyContact || '',
-        notes: employeeHR?.notes || '',
+  // Memoize resetFormWithEmployeeData to prevent unnecessary re-renders
+  const resetFormWithEmployeeData = useCallback(() => {
+    if (!employee) return;
+    
+    try {
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(() => {
+        if (employee) {
+          form.reset({
+            name: employee.name || '',
+            department: employee.department || '',
+            position: employee.position || '',
+            employeeId: employee.employeeId || '',
+            startDate: employeeHR?.startDate,
+            endDate: employeeHR?.endDate,
+            salary: employeeHR?.salary,
+            employmentType: employeeHR?.employmentType,
+            address: employeeHR?.address || '',
+            phone: employeeHR?.phone || '',
+            emergencyContact: employeeHR?.emergencyContact || '',
+            notes: employeeHR?.notes || '',
+          });
+        }
       });
-    } else {
-      form.reset();
+    } catch (err) {
+      console.error("Error resetting form:", err);
     }
-  };
+  }, [employee, employeeHR, form]);
 
   const handleSubmit = async (data: EmployeeFormValues) => {
     if (!employee) return;
@@ -123,8 +130,11 @@ export function useEmployeeEditForm(
   };
 
   const handleClose = () => {
-    form.reset();
-    onClose();
+    // Delay form reset to prevent UI jank
+    setTimeout(() => {
+      form.reset();
+      onClose();
+    }, 50);
   };
 
   return {

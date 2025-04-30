@@ -39,7 +39,7 @@ export function EditEmployeeModal({
       // Small delay to ensure the modal is fully rendered before resetting the form
       const timeoutId = setTimeout(() => {
         resetFormWithEmployeeData();
-      }, 50);
+      }, 100);
       
       return () => clearTimeout(timeoutId);
     }
@@ -48,12 +48,18 @@ export function EditEmployeeModal({
   // Safe guard to prevent rendering if employee is null
   if (!employee) return null;
 
-  // Use memoization for the form content to prevent unnecessary re-renders
   return (
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!open) handleClose();
+        if (!open) {
+          // Use requestIdleCallback to handle closing when browser is idle
+          if (window.requestIdleCallback) {
+            window.requestIdleCallback(() => handleClose());
+          } else {
+            setTimeout(handleClose, 10);
+          }
+        }
       }}
     >
       <DialogContent className="max-w-2xl">
