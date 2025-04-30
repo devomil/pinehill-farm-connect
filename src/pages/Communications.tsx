@@ -21,22 +21,22 @@ export default function Communications() {
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
-    // Attempt to load employees when page loads
-    refetchEmployees();
     
-    // Only set up refresh interval if there's no error
-    let refreshInterval;
-    if (!error) {
-      refreshInterval = setInterval(() => {
-        console.log("Auto-refreshing messages");
-        refreshMessages();
-      }, 60000); // Refresh every minute instead of continuously
-    }
+    // Immediately fetch fresh data when the component mounts
+    refetchEmployees();
+    refreshMessages();
+    
+    // Set up refresh interval for regular updates
+    const refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing communications data");
+      refetchEmployees();  // Refresh employee data too to keep recipient lists current
+      refreshMessages();
+    }, 60000); // Refresh every minute
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [currentUser, refetchEmployees, refreshMessages, error]);
+  }, [currentUser, refetchEmployees, refreshMessages]);
 
   // Only attempt auto-retry when connection errors occur and limit to 3 attempts
   useEffect(() => {
@@ -78,6 +78,13 @@ export default function Communications() {
     current_user_id: currentUser.id
   })) : safeMessages;
 
+  // Force refresh function for manual retries
+  const handleManualRefresh = () => {
+    toast.info("Refreshing employee and message data...");
+    refetchEmployees();
+    refreshMessages();
+  };
+
   return (
     <CommunicationsLayout
       error={error}
@@ -85,6 +92,7 @@ export default function Communications() {
       isConnectionError={isConnectionError(error)}
       onRetry={handleRetryConnection}
       retryCount={retryCount}
+      onRefresh={handleManualRefresh} // Pass the new refresh function
     >
       {!loading && (
         <ConversationTabs
@@ -94,6 +102,7 @@ export default function Communications() {
           employees={allEmployees || []}
           onRespond={respondToShiftRequest}
           onSendMessage={sendMessage}
+          onRefresh={handleManualRefresh} // Pass the refresh function to tabs
         />
       )}
     </CommunicationsLayout>

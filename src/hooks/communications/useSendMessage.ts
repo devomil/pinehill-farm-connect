@@ -22,89 +22,101 @@ export function useSendMessage(currentUser: User | null) {
 
       console.log(`Attempting to send message to recipient ID: ${recipientId}`);
       
-      // Use maybeSingle instead of single to prevent an error if no recipient is found
-      const { data: recipientData, error: recipientError } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .eq('id', recipientId)
-        .maybeSingle();
-
-      if (recipientError) {
-        console.error("Error fetching recipient data:", recipientError);
-        throw new Error("Database error when finding recipient");
-      }
-      
-      if (!recipientData) {
-        console.error("No recipient found with ID:", recipientId);
-        throw new Error(`Recipient not found. Please refresh and try again.`);
-      }
-
-      console.log("Found recipient:", recipientData);
-
-      const { data: communicationData, error: communicationError } = await supabase
-        .from('employee_communications')
-        .insert({
-          sender_id: currentUser.id,
-          recipient_id: recipientId,
-          message,
-          type,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (communicationError) throw communicationError;
-
-      // If it's a shift coverage request, add the shift details
-      if (type === 'shift_coverage' && shiftDetails) {
-        const { error: shiftError } = await supabase
-          .from('shift_coverage_requests')
-          .insert({
-            communication_id: communicationData.id,
-            original_employee_id: currentUser.id,
-            covering_employee_id: recipientId,
-            ...shiftDetails,
-            status: 'pending'
-          });
-
-        if (shiftError) throw shiftError;
-      }
-
-      // Send notification to recipient using notifyManager
+      // First check if the recipient exists in the employee directory
       try {
-        console.log(`Sending notification to ${recipientData.name} (${recipientData.email}) with ID: ${recipientId}`);
-        
-        const actionType = type === 'shift_coverage' ? 'shift_coverage_request' : 'new_message';
-        
-        const notifyResult = await notifyManager(
-          actionType,
-          {
-            id: currentUser.id || "unknown",
-            name: currentUser.name || "Unknown User",
-            email: currentUser.email || "unknown"
-          },
-          {
-            message,
-            communicationId: communicationData.id,
-            ...(shiftDetails || {})
-          },
-          {
-            id: recipientData.id,
-            name: recipientData.name,
-            email: recipientData.email
+        // Use select() instead of maybeSingle() for better error handling
+        const { data: recipientData, error: recipientError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', recipientId)
+          .single();
+  
+        if (recipientError) {
+          console.error("Error fetching recipient data:", recipientError);
+          
+          if (recipientError.code === 'PGRST116') {
+            console.error(`No recipient found with ID: ${recipientId}`);
+            throw new Error(`Recipient not found. Please refresh and try again.`);
+          } else {
+            throw new Error("Database error when finding recipient");
           }
-        );
-
-        if (!notifyResult.success) {
-          console.warn("Notification sending failed, but message was saved:", notifyResult.error);
-          // Don't throw here, as we still created the communication successfully
         }
-      } catch (notifyError) {
-        console.error("Error sending notification:", notifyError);
-        // Don't throw here as the message was still saved
+  
+        if (!recipientData) {
+          console.error("No recipient data returned:", recipientId);
+          throw new Error(`Recipient not found. Please refresh and try again.`);
+        }
+  
+        console.log("Found recipient:", recipientData);
+  
+        const { data: communicationData, error: communicationError } = await supabase
+          .from('employee_communications')
+          .insert({
+            sender_id: currentUser.id,
+            recipient_id: recipientId,
+            message,
+            type,
+            status: 'pending'
+          })
+          .select()
+          .single();
+  
+        if (communicationError) throw communicationError;
+  
+        // If it's a shift coverage request, add the shift details
+        if (type === 'shift_coverage' && shiftDetails) {
+          const { error: shiftError } = await supabase
+            .from('shift_coverage_requests')
+            .insert({
+              communication_id: communicationData.id,
+              original_employee_id: currentUser.id,
+              covering_employee_id: recipientId,
+              ...shiftDetails,
+              status: 'pending'
+            });
+  
+          if (shiftError) throw shiftError;
+        }
+  
+        // Send notification to recipient using notifyManager
+        try {
+          console.log(`Sending notification to ${recipientData.name} (${recipientData.email}) with ID: ${recipientId}`);
+          
+          const actionType = type === 'shift_coverage' ? 'shift_coverage_request' : 'new_message';
+          
+          const notifyResult = await notifyManager(
+            actionType,
+            {
+              id: currentUser.id || "unknown",
+              name: currentUser.name || "Unknown User",
+              email: currentUser.email || "unknown"
+            },
+            {
+              message,
+              communicationId: communicationData.id,
+              ...(shiftDetails || {})
+            },
+            {
+              id: recipientData.id,
+              name: recipientData.name,
+              email: recipientData.email
+            }
+          );
+  
+          if (!notifyResult.success) {
+            console.warn("Notification sending failed, but message was saved:", notifyResult.error);
+            // Don't throw here, as we still created the communication successfully
+          }
+        } catch (notifyError) {
+          console.error("Error sending notification:", notifyError);
+          // Don't throw here as the message was still saved
+        }
+  
+        return communicationData;
+      } catch (error) {
+        console.error("Error in send message function:", error);
+        throw error;
       }
-
-      return communicationData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });

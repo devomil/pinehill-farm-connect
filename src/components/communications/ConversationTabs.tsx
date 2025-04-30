@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Mail } from "lucide-react";
+import { Mail, RefreshCcw } from "lucide-react";
 import { MessageList } from "@/components/communications/MessageList";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
 import { NewMessageDialog } from "@/components/communications/NewMessageDialog";
@@ -17,6 +17,7 @@ interface ConversationTabsProps {
   employees: User[];
   onRespond: (data: { communicationId: string; shiftRequestId: string; accept: boolean; senderId: string }) => void;
   onSendMessage: (data: any) => void;
+  onRefresh?: () => void; // Add refresh handler
 }
 
 export const ConversationTabs: React.FC<ConversationTabsProps> = ({
@@ -26,6 +27,7 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
   employees,
   onRespond,
   onSendMessage,
+  onRefresh
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("inbox");
@@ -68,19 +70,27 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
             )}
           </TabsList>
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Mail className="h-4 w-4 mr-2" />
-                New Message
+          <div className="flex gap-2">
+            {onRefresh && (
+              <Button variant="outline" size="sm" onClick={onRefresh} className="flex items-center gap-1">
+                <RefreshCcw className="h-4 w-4" />
+                <span className="hidden md:inline">Refresh</span>
               </Button>
-            </DialogTrigger>
-            <NewMessageDialog
-              employees={employees || []}
-              onSend={handleNewMessageSend}
-              onClose={() => setDialogOpen(false)}
-            />
-          </Dialog>
+            )}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Mail className="h-4 w-4 mr-2" />
+                  New Message
+                </Button>
+              </DialogTrigger>
+              <NewMessageDialog
+                employees={employees || []}
+                onSend={handleNewMessageSend}
+                onClose={() => setDialogOpen(false)}
+              />
+            </Dialog>
+          </div>
         </div>
         
         <TabsContent value="inbox">
@@ -106,4 +116,4 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
       </Tabs>
     </div>
   );
-};
+}

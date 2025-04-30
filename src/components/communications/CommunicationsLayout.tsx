@@ -1,91 +1,78 @@
 
 import React from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { WifiOff, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, RefreshCcw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CommunicationsLayoutProps {
   children: React.ReactNode;
-  title?: string;
-  description?: string;
-  error?: Error | string | null;
-  loading?: boolean;
-  onRetry?: () => void;
-  isConnectionError?: boolean;
-  retryCount?: number;
+  error: any;
+  loading: boolean;
+  isConnectionError: boolean;
+  onRetry: () => void;
+  retryCount: number;
+  onRefresh?: () => void; // Add refresh handler
 }
 
-export const CommunicationsLayout: React.FC<CommunicationsLayoutProps> = ({
+export function CommunicationsLayout({
   children,
-  title = "Direct Messages",
-  description = "Message your colleagues directly and manage shift coverage requests",
   error,
   loading,
+  isConnectionError,
   onRetry,
-  isConnectionError = false,
-  retryCount = 0,
-}) => {
-  const formatErrorMessage = (error: Error | string | null): string => {
-    if (!error) return "Unknown error";
-    
-    if (typeof error === 'string') {
-      return error;
-    }
-    
-    if (error instanceof Error) {
-      return error.message;
-    }
-    
-    return "Unknown error";
-  };
+  retryCount,
+  onRefresh
+}: CommunicationsLayoutProps) {
+  if (loading) {
+    return (
+      <div className="space-y-6 p-4">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-[400px] w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Error Loading Communications</AlertTitle>
+          <AlertDescription>
+            {isConnectionError
+              ? "Unable to connect to the server. Please check your internet connection."
+              : `An error occurred: ${error.message || "Unknown error"}`}
+          </AlertDescription>
+          <div className="mt-4 flex space-x-2">
+            <Button variant="outline" onClick={onRetry} disabled={retryCount >= 3}>
+              {retryCount > 0 ? `Retry (${retryCount}/3)` : "Retry"}
+            </Button>
+          </div>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
+    <div className="space-y-4 p-4">
+      {onRefresh && (
+        <div className="flex justify-end mb-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRefresh}
+            className="flex items-center gap-1"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Refresh Data
+          </Button>
         </div>
-        
-        {isConnectionError ? (
-          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-            <WifiOff className="h-4 w-4 text-amber-800" />
-            <AlertDescription className="text-amber-800 flex flex-col space-y-2">
-              <p>There seems to be a connection issue. Unable to load messages.</p>
-              {retryCount > 0 && (
-                <p className="text-xs text-amber-700">Attempted {retryCount} {retryCount === 1 ? 'retry' : 'retries'}</p>
-              )}
-              {onRetry && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-fit mt-2 border-amber-500 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
-                  onClick={onRetry}
-                >
-                  Retry Connection
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Error loading data: {formatErrorMessage(error)}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading message data...</span>
-          </div>
-        ) : (
-          children
-        )}
-      </div>
-    </DashboardLayout>
+      )}
+      {children}
+    </div>
   );
-};
+}

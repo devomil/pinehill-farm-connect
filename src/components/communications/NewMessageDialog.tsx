@@ -10,6 +10,7 @@ import { RecipientSelect } from "./RecipientSelect";
 import { ShiftDetailsForm } from "./ShiftDetailsForm";
 import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/communications";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function NewMessageDialog({ employees, onSend, onClose }: NewMessageDialogProps) {
   const { currentUser } = useAuth();
@@ -45,15 +46,60 @@ export function NewMessageDialog({ employees, onSend, onClose }: NewMessageDialo
   }, [form]);
 
   const onSubmit = (values: NewMessageFormData) => {
-    // Add validation to ensure recipient exists
+    // Enhanced validation to ensure recipient exists
+    if (!values.recipientId) {
+      form.setError("recipientId", { 
+        type: "manual", 
+        message: "Please select a recipient" 
+      });
+      return;
+    }
+    
     const recipientExists = filteredEmployees.some(emp => emp.id === values.recipientId);
     
     if (!recipientExists) {
       form.setError("recipientId", { 
         type: "manual", 
-        message: "Please select a valid recipient" 
+        message: "Selected recipient is no longer available" 
+      });
+      toast.error("Selected recipient is no longer available. Please refresh and try again.");
+      return;
+    }
+    
+    // Validate required message
+    if (!values.message.trim()) {
+      form.setError("message", {
+        type: "manual",
+        message: "Message is required"
       });
       return;
+    }
+    
+    // For shift coverage, validate shift details
+    if (type === "shift_coverage") {
+      if (!values.shiftDate) {
+        form.setError("shiftDate", {
+          type: "manual",
+          message: "Shift date is required"
+        });
+        return;
+      }
+      
+      if (!values.shiftStart) {
+        form.setError("shiftStart", {
+          type: "manual",
+          message: "Shift start time is required"
+        });
+        return;
+      }
+      
+      if (!values.shiftEnd) {
+        form.setError("shiftEnd", {
+          type: "manual",
+          message: "Shift end time is required"
+        });
+        return;
+      }
     }
     
     const shiftDetails = type === "shift_coverage" ? {

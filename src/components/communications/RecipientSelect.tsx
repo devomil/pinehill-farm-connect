@@ -20,6 +20,7 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
     const currentRecipientId = form.getValues("recipientId");
     if (currentRecipientId && !employees.some(e => e.id === currentRecipientId)) {
       form.setValue("recipientId", "");
+      console.log("Previously selected recipient is no longer available, resetting selection");
     }
   }, [employees, form]);
 
@@ -27,6 +28,10 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
   const availableRecipients = currentUser ? employees.filter(employee => 
     employee.id !== currentUser.id
   ) : employees;
+
+  // Add logging to check available recipients
+  console.log(`Available recipients: ${availableRecipients.length}`, 
+    availableRecipients.map(r => ({ id: r.id, name: r.name })));
 
   // Check if we have any valid recipients
   const hasRecipients = availableRecipients.length > 0;
@@ -42,6 +47,7 @@ export function RecipientSelect({ form, employees }: RecipientSelectProps) {
             onValueChange={field.onChange} 
             defaultValue={field.value}
             disabled={!hasRecipients}
+            value={field.value}
           >
             <FormControl>
               <SelectTrigger>
