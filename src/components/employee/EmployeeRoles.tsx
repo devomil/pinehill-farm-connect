@@ -1,7 +1,8 @@
 
 import React from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 interface EmployeeRolesProps {
   selectedRoles: { [key: string]: boolean };
@@ -13,34 +14,36 @@ export function EmployeeRoles({ selectedRoles, handleRoleChange }: EmployeeRoles
     <div className="space-y-4 py-4">
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Switch 
             id="role-admin" 
             checked={selectedRoles.admin}
-            onCheckedChange={(checked) => handleRoleChange('admin', !!checked)}
+            onCheckedChange={(checked) => {
+              handleRoleChange('admin', checked);
+              // If admin is enabled, automatically set employee role to false
+              if (checked) {
+                handleRoleChange('employee', false);
+              } else {
+                // If admin is disabled, default to employee role
+                handleRoleChange('employee', true);
+              }
+            }}
           />
           <Label htmlFor="role-admin">Admin (Full system access)</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="role-hr" 
-            checked={selectedRoles.hr}
-            onCheckedChange={(checked) => handleRoleChange('hr', !!checked)}
-          />
-          <Label htmlFor="role-hr">HR (Access to employee data and HR functions)</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="role-manager" 
-            checked={selectedRoles.manager}
-            onCheckedChange={(checked) => handleRoleChange('manager', !!checked)}
-          />
-          <Label htmlFor="role-manager">Manager (Can view employee data)</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Switch 
             id="role-employee" 
             checked={selectedRoles.employee}
-            onCheckedChange={(checked) => handleRoleChange('employee', !!checked)}
+            onCheckedChange={(checked) => {
+              handleRoleChange('employee', checked);
+              // If employee is enabled, automatically set admin role to false
+              if (checked) {
+                handleRoleChange('admin', false);
+              } else {
+                // If employee is disabled, default to admin role
+                handleRoleChange('admin', true);
+              }
+            }}
           />
           <Label htmlFor="role-employee">Employee (Basic access)</Label>
         </div>

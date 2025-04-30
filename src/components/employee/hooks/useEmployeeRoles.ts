@@ -8,9 +8,7 @@ export function useEmployeeRoles(employee: User | null) {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<{[key: string]: boolean}>({
     admin: false,
-    employee: false,
-    hr: false,
-    manager: false
+    employee: true, // Default to employee role
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -37,13 +35,15 @@ export function useEmployeeRoles(employee: User | null) {
         })));
         const roleMap = {
           admin: false,
-          employee: false,
-          hr: false,
-          manager: false
+          employee: true, // Default to employee role
         };
-        data.forEach(role => {
-          roleMap[role.role as keyof typeof roleMap] = true;
-        });
+        
+        // If any roles are found, update the roleMap
+        if (data.length > 0) {
+          roleMap.admin = data.some(role => role.role === 'admin');
+          roleMap.employee = data.some(role => role.role === 'employee') || !roleMap.admin; // Default to employee if not admin
+        }
+        
         setSelectedRoles(roleMap);
       }
     } catch (error) {
@@ -63,50 +63,57 @@ export function useEmployeeRoles(employee: User | null) {
 
   const saveEmployeeRoles = async (employeeId: string) => {
     try {
-      const currentRoles = userRoles.map(r => r.role);
-      const newRoles: ("admin" | "employee" | "hr" | "manager")[] = [];
+      setIsLoading(true);
+      // Get all current roles for this user
+      const { data: existingRoles, error: fetchError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', employeeId);
       
-      Object.entries(selectedRoles).forEach(([role, selected]) => {
-        if (selected) newRoles.push(role as "admin" | "employee" | "hr" | "manager");
-      });
+      if (fetchError) throw fetchError;
       
-      const rolesToAdd = newRoles.filter(r => !currentRoles.includes(r));
-      const rolesToRemove = currentRoles.filter(r => !newRoles.includes(r as ("admin" | "employee" | "hr" | "manager")));
-
-      if (rolesToAdd.length > 0) {
-        const newRoleRecords = rolesToAdd.map(role => ({
-          user_id: employeeId,
-          role: role
-        }));
-        const { error } = await supabase
+      // Delete all existing roles
+      if (existingRoles && existingRoles.length > 0) {
+        const { error: deleteError } = await supabase
           .from('user_roles')
-          .insert(newRoleRecords as { user_id: string; role: "admin" | "employee" | "hr" | "manager" }[]);
-        if (error) throw error;
+          .delete()
+          .eq('user_id', employeeId);
+        
+        if (deleteError) throw deleteError;
       }
       
-      if (rolesToRemove.length > 0) {
-        for (const role of rolesToRemove) {
-          const { error } = await supabase
-            .from('user_roles')
-            .delete()
-            .eq('user_id', employeeId)
-            .eq('role', role);
-          if (error) throw error;
-        }
+      // Add new roles based on selectedRoles
+      const newRoles = [];
+      if (selectedRoles.admin) {
+        newRoles.push({ user_id: employeeId, role: 'admin' });
+      }
+      if (selectedRoles.employee) {
+        newRoles.push({ user_id: employeeId, role: 'employee' });
       }
       
+      if (newRoles.length > 0) {
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert(newRoles);
+          
+        if (insertError) throw insertError;
+      }
+      
+      toast.success('Employee roles updated successfully');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving employee roles:', error);
-      toast.error('Failed to save employee roles');
+      toast.error(`Failed to save employee roles: ${error.message}`);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     userRoles,
     selectedRoles,
-    isLoading: isLoading,
+    isLoading,
     handleRoleChange,
     saveEmployeeRoles
   };

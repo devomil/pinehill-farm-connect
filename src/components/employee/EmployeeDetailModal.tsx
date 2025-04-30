@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema, EmployeeFormValues } from "./schemas/employeeFormSchema";
 import { toast } from "sonner";
 import { EmploymentType } from "./hooks/useEmployeeHRData";
+import { useEmployeeRoles } from "./hooks/useEmployeeRoles";
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -31,14 +32,21 @@ export function EmployeeDetailModal({
   const {
     employeeData,
     employeeHR,
-    isLoading,
-    selectedRoles,
+    isLoading: isEmployeeLoading,
     handleBasicInfoChange,
     handleHRDataChange,
-    handleRoleChange,
     saveEmployeeData,
     setEmployeeHR
   } = useEmployeeDetail(employee, onEmployeeUpdate, onClose);
+
+  const {
+    selectedRoles,
+    handleRoleChange,
+    saveEmployeeRoles,
+    isLoading: isRolesLoading
+  } = useEmployeeRoles(employee);
+
+  const isLoading = isEmployeeLoading || isRolesLoading;
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -104,8 +112,19 @@ export function EmployeeDetailModal({
         setEmployeeHR({...employeeHR});
       }
       
-      // Now save all the data
-      await saveEmployeeData();
+      // Save basic info and HR data
+      const basicInfoSaved = await saveEmployeeData();
+
+      // Save role changes if the employee exists and is properly identified
+      let rolesSaved = false;
+      if (employee && employee.id) {
+        rolesSaved = await saveEmployeeRoles(employee.id);
+      }
+      
+      if (basicInfoSaved && rolesSaved) {
+        onEmployeeUpdate();
+        onClose();
+      }
     } catch (error) {
       toast.error("Failed to save employee data");
       console.error("Form submission error:", error);
