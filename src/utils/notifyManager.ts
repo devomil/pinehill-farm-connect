@@ -15,7 +15,8 @@ export async function notifyManager(
         id: assignedTo.id,
         name: assignedTo.name,
         email: assignedTo.email
-      } : 'none'
+      } : 'none',
+      adminCc: details.adminCc || 'none'
     });
     
     // Add validation to prevent sending to the actor's own email

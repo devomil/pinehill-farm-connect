@@ -18,6 +18,18 @@ export function useRespondToShiftRequest(currentUser: User | null) {
     }: RespondToShiftRequestParams) => {
       const status = accept ? 'accepted' : 'declined';
 
+      // Get communication details to find admin_cc if present
+      const { data: communicationData, error: commDataError } = await supabase
+        .from('employee_communications')
+        .select('*')
+        .eq('id', communicationId)
+        .single();
+        
+      if (commDataError) {
+        console.error("Error fetching communication data:", commDataError);
+        throw new Error("Could not find communication data");
+      }
+
       // Get sender profile information
       const { data: senderData, error: senderError } = await supabase
         .from('profiles')
@@ -29,7 +41,23 @@ export function useRespondToShiftRequest(currentUser: User | null) {
         console.error("Error fetching sender data:", senderError);
         throw new Error("Could not find sender information");
       }
+      
+      // Get admin info if there's an admin_cc in the communication
+      let adminData = null;
+      if (communicationData.admin_cc) {
+        const { data: admin, error: adminError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', communicationData.admin_cc)
+          .single();
+          
+        if (!adminError && admin) {
+          adminData = admin;
+          console.log("Found CC'd admin:", adminData);
+        }
+      }
 
+      // Update communication status
       const { error: commError } = await supabase
         .from('employee_communications')
         .update({ status })
@@ -37,6 +65,7 @@ export function useRespondToShiftRequest(currentUser: User | null) {
 
       if (commError) throw commError;
 
+      // Update shift request status
       const { error: shiftError } = await supabase
         .from('shift_coverage_requests')
         .update({ status })
@@ -57,7 +86,12 @@ export function useRespondToShiftRequest(currentUser: User | null) {
           },
           {
             response: status,
-            communicationId
+            communicationId,
+            adminCc: adminData ? {
+              id: adminData.id,
+              name: adminData.name,
+              email: adminData.email
+            } : null
           },
           {
             id: senderData.id,

@@ -48,6 +48,24 @@ export function useSendMessage(currentUser: User | null) {
         }
   
         console.log("Found recipient:", recipientData);
+
+        // Get requester's admin if this is a shift coverage request
+        let adminData = null;
+        if (type === 'shift_coverage') {
+          // Find the admin assigned to the current user (requester)
+          const { data: adminAssignment, error: adminError } = await supabase
+            .from('employee_assignments')
+            .select('admin_id, admin:profiles!employee_assignments_admin_id_fkey(id, name, email)')
+            .eq('employee_id', currentUser.id)
+            .single();
+
+          if (!adminError && adminAssignment?.admin) {
+            adminData = adminAssignment.admin;
+            console.log("Found requester's admin:", adminData);
+          } else {
+            console.warn("No admin found for requester:", currentUser.id, adminError);
+          }
+        }
   
         const { data: communicationData, error: communicationError } = await supabase
           .from('employee_communications')
@@ -56,7 +74,8 @@ export function useSendMessage(currentUser: User | null) {
             recipient_id: recipientId,
             message,
             type,
-            status: 'pending'
+            status: 'pending',
+            admin_cc: adminData?.id || null // Store the admin ID for reference
           })
           .select()
           .single();
@@ -94,6 +113,11 @@ export function useSendMessage(currentUser: User | null) {
             {
               message,
               communicationId: communicationData.id,
+              adminCc: adminData ? {
+                id: adminData.id,
+                name: adminData.name,
+                email: adminData.email
+              } : null,
               ...(shiftDetails || {})
             },
             {

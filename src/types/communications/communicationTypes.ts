@@ -8,6 +8,7 @@ export interface Communication {
   created_at: string;
   status: 'pending' | 'accepted' | 'declined';
   read_at: string | null;
+  admin_cc: string | null;
 }
 
 export interface ShiftCoverageRequest {
