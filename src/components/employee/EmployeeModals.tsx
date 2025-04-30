@@ -57,7 +57,7 @@ export function EmployeeModals({
       {/* Password Reset Dialog */}
       {resetEmployee && (
         <EmployeeResetPasswordDialog
-          isOpen={!!resetEmployee}
+          open={!!resetEmployee}
           onClose={() => setResetEmployee(null)}
           employee={resetEmployee}
         />

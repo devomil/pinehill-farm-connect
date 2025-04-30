@@ -8,7 +8,7 @@ import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "../schemas/employeeFormSchema";
 import { EmployeeHR } from "@/types";
 
-type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
+type EmploymentType = "full-time" | "part-time" | "contract" | "seasonal" | "intern" | "none";
 
 interface EmploymentFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
@@ -49,10 +49,13 @@ export function EmploymentFields({ form, handleHRDataChange, setEmployeeHR }: Em
             <Label htmlFor="employmentType">Employment Type</Label>
             <FormControl>
               <Select 
-                value={field.value || ''} 
+                value={field.value || 'none'} 
                 onValueChange={(value: EmploymentType) => {
-                  field.onChange(value);
-                  setEmployeeHR(prev => prev ? { ...prev, employmentType: value } : null);
+                  field.onChange(value === 'none' ? '' : value);
+                  setEmployeeHR(prev => prev ? { 
+                    ...prev, 
+                    employmentType: value === 'none' ? '' : value 
+                  } : null);
                 }}
               >
                 <SelectTrigger>
@@ -64,7 +67,7 @@ export function EmploymentFields({ form, handleHRDataChange, setEmployeeHR }: Em
                   <SelectItem value="contract">Contract</SelectItem>
                   <SelectItem value="seasonal">Seasonal</SelectItem>
                   <SelectItem value="intern">Intern</SelectItem>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>

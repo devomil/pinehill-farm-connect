@@ -37,8 +37,8 @@ export function EmployeeContent({
       <CardContent className="p-6">
         <div className="space-y-4">
           <EmployeeSearchBar 
-            searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery} 
+            query={searchQuery} 
+            onQueryChange={setSearchQuery} 
           />
           
           {error && (

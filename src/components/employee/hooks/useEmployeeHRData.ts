@@ -4,7 +4,7 @@ import { EmployeeHR, User } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-export type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
+export type EmploymentType = "full-time" | "part-time" | "contract" | "seasonal" | "intern" | "";
 
 export function useEmployeeHRData(employee: User | null) {
   const [employeeHR, setEmployeeHR] = useState<EmployeeHR | null>(null);
@@ -53,6 +53,7 @@ export function useEmployeeHRData(employee: User | null) {
         setEmployeeHR({
           id: '',
           userId: employeeId,
+          employmentType: ''
         });
       }
     } catch (error) {
