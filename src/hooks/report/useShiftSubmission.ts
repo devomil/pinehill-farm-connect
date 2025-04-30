@@ -63,9 +63,9 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use simpler types and avoid TypeScript recursion with explicit typing
-      // Fetch admin profiles
-      const { data: adminData, error: adminsError } = await supabase
+      // Completely avoid type complexities by using a simple structure and any typing
+      // for the database response to prevent TypeScript from going too deep
+      const { data, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('role', 'admin');
@@ -75,29 +75,28 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Create a simple array of admin objects with explicit types
-      // This avoids TypeScript having to deeply analyze the types
-      const admins: AdminBasicInfo[] = [];
+      // Manually extract only the fields we need to completely avoid deep type analysis
+      const adminsList: Array<{id: string; name: string; email: string}> = [];
       
-      if (Array.isArray(adminData)) {
-        for (const admin of adminData) {
-          admins.push({
-            id: admin.id,
-            name: admin.name,
-            email: admin.email
+      if (data && Array.isArray(data)) {
+        data.forEach(admin => {
+          adminsList.push({
+            id: admin.id || '',
+            name: admin.name || 'Admin',
+            email: admin.email || ''
           });
-        }
+        });
       }
       
-      if (admins.length === 0) {
+      if (adminsList.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Use primitive types to avoid deep nesting
-        for (const admin of admins) {
+        for (let i = 0; i < adminsList.length; i++) {
+          const admin = adminsList[i];
           await notifyAdmin(
             admin.id,
-            admin.name || 'Admin',
-            admin.email || '',
+            admin.name,
+            admin.email,
             shiftReport.id,
             reportData.priority
           );
@@ -152,8 +151,8 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Explicitly type the mutation with Error type to avoid deep recursion
-  const mutation = useMutation<any, Error, ShiftReportInput>({
+  // Use explicit type annotations and avoid complex generic type inference
+  const mutation = useMutation<ShiftReport, Error, ShiftReportInput>({
     mutationFn: submitShiftReport,
     onSuccess: () => {
       // Handle success if needed
