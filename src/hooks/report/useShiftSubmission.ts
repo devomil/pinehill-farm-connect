@@ -5,6 +5,19 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the actual shape of what comes back from the database
+interface DBShiftReport {
+  id: string;
+  created_at: string;
+  user_id: string;
+  date: string;
+  admin_id: string | null;
+  notes: string;
+  priority: string;
+  updated_at: string;
+}
+
+// Define the full ShiftReport with all fields needed by the UI components
 interface ShiftReport {
   id: string;
   created_at: string;
@@ -26,7 +39,7 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Define a simple standalone interface for admin data to break circular references
+// Simple admin type to avoid deep nesting
 interface AdminBasicInfo {
   id: string;
   name?: string | null;
@@ -37,7 +50,7 @@ export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
 
-  const submitShiftReport = async (reportData: ShiftReportInput) => {
+  const submitShiftReport = async (reportData: ShiftReportInput): Promise<DBShiftReport> => {
     setIsSubmitting(true);
     try {
       if (!currentUser) {
@@ -63,8 +76,8 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Completely avoid type complexities by using a simple structure and any typing
-      // for the database response to prevent TypeScript from going too deep
+      // No type inference - use any to prevent TypeScript from analyzing too deeply
+      // We'll handle the data manually to avoid complex type structures
       const { data, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
@@ -75,17 +88,18 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Manually extract only the fields we need to completely avoid deep type analysis
-      const adminsList: Array<{id: string; name: string; email: string}> = [];
+      // Use primitive arrays and simple objects - no complex nesting
+      const adminsList: {id: string; name: string; email: string}[] = [];
       
       if (data && Array.isArray(data)) {
-        data.forEach(admin => {
+        for (let i = 0; i < data.length; i++) {
+          const admin = data[i];
           adminsList.push({
             id: admin.id || '',
             name: admin.name || 'Admin',
             email: admin.email || ''
           });
-        });
+        }
       }
       
       if (adminsList.length === 0) {
@@ -115,7 +129,7 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use primitive types instead of complex objects to avoid type recursion
+  // Use only primitives to avoid complex type relationships
   const notifyAdmin = async (
     adminId: string,
     adminName: string,
@@ -151,8 +165,8 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use explicit type annotations and avoid complex generic type inference
-  const mutation = useMutation<ShiftReport, Error, ShiftReportInput>({
+  // Fix the type mismatch by using DBShiftReport for the mutation
+  const mutation = useMutation<DBShiftReport, Error, ShiftReportInput>({
     mutationFn: submitShiftReport,
     onSuccess: () => {
       // Handle success if needed
