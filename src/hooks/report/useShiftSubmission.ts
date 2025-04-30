@@ -39,17 +39,23 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
+// Simple type for admin data
+interface AdminProfile {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
 
-  // Completely separate function to fetch admins, avoiding type nesting
-  const fetchAdmins = async () => {
-    // Use raw fetch call instead of Supabase client to avoid type complexity
-    const supabaseUrl = "https://pdeaxfhsodenefeckabm.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA";
-    
+  // Separate function to fetch admins
+  const fetchAdmins = async (): Promise<AdminProfile[]> => {
     try {
+      const supabaseUrl = "https://pdeaxfhsodenefeckabm.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA";
+      
       const response = await fetch(`${supabaseUrl}/rest/v1/profiles?select=id,name,email&role=eq.admin`, {
         method: 'GET',
         headers: {
@@ -63,7 +69,8 @@ export const useShiftSubmission = () => {
         throw new Error('Failed to fetch admins');
       }
       
-      return await response.json();
+      const admins: AdminProfile[] = await response.json();
+      return admins || [];
     } catch (error) {
       console.error("Error fetching admins:", error);
       return [];
@@ -77,27 +84,27 @@ export const useShiftSubmission = () => {
         throw new Error("User not authenticated.");
       }
 
-      // Create a report payload without complex type transformations
-      const reportPayload = {
-        ...reportData,
+      // Create a simple object with the exact properties expected by the database
+      const insertData = {
         user_id: currentUser.id,
-        submitted_by: currentUser.name || currentUser.email,
-        submitted_at: new Date().toISOString(),
-        status: 'submitted',
+        date: reportData.date,
+        notes: reportData.notes,
+        priority: reportData.priority,
+        admin_id: reportData.assignedTo || null
       };
 
-      // Insert the report and get the result
-      const { data, error: insertError } = await supabase
+      // Insert the report
+      const { error: insertError } = await supabase
         .from('shift_reports')
-        .insert([reportPayload]);
+        .insert([insertData]);
 
       if (insertError) {
         console.error("Error submitting shift report:", insertError);
         throw new Error(`Failed to submit shift report: ${insertError.message}`);
       }
 
-      // Separate query to get the inserted report
-      const { data: reportData, error: fetchError } = await supabase
+      // Fetch the inserted report separately to get its ID
+      const { data: fetchedReports, error: fetchError } = await supabase
         .from('shift_reports')
         .select('*')
         .order('created_at', { ascending: false })
@@ -108,15 +115,14 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to retrieve report: ${fetchError.message}`);
       }
 
-      const shiftReport = reportData?.[0] as DBShiftReport;
+      const shiftReport = fetchedReports?.[0] as DBShiftReport;
       if (!shiftReport) {
         throw new Error("Failed to retrieve the created shift report");
       }
 
-      // Use our separate function to fetch admins
+      // Fetch admins and notify them
       const admins = await fetchAdmins();
       
-      // Notify admins without complex type handling
       if (admins && admins.length > 0) {
         for (let i = 0; i < admins.length; i++) {
           const admin = admins[i];
