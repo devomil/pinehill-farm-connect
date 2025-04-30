@@ -71,8 +71,10 @@ export const useShiftSubmission = () => {
       if (!admins || admins.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Send notifications to admins
-        await sendNotifications(admins as User[], shiftReport.id, reportData.priority);
+        // Send notifications to admins - simplified to avoid deep type issues
+        await Promise.all(
+          admins.map((admin) => sendNotification(admin, shiftReport.id, reportData.priority))
+        );
       }
 
       toast.success('Shift report submitted successfully!');
@@ -87,40 +89,34 @@ export const useShiftSubmission = () => {
     }
   };
 
-  const sendNotifications = async (admins: User[], shiftReportId: string, priority: string) => {
+  // Simplified notification function to avoid deep type nesting
+  const sendNotification = async (admin: any, shiftReportId: string, priority: string) => {
     try {
-      // Prepare notification content
-      const notificationTitle = `New Shift Report Submitted - Priority: ${priority}`;
-      const notificationMessage = `A new shift report has been submitted by ${currentUser?.name || 'Employee'}`;
-
-      // Create notifications for each admin
-      for (const admin of admins) {
-        // Make sure user has required fields by providing defaults if needed
-        const adminUser = {
-          id: admin.id,
-          name: admin.name || 'Admin',
-          email: admin.email || ''
-        };
-
-        // Send admin notification
-        const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
-          body: { 
-            admin: adminUser, 
-            reportId: shiftReportId, 
-            priority, 
-            reportUserName: currentUser?.name || 'Employee'
-          }
-        });
-
-        if (notifyError) {
-          console.error('Error sending notification:', notifyError);
+      if (!currentUser) return false;
+      
+      const adminUser = {
+        id: admin.id,
+        name: admin.name || 'Admin',
+        email: admin.email || ''
+      };
+      
+      const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
+        body: { 
+          admin: adminUser, 
+          reportId: shiftReportId, 
+          priority, 
+          reportUserName: currentUser.name || 'Employee'
         }
-      }
+      });
 
+      if (notifyError) {
+        console.error('Error sending notification:', notifyError);
+        return false;
+      }
+      
       return true;
     } catch (error) {
-      console.error('Error sending notifications:', error);
-      toast.error('Failed to send notifications.');
+      console.error('Error sending notification:', error);
       return false;
     }
   };
