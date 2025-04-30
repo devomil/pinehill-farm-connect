@@ -8,12 +8,16 @@ import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "./schemas/employeeFormSchema";
 
 interface EmployeeBasicInfoProps {
-  employeeData: User;
+  employeeData: User | null;
   handleBasicInfoChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   form: UseFormReturn<EmployeeFormValues>;
 }
 
 export function EmployeeBasicInfo({ employeeData, handleBasicInfoChange, form }: EmployeeBasicInfoProps) {
+  if (!employeeData) {
+    return <div>Loading employee data...</div>;
+  }
+
   return (
     <div className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
