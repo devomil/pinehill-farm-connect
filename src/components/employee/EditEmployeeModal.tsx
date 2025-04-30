@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema, EmployeeFormValues } from "./schemas/employeeFormSchema";
 import { Form } from "@/components/ui/form";
 import { useEmployeeDetail } from "./hooks/useEmployeeDetail";
+import { toast } from "sonner";
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
@@ -89,33 +90,40 @@ export function EditEmployeeModal({
   const handleSubmit = async (data: EmployeeFormValues) => {
     if (!employee) return;
     
-    // Update local state
-    if (employeeData) {
-      employeeData.name = data.name;
-      employeeData.department = data.department;
-      employeeData.position = data.position;
-      employeeData.employeeId = data.employeeId;
-    }
-    
-    if (employeeHR) {
-      employeeHR.startDate = data.startDate;
-      employeeHR.endDate = data.endDate;
-      employeeHR.salary = data.salary;
-      employeeHR.employmentType = data.employmentType;
-      employeeHR.address = data.address;
-      employeeHR.phone = data.phone;
-      employeeHR.emergencyContact = data.emergencyContact;
-      employeeHR.notes = data.notes;
+    try {
+      console.log("Submitting form data:", data);
       
-      setEmployeeHR({...employeeHR});
-    }
-    
-    // Save all data at once
-    const success = await saveEmployeeData();
-    
-    if (success) {
-      onEmployeeUpdate();
-      handleClose();
+      // Update local state
+      if (employeeData) {
+        employeeData.name = data.name;
+        employeeData.department = data.department;
+        employeeData.position = data.position;
+        employeeData.employeeId = data.employeeId;
+      }
+      
+      if (employeeHR) {
+        employeeHR.startDate = data.startDate;
+        employeeHR.endDate = data.endDate;
+        employeeHR.salary = data.salary;
+        employeeHR.employmentType = data.employmentType;
+        employeeHR.address = data.address;
+        employeeHR.phone = data.phone;
+        employeeHR.emergencyContact = data.emergencyContact;
+        employeeHR.notes = data.notes;
+        
+        setEmployeeHR({...employeeHR});
+      }
+      
+      // Save all data at once
+      const success = await saveEmployeeData();
+      
+      if (success) {
+        onEmployeeUpdate();
+        handleClose();
+      }
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      toast.error("Failed to save employee data");
     }
   };
 

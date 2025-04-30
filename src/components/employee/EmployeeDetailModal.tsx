@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema, EmployeeFormValues } from "./schemas/employeeFormSchema";
 import { toast } from "sonner";
 import { EmploymentType } from "./hooks/useEmployeeHRData";
+import { Loader2 } from "lucide-react";
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export function EmployeeDetailModal({
       name: employeeData?.name || '',
       department: employeeData?.department || '',
       position: employeeData?.position || '',
-      employeeId: employeeData?.employeeId || '', // Added employeeId
+      employeeId: employeeData?.employeeId || '',
       startDate: employeeHR?.startDate,
       endDate: employeeHR?.endDate,
       salary: employeeHR?.salary,
@@ -160,7 +161,12 @@ export function EmployeeDetailModal({
             <DialogFooter className="mt-4">
               <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : 'Save Changes'}
               </Button>
             </DialogFooter>
           </form>

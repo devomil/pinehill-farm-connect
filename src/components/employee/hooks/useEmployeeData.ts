@@ -41,6 +41,7 @@ export function useEmployeeData(employee: User | null) {
           department: employeeData.department || '',
           position: employeeData.position || '',
           employeeId: employeeData.employeeId || '',
+          updated_at: new Date().toISOString()
         })
         .eq('id', employeeData.id);
         
