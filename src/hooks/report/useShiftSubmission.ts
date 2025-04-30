@@ -46,13 +46,6 @@ interface AdminBasicInfo {
   email?: string | null;
 }
 
-// Type for the admin data from database
-type AdminData = {
-  id: string;
-  name: string | null;
-  email: string | null;
-};
-
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
@@ -83,11 +76,12 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use explicit casting to break circular type inference
-      const { data: adminsData, error: adminsError } = await supabase
+      // Instead of casting, use a simplified approach that avoids deep type inference
+      // Just specify the column names explicitly and use a basic type
+      const { data: admins, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .eq('role', 'admin') as { data: AdminData[] | null; error: any };
+        .eq('role', 'admin');
 
       if (adminsError) {
         console.error("Error fetching admins:", adminsError);
@@ -97,9 +91,9 @@ export const useShiftSubmission = () => {
       // Process admins with primitive types and simple objects
       const adminsList: AdminBasicInfo[] = [];
       
-      if (adminsData && Array.isArray(adminsData)) {
+      if (admins && Array.isArray(admins)) {
         // Use for...of loop to avoid complex type inference
-        for (const admin of adminsData) {
+        for (const admin of admins) {
           adminsList.push({
             id: admin.id || '',
             name: admin.name || 'Admin',
