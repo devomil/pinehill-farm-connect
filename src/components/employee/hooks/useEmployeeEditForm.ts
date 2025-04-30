@@ -46,7 +46,7 @@ export function useEmployeeEditForm(
       emergencyContact: "",
       notes: "",
     },
-    mode: "onSubmit" // Changed from onBlur to onSubmit for better performance
+    mode: "onSubmit" 
   });
 
   // Memoize resetFormWithEmployeeData to prevent unnecessary re-renders
@@ -132,7 +132,6 @@ export function useEmployeeEditForm(
         setTimeout(() => {
           console.log("Employee update successful, calling onEmployeeUpdate");
           onEmployeeUpdate();
-          handleClose();
         }, 300);
       } else {
         console.error("Save operation returned false");
@@ -153,6 +152,15 @@ export function useEmployeeEditForm(
       onClose();
     }, 100);
   }, [form, onClose]);
+
+  // Reset form when employee changes or modal opens/closes
+  useEffect(() => {
+    if (employee) {
+      // Small delay to ensure the modal is fully rendered before resetting the form
+      const timeoutId = setTimeout(resetFormWithEmployeeData, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [employee, resetFormWithEmployeeData]);
 
   return {
     form,

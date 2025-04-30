@@ -43,7 +43,7 @@ export function EditEmployeeForm({
   onSubmit,
   onClose
 }: EditEmployeeFormProps) {
-  // Make sure form submission is properly handled
+  // Explicitly handle form submission
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submission initiated");
