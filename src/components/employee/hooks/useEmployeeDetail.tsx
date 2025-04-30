@@ -39,6 +39,7 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
     
     try {
       console.log("Saving employee data for:", employeeData.name);
+      console.log("Employee data before save:", employeeData);
       
       // First, save the basic profile information
       const basicInfoSuccess = await saveEmployeeBasicInfo();
@@ -49,14 +50,15 @@ export function useEmployeeDetail(employee: User | null, onEmployeeUpdate: () =>
       
       console.log("Basic info saved successfully");
       
-      // Continue with updating HR data
-      const hrSuccess = await saveEmployeeHRData(employeeData.id);
-      if (!hrSuccess) {
-        console.error("Failed to save HR data");
-        throw new Error("Failed to save HR data");
+      // Continue with updating HR data if we have employee HR data
+      if (employeeHR) {
+        const hrSuccess = await saveEmployeeHRData(employeeData.id);
+        if (!hrSuccess) {
+          console.error("Failed to save HR data");
+          throw new Error("Failed to save HR data");
+        }
+        console.log("HR data saved successfully");
       }
-      
-      console.log("HR data saved successfully");
 
       // Update user roles
       const rolesSuccess = await saveEmployeeRoles(employeeData.id);

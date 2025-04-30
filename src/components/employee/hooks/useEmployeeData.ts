@@ -27,6 +27,7 @@ export function useEmployeeData(employee: User | null) {
     
     try {
       console.log("Updating profile with data:", {
+        id: employeeData.id,
         name: employeeData.name,
         department: employeeData.department,
         position: employeeData.position,
@@ -51,6 +52,7 @@ export function useEmployeeData(employee: User | null) {
       }
       
       console.log("Profile updated successfully");
+      toast.success("Basic info saved successfully");
       return true;
     } catch (error) {
       console.error('Error saving employee data:', error);
