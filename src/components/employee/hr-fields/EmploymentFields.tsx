@@ -8,6 +8,8 @@ import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "../schemas/employeeFormSchema";
 import { EmployeeHR } from "@/types";
 
+type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
+
 interface EmploymentFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
   handleHRDataChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
@@ -48,7 +50,7 @@ export function EmploymentFields({ form, handleHRDataChange, setEmployeeHR }: Em
             <FormControl>
               <Select 
                 value={field.value || ''} 
-                onValueChange={(value) => {
+                onValueChange={(value: EmploymentType) => {
                   field.onChange(value);
                   setEmployeeHR(prev => prev ? { ...prev, employmentType: value } : null);
                 }}
@@ -62,6 +64,7 @@ export function EmploymentFields({ form, handleHRDataChange, setEmployeeHR }: Em
                   <SelectItem value="contract">Contract</SelectItem>
                   <SelectItem value="seasonal">Seasonal</SelectItem>
                   <SelectItem value="intern">Intern</SelectItem>
+                  <SelectItem value="">None</SelectItem>
                 </SelectContent>
               </Select>
             </FormControl>

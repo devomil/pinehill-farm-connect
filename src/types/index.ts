@@ -1,18 +1,12 @@
-
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: "employee" | "admin" | "hr" | "manager";
-  profileImage?: string;
+  name?: string;
+  role?: string;
   department?: string;
   position?: string;
-}
-
-export interface UserRole {
-  id: string;
-  userId: string;
-  role: "employee" | "admin" | "hr" | "manager";
+  avatar_url?: string;
+  created_at?: string;
 }
 
 export interface EmployeeHR {
@@ -21,71 +15,65 @@ export interface EmployeeHR {
   startDate?: Date;
   endDate?: Date;
   salary?: number;
-  employmentType?: string;
+  employmentType?: "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
   address?: string;
   phone?: string;
   emergencyContact?: string;
   notes?: string;
 }
 
-export interface TimeOffRequest {
+export interface UserRole {
   id: string;
   userId: string;
-  startDate: Date;
-  endDate: Date;
-  reason: string;
-  status: "pending" | "approved" | "rejected";
-  notes?: string;
+  role: "admin" | "employee" | "hr" | "manager";
 }
 
-export interface Training {
+export interface Project {
   id: string;
+  name: string;
+  description?: string;
+  status: "planning" | "active" | "completed" | "on-hold";
+  startDate?: Date;
+  endDate?: Date;
+  budget?: number;
+  manager?: string;
+  client?: string;
+  priority?: "low" | "medium" | "high";
+}
+
+export interface Task {
+  id: string;
+  projectId: string;
   title: string;
+  description?: string;
+  status: "todo" | "in-progress" | "review" | "done";
+  assignee?: string;
+  dueDate?: Date;
+  priority?: "low" | "medium" | "high";
+  estimatedHours?: number;
+  actualHours?: number;
+}
+
+export interface TimeEntry {
+  id: string;
+  userId: string;
+  taskId?: string;
+  projectId?: string;
   description: string;
-  category: string;
-  requiredFor: string[];
-  duration: number;
-  expiresAfter?: number;
-  attachments?: string[];
-  hasQuiz?: boolean;
-  externalTestUrl?: string;
-}
-
-export interface TrainingProgress {
-  userId: string;
-  trainingId: string;
-  completed: boolean;
-  completedDate?: Date;
-  score?: number;
-  expirationDate?: Date;
-  certificateUrl?: string;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  author: string;
-  priority: "urgent" | "important" | "fyi";
-  readBy: string[];
-  hasQuiz?: boolean;
-  requires_acknowledgment?: boolean;
-  attachments?: { name: string; type: string; url?: string }[];
-  target_type?: "all" | "specific"; // Added missing property
-  acknowledgements?: string[];  // Array of user IDs who have acknowledged this announcement
-  currentUserId?: string;       // Current user ID for checking if user has acknowledged
-}
-
-export interface ShiftReport {
-  id: string;
-  userId: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
   date: Date;
-  category: "maintenance" | "inventory" | "customer" | "other";
+  billable: boolean;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
   title: string;
-  description: string;
-  images?: string[];
-  documents?: string[];
-  assignedTo?: string[];
-  status: "new" | "in-progress" | "resolved";
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  read: boolean;
+  createdAt: Date;
+  link?: string;
 }

@@ -48,7 +48,7 @@ export function EmployeeDetailModal({
       startDate: employeeHR?.startDate,
       endDate: employeeHR?.endDate,
       salary: employeeHR?.salary,
-      employmentType: employeeHR?.employmentType || '',
+      employmentType: (employeeHR?.employmentType as "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern") || '',
       address: employeeHR?.address || '',
       phone: employeeHR?.phone || '',
       emergencyContact: employeeHR?.emergencyContact || '',
@@ -67,7 +67,7 @@ export function EmployeeDetailModal({
       form.setValue('startDate', employeeHR.startDate);
       form.setValue('endDate', employeeHR.endDate);
       form.setValue('salary', employeeHR.salary);
-      form.setValue('employmentType', employeeHR.employmentType || '');
+      form.setValue('employmentType', (employeeHR.employmentType as "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern") || '');
       form.setValue('address', employeeHR.address || '');
       form.setValue('phone', employeeHR.phone || '');
       form.setValue('emergencyContact', employeeHR.emergencyContact || '');

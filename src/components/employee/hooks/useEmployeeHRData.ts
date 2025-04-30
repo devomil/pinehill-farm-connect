@@ -4,6 +4,8 @@ import { EmployeeHR, User } from "@/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+type EmploymentType = "" | "full-time" | "part-time" | "contract" | "seasonal" | "intern";
+
 export function useEmployeeHRData(employee: User | null) {
   const [employeeHR, setEmployeeHR] = useState<EmployeeHR | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -31,7 +33,7 @@ export function useEmployeeHRData(employee: User | null) {
           startDate: data.start_date ? new Date(data.start_date) : undefined,
           endDate: data.end_date ? new Date(data.end_date) : undefined,
           salary: data.salary,
-          employmentType: data.employment_type,
+          employmentType: data.employment_type as EmploymentType,
           address: data.address,
           phone: data.phone,
           emergencyContact: data.emergency_contact,
