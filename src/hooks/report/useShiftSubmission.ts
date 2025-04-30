@@ -26,11 +26,11 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Define a simpler admin type to avoid deep type instantiation
-interface AdminUserBasic {
+// Define a simple standalone interface for admin data to break circular references
+interface AdminBasicInfo {
   id: string;
-  name?: string;
-  email?: string;
+  name?: string | null;
+  email?: string | null;
 }
 
 export const useShiftSubmission = () => {
@@ -63,8 +63,8 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Use explicit typing for admins to prevent type recursion
-      const { data: admins, error: adminsError } = await supabase
+      // Use explicit type casting to break circular dependencies
+      const { data, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('role', 'admin');
@@ -74,15 +74,21 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Ensure admins is treated as a simple array of AdminUserBasic
-      const typedAdmins: AdminUserBasic[] = admins || [];
+      // Cast to simple array of AdminBasicInfo to avoid deep nesting
+      const admins = (data || []) as AdminBasicInfo[];
       
-      if (typedAdmins.length === 0) {
+      if (admins.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        // Process notifications sequentially with explicit type handling
-        for (const admin of typedAdmins) {
-          await notifyAdmin(admin, shiftReport.id, reportData.priority);
+        // Process notifications one at a time to avoid complex type nesting
+        for (const admin of admins) {
+          await notifyAdmin(
+            admin.id,
+            admin.name || 'Admin',
+            admin.email || '',
+            shiftReport.id,
+            reportData.priority
+          );
         }
       }
 
@@ -98,21 +104,23 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Simplified notification function with explicit parameter typing
+  // Use primitive types instead of complex objects to avoid type recursion
   const notifyAdmin = async (
-    admin: AdminUserBasic,
+    adminId: string,
+    adminName: string,
+    adminEmail: string,
     shiftReportId: string,
     priority: string
   ): Promise<boolean> => {
     try {
-      if (!currentUser || !admin.id) return false;
+      if (!currentUser || !adminId) return false;
       
       const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
         body: { 
           admin: {
-            id: admin.id,
-            name: admin.name || 'Admin',
-            email: admin.email || ''
+            id: adminId,
+            name: adminName,
+            email: adminEmail
           },
           reportId: shiftReportId, 
           priority, 
@@ -132,13 +140,13 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Use properly typed mutation
+  // Use mutation with explicitly typed parameters
   const mutation = useMutation({
     mutationFn: submitShiftReport,
     onSuccess: () => {
       // Handle success if needed
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Mutation error:", error);
     }
   });
