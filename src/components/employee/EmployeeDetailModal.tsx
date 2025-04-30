@@ -13,7 +13,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { employeeFormSchema, EmployeeFormValues } from "./schemas/employeeFormSchema";
 import { toast } from "sonner";
 import { EmploymentType } from "./hooks/useEmployeeHRData";
-import { useEmployeeRoles } from "./hooks/useEmployeeRoles";
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -31,21 +30,14 @@ export function EmployeeDetailModal({
   const {
     employeeData,
     employeeHR,
-    isLoading: isEmployeeLoading,
+    isLoading,
+    selectedRoles,
     handleBasicInfoChange,
     handleHRDataChange,
+    handleRoleChange,
     saveEmployeeData,
     setEmployeeHR
   } = useEmployeeDetail(employee, onEmployeeUpdate, onClose);
-
-  const {
-    selectedRoles,
-    handleRoleChange,
-    saveEmployeeRoles,
-    isLoading: isRolesLoading
-  } = useEmployeeRoles(employee);
-
-  const isLoading = isEmployeeLoading || isRolesLoading;
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -157,6 +149,7 @@ export function EmployeeDetailModal({
                 <EmployeeRoles 
                   selectedRoles={selectedRoles}
                   handleRoleChange={handleRoleChange}
+                  employee={employee}
                 />
               </TabsContent>
             </Tabs>
@@ -170,5 +163,5 @@ export function EmployeeDetailModal({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
