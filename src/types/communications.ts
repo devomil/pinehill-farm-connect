@@ -33,6 +33,7 @@ export interface NewMessageDialogProps {
     };
   }) => void;
   onClose?: () => void;
+  onRefresh?: () => void; // Add refresh function
 }
 
 export interface MessageNotification {

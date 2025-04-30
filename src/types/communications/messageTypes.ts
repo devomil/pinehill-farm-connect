@@ -6,7 +6,7 @@ export interface MessageData {
   sender_id: string;
   recipient_id: string;
   message: string;
-  type: string;
+  type: 'general' | 'shift_coverage' | 'urgent';
   created_at: string;
   status: string;
   read_at: string | null;

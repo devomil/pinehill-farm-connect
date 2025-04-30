@@ -10,7 +10,7 @@ export interface NewMessageDialogProps {
   onRefresh?: () => void; // Add refresh function
 }
 
-export type MessageType = 'general' | 'shift_coverage';
+export type MessageType = 'general' | 'shift_coverage' | 'urgent';
 
 export interface NewMessageFormData {
   recipientId: string;

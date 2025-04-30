@@ -4,11 +4,12 @@ export interface Communication {
   sender_id: string;
   recipient_id: string;
   message: string;
-  type: 'general' | 'shift_coverage';
+  type: 'general' | 'shift_coverage' | 'urgent';
   created_at: string;
   status: 'pending' | 'accepted' | 'declined';
   read_at: string | null;
   admin_cc: string | null;
+  shift_coverage_requests?: ShiftCoverageRequest[];
 }
 
 export interface ShiftCoverageRequest {
@@ -25,7 +26,7 @@ export interface ShiftCoverageRequest {
 export interface SendMessageParams {
   recipientId: string;
   message: string;
-  type: 'general' | 'shift_coverage';
+  type: 'general' | 'shift_coverage' | 'urgent';
   shiftDetails?: Omit<ShiftCoverageRequest, 'id' | 'communication_id' | 'status'>;
 }
 

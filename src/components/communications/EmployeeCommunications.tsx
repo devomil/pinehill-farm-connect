@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -10,6 +11,7 @@ import { MessageConversation } from "./MessageConversation";
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
 import { EmployeeAlert } from "./EmployeeAlert";
+import { Communication } from "@/types/communications/communicationTypes";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -79,7 +81,7 @@ export function EmployeeCommunications({
   // Type assertion to ensure compatibility with Communication type
   const typedMessages = messages ? messages.map(msg => ({
     ...msg,
-    type: msg.type as 'general' | 'shift_coverage'
+    type: msg.type as 'general' | 'shift_coverage' | 'urgent'
   })) : [];
 
   const handleSendMessage = useCallback((message: string) => {
