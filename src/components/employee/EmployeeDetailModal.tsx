@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function EmployeeDetailModal({
       name: employeeData?.name || '',
       department: employeeData?.department || '',
       position: employeeData?.position || '',
+      employeeId: employeeData?.employeeId || '', // Added employeeId
       startDate: employeeHR?.startDate,
       endDate: employeeHR?.endDate,
       salary: employeeHR?.salary,
@@ -62,6 +64,7 @@ export function EmployeeDetailModal({
       form.setValue('name', employeeData.name || '');
       form.setValue('department', employeeData.department || '');
       form.setValue('position', employeeData.position || '');
+      form.setValue('employeeId', employeeData.employeeId || '');
     }
     if (employeeHR) {
       form.setValue('startDate', employeeHR.startDate);
@@ -86,6 +89,7 @@ export function EmployeeDetailModal({
         employeeData.name = data.name;
         employeeData.department = data.department;
         employeeData.position = data.position;
+        employeeData.employeeId = data.employeeId;
       }
       
       // Update the employee HR data state with form values

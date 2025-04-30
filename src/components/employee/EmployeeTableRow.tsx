@@ -29,6 +29,9 @@ export function EmployeeTableRow({
         <div className="flex flex-col">
           <span>{employee.name}</span>
           <span className="text-xs text-muted-foreground">{employee.email}</span>
+          {employee.employeeId && (
+            <span className="text-xs font-semibold"># {employee.employeeId}</span>
+          )}
         </div>
       </td>
       <td className="px-6 py-4">{employee.department || "-"}</td>

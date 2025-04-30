@@ -29,7 +29,8 @@ export function useEmployeeData(employee: User | null) {
       console.log("Updating profile with data:", {
         name: employeeData.name,
         department: employeeData.department,
-        position: employeeData.position
+        position: employeeData.position,
+        employeeId: employeeData.employeeId,
       });
       
       // Update the basic profile information
@@ -38,7 +39,8 @@ export function useEmployeeData(employee: User | null) {
         .update({
           name: employeeData.name || '',
           department: employeeData.department || '',
-          position: employeeData.position || ''
+          position: employeeData.position || '',
+          employeeId: employeeData.employeeId || '',
         })
         .eq('id', employeeData.id);
         

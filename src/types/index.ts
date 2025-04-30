@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -8,6 +7,7 @@ export interface User {
   position?: string;
   avatar_url?: string;
   created_at?: string;
+  employeeId?: string; // Added employeeId field
 }
 
 export interface EmployeeHR {

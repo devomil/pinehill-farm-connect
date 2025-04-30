@@ -10,7 +10,7 @@ export function useEmployeeEdit() {
 
   const updateEmployeeDetails = async (
     employeeId: string, 
-    updates: { name?: string; department?: string; position?: string }
+    updates: { name?: string; department?: string; position?: string; employeeId?: string }
   ): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
@@ -25,6 +25,7 @@ export function useEmployeeEdit() {
           name: updates.name,
           department: updates.department,
           position: updates.position,
+          employeeId: updates.employeeId,
           updated_at: new Date().toISOString()
         })
         .eq('id', employeeId);

@@ -47,6 +47,28 @@ export function EmployeeBasicInfo({ employeeData, handleBasicInfoChange, form }:
             disabled
           />
         </div>
+        
+        <FormField
+          control={form.control}
+          name="employeeId"
+          render={({ field }) => (
+            <FormItem>
+              <Label htmlFor="employeeId">Employee ID</Label>
+              <FormControl>
+                <Input 
+                  id="employeeId" 
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    handleBasicInfoChange(e);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="department"

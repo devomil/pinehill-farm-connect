@@ -51,6 +51,7 @@ export function EditEmployeeModal({
       name: "",
       department: "",
       position: "",
+      employeeId: "",
       startDate: undefined,
       endDate: undefined,
       salary: undefined,
@@ -69,6 +70,7 @@ export function EditEmployeeModal({
         name: employee.name || '',
         department: employee.department || '',
         position: employee.position || '',
+        employeeId: employee.employeeId || '',
         startDate: employeeHR?.startDate,
         endDate: employeeHR?.endDate,
         salary: employeeHR?.salary,
@@ -92,6 +94,7 @@ export function EditEmployeeModal({
       employeeData.name = data.name;
       employeeData.department = data.department;
       employeeData.position = data.position;
+      employeeData.employeeId = data.employeeId;
     }
     
     if (employeeHR) {
