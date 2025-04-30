@@ -1,62 +1,59 @@
 
 import React from "react";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, KeyRound } from "lucide-react";
-import { User as UserType } from "@/types";
+import { User } from "@/types";
+import { Edit, Trash2, UserRound } from "lucide-react";
 
 interface EmployeeTableRowProps {
-  employee: UserType;
-  onEdit: (employee: UserType) => void;
+  employee: User;
+  onEdit: (employee: User) => void;
   onDelete: (id: string) => void;
-  onResetPassword?: (employee: UserType) => void; // New prop
-  isAdmin?: boolean; // Passes true if currentUser is admin
+  onResetPassword?: (employee: User) => void;
+  isAdmin?: boolean;
 }
 
-export function EmployeeTableRow({ employee, onEdit, onDelete, onResetPassword, isAdmin }: EmployeeTableRowProps) {
+export function EmployeeTableRow({ 
+  employee, 
+  onEdit, 
+  onDelete, 
+  onResetPassword, 
+  isAdmin 
+}: EmployeeTableRowProps) {
   return (
-    <tr>
-      <td className="font-medium">{employee.name}</td>
-      <td>{employee.email}</td>
-      <td>{employee.department}</td>
-      <td>{employee.position}</td>
-      <td>
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          employee.role === "admin" ? "bg-purple-100 text-purple-800" : 
-          employee.role === "hr" ? "bg-green-100 text-green-800" :
-          employee.role === "manager" ? "bg-amber-100 text-amber-800" :
-          "bg-blue-100 text-blue-800"
-        }`}>
-          {employee.role}
-        </span>
-      </td>
-      <td>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => onEdit(employee)}
-          >
+    <TableRow key={employee.id}>
+      <TableCell className="font-medium">{employee.name || 'Not Set'}</TableCell>
+      <TableCell>{employee.email}</TableCell>
+      <TableCell>{employee.department || 'Not Set'}</TableCell>
+      <TableCell>{employee.position || 'Not Set'}</TableCell>
+      <TableCell>{employee.role || 'employee'}</TableCell>
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>
             <Edit className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => onDelete(employee.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          {isAdmin && onResetPassword && (
-            <Button 
-              variant="ghost"
-              size="icon"
-              title="Reset Password"
-              onClick={() => onResetPassword(employee)}
-            >
-              <KeyRound className="h-4 w-4" />
-            </Button>
+          
+          {isAdmin && (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => onResetPassword && onResetPassword(employee)}>
+                <UserRound className="h-4 w-4" />
+                <span className="sr-only">Reset Password</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onDelete(employee.id)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </>
           )}
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

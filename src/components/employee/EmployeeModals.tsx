@@ -4,6 +4,7 @@ import { EmployeeDetailModal } from "./EmployeeDetailModal";
 import { EmployeeResetPasswordDialog } from "./EmployeeResetPasswordDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AddEmployeeForm } from "./AddEmployeeForm";
+import { EditEmployeeModal } from "./EditEmployeeModal";
 
 interface EmployeeModalsProps {
   selectedEmployee: UserType | null;
@@ -15,6 +16,8 @@ interface EmployeeModalsProps {
   isAddModalOpen: boolean;
   setIsAddModalOpen: (open: boolean) => void;
   handleEmployeeCreated: () => void;
+  isEditModalOpen?: boolean;
+  closeEditModal?: () => void;
 }
 
 export function EmployeeModals({
@@ -27,12 +30,21 @@ export function EmployeeModals({
   isAddModalOpen,
   setIsAddModalOpen,
   handleEmployeeCreated,
+  isEditModalOpen = false,
+  closeEditModal = () => {},
 }: EmployeeModalsProps) {
   return (
     <>
       <EmployeeDetailModal
         isOpen={isDetailModalOpen}
         onClose={closeDetailModal}
+        employee={selectedEmployee}
+        onEmployeeUpdate={handleEmployeeUpdate}
+      />
+
+      <EditEmployeeModal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
         employee={selectedEmployee}
         onEmployeeUpdate={handleEmployeeUpdate}
       />

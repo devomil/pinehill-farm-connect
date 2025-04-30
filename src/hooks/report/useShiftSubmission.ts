@@ -35,6 +35,7 @@ interface ShiftReport {
   submitted_at: string;
   status: string;
   notes: string;
+  assignedTo?: string; // Add the assignedTo property that was missing
 }
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;

@@ -33,6 +33,8 @@ export default function Employees() {
 
   const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<UserType | null>(null);
 
   useEffect(() => {
     if (error) {
@@ -56,12 +58,22 @@ export default function Employees() {
     }, 500);
   };
 
-  const handleEditEmployee = (employee: UserType) => openModal(employee);
+  const handleEditEmployee = (employee: UserType) => {
+    setEditingEmployee(employee);
+    setIsEditModalOpen(true);
+  };
+  
+  const handleViewEmployee = (employee: UserType) => {
+    openModal(employee);
+  };
   
   const handleDeleteEmployee = (id: string) =>
     import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`));
   
-  const handleEmployeeUpdate = () => refetch();
+  const handleEmployeeUpdate = () => {
+    refetch();
+    setIsEditModalOpen(false);
+  };
   
   const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
 
@@ -88,7 +100,7 @@ export default function Employees() {
         {isAdmin && <EmployeeAssignments />}
       </div>
       <EmployeeModals 
-        selectedEmployee={selectedEmployee}
+        selectedEmployee={editingEmployee || selectedEmployee}
         isDetailModalOpen={isDetailModalOpen}
         closeDetailModal={closeModal}
         handleEmployeeUpdate={handleEmployeeUpdate}
@@ -97,6 +109,8 @@ export default function Employees() {
         isAddModalOpen={isAddModalOpen}
         setIsAddModalOpen={setIsAddModalOpen}
         handleEmployeeCreated={handleEmployeeCreated}
+        isEditModalOpen={isEditModalOpen}
+        closeEditModal={() => setIsEditModalOpen(false)}
       />
     </DashboardLayout>
   );
