@@ -119,6 +119,8 @@ export function EmployeeDetailModal({
       let rolesSaved = false;
       if (employee && employee.id) {
         rolesSaved = await saveEmployeeRoles(employee.id);
+      } else {
+        rolesSaved = true; // If no employee ID, consider it successful
       }
       
       if (basicInfoSaved && rolesSaved) {

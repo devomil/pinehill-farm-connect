@@ -70,6 +70,7 @@ export function useAuthSession() {
             console.error("Error fetching user role:", roleError);
           }
           
+          // Default to employee if no specific role is found
           const role = userRoleData?.role || "employee";
           console.log("User role:", role);
           
