@@ -1,8 +1,17 @@
 
 import React from "react";
 import { User } from "@/types";
-import { EmployeeTableRow } from "./EmployeeTableRow";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pencil, Trash2, Key } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from "@/components/ui/table";
 
 interface EmployeeTableProps {
   employees: User[];
@@ -48,31 +57,71 @@ export function EmployeeTable({
   }
 
   return (
-    <div className="relative overflow-x-auto">
-      <table className="w-full text-sm text-left">
-        <thead className="text-xs uppercase bg-slate-100 dark:bg-slate-800">
-          <tr>
-            <th scope="col" className="px-6 py-3">Employee</th>
-            <th scope="col" className="px-6 py-3">Department</th>
-            <th scope="col" className="px-6 py-3">Position</th>
-            <th scope="col" className="px-6 py-3">Role</th>
-            <th scope="col" className="px-6 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="border rounded-md overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Position</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {employees.map((employee) => (
-            <EmployeeTableRow 
-              key={employee.id}
-              employee={employee}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onResetPassword={onResetPassword}
-              onView={onView}
-              isAdmin={isAdmin}
-            />
+            <TableRow key={employee.id}>
+              <TableCell className="font-medium">{employee.name}</TableCell>
+              <TableCell>{employee.email}</TableCell>
+              <TableCell>{employee.department || "-"}</TableCell>
+              <TableCell>{employee.position || "-"}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  employee.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {employee.role || "employee"}
+                </span>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(employee)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  
+                  {isAdmin && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(employee.id)}
+                        title="Delete"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onResetPassword(employee)}
+                        title="Reset Password"
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

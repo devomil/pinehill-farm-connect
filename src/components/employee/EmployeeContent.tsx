@@ -3,7 +3,7 @@ import React from "react";
 import { EmployeeSearchBar } from "./EmployeeSearchBar";
 import { EmployeeTable } from "./EmployeeTable";
 import { User } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
@@ -34,6 +34,9 @@ export function EmployeeContent({
 }: EmployeeContentProps) {
   return (
     <Card>
+      <CardHeader>
+        <CardTitle>Employees Directory</CardTitle>
+      </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-4">
           <EmployeeSearchBar 
