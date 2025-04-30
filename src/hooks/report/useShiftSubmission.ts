@@ -76,24 +76,23 @@ export const useShiftSubmission = () => {
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // No type inference - use any to prevent TypeScript from analyzing too deeply
-      // We'll handle the data manually to avoid complex type structures
-      const { data, error: adminsError } = await supabase
+      // Use explicit typing and avoid complex type inference
+      // Type the query response as any to avoid deep type analysis
+      const { data: adminsData, error: adminsError } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .eq('role', 'admin');
+        .eq('role', 'admin') as { data: any[], error: any };
 
       if (adminsError) {
         console.error("Error fetching admins:", adminsError);
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Use primitive arrays and simple objects - no complex nesting
-      const adminsList: {id: string; name: string; email: string}[] = [];
+      // Process admins with primitive types and simple objects
+      const adminsList: AdminBasicInfo[] = [];
       
-      if (data && Array.isArray(data)) {
-        for (let i = 0; i < data.length; i++) {
-          const admin = data[i];
+      if (adminsData) {
+        for (const admin of adminsData) {
           adminsList.push({
             id: admin.id || '',
             name: admin.name || 'Admin',
@@ -105,12 +104,11 @@ export const useShiftSubmission = () => {
       if (adminsList.length === 0) {
         console.warn("No admins found to notify.");
       } else {
-        for (let i = 0; i < adminsList.length; i++) {
-          const admin = adminsList[i];
+        for (const admin of adminsList) {
           await notifyAdmin(
             admin.id,
-            admin.name,
-            admin.email,
+            admin.name || 'Admin',
+            admin.email || '',
             shiftReport.id,
             reportData.priority
           );
