@@ -1,6 +1,6 @@
 
-import React, { useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useEffect, useCallback } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { User } from "@/types";
 import { useEmployeeEditForm } from "./hooks/useEmployeeEditForm";
 import { EditEmployeeForm } from "./EditEmployeeForm";
@@ -33,17 +33,21 @@ export function EditEmployeeModal({
     setEmployeeHR
   } = useEmployeeEditForm(employee, onEmployeeUpdate, onClose);
 
+  // Memoize the reset function to prevent unnecessary re-renders
+  const resetForm = useCallback(() => {
+    if (employee) {
+      resetFormWithEmployeeData();
+    }
+  }, [employee, resetFormWithEmployeeData]);
+
   // Reset form when employee changes or modal opens/closes
   useEffect(() => {
     if (isOpen && employee) {
       // Small delay to ensure the modal is fully rendered before resetting the form
-      const timeoutId = setTimeout(() => {
-        resetFormWithEmployeeData();
-      }, 100);
-      
+      const timeoutId = setTimeout(resetForm, 100);
       return () => clearTimeout(timeoutId);
     }
-  }, [employee, isOpen, resetFormWithEmployeeData]);
+  }, [employee, isOpen, resetForm]);
 
   // Safe guard to prevent rendering if employee is null
   if (!employee) return null;
@@ -65,6 +69,9 @@ export function EditEmployeeModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Employee: {employee.name}</DialogTitle>
+          <DialogDescription>
+            Make changes to employee information below
+          </DialogDescription>
         </DialogHeader>
         
         <EditEmployeeForm

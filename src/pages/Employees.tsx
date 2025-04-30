@@ -41,22 +41,23 @@ export default function Employees() {
     if (error) {
       toast.error(`Error loading employees: ${error}`);
     }
-    
-    // Log the employee count on each render to help with debugging
-    console.log(`Displaying ${employees.length} employees`);
-  }, [employees.length, error]);
+  }, [error]);
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = useCallback(() => {
     setIsAddModalOpen(true);
-  };
+  }, []);
 
   const handleEmployeeCreated = useCallback(() => {
     setIsAddModalOpen(false);
     console.log("Employee created - refreshing list...");
+    
+    setIsUpdating(true);
     // Run the refetch with a slight delay to ensure database updates are complete
     setTimeout(() => {
-      refetch();
-    }, 500);
+      refetch().finally(() => {
+        setIsUpdating(false);
+      });
+    }, 300);
   }, [refetch]);
 
   const handleEditEmployee = useCallback((employee: UserType) => {
@@ -69,8 +70,9 @@ export default function Employees() {
     openModal(employee);
   }, [openModal]);
   
-  const handleDeleteEmployee = useCallback((id: string) =>
-    import("sonner").then(({ toast }) => toast.info(`Delete employee with ID ${id} - Coming soon!`)), []);
+  const handleDeleteEmployee = useCallback((id: string) => {
+    toast.info(`Delete employee with ID ${id} - Coming soon!`);
+  }, []);
   
   const handleEmployeeUpdate = useCallback(() => {
     console.log("Employee updated - refreshing list");
@@ -79,23 +81,29 @@ export default function Employees() {
     // Use a timeout to avoid UI freezing during state updates
     setTimeout(() => {
       refetch().finally(() => {
+        // Delay closing the modal to ensure state is properly updated
         setTimeout(() => {
           setIsEditModalOpen(false);
           setEditingEmployee(null);
           setIsUpdating(false);
-        }, 50);
+          toast.success("Employee data updated successfully");
+        }, 200);
       });
     }, 300);
   }, [refetch]);
   
-  const handleResetPassword = useCallback((employee: UserType) => setResetEmployee(employee), []);
+  const handleResetPassword = useCallback((employee: UserType) => {
+    setResetEmployee(employee);
+  }, []);
 
   const closeEditModal = useCallback(() => {
-    setIsEditModalOpen(false);
     // Small delay before clearing the employee data to prevent UI jank
     setTimeout(() => {
-      setEditingEmployee(null);
-    }, 100);
+      setIsEditModalOpen(false);
+      setTimeout(() => {
+        setEditingEmployee(null);
+      }, 100);
+    }, 50);
   }, []);
 
   return (

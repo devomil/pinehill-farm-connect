@@ -29,6 +29,7 @@ export function useEmployeeEditForm(
 
   const isLoading = isSubmitting || isDetailLoading;
   
+  // Initialize the form with Zod schema
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
@@ -44,7 +45,8 @@ export function useEmployeeEditForm(
       phone: "",
       emergencyContact: "",
       notes: "",
-    }
+    },
+    mode: "onBlur" // Validate on blur for better UX
   });
 
   // Memoize resetFormWithEmployeeData to prevent unnecessary re-renders
@@ -52,6 +54,8 @@ export function useEmployeeEditForm(
     if (!employee) return;
     
     try {
+      console.log("Resetting form with employee data:", employee.name);
+      
       // Use requestAnimationFrame for better performance
       requestAnimationFrame(() => {
         if (employee) {
@@ -114,12 +118,14 @@ export function useEmployeeEditForm(
       const success = await saveEmployeeData();
       
       if (success) {
+        toast.success("Employee data saved successfully");
+        
         // Call onEmployeeUpdate and close the modal after a short delay
         // to allow state updates to complete
         setTimeout(() => {
           onEmployeeUpdate();
           handleClose();
-        }, 100);
+        }, 300);
       }
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -129,13 +135,13 @@ export function useEmployeeEditForm(
     }
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     // Delay form reset to prevent UI jank
     setTimeout(() => {
       form.reset();
       onClose();
-    }, 50);
-  };
+    }, 100);
+  }, [form, onClose]);
 
   return {
     form,

@@ -43,9 +43,14 @@ export function EditEmployeeForm({
   onSubmit,
   onClose
 }: EditEmployeeFormProps) {
+  const handleFormSubmit = form.handleSubmit((data) => {
+    console.log("Form submission data:", data);
+    onSubmit(data);
+  });
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleFormSubmit} className="space-y-4">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -83,11 +88,20 @@ export function EditEmployeeForm({
           <div className="text-destructive text-sm">{error}</div>
         )}
         
-        <DialogFooter className="mt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <DialogFooter className="mt-4 pt-2 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="min-w-[120px]"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
