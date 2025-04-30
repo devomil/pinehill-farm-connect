@@ -43,10 +43,15 @@ export function EditEmployeeForm({
   onSubmit,
   onClose
 }: EditEmployeeFormProps) {
-  const handleFormSubmit = form.handleSubmit((data) => {
-    console.log("Form submission data:", data);
-    onSubmit(data);
-  });
+  // Make sure form submission is properly handled
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submission initiated");
+    form.handleSubmit((data) => {
+      console.log("Form data validated:", data);
+      onSubmit(data);
+    })(e);
+  };
 
   return (
     <Form {...form}>
@@ -100,7 +105,7 @@ export function EditEmployeeForm({
           <Button 
             type="submit" 
             disabled={isLoading}
-            className="min-w-[120px]"
+            className="min-w-[120px] bg-primary hover:bg-primary/90"
           >
             {isLoading ? (
               <>

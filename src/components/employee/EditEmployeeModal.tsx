@@ -36,6 +36,7 @@ export function EditEmployeeModal({
   // Memoize the reset function to prevent unnecessary re-renders
   const resetForm = useCallback(() => {
     if (employee) {
+      console.log("Calling resetFormWithEmployeeData for:", employee.name);
       resetFormWithEmployeeData();
     }
   }, [employee, resetFormWithEmployeeData]);
@@ -52,17 +53,20 @@ export function EditEmployeeModal({
   // Safe guard to prevent rendering if employee is null
   if (!employee) return null;
 
+  const handleSubmitWrapper = (data: any) => {
+    console.log("Submit wrapper called with data:", data);
+    handleSubmit(data);
+  };
+
   return (
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
         if (!open) {
-          // Use requestIdleCallback to handle closing when browser is idle
-          if (window.requestIdleCallback) {
-            window.requestIdleCallback(() => handleClose());
-          } else {
-            setTimeout(handleClose, 10);
-          }
+          // Use requestAnimationFrame to handle closing for better performance
+          requestAnimationFrame(() => {
+            handleClose();
+          });
         }
       }}
     >
@@ -85,7 +89,7 @@ export function EditEmployeeModal({
           handleHRDataChange={handleHRDataChange}
           handleRoleChange={handleRoleChange}
           setEmployeeHR={setEmployeeHR}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitWrapper}
           onClose={handleClose}
         />
       </DialogContent>

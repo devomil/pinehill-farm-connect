@@ -46,7 +46,7 @@ export function useEmployeeEditForm(
       emergencyContact: "",
       notes: "",
     },
-    mode: "onBlur" // Validate on blur for better UX
+    mode: "onSubmit" // Changed from onBlur to onSubmit for better performance
   });
 
   // Memoize resetFormWithEmployeeData to prevent unnecessary re-renders
@@ -83,14 +83,21 @@ export function useEmployeeEditForm(
   const handleSubmit = async (data: EmployeeFormValues) => {
     if (!employee) return;
     
+    console.log("Submit function called with data:", data);
+    
+    // Prevent double submissions
+    if (isSubmitting) {
+      console.log("Submission already in progress, ignoring duplicate submit");
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
-      console.log("Submitting form data:", data);
+      console.log("Form submission started");
       
       // Create a deep copy of the employeeData and employeeHR objects before modifying
-      // to prevent any state mutation issues
-      const updatedEmployeeData = employeeData ? { ...employeeData } : null;
-      const updatedEmployeeHR = employeeHR ? { ...employeeHR } : null;
+      const updatedEmployeeData = employeeData ? JSON.parse(JSON.stringify(employeeData)) : null;
+      const updatedEmployeeHR = employeeHR ? JSON.parse(JSON.stringify(employeeHR)) : null;
       
       // Update the copied objects
       if (updatedEmployeeData) {
@@ -114,6 +121,7 @@ export function useEmployeeEditForm(
         setEmployeeHR(updatedEmployeeHR);
       }
       
+      console.log("Calling saveEmployeeData with updated values");
       // Save all data at once
       const success = await saveEmployeeData();
       
@@ -121,11 +129,14 @@ export function useEmployeeEditForm(
         toast.success("Employee data saved successfully");
         
         // Call onEmployeeUpdate and close the modal after a short delay
-        // to allow state updates to complete
         setTimeout(() => {
+          console.log("Employee update successful, calling onEmployeeUpdate");
           onEmployeeUpdate();
           handleClose();
         }, 300);
+      } else {
+        console.error("Save operation returned false");
+        toast.error("Failed to save employee data");
       }
     } catch (err) {
       console.error("Error submitting form:", err);
