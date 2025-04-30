@@ -7,10 +7,10 @@ import { toast } from "sonner";
 interface EmployeeResetPasswordDialogProps {
   employee: UserType | null;
   open: boolean;
-  setOpen: (open: boolean) => void;
+  onClose: (open: boolean) => void;
 }
 
-export function EmployeeResetPasswordDialog({ employee, open, setOpen }: EmployeeResetPasswordDialogProps) {
+export function EmployeeResetPasswordDialog({ employee, open, onClose }: EmployeeResetPasswordDialogProps) {
   const [resetLoading, setResetLoading] = React.useState(false);
 
   const confirmResetPassword = async () => {
@@ -34,12 +34,12 @@ export function EmployeeResetPasswordDialog({ employee, open, setOpen }: Employe
       toast.error("Failed to send reset email.");
     } finally {
       setResetLoading(false);
-      setOpen(false);
+      onClose(false);
     }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Reset Password?</AlertDialogTitle>
