@@ -1,108 +1,127 @@
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/types';
 
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
-import { toast } from "sonner";
-import { useShiftNotifications } from "./useShiftNotifications";
-import { notifyManager } from "@/utils/notifyManager";
-
-export type ShiftFormValues = {
+interface ShiftReport {
+  id: string;
+  created_at: string;
+  user_id: string;
   date: string;
+  shift_start: string;
+  shift_end: string;
+  total_hours: number;
+  tasks_completed: string;
+  challenges_faced: string;
+  lessons_learned: string;
+  shift_summary: string;
+  priority: string;
+  submitted_by: string;
+  submitted_at: string;
+  status: string;
   notes: string;
-  priority: "high" | "medium" | "low";
-  assignedTo?: string;
-};
+}
 
-export function useShiftSubmission(currentUser: User | null, employees: User[]) {
-  const { sendNotificationToAdmin } = useShiftNotifications();
+export const useShiftSubmission = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  const onSubmit = async (data: ShiftFormValues, resetForm: () => void) => {
+  const submitShiftReport = async (reportData: Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>) => {
+    setIsSubmitting(true);
     try {
-      // First, validate the report data
-      if (!data.notes || !data.date || !data.priority) {
-        throw new Error("Missing required fields in report");
+      if (!user) {
+        throw new Error("User not authenticated.");
       }
-      
-      // Create the shift report
-      const { data: reportData, error } = await supabase
+
+      const { data: shiftReport, error: shiftReportError } = await supabase
         .from('shift_reports')
-        .insert({
-          user_id: currentUser?.id,
-          date: data.date,
-          notes: data.notes,
-          priority: data.priority,
-          assigned_to: data.assignedTo || null
-        })
-        .select();
-
-      if (error) throw error;
-
-      // If the report is assigned to someone, send a notification
-      if (data.assignedTo) {
-        // Find the assigned employee with complete profile data
-        const selectedEmployee = employees.find(e => e.id === data.assignedTo);
-        
-        if (selectedEmployee && selectedEmployee.id !== currentUser?.id) {
-          console.log(`Sending notification for assigned report to: ${selectedEmployee.name} (${selectedEmployee.email})`);
-          
-          // Validate the assigned user's email
-          if (!selectedEmployee.email || !selectedEmployee.email.includes('@')) {
-            console.error(`Invalid email for assigned user: ${selectedEmployee.email}`);
-            toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name || 'user'}`);
-          } else if (selectedEmployee.email === currentUser?.email) {
-            console.error("Cannot send notification to yourself");
-            toast.error("Report submitted, but notification was not sent as you cannot notify yourself");
-          } else {
-            // Use the notifyManager utility directly for actual report submissions
-            // This ensures the assignedTo information is included
-            const notifyResult = await notifyManager(
-              "shift_report", 
-              {
-                id: currentUser?.id || "unknown",
-                name: currentUser?.name || "Unknown User",
-                email: currentUser?.email || "unknown"
-              },
-              {
-                date: data.date,
-                notes: data.notes,
-                priority: data.priority,
-                reportId: reportData?.[0]?.id
-              },
-              {
-                id: selectedEmployee.id,
-                name: selectedEmployee.name || "Unknown User",
-                email: selectedEmployee.email
-              }
-            );
-            
-            if (!notifyResult.success) {
-              console.error("Failed to send notification:", notifyResult.error);
-              
-              if (notifyResult.invalidEmail) {
-                toast.error(`Report submitted, but notification could not be sent due to invalid email address for ${selectedEmployee.name || 'user'}`);
-              } else if (notifyResult.selfNotification) {
-                toast.error("Report submitted, but notification was not sent as you cannot notify yourself");
-              } else {
-                toast.error("Report was submitted but notification failed to send");
-              }
-            } else {
-              toast.success(`Report submitted and notification sent successfully to ${selectedEmployee.name || 'user'}`);
-            }
+        .insert([
+          {
+            ...reportData,
+            user_id: user.id,
+            submitted_by: user.name || user.email,
+            submitted_at: new Date().toISOString(),
+            status: 'submitted',
           }
-        } else if (selectedEmployee && selectedEmployee.id === currentUser?.id) {
-          toast.success("Report submitted successfully (no notification sent as you assigned to yourself)");
-        } else {
-          toast.success("Report submitted successfully");
-        }
-      } else {
-        toast.success("Shift report submitted successfully");
+        ])
+        .select()
+        .single();
+
+      if (shiftReportError) {
+        console.error("Error submitting shift report:", shiftReportError);
+        throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
-      
-      resetForm();
-    } catch (error) {
-      console.error('Error submitting shift report:', error);
-      toast.error("Failed to submit shift report");
+
+      // Fetch admins to send notifications
+      const { data: admins, error: adminsError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'admin');
+
+      if (adminsError) {
+        console.error("Error fetching admins:", adminsError);
+        throw new Error(`Failed to fetch admins: ${adminsError.message}`);
+      }
+
+      if (!admins || admins.length === 0) {
+        console.warn("No admins found to notify.");
+      } else {
+        // Send notifications to admins
+        await sendNotifications(admins as User[], shiftReport.id, reportData.priority);
+      }
+
+      toast.success('Shift report submitted successfully!');
+      return shiftReport;
+
+    } catch (error: any) {
+      console.error("Error in submitShiftReport:", error.message);
+      toast.error(`Failed to submit shift report: ${error.message}`);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return { onSubmit };
-}
+  const sendNotifications = async (admins: User[], shiftReportId: string, priority: string) => {
+    try {
+      // Prepare notification content
+      const notificationTitle = `New Shift Report Submitted - Priority: ${priority}`;
+      const notificationMessage = `A new shift report has been submitted by ${user?.name || 'Employee'}. Check it out!`;
+
+      // Create notifications for each admin
+      for (const admin of admins) {
+        // Make sure user has required fields by providing defaults if needed
+        const adminUser = {
+          id: admin.id,
+          name: admin.name || 'Admin',
+          email: admin.email || ''
+        };
+
+        // Send admin notification
+        const { error: notifyError } = await supabase.functions.invoke('notify-manager', {
+          body: { admin: adminUser, reportId: shiftReportId, priority, reportUserName: user?.name || 'Employee' }
+        });
+
+        if (notifyError) {
+          console.error('Error sending notification:', notifyError);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error sending notifications:', error);
+      toast.error('Failed to send notifications.');
+      return false;
+    }
+  };
+
+  const mutation = useMutation(submitShiftReport);
+
+  return {
+    submitShiftReport,
+    isSubmitting,
+    ...mutation,
+  };
+};

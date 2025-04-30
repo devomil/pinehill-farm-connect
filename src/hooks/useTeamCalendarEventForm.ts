@@ -1,121 +1,102 @@
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useEmployeeDirectory } from './useEmployeeDirectory';
+import { useState } from 'react';
+import { User } from '@/types';
+import { toast } from 'sonner';
 
-import { useState } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { notifyManager } from "@/utils/notifyManager";
-import { User } from "@/types";
+const eventFormSchema = z.object({
+  title: z.string().min(3, {
+    message: "Title must be at least 3 characters.",
+  }),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  startTime: z.date(),
+  endTime: z.date(),
+});
 
-interface UseTeamCalendarEventFormProps {
-  currentUser: User;
-  onEventCreated: () => void;
-  setOpen: (v: boolean) => void;
-  form: UseFormReturn<any>;
-}
+type EventFormValues = z.infer<typeof eventFormSchema>
 
-export const useTeamCalendarEventForm = ({
-  currentUser,
-  onEventCreated,
-  setOpen,
-  form,
-}: UseTeamCalendarEventFormProps) => {
-  const [loading, setLoading] = useState(false);
-  const [sendNotifications, setSendNotifications] = useState(false);
-  const [notifyAll, setNotifyAll] = useState(true);
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+export const useTeamCalendarEventForm = (onSuccess?: () => void) => {
+  const [addedPeople, setAddedPeople] = useState<User[]>([]);
+  const { employees } = useEmployeeDirectory();
+  const [isSaving, setIsSaving] = useState(false);
 
-  const onSubmit = async (values: any) => {
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      location: "",
+      startTime: new Date(),
+      endTime: new Date(),
+    },
+  });
+
+  const handleAddPeople = (person: User) => {
+    // Ensure person has required fields
+    const personWithRequiredFields = {
+      id: person.id,
+      name: person.name || person.email?.split('@')[0] || 'Unknown',
+      email: person.email || ''
+    };
+
+    if (!addedPeople.find((p) => p.id === personWithRequiredFields.id)) {
+      setAddedPeople([...addedPeople, personWithRequiredFields]);
+    }
+  };
+
+  const handleRemovePerson = (person: User) => {
+    // Ensure person has required fields
+    const personWithRequiredFields = {
+      id: person.id,
+      name: person.name || person.email?.split('@')[0] || 'Unknown',
+      email: person.email || ''
+    };
+
+    setAddedPeople(addedPeople.filter((p) => p.id !== personWithRequiredFields.id));
+  };
+
+  const onSubmit = async (data: EventFormValues) => {
+    setIsSaving(true);
     try {
-      setLoading(true);
-
-      const start_datetime = `${values.startDate.toISOString().split("T")[0]}T${values.startTime || "09:00"}:00`;
-      const end_datetime = `${values.endDate.toISOString().split("T")[0]}T${values.endTime || "10:00"}:00`;
-
-      let processedAttachments: string[] = [];
-      
-      if (values.attachments && values.attachments instanceof FileList) {
-        processedAttachments = await Promise.all(
-          Array.from(values.attachments).map(file => 
-            new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = (e) => resolve(e.target?.result as string);
-              reader.readAsDataURL(file as Blob);
-            })
-          )
-        );
-      }
-
-      const newEvent = {
-        title: values.title,
-        description: values.description || "",
-        start_date: values.startDate.toISOString().split("T")[0],
-        end_date: values.endDate.toISOString().split("T")[0],
-        created_by: currentUser.id,
-        attendance_type: values.attendanceType,
-        attachments: processedAttachments,
-        start_time: values.startTime,
-        end_time: values.endTime,
-        location: values.location,
-      };
-
       const { error } = await supabase
-        .from("company_events")
-        .insert([newEvent]);
-        
+        .from('team_calendar')
+        .insert({
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          start_time: data.startTime.toISOString(),
+          end_time: data.endTime.toISOString(),
+          people: addedPeople.map((person) => person.id),
+        });
+
       if (error) {
         toast.error("Failed to create event");
-        return;
+        console.error("Error creating event:", error);
+      } else {
+        toast.success("Event created successfully!");
+        form.reset();
+        setAddedPeople([]);
+        onSuccess?.();
       }
-      
-      toast.success("Event created successfully");
-      if (sendNotifications) {
-        if (notifyAll) {
-          await notifyManager("event_created", 
-            {
-              id: currentUser.id,
-              name: currentUser.name || "Unknown User",
-              email: currentUser.email || ""
-            }, 
-            {
-              event: newEvent,
-              notificationType: "team_calendar",
-              recipients: "all",
-            }
-          );
-        } else {
-          await notifyManager("event_created", 
-            {
-              id: currentUser.id,
-              name: currentUser.name || "Unknown User", 
-              email: currentUser.email || ""
-            }, 
-            {
-              event: newEvent,
-              notificationType: "team_calendar",
-              recipients: selectedUserIds,
-            }
-          );
-        }
-        toast.success("Notifications sent");
-      }
-      setOpen(false);
-      form.reset();
-      onEventCreated();
-    } catch {
-      toast.error("An error occurred");
+    } catch (error) {
+      toast.error("Failed to create event");
+      console.error("Error creating event:", error);
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
   return {
-    loading,
-    sendNotifications,
-    setSendNotifications,
-    notifyAll,
-    setNotifyAll,
-    selectedUserIds,
-    setSelectedUserIds,
+    form,
     onSubmit,
+    addedPeople,
+    handleAddPeople,
+    handleRemovePerson,
+    availablePeople: employees,
+    isSaving
   };
 };

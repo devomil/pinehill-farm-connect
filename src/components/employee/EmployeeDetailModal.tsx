@@ -81,6 +81,30 @@ export function EmployeeDetailModal({
   const onSubmit = async (data: EmployeeFormValues) => {
     try {
       console.log("Form submission with data:", data);
+
+      // Update the employee data state with form values
+      if (employeeData) {
+        employeeData.name = data.name;
+        employeeData.department = data.department;
+        employeeData.position = data.position;
+      }
+      
+      // Update the employee HR data state with form values
+      if (employeeHR) {
+        employeeHR.startDate = data.startDate;
+        employeeHR.endDate = data.endDate;
+        employeeHR.salary = data.salary;
+        employeeHR.employmentType = data.employmentType;
+        employeeHR.address = data.address;
+        employeeHR.phone = data.phone;
+        employeeHR.emergencyContact = data.emergencyContact;
+        employeeHR.notes = data.notes;
+        
+        // Update the employeeHR state
+        setEmployeeHR({...employeeHR});
+      }
+      
+      // Now save all the data
       await saveEmployeeData();
     } catch (error) {
       toast.error("Failed to save employee data");

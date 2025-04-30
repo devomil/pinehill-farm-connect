@@ -93,8 +93,8 @@ export function useEmployeeHRData(employee: User | null) {
       
       const hrData = {
         user_id: employeeId,
-        start_date: employeeHR.startDate ? employeeHR.startDate.toISOString().split('T')[0] : null,
-        end_date: employeeHR.endDate ? employeeHR.endDate.toISOString().split('T')[0] : null,
+        start_date: employeeHR.startDate ? new Date(employeeHR.startDate).toISOString().split('T')[0] : null,
+        end_date: employeeHR.endDate ? new Date(employeeHR.endDate).toISOString().split('T')[0] : null,
         salary: employeeHR.salary,
         employment_type: employeeHR.employmentType,
         address: employeeHR.address,

@@ -1,159 +1,75 @@
 
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Link as LinkIcon } from "lucide-react";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Training } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, Edit2, Trash2 } from "lucide-react";
+import { Training } from '@/types';
+import { toast } from 'sonner';
 
-export const AdminTrainingList: React.FC = () => {
-  const [trainings, setTrainings] = useState<Training[]>([]);
-  const [loading, setLoading] = useState(true);
+interface AdminTrainingListProps {
+  trainings: Training[];
+  onAdd: () => void;
+  onEdit: (training: Training) => void;
+}
 
-  const fetchTrainings = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("trainings")
-        .select("*")
-        .order("created_at", { ascending: false });
+export const AdminTrainingList = ({ trainings, onAdd, onEdit }: AdminTrainingListProps) => {
+  // Make sure the trainings are cast to the correct type
+  const typedTrainings = trainings.map(training => ({
+    ...training,
+    category: training.category as "CBD101" | "HIPAA" | "SaltGenerator" | "OpeningClosing" | "Other"
+  }));
 
-      if (error) {
-        throw error;
-      }
-
-      // Map database fields to our Training type
-      const mappedTrainings: Training[] = data.map(training => ({
-        id: training.id,
-        title: training.title,
-        description: training.description || "",
-        category: training.category || "Other",
-        requiredFor: training.required_for || [],
-        duration: training.duration,
-        expiresAfter: training.expires_after,
-        hasQuiz: training.has_quiz || false,
-        attachments: Array.isArray(training.attachments) 
-          ? training.attachments.map((a: any) => ({
-              name: a.name || "Unnamed",
-              type: a.type || "unknown",
-              url: a.url
-            }))
-          : [],
-        external_test_url: training.external_test_url
-      }));
-
-      setTrainings(mappedTrainings);
-    } catch (error) {
-      console.error("Error fetching trainings:", error);
-      toast.error("Failed to load trainings");
-    } finally {
-      setLoading(false);
-    }
+  const handleDelete = (id: string) => {
+    toast.info("Delete functionality coming soon");
   };
-
-  useEffect(() => {
-    fetchTrainings();
-  }, []);
-
-  const formatRequiredFor = (requiredFor: string[]) => {
-    if (requiredFor.includes("all")) {
-      return "All Employees";
-    }
-    return requiredFor.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(", ");
-  };
-
-  const renderAttachmentsIndicator = (training: Training) => {
-    if (!training.attachments || training.attachments.length === 0) {
-      return null;
-    }
-    
-    return (
-      <Badge variant="outline" className="ml-2">
-        <FileText className="h-3 w-3 mr-1" />
-        {training.attachments.length} file{training.attachments.length !== 1 ? 's' : ''}
-      </Badge>
-    );
-  };
-
-  const renderTestingType = (training: Training) => {
-    if (training.hasQuiz) {
-      return <Badge className="bg-green-500">Auto Quiz</Badge>;
-    }
-    
-    if (training.external_test_url) {
-      return (
-        <Badge variant="outline" className="flex items-center gap-1">
-          <LinkIcon className="h-3 w-3" />
-          External
-        </Badge>
-      );
-    }
-    
-    return null;
-  };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex justify-center">
-            <p className="text-muted-foreground">Loading trainings...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (trainings.length === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex justify-center">
-            <p className="text-muted-foreground">No trainings created yet. Create a new training to get started.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Training Catalog</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Training Modules</CardTitle>
+        <Button onClick={onAdd} size="sm">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add New Training
+        </Button>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Required For</TableHead>
-              <TableHead>Materials & Testing</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {trainings.map((training) => (
-              <TableRow key={training.id}>
-                <TableCell className="font-medium">
-                  {training.title}
-                </TableCell>
-                <TableCell>{training.category}</TableCell>
-                <TableCell>{training.duration} min</TableCell>
-                <TableCell>{formatRequiredFor(training.requiredFor)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {renderAttachmentsIndicator(training)}
-                    {renderTestingType(training)}
+        {typedTrainings.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No trainings found. Click "Add New Training" to create one.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {typedTrainings.map((training) => (
+              <div key={training.id} className="flex justify-between items-center p-3 border rounded-md">
+                <div>
+                  <h3 className="font-medium">{training.title}</h3>
+                  <div className="text-sm text-gray-500 flex flex-wrap gap-2 mt-1">
+                    <span className="bg-gray-100 px-2 py-0.5 rounded">
+                      {training.category}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-blue-100">
+                      {training.duration} minutes
+                    </span>
+                    {training.hasQuiz && (
+                      <span className="px-2 py-0.5 rounded bg-purple-100">
+                        Has Quiz
+                      </span>
+                    )}
                   </div>
-                </TableCell>
-              </TableRow>
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => onEdit(training)}>
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDelete(training.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

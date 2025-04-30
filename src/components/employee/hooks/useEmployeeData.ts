@@ -36,9 +36,9 @@ export function useEmployeeData(employee: User | null) {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          name: employeeData.name,
-          department: employeeData.department,
-          position: employeeData.position
+          name: employeeData.name || '',
+          department: employeeData.department || '',
+          position: employeeData.position || ''
         })
         .eq('id', employeeData.id);
         

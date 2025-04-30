@@ -1,270 +1,196 @@
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, CheckCircle, Clock, FileText, Play, Award } from "lucide-react";
-import { Training, TrainingProgress } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useTrainings } from "@/hooks/useTrainings";
+import { format, formatDistanceToNow } from 'date-fns';
+import { CheckCircle } from "lucide-react";
 
-export default function TrainingPortal() {
+export default function Training() {
   const { currentUser } = useAuth();
-  const [trainings, setTrainings] = useState<Training[]>([]);
-  const [trainingProgress, setTrainingProgress] = useState<TrainingProgress[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedTraining, setSelectedTraining] = useState<string | null>(null);
+  const { trainings, isLoading, error, userProgress, isUserProgressLoading, userProgressError } = useTrainings(currentUser?.id);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch trainings
-        let { data: trainingData, error: trainingError } = await supabase
-          .from("trainings")
-          .select("*");
-
-        if (trainingError) throw trainingError;
-        
-        // Map the training data from snake_case to camelCase to match our Training interface
-        const mappedTrainings: Training[] = (trainingData || []).map((training: any) => ({
-          id: training.id,
-          title: training.title,
-          description: training.description || "",
-          category: training.category as "CBD101" | "HIPAA" | "SaltGenerator" | "OpeningClosing" | "Other",
-          requiredFor: training.required_for || [],
-          duration: training.duration,
-          expiresAfter: training.expires_after,
-        }));
-
-        // For now, we'll use mock progress data since we don't have actual data
-        const mockProgress: TrainingProgress[] = [];
-        
-        setTrainings(mappedTrainings);
-        setTrainingProgress(mockProgress);
-      } catch (error) {
-        console.error("Error fetching training data:", error);
-        toast.error("Failed to load training data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [currentUser]);
-
-  const getUserProgress = (trainingId: string) => {
-    return trainingProgress.find(p => p.trainingId === trainingId && p.userId === currentUser?.id);
-  };
-
-  const getTotalProgress = () => {
-    if (!trainings.length) return 0;
-    const completed = trainingProgress.filter(p => p.completed).length;
-    return Math.round((completed / trainings.length) * 100);
-  };
-
-  // Group trainings by category
-  const trainingsByCategory = trainings.reduce((acc, training) => {
-    const category = training.category || "Other";
-    if (!acc[category]) {
-      acc[category] = [];
+    if (error) {
+      console.error("Error fetching trainings:", error);
     }
-    acc[category].push(training);
-    return acc;
-  }, {} as Record<string, Training[]>);
+    if (userProgressError) {
+      console.error("Error fetching user training progress:", userProgressError);
+    }
+  }, [error, userProgressError]);
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <p className="text-muted-foreground">Loading trainings...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const handleSelectTraining = (trainingId: string) => {
+    setSelectedTraining(trainingId);
+  };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSelectedTraining(null);
+  };
+
+  const userTrainingProgress = userProgress.find(p => p.trainingId === selectedTraining);
+
+  const requiredTrainings = trainings.filter(training =>
+    training.requiredFor.includes(currentUser?.role || 'employee')
+  );
+
+  const inProgressTrainings = trainings.filter(training => {
+    const progress = userProgress.find(p => p.trainingId === training.id);
+    return progress && progress.status === 'in-progress';
+  });
+
+  // Correct the completed to completedAt
+  const completedTrainings = trainings.filter(training => {
+    const progress = userProgress.find(p => p.trainingId === training.id);
+    return progress && progress.completedAt;
+  });
+
+  const filteredTrainings = trainings.filter(training => {
+    if (activeTab === 'required') {
+      return training.requiredFor.includes(currentUser?.role || 'employee');
+    }
+    return true;
+  });
+
+  // Render function - update all references from completed to completedAt
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Training Portal</h1>
-          <p className="text-muted-foreground">Complete required trainings and track your progress</p>
+      <div className="space-y-4 p-8">
+        <div className="text-2xl font-bold">Training</div>
+        <div className="tabs">
+          <div className="flex space-x-4">
+            <button
+              className={`px-4 py-2 rounded-md ${activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleTabChange('all')}
+            >
+              All Trainings
+            </button>
+            <button
+              className={`px-4 py-2 rounded-md ${activeTab === 'required' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleTabChange('required')}
+            >
+              Required
+            </button>
+            <button
+              className={`px-4 py-2 rounded-md ${activeTab === 'in-progress' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleTabChange('in-progress')}
+            >
+              In Progress
+            </button>
+            <button
+              className={`px-4 py-2 rounded-md ${activeTab === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleTabChange('completed')}
+            >
+              Completed
+            </button>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Training completion status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Overall completion</span>
-                <span className="font-medium">{getTotalProgress()}%</span>
+        {isLoading ? (
+          <div>Loading trainings...</div>
+        ) : error ? (
+          <div>Error: {error.message}</div>
+        ) : (
+          <div className="space-y-4">
+            {selectedTraining && (
+              <div className="space-y-4">
+                {trainings
+                  .filter(training => training.id === selectedTraining)
+                  .map(training => (
+                    <div key={training.id} className="space-y-2">
+                      <div className="text-xl font-semibold">{training.title}</div>
+                      <p>{training.description}</p>
+                      {userTrainingProgress?.completedAt ? (
+                        <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md flex items-center space-x-2">
+                          <CheckCircle className="h-5 w-5" />
+                          <span>Completed on {format(new Date(userTrainingProgress.completedAt), 'PPP')}</span>
+                        </div>
+                      ) : (
+                        <button className="bg-blue-500 text-white px-4 py-2 rounded-md">
+                          Start Training
+                        </button>
+                      )}
+                    </div>
+                  ))}
               </div>
-              <Progress value={getTotalProgress()} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+            )}
 
-        <Tabs defaultValue="all" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="all">All Trainings</TabsTrigger>
-            <TabsTrigger value="incomplete">Incomplete</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-          <TabsContent value="all" className="space-y-8">
-            {Object.entries(trainingsByCategory).length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <Book className="h-10 w-10 text-muted-foreground mb-4" />
-                  <p className="text-center text-muted-foreground">
-                    No trainings are available for you at the moment.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              Object.entries(trainingsByCategory).map(([category, trainings]) => (
-                <div key={category} className="space-y-4">
-                  <h2 className="text-xl font-semibold">{category === "OpeningClosing" ? "Opening & Closing" : category}</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {trainings.map((training) => {
-                      const progress = getUserProgress(training.id);
-                      const isCompleted = !!progress?.completed;
+            {/* Update all other instances of .completed to .completedAt */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              {activeTab === 'required' && requiredTrainings.length > 0 ? (
+                requiredTrainings.map(training => (
+                  <div key={training.id} className="bg-white border rounded-lg p-4 cursor-pointer hover:shadow-md">
+                    <div className="font-semibold">{training.title}</div>
+                    <p className="text-sm text-gray-500">{training.description}</p>
+                    <button className="bg-blue-500 text-white px-4 py-2 rounded-md mt-4">
+                      Start Training
+                    </button>
+                  </div>
+                ))
+              ) : activeTab === 'in-progress' && inProgressTrainings.length > 0 ? (
+                inProgressTrainings.map(training => (
+                  <div key={training.id} className="bg-white border rounded-lg p-4 cursor-pointer hover:shadow-md">
+                    <div className="font-semibold">{training.title}</div>
+                    <p className="text-sm text-gray-500">{training.description}</p>
+                    <button className="bg-blue-500 text-white px-4 py-2 rounded-md mt-4">
+                      Continue Training
+                    </button>
+                  </div>
+                ))
+              ) : activeTab === 'completed' && completedTrainings.length > 0 ? (
+                completedTrainings.map(training => {
+                  const progress = userProgress.find(p => p.trainingId === training.id);
+                  return (
+                    <div key={training.id}
+                      className="bg-white border rounded-lg p-4 cursor-pointer hover:shadow-md"
+                      onClick={() => handleSelectTraining(training.id)}
+                    >
+                      <div className="font-semibold">{training.title}</div>
+                      <p className="text-sm text-gray-500">{training.description}</p>
+                      <div className="mt-2 flex items-center text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        <span>Completed {progress?.completedAt ? formatDistanceToNow(new Date(progress.completedAt), { addSuffix: true }) : ''}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                activeTab !== 'all' && <div className="text-center py-8 text-gray-500 col-span-3">No trainings found in this category.</div>
+              )}
+
+              {activeTab === 'all' && (
+                <div className="col-span-1 md:col-span-3">
+                  <div className="text-lg font-semibold">All Trainings</div>
+                  <div className="space-y-2 mt-4">
+                    {filteredTrainings.map(training => {
+                      const progress = userProgress.find(p => p.trainingId === training.id);
+                      const isCompleted = progress?.completedAt !== undefined;
 
                       return (
-                        <Card key={training.id} className={isCompleted ? "border-green-200 bg-green-50" : ""}>
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-lg">{training.title}</CardTitle>
-                              {isCompleted && <CheckCircle className="h-5 w-5 text-green-600" />}
+                        <div key={training.id}
+                          className={`border p-3 rounded cursor-pointer hover:bg-gray-50 ${
+                            isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                          }`}
+                          onClick={() => handleSelectTraining(training.id)}
+                        >
+                          <div className="font-semibold">{training.title}</div>
+                          <p className="text-sm text-gray-500">{training.description}</p>
+                          {isCompleted && (
+                            <div className="text-green-600 text-sm flex items-center">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Completed {formatDistanceToNow(new Date(progress.completedAt!), { addSuffix: true })}
                             </div>
-                            <CardDescription>{training.description}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                                <span className="text-muted-foreground">{training.duration} mins</span>
-                              </div>
-                              {isCompleted && (
-                                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                  Score: {progress?.score}%
-                                </Badge>
-                              )}
-                            </div>
-                          </CardContent>
-                          <CardFooter>
-                            {isCompleted ? (
-                              <Button variant="outline" size="sm" className="w-full">
-                                <FileText className="h-4 w-4 mr-2" />
-                                View Certificate
-                              </Button>
-                            ) : (
-                              <Button variant="default" size="sm" className="w-full">
-                                <Play className="h-4 w-4 mr-2" />
-                                Start Training
-                              </Button>
-                            )}
-                          </CardFooter>
-                        </Card>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
                 </div>
-              ))
-            )}
-          </TabsContent>
-          
-          <TabsContent value="incomplete">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trainings
-                .filter((training) => !trainingProgress.some(p => p.trainingId === training.id && p.completed))
-                .map((training) => (
-                  <Card key={training.id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{training.title}</CardTitle>
-                      <CardDescription>{training.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <div className="flex items-center text-sm">
-                        <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <span className="text-muted-foreground">{training.duration} mins</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button variant="default" size="sm" className="w-full">
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Training
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
+              )}
             </div>
-            {trainings.filter(t => !trainingProgress.some(p => p.trainingId === t.id && p.completed)).length === 0 && (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <CheckCircle className="h-10 w-10 text-green-600 mb-4" />
-                  <p className="text-center text-muted-foreground">
-                    You've completed all your assigned trainings!
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="completed">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trainings
-                .filter((training) => trainingProgress.some(p => p.trainingId === training.id && p.completed))
-                .map((training) => {
-                  const progress = getUserProgress(training.id);
-                  
-                  return (
-                    <Card key={training.id} className="border-green-200 bg-green-50">
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg">{training.title}</CardTitle>
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                        </div>
-                        <CardDescription>{training.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center">
-                            <Award className="h-4 w-4 mr-1 text-green-600" />
-                            <span className="text-muted-foreground">Completed: {progress?.completedDate?.toLocaleDateString()}</span>
-                          </div>
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Score: {progress?.score}%
-                          </Badge>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View Certificate
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-            </div>
-            {trainings.filter(t => trainingProgress.some(p => p.trainingId === t.id && p.completed)).length === 0 && (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <Book className="h-10 w-10 text-muted-foreground mb-4" />
-                  <p className="text-center text-muted-foreground">
-                    You haven't completed any trainings yet.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
