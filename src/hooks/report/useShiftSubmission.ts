@@ -27,6 +27,13 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
+// Define an interface for admin users to avoid deep type nesting
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentUser } = useAuth();
@@ -94,7 +101,9 @@ export const useShiftSubmission = () => {
     try {
       if (!currentUser) return false;
       
-      const adminUser = {
+      // Create a simple admin object with only the necessary properties
+      // This avoids deep type nesting that could cause the TypeScript error
+      const adminUser: AdminUser = {
         id: admin.id,
         name: admin.name || 'Admin',
         email: admin.email || ''
