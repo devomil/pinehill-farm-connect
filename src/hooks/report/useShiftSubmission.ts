@@ -39,11 +39,11 @@ interface ShiftReport {
 
 type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
 
-// Simple admin type to avoid deep nesting
-interface AdminBasicInfo {
+// Simple admin interface without nested types
+interface AdminProfile {
   id: string;
-  name?: string | null;
-  email?: string | null;
+  name: string | null;
+  email: string | null;
 }
 
 export const useShiftSubmission = () => {
@@ -57,55 +57,52 @@ export const useShiftSubmission = () => {
         throw new Error("User not authenticated.");
       }
 
-      const { data: shiftReport, error: shiftReportError } = await supabase
+      // Define the data to insert with explicit typing
+      const reportToInsert = {
+        ...reportData,
+        user_id: currentUser.id,
+        submitted_by: currentUser.name || currentUser.email,
+        submitted_at: new Date().toISOString(),
+        status: 'submitted',
+      };
+
+      // Insert the report with explicit typing for the response
+      const { data, error: shiftReportError } = await supabase
         .from('shift_reports')
-        .insert([
-          {
-            ...reportData,
-            user_id: currentUser.id,
-            submitted_by: currentUser.name || currentUser.email,
-            submitted_at: new Date().toISOString(),
-            status: 'submitted',
-          }
-        ])
-        .select()
-        .single();
+        .insert([reportToInsert])
+        .select();
 
       if (shiftReportError) {
         console.error("Error submitting shift report:", shiftReportError);
         throw new Error(`Failed to submit shift report: ${shiftReportError.message}`);
       }
 
-      // Instead of casting, use a simplified approach that avoids deep type inference
-      // Just specify the column names explicitly and use a basic type
-      const { data: admins, error: adminsError } = await supabase
+      // Get the first report from the data array
+      const shiftReport = data?.[0] as DBShiftReport;
+      if (!shiftReport) {
+        throw new Error("Failed to retrieve the created shift report");
+      }
+
+      // Use specific types and explicit field selection without chaining
+      // This breaks the deep type inference chain that causes TS2589
+      const profilesResponse = await supabase
         .from('profiles')
         .select('id, name, email')
         .eq('role', 'admin');
+
+      // Handle and parse the response explicitly
+      const adminsError = profilesResponse.error;
+      const admins = profilesResponse.data as AdminProfile[] | null;
 
       if (adminsError) {
         console.error("Error fetching admins:", adminsError);
         throw new Error(`Failed to fetch admins: ${adminsError.message}`);
       }
 
-      // Process admins with primitive types and simple objects
-      const adminsList: AdminBasicInfo[] = [];
-      
-      if (admins && Array.isArray(admins)) {
-        // Use for...of loop to avoid complex type inference
+      // Process admins using a simple array
+      if (admins && admins.length > 0) {
+        // Notify each admin
         for (const admin of admins) {
-          adminsList.push({
-            id: admin.id || '',
-            name: admin.name || 'Admin',
-            email: admin.email || ''
-          });
-        }
-      }
-      
-      if (adminsList.length === 0) {
-        console.warn("No admins found to notify.");
-      } else {
-        for (const admin of adminsList) {
           await notifyAdmin(
             admin.id,
             admin.name || 'Admin',
@@ -114,6 +111,8 @@ export const useShiftSubmission = () => {
             reportData.priority
           );
         }
+      } else {
+        console.warn("No admins found to notify.");
       }
 
       toast.success('Shift report submitted successfully!');
@@ -164,7 +163,7 @@ export const useShiftSubmission = () => {
     }
   };
 
-  // Fix the type mismatch by using DBShiftReport for the mutation
+  // Use DBShiftReport for the mutation return type to be explicit
   const mutation = useMutation<DBShiftReport, Error, ShiftReportInput>({
     mutationFn: submitShiftReport,
     onSuccess: () => {
