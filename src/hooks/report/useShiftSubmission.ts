@@ -25,14 +25,16 @@ interface ShiftReport {
   notes: string;
 }
 
+type ShiftReportInput = Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>;
+
 export const useShiftSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { currentUser } = useAuth(); // Fix: use currentUser instead of user
+  const { currentUser } = useAuth();
 
-  const submitShiftReport = async (reportData: Omit<ShiftReport, 'id' | 'created_at' | 'submitted_by' | 'submitted_at' | 'status'>) => {
+  const submitShiftReport = async (reportData: ShiftReportInput) => {
     setIsSubmitting(true);
     try {
-      if (!currentUser) { // Fix: use currentUser
+      if (!currentUser) {
         throw new Error("User not authenticated.");
       }
 
@@ -41,8 +43,8 @@ export const useShiftSubmission = () => {
         .insert([
           {
             ...reportData,
-            user_id: currentUser.id, // Fix: use currentUser
-            submitted_by: currentUser.name || currentUser.email, // Fix: use currentUser
+            user_id: currentUser.id,
+            submitted_by: currentUser.name || currentUser.email,
             submitted_at: new Date().toISOString(),
             status: 'submitted',
           }
@@ -89,7 +91,7 @@ export const useShiftSubmission = () => {
     try {
       // Prepare notification content
       const notificationTitle = `New Shift Report Submitted - Priority: ${priority}`;
-      const notificationMessage = `A new shift report has been submitted by ${currentUser?.name || 'Employee'}. Check it out!`; // Fix: use currentUser
+      const notificationMessage = `A new shift report has been submitted by ${currentUser?.name || 'Employee'}`;
 
       // Create notifications for each admin
       for (const admin of admins) {
@@ -106,7 +108,7 @@ export const useShiftSubmission = () => {
             admin: adminUser, 
             reportId: shiftReportId, 
             priority, 
-            reportUserName: currentUser?.name || 'Employee' // Fix: use currentUser
+            reportUserName: currentUser?.name || 'Employee'
           }
         });
 

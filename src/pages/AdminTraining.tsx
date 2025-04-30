@@ -10,16 +10,24 @@ import { AdminTrainingList } from "@/components/training/AdminTrainingList";
 import { AdminTrainingAssignments } from "@/components/training/AdminTrainingAssignments";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
+import { useTrainings } from "@/hooks/useTrainings";
+import { Training } from "@/types";
 
 export default function AdminTraining() {
   const { currentUser, isAuthenticated } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { trainings = [] } = useTrainings();
 
   // Function to trigger refresh of the training list
   const refreshTrainings = () => {
     setRefreshKey(prev => prev + 1);
     setIsFormOpen(false);
+  };
+
+  // Function to handle edit training (to be implemented)
+  const handleEditTraining = (training: Training) => {
+    toast.info(`Edit functionality for "${training.title}" coming soon`);
   };
 
   // If not authenticated, redirect to login
@@ -58,7 +66,12 @@ export default function AdminTraining() {
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
           </TabsList>
           <TabsContent value="trainings" className="space-y-4">
-            <AdminTrainingList key={refreshKey} />
+            <AdminTrainingList 
+              key={refreshKey} 
+              trainings={trainings}
+              onAdd={() => setIsFormOpen(true)}
+              onEdit={handleEditTraining}
+            />
           </TabsContent>
           <TabsContent value="assignments">
             <AdminTrainingAssignments />
