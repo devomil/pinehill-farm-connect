@@ -55,23 +55,27 @@ export async function notifyManager(
       console.log(`[NotifyManager] Using specified recipient: ${assignedTo.name} (${assignedTo.email}) with ID: ${assignedTo.id}`);
     }
     
-    // Add more debugging to help trace issues
-    console.log(`[NotifyManager] Making request to notify-manager function with actor: ${actor.name} (${actor.email}), sending to: ${assignedTo?.email || 'none'}`);
-    
-    // Log the full request payload
-    console.log(`[NotifyManager] Request payload:`, JSON.stringify({ 
+    // Prepare the request payload
+    const payload = { 
       actionType, 
       actor, 
       details, 
       assignedTo 
-    }, null, 2));
+    };
     
+    // Log the full request payload
+    console.log(`[NotifyManager] Request payload:`, JSON.stringify(payload, null, 2));
+    
+    // Use the correct URL with the project ID
     const res = await fetch(
       "https://pdeaxfhsodenefeckabm.functions.supabase.co/notify-manager",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actionType, actor, details, assignedTo }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA"}`
+        },
+        body: JSON.stringify(payload),
       }
     );
     

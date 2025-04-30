@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useAssignmentManagement } from "@/hooks/report/useAssignmentManagement";
+import { useShiftNotifications } from "@/hooks/report/useShiftNotifications";
 
 export interface FormValues {
   date: string;
@@ -19,6 +20,7 @@ export function useShiftReportForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { unfilteredEmployees: assignableEmployees } = useEmployeeDirectory();
   const { createTestAssignment } = useAssignmentManagement(assignableEmployees, currentUser);
+  const { sendNotificationToAdmin } = useShiftNotifications();
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -56,7 +58,7 @@ export function useShiftReportForm() {
       if (values.assignedTo && data) {
         try {
           const notifyResult = await supabase.functions.invoke('notify-manager', {
-            body: {
+            body: { 
               action: 'shift_report_assigned',
               sender: {
                 id: currentUser.id,
@@ -108,34 +110,24 @@ export function useShiftReportForm() {
     }
 
     try {
-      // Find a recipient to send the test to
-      const recipient = assignableEmployees.find(emp => emp.id !== currentUser.id) || currentUser;
-
-      const result = await supabase.functions.invoke('notify-manager', {
-        body: {
-          action: 'test_notification',
-          sender: {
-            id: currentUser.id,
-            name: currentUser.name || currentUser.email?.split('@')[0] || 'Unknown User',
-            email: currentUser.email || 'unknown'
-          },
-          data: {
-            message: 'This is a test notification',
-            timestamp: new Date().toISOString()
-          },
-          receiver: {
-            id: recipient.id,
-            name: recipient.name,
-            email: recipient.email
-          }
-        }
-      });
-
-      if (result.error) {
-        throw new Error(`Notification error: ${result.error.message}`);
+      // Get the assigned admin from the form
+      const assignedToId = form.getValues("assignedTo");
+      
+      if (!assignedToId) {
+        toast.warning("Please select an employee to send the test notification to");
+        return;
       }
-
-      toast.success(`Test notification sent to ${recipient.name}`);
+      
+      // Find the selected employee in the directory
+      const selectedEmployee = assignableEmployees.find(emp => emp.id === assignedToId);
+      
+      if (!selectedEmployee) {
+        toast.error("Selected employee not found");
+        return;
+      }
+      
+      // Send the test notification using our notification utility
+      await sendNotificationToAdmin(selectedEmployee, currentUser);
     } catch (error: any) {
       console.error("Error sending test notification:", error);
       toast.error(`Failed to send test notification: ${error.message}`);

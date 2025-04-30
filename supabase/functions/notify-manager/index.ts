@@ -11,6 +11,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,11 +22,35 @@ serve(async (req) => {
 
   try {
     const request: NotificationRequest = await req.json();
+    
+    // Log the incoming request for debugging
     console.log(`Processing notification: ${request.actionType}`, { 
       actor: request.actor, 
       details: request.details,
       assignedTo: request.assignedTo || 'none'
     });
+    
+    // Handle missing actionType
+    if (!request.actionType) {
+      console.error("Missing actionType in request", request);
+      return new Response(JSON.stringify({ 
+        error: "Missing required field: actionType" 
+      }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+    
+    // Handle missing actor
+    if (!request.actor || !request.actor.id) {
+      console.error("Missing actor information in request", request);
+      return new Response(JSON.stringify({ 
+        error: "Missing required field: actor" 
+      }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
     
     if (request.actionType === "shift_report") {
       const result = await handleShiftReport(supabase, request);
