@@ -35,6 +35,7 @@ export default function Employees() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<UserType | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -73,9 +74,16 @@ export default function Employees() {
   
   const handleEmployeeUpdate = () => {
     console.log("Employee updated - refreshing list");
-    refetch();
-    setIsEditModalOpen(false);
-    setEditingEmployee(null);
+    setIsUpdating(true);
+    
+    // Use a timeout to avoid UI freezing during state updates
+    setTimeout(() => {
+      refetch().finally(() => {
+        setIsEditModalOpen(false);
+        setEditingEmployee(null);
+        setIsUpdating(false);
+      });
+    }, 300);
   };
   
   const handleResetPassword = (employee: UserType) => setResetEmployee(employee);
@@ -97,7 +105,7 @@ export default function Employees() {
           searchQuery={searchQuery} 
           setSearchQuery={setSearchQuery}
           employees={employees}
-          loading={loading}
+          loading={loading || isUpdating}
           onEdit={handleEditEmployee}
           onDelete={handleDeleteEmployee}
           onResetPassword={handleResetPassword}

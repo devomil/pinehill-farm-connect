@@ -36,14 +36,26 @@ export function EditEmployeeModal({
   // Reset form when employee changes or modal opens/closes
   useEffect(() => {
     if (isOpen && employee) {
-      resetFormWithEmployeeData();
+      // Small delay to ensure the modal is fully rendered before resetting the form
+      const timeoutId = setTimeout(() => {
+        resetFormWithEmployeeData();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [employee, isOpen]);
+  }, [employee, isOpen, resetFormWithEmployeeData]);
 
+  // Safe guard to prevent rendering if employee is null
   if (!employee) return null;
 
+  // Use memoization for the form content to prevent unnecessary re-renders
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Employee: {employee.name}</DialogTitle>

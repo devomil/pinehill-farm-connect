@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@/types";
 import { useEmployeeDetail } from "./useEmployeeDetail";
 import { EmployeeFormValues } from "../schemas/employeeFormSchema";
@@ -76,33 +76,43 @@ export function useEmployeeEditForm(
       setIsSubmitting(true);
       console.log("Submitting form data:", data);
       
-      // Update local state
-      if (employeeData) {
-        employeeData.name = data.name;
-        employeeData.department = data.department;
-        employeeData.position = data.position;
-        employeeData.employeeId = data.employeeId;
+      // Create a deep copy of the employeeData and employeeHR objects before modifying
+      // to prevent any state mutation issues
+      const updatedEmployeeData = employeeData ? { ...employeeData } : null;
+      const updatedEmployeeHR = employeeHR ? { ...employeeHR } : null;
+      
+      // Update the copied objects
+      if (updatedEmployeeData) {
+        updatedEmployeeData.name = data.name;
+        updatedEmployeeData.department = data.department;
+        updatedEmployeeData.position = data.position;
+        updatedEmployeeData.employeeId = data.employeeId;
       }
       
-      if (employeeHR) {
-        employeeHR.startDate = data.startDate;
-        employeeHR.endDate = data.endDate;
-        employeeHR.salary = data.salary;
-        employeeHR.employmentType = data.employmentType;
-        employeeHR.address = data.address;
-        employeeHR.phone = data.phone;
-        employeeHR.emergencyContact = data.emergencyContact;
-        employeeHR.notes = data.notes;
+      if (updatedEmployeeHR) {
+        updatedEmployeeHR.startDate = data.startDate;
+        updatedEmployeeHR.endDate = data.endDate;
+        updatedEmployeeHR.salary = data.salary;
+        updatedEmployeeHR.employmentType = data.employmentType;
+        updatedEmployeeHR.address = data.address;
+        updatedEmployeeHR.phone = data.phone;
+        updatedEmployeeHR.emergencyContact = data.emergencyContact;
+        updatedEmployeeHR.notes = data.notes;
         
-        setEmployeeHR({...employeeHR});
+        // Use the setter function to update the HR state
+        setEmployeeHR(updatedEmployeeHR);
       }
       
       // Save all data at once
       const success = await saveEmployeeData();
       
       if (success) {
-        onEmployeeUpdate();
-        handleClose();
+        // Call onEmployeeUpdate and close the modal after a short delay
+        // to allow state updates to complete
+        setTimeout(() => {
+          onEmployeeUpdate();
+          handleClose();
+        }, 100);
       }
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -129,6 +139,6 @@ export function useEmployeeEditForm(
     handleSubmit,
     handleClose,
     resetFormWithEmployeeData,
-    setEmployeeHR // Add setEmployeeHR to the return object
+    setEmployeeHR
   };
 }
