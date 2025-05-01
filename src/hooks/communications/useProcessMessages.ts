@@ -47,6 +47,7 @@ export function useProcessMessages(
       if (messageType === 'shift_coverage' && typedShiftRequests.length > 0) {
         console.log(`Processing shift coverage message ${msg.id} with ${typedShiftRequests.length} requests`);
         console.log(`Message is ${msg.sender_id === currentUser?.id ? 'sent by' : 'received by'} current user`);
+        console.log(`Shift request details: date=${typedShiftRequests[0].shift_date}, start=${typedShiftRequests[0].shift_start}`);
       }
       
       // Return a properly typed Communication object
@@ -75,7 +76,13 @@ export function useProcessMessages(
     console.log(`Processed ${processed.length} total messages, including ${shiftCoverageMessages.length} shift coverage messages with requests`);
     
     if (shiftCoverageMessages.length > 0) {
-      console.log("Sample processed shift coverage message:", shiftCoverageMessages[0]);
+      console.log("Sample processed shift coverage message:", {
+        id: shiftCoverageMessages[0].id,
+        sender: shiftCoverageMessages[0].sender_id,
+        recipient: shiftCoverageMessages[0].recipient_id,
+        message: shiftCoverageMessages[0].message.substring(0, 30) + "...",
+        requests: shiftCoverageMessages[0].shift_coverage_requests?.length || 0
+      });
     }
     
     return processed;

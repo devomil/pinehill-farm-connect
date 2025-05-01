@@ -26,23 +26,21 @@ export const useCommunications = () => {
     if (messages) {
       console.log(`Communications loaded successfully for ${currentUser?.email}: ${messages.length} messages`);
       
-      // Log shift coverage requests
+      // Log shift coverage requests specifically
       const shiftCoverageMessages = messages.filter(msg => msg.type === 'shift_coverage');
       console.log(`Shift coverage messages for ${currentUser?.email}:`, shiftCoverageMessages.length);
       
       if (shiftCoverageMessages.length > 0) {
-        console.log("Sample shift coverage message:", {
-          id: shiftCoverageMessages[0].id,
-          sender: shiftCoverageMessages[0].sender_id,
-          recipient: shiftCoverageMessages[0].recipient_id,
-          requests: shiftCoverageMessages[0].shift_coverage_requests?.length || 0
+        // Log each shift coverage message for debugging
+        shiftCoverageMessages.forEach((msg, idx) => {
+          console.log(`Shift message ${idx}: ${msg.id}, from ${msg.sender_id} to ${msg.recipient_id}`);
+          
+          if (msg.shift_coverage_requests?.length) {
+            console.log(`  Request details: ${msg.shift_coverage_requests.length} requests, status: ${msg.shift_coverage_requests[0].status}`);
+          } else {
+            console.log("  No shift coverage requests in this message");
+          }
         });
-        
-        if (shiftCoverageMessages[0].shift_coverage_requests?.length) {
-          console.log("Sample shift coverage request:", shiftCoverageMessages[0].shift_coverage_requests[0]);
-        } else {
-          console.log("No shift coverage requests in the sample message");
-        }
       }
     } else if (!isLoading && !error) {
       console.log(`No communications data found for ${currentUser?.email} but no error reported`);
@@ -67,7 +65,7 @@ export const useCommunications = () => {
     });
   };
 
-  // Force initial fetch on first mount and set up periodic refresh
+  // Force initial fetch on first mount and set up more frequent periodic refresh
   useEffect(() => {
     console.log(`Initial communications fetch for ${currentUser?.email}`);
     refetch();
@@ -76,7 +74,7 @@ export const useCommunications = () => {
     const refreshInterval = setInterval(() => {
       console.log("Periodic refresh of communications data");
       refetch();
-    }, 30000); // Refresh every 30 seconds
+    }, 15000); // Refresh every 15 seconds to ensure we don't miss updates
     
     return () => {
       clearInterval(refreshInterval);

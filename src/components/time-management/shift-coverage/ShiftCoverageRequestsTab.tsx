@@ -40,68 +40,85 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   
   // Enhanced logging for debugging
   useEffect(() => {
-    console.log("ShiftCoverageRequestsTab - Raw messages received:", messages);
+    console.log("ShiftCoverageRequestsTab - Render with messages:", messages.length);
+    
     if (messages.length > 0) {
-      messages.forEach(msg => {
+      // Log all messages to inspect what's available
+      messages.forEach((msg, idx) => {
         if (msg.type === 'shift_coverage') {
-          console.log(`Message ${msg.id}: sender=${msg.sender_id}, recipient=${msg.recipient_id}, status=${msg.status}, shift_requests=${msg.shift_coverage_requests?.length || 0}`);
+          console.log(`Shift Coverage Message ${idx}: sender=${msg.sender_id}, recipient=${msg.recipient_id}, type=${msg.type}`);
+          console.log(`Message details: id=${msg.id}, status=${msg.status}, shift_requests=${msg.shift_coverage_requests?.length || 0}`);
           
           if (msg.shift_coverage_requests && msg.shift_coverage_requests.length > 0) {
-            console.log("First shift request:", msg.shift_coverage_requests[0]);
+            const request = msg.shift_coverage_requests[0];
+            console.log(`Shift request details: date=${request.shift_date}, status=${request.status}`);
+          } else {
+            console.log("No shift coverage requests found in this message");
           }
         }
       });
     }
     
     console.log("Current user:", currentUser.id, currentUser.email);
-    console.log("Filter state:", filter);
-  }, [messages, currentUser, filter]);
+  }, [messages, currentUser]);
 
-  // Filter shift coverage requests from messages - FIX: Improved filtering logic
+  // FIXED: Improved filtering logic to properly detect shift coverage messages
   const shiftCoverageRequests = useMemo(() => {
     if (!messages || messages.length === 0) {
       console.log("No messages found for shift coverage filtering");
       return [];
     }
     
+    // Better filtering to ensure we include all shift coverage requests
     const filtered = messages.filter(message => {
-      const isShiftCoverage = message.type === "shift_coverage";
-      const hasShiftRequests = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
-      const isRelevantToUser = message.recipient_id === currentUser.id || message.sender_id === currentUser.id;
-      
-      // Log each message being considered
-      if (isShiftCoverage) {
-        console.log(`Filtering message ${message.id}: type=${message.type}, recipient=${message.recipient_id}, sender=${message.sender_id}, isRelevant=${isRelevantToUser}, hasRequests=${hasShiftRequests}`);
+      // Must be shift_coverage type message
+      if (message.type !== "shift_coverage") {
+        return false;
       }
       
-      return isShiftCoverage && isRelevantToUser && hasShiftRequests;
+      // Must be relevant to current user (either sender or recipient)
+      const isRelevantToUser = message.sender_id === currentUser.id || message.recipient_id === currentUser.id;
+      
+      // Must contain at least one shift request
+      const hasShiftRequests = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
+      
+      if (isRelevantToUser && hasShiftRequests) {
+        console.log(`Including shift coverage message ${message.id} in filtered results`);
+        return true;
+      }
+      
+      return false;
     });
     
-    console.log(`Filtered ${filtered.length} shift coverage requests from ${messages.length} messages`);
+    console.log(`ShiftCoverageRequestsTab - Filtered ${filtered.length} shift coverage requests out of ${messages.length} messages`);
     return filtered;
-  }, [messages, currentUser]);
+  }, [messages, currentUser.id]);
 
-  // Apply status filter
+  // Apply status filter - FIXED to use the shift request status, not the message status
   const filteredRequests = useMemo(() => {
     if (filter === 'all') {
       return shiftCoverageRequests;
     }
     
-    const statusFiltered = shiftCoverageRequests.filter(request => {
-      if (!request.shift_coverage_requests || request.shift_coverage_requests.length === 0) {
+    const statusFiltered = shiftCoverageRequests.filter(message => {
+      if (!message.shift_coverage_requests || message.shift_coverage_requests.length === 0) {
         return false;
       }
       
-      // Use the status from the shift_coverage_requests instead of the message status
-      const requestStatus = request.shift_coverage_requests[0].status;
-      return requestStatus === filter;
+      // Use the status from the shift_coverage_requests rather than message status
+      const requestStatus = message.shift_coverage_requests[0].status;
+      const isMatching = requestStatus === filter;
+      
+      console.log(`Filtering message ${message.id} with status ${requestStatus} against filter ${filter}: ${isMatching}`);
+      
+      return isMatching;
     });
     
     console.log(`Status filtered to ${filter}: ${statusFiltered.length} requests`);
     return statusFiltered;
   }, [shiftCoverageRequests, filter]);
 
-  // Calculate counts for different status types - Fixed to use shift request status
+  // Calculate counts for different status types - FIXED to use shift request status
   const pendingCount = useMemo(() => 
     shiftCoverageRequests.filter(req => 
       req.shift_coverage_requests && 
@@ -153,6 +170,8 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   
   // Get available employees (excluding current user)
   const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
+
+  console.log(`ShiftCoverageRequestsTab - Final filtered requests count: ${filteredRequests.length}`);
 
   return (
     <>

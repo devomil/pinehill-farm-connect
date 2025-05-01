@@ -51,9 +51,11 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
     });
   }, [request, isIncoming, otherPersonId, otherPerson, shiftDetails]);
   
-  // Use the status from the shift request, not the communication
-  const requestStatus = shiftDetails?.status || request.status;
+  // IMPORTANT: Use the status from the shift request, not the communication
+  const requestStatus = shiftDetails?.status || 'pending';
   const isStatusPending = requestStatus === 'pending';
+  
+  console.log(`ShiftRequestCard ${request.id} status: ${requestStatus}, isStatusPending: ${isStatusPending}`);
   
   // Determine color scheme based on status
   const statusColors = {
@@ -97,6 +99,11 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
     setShowConfirmDialog(false);
   };
 
+  if (!shiftDetails) {
+    console.warn(`ShiftRequestCard ${request.id} has no shift details`);
+    return null;
+  }
+
   return (
     <>
       <Card className={`overflow-hidden ${colors.card}`}>
@@ -119,20 +126,18 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
               <p>{otherPerson?.name || "Unknown"}</p>
             </div>
             
-            {shiftDetails && (
-              <div className="bg-muted/40 p-4 rounded-md space-y-2">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Date: </span>
-                  <span className="ml-2">{shiftDetails.shift_date}</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Time: </span>
-                  <span className="ml-2">{shiftDetails.shift_start} - {shiftDetails.shift_end}</span>
-                </div>
+            <div className="bg-muted/40 p-4 rounded-md space-y-2">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="font-medium">Date: </span>
+                <span className="ml-2">{shiftDetails.shift_date}</span>
               </div>
-            )}
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="font-medium">Time: </span>
+                <span className="ml-2">{shiftDetails.shift_start} - {shiftDetails.shift_end}</span>
+              </div>
+            </div>
             
             <div>
               <h4 className="font-medium mb-1">Message:</h4>
@@ -164,17 +169,15 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
         </CardContent>
       </Card>
 
-      {shiftDetails && (
-        <ShiftResponseConfirmDialog
-          isOpen={showConfirmDialog}
-          onClose={() => setShowConfirmDialog(false)}
-          onConfirm={handleConfirmResponse}
-          isAccepting={responseType === true}
-          requesterName={otherPerson?.name || "Unknown"}
-          shiftDate={shiftDetails.shift_date}
-          shiftTime={`${shiftDetails.shift_start} - ${shiftDetails.shift_end}`}
-        />
-      )}
+      <ShiftResponseConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleConfirmResponse}
+        isAccepting={responseType === true}
+        requesterName={otherPerson?.name || "Unknown"}
+        shiftDate={shiftDetails.shift_date}
+        shiftTime={`${shiftDetails.shift_start} - ${shiftDetails.shift_end}`}
+      />
     </>
   );
 };
