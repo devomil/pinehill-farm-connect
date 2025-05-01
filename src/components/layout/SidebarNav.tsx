@@ -8,7 +8,6 @@ import {
   CalendarIcon, 
   Home, 
   Megaphone, 
-  MessageSquare,
   Users, 
   BookOpenCheck,
   BookOpen
@@ -116,7 +115,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
                 variant="ghost"
                 className={cn(
                   "justify-start font-normal",
-                  pathname === item.to && "bg-accent"
+                  (pathname === item.to || pathname === "/communications") && "bg-accent"
                 )}
                 asChild
               >
