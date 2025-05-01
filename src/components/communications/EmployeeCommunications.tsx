@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -188,7 +189,7 @@ export function EmployeeCommunications({
           <Card className="md:col-span-2">
             <MessageConversation
               selectedEmployee={selectedEmployee}
-              messages={typedMessages}
+              messages={typedMessages} {/* Using the properly typed messages here */}
               isLoading={isLoading}
               onSendMessage={handleSendMessage}
               onBack={() => {
