@@ -15,7 +15,7 @@ export function useProcessMessages(
     return ['general', 'shift_coverage', 'urgent'].includes(type);
   }
 
-  function isValidMessageStatus(status: string): type is MessageStatus {
+  function isValidMessageStatus(status: string): status is MessageStatus {
     return ['pending', 'accepted', 'declined'].includes(status);
   }
 

@@ -43,7 +43,7 @@ export function useEmployeeCommunications({
   const { isMobileView } = useResponsiveLayout();
   
   // Process messages with proper typing - ensure it returns correctly typed Communication[]
-  const processedMessages = useProcessMessages(messages, currentUser);
+  const processedMessages: Communication[] = useProcessMessages(messages, currentUser);
   
   // Use message read status hook
   useMessageReadStatus(selectedEmployee, currentUser, unreadMessages || []);
