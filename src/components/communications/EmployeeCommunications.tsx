@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { User } from "@/types";
 import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
 import { EmployeeAlert } from "./EmployeeAlert";
-import { EmployeeListView } from "./EmployeeListView";
+import { EmployeeDropdownSelect } from "./EmployeeDropdownSelect";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { useEmployeeCommunications } from "@/hooks/communications/useEmployeeCommunications";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -39,10 +39,6 @@ export function EmployeeCommunications({
     setSelectedEmployee: propSetSelectedEmployee
   });
   
-  // Show mobile layout or desktop layout based on screen size and selection
-  const showMessageList = !isMobileView || (isMobileView && !selectedEmployee);
-  const showConversation = !isMobileView || (isMobileView && selectedEmployee);
-
   return (
     <div className="space-y-4">
       <EmployeeCommunicationsHeader 
@@ -55,35 +51,35 @@ export function EmployeeCommunications({
 
       {allEmployees?.length <= 1 && <EmployeeAlert />}
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Employee List Column */}
-        {showMessageList && (
-          <EmployeeListView
+      <div className="space-y-4">
+        {/* Employee Dropdown Selection */}
+        <Card className="p-4">
+          <EmployeeDropdownSelect
             employees={allEmployees || []}
-            isLoading={isLoading}
             onSelectEmployee={handleSelectEmployee}
             selectedEmployee={selectedEmployee}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             unreadMessages={unreadMessages || []}
-            onRefresh={handleRefresh}
           />
-        )}
+        </Card>
 
-        {/* Conversation Column */}
-        {showConversation && selectedEmployee && (
-          <EmployeeConversationView
-            selectedEmployee={selectedEmployee}
-            messages={processedMessages}
-            isLoading={isLoading}
-            onSendMessage={handleSendMessage}
-            onBack={() => {
-              setSelectedEmployee(null);
-              if (propSetSelectedEmployee) {
-                propSetSelectedEmployee(null);
-              }
-            }}
-          />
+        {/* Conversation View */}
+        {selectedEmployee && (
+          <Card className="md:col-span-2 p-4">
+            <EmployeeConversationView
+              selectedEmployee={selectedEmployee}
+              messages={processedMessages}
+              isLoading={isLoading}
+              onSendMessage={handleSendMessage}
+              onBack={() => {
+                setSelectedEmployee(null);
+                if (propSetSelectedEmployee) {
+                  propSetSelectedEmployee(null);
+                }
+              }}
+            />
+          </Card>
         )}
       </div>
     </div>
