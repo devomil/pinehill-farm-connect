@@ -7,7 +7,6 @@ import { EmployeeAlert } from "./EmployeeAlert";
 import { EmployeeListView } from "./EmployeeListView";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { useEmployeeCommunications } from "@/hooks/communications/useEmployeeCommunications";
-import { Communication } from "@/types/communications/communicationTypes";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;

@@ -1,12 +1,14 @@
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { User } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
-import { Communication, MessageType, MessageStatus, SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
+import { useMessageReadStatus } from "./useMessageReadStatus";
+import { useProcessMessages } from "./useProcessMessages";
+import { useResponsiveLayout } from "./useResponsiveLayout";
+import { useMessageSending } from "./useMessageSending";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -16,7 +18,7 @@ interface UseEmployeeCommunicationsProps {
 export interface SendMessageData {
   recipientId: string;
   message: string;
-  type: MessageType;
+  type: 'general' | 'shift_coverage' | 'urgent';
   shiftDetails?: {
     shift_date: string;
     shift_start: string;
@@ -35,111 +37,15 @@ export function useEmployeeCommunications({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMobileView, setIsMobileView] = useState(false);
+  
+  // Use our newly extracted hooks
+  const { isMobileView } = useResponsiveLayout();
+  const processedMessages = useProcessMessages(messages, currentUser);
+  
+  // Use message read status hook
+  useMessageReadStatus(selectedEmployee, currentUser, unreadMessages || []);
 
-  // Sync with parent component if props are provided
-  useEffect(() => {
-    if (propSelectedEmployee !== undefined) {
-      setSelectedEmployee(propSelectedEmployee);
-    }
-  }, [propSelectedEmployee]);
-
-  // Check for mobile view
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Mark messages as read when viewing a conversation
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (!selectedEmployee || !currentUser || !unreadMessages.length) return;
-
-      // Find unread messages from the selected employee
-      const toMarkAsRead = unreadMessages.filter(
-        msg => msg.sender_id === selectedEmployee.id && msg.recipient_id === currentUser.id
-      );
-      
-      if (toMarkAsRead.length === 0) return;
-      
-      console.log(`Marking ${toMarkAsRead.length} messages as read`);
-      
-      const messageIds = toMarkAsRead.map(msg => msg.id);
-      const { error } = await supabase
-        .from('employee_communications')
-        .update({ read_at: new Date().toISOString() })
-        .in('id', messageIds);
-      
-      if (error) {
-        console.error("Error marking messages as read:", error);
-      }
-    };
-    
-    markMessagesAsRead();
-  }, [selectedEmployee, currentUser, unreadMessages]);
-
-  // Helper functions for type validation
-  function isValidMessageType(type: string): boolean {
-    return ['general', 'shift_coverage', 'urgent'].includes(type);
-  }
-
-  function isValidMessageStatus(status: string): boolean {
-    return ['pending', 'accepted', 'declined'].includes(status);
-  }
-
-  // Process messages with proper typing - explicitly return Communication[] type
-  const processedMessages = useMemo((): Communication[] => {
-    if (!messages || !messages.length) return [];
-    
-    return messages.map(msg => {
-      // Cast message type to proper union type
-      const messageType = isValidMessageType(msg.type) 
-        ? msg.type as MessageType
-        : 'general' as MessageType;
-      
-      // Cast message status to proper union type
-      const messageStatus = isValidMessageStatus(msg.status)
-        ? msg.status as MessageStatus
-        : 'pending' as MessageStatus;
-      
-      // Process shift coverage requests to ensure they have proper types
-      const typedShiftRequests = msg.shift_coverage_requests?.map((req: any) => {
-        return {
-          ...req,
-          status: isValidMessageStatus(req.status)
-            ? req.status as MessageStatus
-            : 'pending' as MessageStatus
-        };
-      });
-      
-      // Build the properly typed message object
-      return {
-        ...msg,
-        type: messageType,
-        status: messageStatus,
-        shift_coverage_requests: typedShiftRequests,
-        admin_cc: msg.admin_cc,
-        current_user_id: currentUser?.id
-      } as Communication;
-    });
-  }, [messages, currentUser?.id]);
-
-  const handleSendMessage = useCallback((message: string) => {
-    if (!selectedEmployee) return;
-    
-    sendMessage({
-      recipientId: selectedEmployee.id,
-      message,
-      type: "general",
-    });
-  }, [selectedEmployee, sendMessage]);
-
+  // Handle employee selection with sync to parent component if needed
   const handleSelectEmployee = useCallback((employee: User) => {
     setSelectedEmployee(employee);
     // Update parent component if callback provided
@@ -148,36 +54,14 @@ export function useEmployeeCommunications({
     }
   }, [propSetSelectedEmployee]);
 
-  const handleNewMessageSend = useCallback((data: SendMessageData) => {
-    // Convert SendMessageData to SendMessageParams by adding required fields for shift details
-    const sendParams: SendMessageParams = {
-      recipientId: data.recipientId,
-      message: data.message,
-      type: data.type,
-    };
-    
-    // Add shift details with appropriate field mapping if available
-    if (data.shiftDetails) {
-      sendParams.shiftDetails = {
-        original_employee_id: currentUser?.id || '',
-        covering_employee_id: data.recipientId,
-        shift_date: data.shiftDetails.shift_date,
-        shift_start: data.shiftDetails.shift_start,
-        shift_end: data.shiftDetails.shift_end
-      };
-    }
-    
-    sendMessage(sendParams);
-    setDialogOpen(false);
-    
-    // Find and select the employee that received the message
-    if (allEmployees) {
-      const recipient = allEmployees.find(emp => emp.id === data.recipientId);
-      if (recipient) {
-        handleSelectEmployee(recipient);
-      }
-    }
-  }, [sendMessage, allEmployees, handleSelectEmployee, currentUser]);
+  // Use message sending hook
+  const { handleSendMessage, handleNewMessageSend } = useMessageSending(
+    selectedEmployee, 
+    currentUser, 
+    sendMessage, 
+    handleSelectEmployee,
+    allEmployees
+  );
   
   // Combined refresh function
   const handleRefresh = useCallback(() => {
