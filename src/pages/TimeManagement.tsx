@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,10 +26,17 @@ export default function TimeManagement() {
   const [retryCount, setRetryCount] = useState(0);
   
   // Get communications data for shift coverage requests
-  const { messages: rawMessages, isLoading: messagesLoading, error: messagesError, respondToShiftRequest, refreshMessages } = useCommunications();
+  const { 
+    messages: rawMessages, 
+    isLoading: messagesLoading, 
+    error: messagesError, 
+    respondToShiftRequest, 
+    refreshMessages 
+  } = useCommunications();
+  
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     setError(null);
@@ -59,6 +66,11 @@ export default function TimeManagement() {
             notes: r.notes,
           }))
         );
+        
+        // Show success notification after successful fetch to provide user feedback
+        if (retryCount > 0) {
+          toast.success("Time off requests refreshed successfully");
+        }
       } else {
         console.log("No time off requests data returned");
         setTimeOffRequests([]);
@@ -70,20 +82,29 @@ export default function TimeManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, retryCount]);
 
   // Retry logic for failed fetches
   const handleRetry = () => {
     setRetryCount(prevCount => prevCount + 1);
+    toast.info("Retrying data fetch...");
     fetchRequests();
     refreshMessages();
-    toast.info("Retrying data fetch...");
   };
 
-  useEffect(() => {
+  // Force refresh of data
+  const forceRefreshData = useCallback(() => {
+    setRetryCount(prevCount => prevCount + 1);
     fetchRequests();
-    refreshMessages(); // Also fetch messages for shift coverage requests
-  }, [currentUser, refreshMessages, retryCount]);
+    refreshMessages();
+  }, [fetchRequests, refreshMessages]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchRequests();
+      refreshMessages(); // Also fetch messages for shift coverage requests
+    }
+  }, [currentUser, fetchRequests, refreshMessages, retryCount]);
 
   // Handle tab changes
   const handleTabChange = (value: string) => {
@@ -122,13 +143,13 @@ export default function TimeManagement() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error Loading Data</AlertTitle>
-            <AlertDescription>
-              There was a problem loading your time management data.
+            <AlertDescription className="flex items-center justify-between">
+              <span>There was a problem loading your time management data.</span>
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="ml-2" 
+                size="sm"
                 onClick={handleRetry}
+                className="ml-2 whitespace-nowrap"
               >
                 <RefreshCw className="mr-2 h-3 w-3" /> Retry
               </Button>
@@ -141,7 +162,10 @@ export default function TimeManagement() {
             <h1 className="text-2xl font-bold">Time Management</h1>
             <p className="text-muted-foreground">Request and manage time off</p>
           </div>
-          <div>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="icon" onClick={forceRefreshData} title="Refresh data">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
             <TimeOffRequestForm
               currentUser={currentUser}
               onRequestSubmitted={fetchRequests}

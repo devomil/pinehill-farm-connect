@@ -21,9 +21,10 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
 }) => {
   const handleRefresh = () => {
     if (refresh) {
+      toast.info("Refreshing time off requests...");
       try {
         refresh();
-        toast.success("Refreshed time off requests");
+        // Toast is shown on successful completion - moved to TimeManagement.tsx
       } catch (error) {
         console.error("Error refreshing time off requests:", error);
         toast.error("Failed to refresh time off requests");
@@ -78,7 +79,7 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
           Create your first time-off request to get started.
         </p>
         {refresh && (
-          <Button className="mt-4" onClick={refresh} variant="outline">
+          <Button className="mt-4" onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>

@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { NewShiftCoverageRequestButton } from "./NewShiftCoverageRequestButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner"; // Import toast for better user feedback
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -38,14 +39,23 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
 
   // Filter shift coverage requests from messages
   const shiftCoverageRequests = useMemo(() => {
-    return messages?.filter(
-      (message) => 
-        message.type === "shift_coverage" && 
-        (message.recipient_id === currentUser.id || 
-         message.sender_id === currentUser.id) &&
-        message.shift_coverage_requests && 
-        message.shift_coverage_requests.length > 0
-    ) || [];
+    // Add debug logging
+    console.log("Processing shift coverage requests:", messages?.length);
+    
+    if (!messages?.length) {
+      return [];
+    }
+    
+    const filtered = messages.filter(message => {
+      const isShiftCoverage = message.type === "shift_coverage";
+      const isRelevantToUser = message.recipient_id === currentUser.id || message.sender_id === currentUser.id;
+      const hasShiftRequests = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
+      
+      return isShiftCoverage && isRelevantToUser && hasShiftRequests;
+    });
+    
+    console.log("Filtered shift coverage requests:", filtered.length);
+    return filtered;
   }, [messages, currentUser]);
 
   // Apply status filter
@@ -76,6 +86,12 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     return allEmployees?.find(emp => emp.id === id);
   };
 
+  // Handle manual refresh with feedback
+  const handleManualRefresh = () => {
+    toast.info("Refreshing shift coverage requests...");
+    onRefresh();
+  };
+
   if (error) {
     return (
       <Alert variant="destructive" className="mb-4">
@@ -83,7 +99,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
         <AlertTitle>Error loading shift coverage requests</AlertTitle>
         <AlertDescription className="flex flex-col gap-2">
           <p>There was a problem loading your shift coverage requests. Please try again.</p>
-          <Button variant="outline" size="sm" className="w-fit" onClick={onRefresh}>
+          <Button variant="outline" size="sm" className="w-fit" onClick={handleManualRefresh}>
             <RefreshCw className="mr-2 h-3 w-3" /> Retry
           </Button>
         </AlertDescription>
@@ -111,7 +127,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             variant={filter === 'all' ? 'default' : 'outline'} 
             onClick={() => setFilter('all')}
           >
-            All Requests
+            All Requests ({shiftCoverageRequests.length})
           </Button>
           <Button 
             size="sm" 
@@ -130,6 +146,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             size="sm" 
             variant={filter === 'accepted' ? 'default' : 'outline'} 
             onClick={() => setFilter('accepted')}
+            className="relative"
           >
             Accepted
             {acceptedCount > 0 && (
@@ -142,6 +159,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             size="sm" 
             variant={filter === 'declined' ? 'default' : 'outline'} 
             onClick={() => setFilter('declined')}
+            className="relative"
           >
             Declined
             {declinedCount > 0 && (
@@ -151,7 +169,10 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             )}
           </Button>
         </div>
-        <div>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={handleManualRefresh} className="mr-2">
+            <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+          </Button>
           <NewShiftCoverageRequestButton 
             currentUser={currentUser}
             allEmployees={allEmployees || []}

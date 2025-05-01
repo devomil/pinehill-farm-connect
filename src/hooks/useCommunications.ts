@@ -41,7 +41,12 @@ export const useCommunications = () => {
   };
 
   const respondToShiftRequest = (params: RespondToShiftRequestParams) => {
-    return respondToShiftRequestMutation.mutate(params);
+    return respondToShiftRequestMutation.mutate(params, {
+      onSuccess: () => {
+        // Invalidate and refetch communications data after successful mutation
+        refreshMessages();
+      }
+    });
   };
   
   // Function to refresh messages with a retry parameter to prevent loops
