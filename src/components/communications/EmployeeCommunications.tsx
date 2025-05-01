@@ -77,22 +77,40 @@ export function EmployeeCommunications({
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
-  // Type correction: Explicitly cast each message to match Communication type
-  // This ensures that the 'type' property is recognized as the correct string literal union
-  const typedMessages: Communication[] = messages ? messages.map(msg => {
-    const typedMsg = {
-      ...msg,
-      // Ensure type is one of the allowed values, defaulting to 'general' if not
-      type: (['general', 'shift_coverage', 'urgent'].includes(msg.type) 
-        ? msg.type 
-        : 'general') as 'general' | 'shift_coverage' | 'urgent',
-      // Ensure status is one of the allowed values
-      status: (['pending', 'accepted', 'declined'].includes(msg.status)
-        ? msg.status
-        : 'pending') as 'pending' | 'accepted' | 'declined'
-    };
-    return typedMsg;
-  }) : [];
+  // Enhanced type correction to properly cast all messages and their nested properties
+  const typedMessages = React.useMemo(() => {
+    if (!messages) return [] as Communication[];
+    
+    return messages.map(msg => {
+      // Cast message type to proper union type
+      const messageType = ['general', 'shift_coverage', 'urgent'].includes(msg.type) 
+        ? msg.type as 'general' | 'shift_coverage' | 'urgent'
+        : 'general' as const;
+      
+      // Cast message status to proper union type
+      const messageStatus = ['pending', 'accepted', 'declined'].includes(msg.status)
+        ? msg.status as 'pending' | 'accepted' | 'declined'
+        : 'pending' as const;
+      
+      // Process shift coverage requests to ensure they have proper types
+      const typedShiftRequests = msg.shift_coverage_requests?.map(req => {
+        return {
+          ...req,
+          status: ['pending', 'accepted', 'declined'].includes(req.status)
+            ? req.status as 'pending' | 'accepted' | 'declined'
+            : 'pending' as const
+        };
+      });
+      
+      // Build the properly typed message object
+      return {
+        ...msg,
+        type: messageType,
+        status: messageStatus,
+        shift_coverage_requests: typedShiftRequests,
+      } as Communication;
+    });
+  }, [messages]);
 
   const handleSendMessage = useCallback((message: string) => {
     if (selectedEmployee) {

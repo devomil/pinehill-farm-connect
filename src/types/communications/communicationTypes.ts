@@ -21,6 +21,8 @@ export interface ShiftCoverageRequest {
   shift_start: string;
   shift_end: string;
   status: 'pending' | 'accepted' | 'declined';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SendMessageParams {
