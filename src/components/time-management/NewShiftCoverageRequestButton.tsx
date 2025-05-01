@@ -7,7 +7,6 @@ import { User } from "@/types";
 import { RecipientSelect } from "@/components/communications/RecipientSelect";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "@/hooks/communications/useSendMessage";
 import { toast } from "sonner";
 
@@ -73,6 +72,9 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     setShiftEnd("");
   };
 
+  // Filter out the current user from the employee list
+  const availableEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -87,14 +89,11 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <div>
-            <Label htmlFor="recipient">Select Employee</Label>
-            <RecipientSelect
-              employees={allEmployees.filter(emp => emp.id !== currentUser.id)}
-              value={recipientId}
-              onChange={setRecipientId}
-            />
-          </div>
+          <RecipientSelect
+            employees={availableEmployees}
+            value={recipientId}
+            onChange={setRecipientId}
+          />
 
           <ShiftDetailsForm
             shiftDate={shiftDate}

@@ -1,91 +1,44 @@
 
-import React, { useEffect } from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
 import { User } from "@/types";
-import { NewMessageFormData } from "@/types/communications";
-import { useAuth } from "@/contexts/AuthContext";
+import { Label } from "@/components/ui/label";
 
 interface RecipientSelectProps {
-  form: UseFormReturn<NewMessageFormData>;
   employees: User[];
-  onRefresh?: () => void; // Optional callback to refresh employee list
+  value: string;
+  onChange: (value: string) => void;
 }
 
-export function RecipientSelect({ form, employees, onRefresh }: RecipientSelectProps) {
-  const { currentUser } = useAuth();
-  
-  useEffect(() => {
-    // Reset the recipient if the currently selected one is removed from the list
-    const currentRecipientId = form.getValues("recipientId");
-    if (currentRecipientId && !employees.some(e => e.id === currentRecipientId)) {
-      form.setValue("recipientId", "");
-      console.log("Previously selected recipient is no longer available, resetting selection");
-    }
-  }, [employees, form]);
-
-  // Filter out the current user from the employee list
-  const availableRecipients = currentUser ? employees.filter(employee => 
-    employee.id !== currentUser.id
-  ) : employees;
-
-  // Add logging to check available recipients
-  console.log(`Available recipients: ${availableRecipients.length}`, 
-    availableRecipients.map(r => ({ id: r.id, name: r.name })));
-
+export function RecipientSelect({ employees, value, onChange }: RecipientSelectProps) {
   // Check if we have any valid recipients
-  const hasRecipients = availableRecipients.length > 0;
+  const hasRecipients = employees.length > 0;
 
   return (
-    <FormField
-      control={form.control}
-      name="recipientId"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="flex justify-between">
-            <span>Recipient</span>
-            {onRefresh && (
-              <button 
-                type="button" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  onRefresh();
-                }}
-                className="text-xs text-primary hover:underline"
-              >
-                Refresh list
-              </button>
-            )}
-          </FormLabel>
-          <Select 
-            onValueChange={field.onChange} 
-            defaultValue={field.value}
-            disabled={!hasRecipients}
-            value={field.value}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={hasRecipients ? "Select recipient" : "No recipients available"} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {hasRecipients ? (
-                availableRecipients.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-recipient" disabled>
-                  No recipients available
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="space-y-2">
+      <Label htmlFor="recipient">Select Employee</Label>
+      <Select 
+        onValueChange={onChange} 
+        value={value}
+        disabled={!hasRecipients}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={hasRecipients ? "Select recipient" : "No recipients available"} />
+        </SelectTrigger>
+        <SelectContent>
+          {hasRecipients ? (
+            employees.map((employee) => (
+              <SelectItem key={employee.id} value={employee.id}>
+                {employee.name || employee.email}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="no-recipient" disabled>
+              No recipients available
+            </SelectItem>
+          )}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
