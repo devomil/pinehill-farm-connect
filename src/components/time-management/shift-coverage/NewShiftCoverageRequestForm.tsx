@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { User } from "@/types";
 import { NewMessageFormData } from "@/types/communications";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface NewShiftCoverageRequestFormProps {
   employees: User[];
@@ -67,9 +68,21 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
 
   // Filter out current user from employee list
   const filteredEmployees = employees.filter(emp => emp.id !== currentUser.id);
+  
+  // Check if there are available employees after filtering
+  const hasAvailableEmployees = filteredEmployees.length > 0;
 
   return (
     <Form {...form}>
+      {!hasAvailableEmployees && (
+        <Alert className="bg-amber-50 border-amber-300 mb-4">
+          <AlertCircle className="h-4 w-4 text-amber-800" />
+          <AlertDescription className="text-amber-800">
+            No other employees are available to cover shifts. Go to the Reports page and click "Fix Assignments" to add employees.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
         <FormField
           control={form.control}
@@ -77,10 +90,10 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
           render={({ field }) => (
             <FormItem>
               <FormLabel>Employee to Cover Shift</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!hasAvailableEmployees}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select employee" />
+                    <SelectValue placeholder={hasAvailableEmployees ? "Select employee" : "No employees available"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -89,6 +102,11 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
                       {employee.name || employee.email}
                     </SelectItem>
                   ))}
+                  {!hasAvailableEmployees && (
+                    <SelectItem value="no-employees" disabled>
+                      No other employees available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -103,7 +121,7 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
             <FormItem>
               <FormLabel>Shift Date</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" {...field} disabled={!hasAvailableEmployees} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -118,7 +136,7 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
               <FormItem>
                 <FormLabel>Start Time</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
+                  <Input type="time" {...field} disabled={!hasAvailableEmployees} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,7 +149,7 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
               <FormItem>
                 <FormLabel>End Time</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
+                  <Input type="time" {...field} disabled={!hasAvailableEmployees} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -146,14 +164,14 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea rows={4} {...field} />
+                <Textarea rows={4} {...field} disabled={!hasAvailableEmployees} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type="submit" disabled={isLoading || !hasAvailableEmployees} className="w-full">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
