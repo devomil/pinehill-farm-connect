@@ -27,15 +27,17 @@ export function useShiftCoverageFilters(
       // Must contain at least one shift request
       const hasShiftRequests = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
       
-      if (isRelevantToUser && hasShiftRequests) {
-        console.log(`Including shift coverage message ${message.id} in filtered results`);
-        return true;
-      }
-      
-      return false;
+      return isRelevantToUser && hasShiftRequests;
     });
     
-    console.log(`useShiftCoverageFilters - Filtered ${filtered.length} shift coverage requests out of ${messages.length} messages`);
+    console.log(`useShiftCoverageFilters - Found ${filtered.length} shift coverage requests out of ${messages.length} total messages`);
+    
+    if (filtered.length > 0) {
+      filtered.forEach(req => {
+        console.log(`Shift request ${req.id} - from ${req.sender_id} to ${req.recipient_id}, status: ${req.shift_coverage_requests?.[0]?.status || 'unknown'}`);
+      });
+    }
+    
     return filtered;
   }, [messages, currentUser.id]);
 

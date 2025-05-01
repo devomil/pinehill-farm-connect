@@ -41,6 +41,7 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
       isIncoming,
       otherPersonId,
       otherPerson: otherPerson?.name || 'Unknown',
+      requestStatus: shiftDetails?.status || 'unknown',
       shiftDetails: shiftDetails ? {
         id: shiftDetails.id,
         date: shiftDetails.shift_date,
@@ -54,8 +55,6 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
   // IMPORTANT: Use the status from the shift request, not the communication
   const requestStatus = shiftDetails?.status || 'pending';
   const isStatusPending = requestStatus === 'pending';
-  
-  console.log(`ShiftRequestCard ${request.id} status: ${requestStatus}, isStatusPending: ${isStatusPending}`);
   
   // Determine color scheme based on status
   const statusColors = {
@@ -129,12 +128,12 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
             <div className="bg-muted/40 p-4 rounded-md space-y-2">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="font-medium">Date: </span>
+                <span className="font-medium">Date:</span>{" "}
                 <span className="ml-2">{shiftDetails.shift_date}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="font-medium">Time: </span>
+                <span className="font-medium">Time:</span>{" "}
                 <span className="ml-2">{shiftDetails.shift_start} - {shiftDetails.shift_end}</span>
               </div>
             </div>

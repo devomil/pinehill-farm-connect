@@ -6,14 +6,17 @@ import { useRespondToShiftRequest } from "./communications/useRespondToShiftRequ
 import { useUnreadMessages } from "./communications/useUnreadMessages";
 import { useRefreshMessages } from "./communications/useRefreshMessages";
 import { Communication } from "@/types/communications/communicationTypes";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 export const useCommunications = () => {
   const { currentUser } = useAuth();
   const { data: messages, isLoading, error, refetch } = useGetCommunications(currentUser);
   const sendMessageMutation = useSendMessage(currentUser);
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
-  const refreshMessages = useRefreshMessages();
+  const refreshMessages = useCallback(() => {
+    console.log("Manually refreshing communications data");
+    return refetch();
+  }, [refetch]);
   
   // Enhanced debug logging for communications
   useEffect(() => {

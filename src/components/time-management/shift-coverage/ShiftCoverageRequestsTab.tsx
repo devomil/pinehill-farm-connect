@@ -50,6 +50,14 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   useEffect(() => {
     console.log("ShiftCoverageRequestsTab - Render with messages:", messages.length);
     console.log(`ShiftCoverageRequestsTab - Final filtered requests count: ${filteredRequests.length}`);
+    
+    if (filteredRequests.length > 0) {
+      filteredRequests.forEach(req => {
+        console.log(`Filtered request: ${req.id}, from ${req.sender_id} to ${req.recipient_id}, status: ${req.shift_coverage_requests?.[0]?.status}`);
+      });
+    } else {
+      console.log("No shift coverage requests found after filtering");
+    }
   }, [messages, filteredRequests]);
 
   // Find employee by ID
