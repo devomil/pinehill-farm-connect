@@ -19,6 +19,7 @@ export default function TimeManagement() {
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [activeTab, setActiveTab] = useState("my-requests");
   
   // Get communications data for shift coverage requests
   const { messages: rawMessages, isLoading: messagesLoading, respondToShiftRequest, refreshMessages } = useCommunications();
@@ -69,6 +70,17 @@ export default function TimeManagement() {
     refreshMessages(); // Also fetch messages for shift coverage requests
   }, [currentUser, refreshMessages]);
 
+  // Handle tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Refresh data when switching to specific tabs
+    if (value === "shift-coverage") {
+      refreshMessages();
+    } else if (value === "my-requests") {
+      fetchRequests();
+    }
+  };
+
   if (!currentUser) {
     return (
       <DashboardLayout>
@@ -100,8 +112,8 @@ export default function TimeManagement() {
             />
           </div>
         </div>
-        <Tabs defaultValue="my-requests">
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="mb-4">
             <TabsTrigger value="my-requests">My Requests</TabsTrigger>
             <TabsTrigger value="shift-coverage">Shift Coverage</TabsTrigger>
             {isAdmin && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}

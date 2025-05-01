@@ -77,7 +77,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   return (
     <>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             size="sm" 
             variant={filter === 'all' ? 'default' : 'outline'} 
@@ -113,11 +113,13 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             Declined
           </Button>
         </div>
-        <NewShiftCoverageRequestButton 
-          currentUser={currentUser}
-          allEmployees={allEmployees || []}
-          onRequestSent={onRefresh}
-        />
+        <div>
+          <NewShiftCoverageRequestButton 
+            currentUser={currentUser}
+            allEmployees={allEmployees || []}
+            onRequestSent={onRefresh}
+          />
+        </div>
       </div>
 
       {filteredRequests.length === 0 ? (
