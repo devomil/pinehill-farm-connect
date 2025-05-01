@@ -15,7 +15,7 @@ export function useProcessMessages(
     return ['general', 'shift_coverage', 'urgent'].includes(type);
   }
 
-  function isValidMessageStatus(status: string): status is MessageStatus {
+  function isValidMessageStatus(status: string): type is MessageStatus {
     return ['pending', 'accepted', 'declined'].includes(status);
   }
 
@@ -26,12 +26,12 @@ export function useProcessMessages(
     return messages.map(msg => {
       // Validate and convert message type to MessageType enum
       const messageType: MessageType = isValidMessageType(msg.type) 
-        ? msg.type as MessageType
+        ? msg.type 
         : 'general';
       
       // Validate and convert message status to MessageStatus enum
       const messageStatus: MessageStatus = isValidMessageStatus(msg.status)
-        ? msg.status as MessageStatus
+        ? msg.status
         : 'pending';
       
       // Process shift coverage requests with proper typing
@@ -39,13 +39,13 @@ export function useProcessMessages(
         return {
           ...req,
           status: isValidMessageStatus(req.status)
-            ? req.status as MessageStatus
-            : 'pending' as MessageStatus
+            ? req.status
+            : 'pending'
         };
       }) || [];
       
       // Return a properly typed Communication object
-      return {
+      const communication: Communication = {
         id: msg.id,
         sender_id: msg.sender_id,
         recipient_id: msg.recipient_id,
@@ -58,6 +58,8 @@ export function useProcessMessages(
         shift_coverage_requests: typedShiftRequests,
         current_user_id: currentUser?.id
       };
+      
+      return communication;
     });
   }, [messages, currentUser?.id]);
 }
