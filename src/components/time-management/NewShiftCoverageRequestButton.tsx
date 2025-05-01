@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CalendarPlus } from "lucide-react";
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/sheet";
 import { User } from "@/types";
 import { NewMessageFormData } from "@/types/communications";
-import { useMessageSending } from "@/hooks/communications/useMessageSending";
 import { toast } from "sonner";
 import { NewShiftCoverageRequestForm } from "./shift-coverage/NewShiftCoverageRequestForm";
 
@@ -27,22 +27,31 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
   onRequestSent,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { sendMessage, isLoading } = useMessageSending();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check if there are available employees
-  const hasAvailableEmployees = allEmployees && allEmployees.length > 0;
+  const hasAvailableEmployees = allEmployees && allEmployees
+    .filter(emp => emp.id !== currentUser.id)
+    .length > 0;
 
   const handleNewRequest = (formData: NewMessageFormData) => {
+    setIsLoading(true);
     // Create shift coverage request
-    sendMessage({
-      recipientId: formData.recipientId,
-      message: formData.message,
-      type: "shift_coverage",
-      shiftDetails: {
-        shift_date: formData.shiftDate || "",
-        shift_start: formData.shiftStart || "",
-        shift_end: formData.shiftEnd || "",
+    fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        recipientId: formData.recipientId,
+        message: formData.message,
+        type: "shift_coverage",
+        shiftDetails: {
+          shift_date: formData.shiftDate || "",
+          shift_start: formData.shiftStart || "",
+          shift_end: formData.shiftEnd || "",
+        }
+      })
     })
       .then(() => {
         setIsOpen(false);
@@ -52,6 +61,9 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       .catch((error) => {
         console.error("Error sending shift coverage request:", error);
         toast.error("Failed to send shift coverage request");
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 

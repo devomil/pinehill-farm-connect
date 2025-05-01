@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Check, X } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { format } from "date-fns";
