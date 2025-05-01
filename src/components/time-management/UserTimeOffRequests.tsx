@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Plus, Calendar, RefreshCw } from "lucide-react";
 import { TimeOffRequest } from "@/types";
-import { toast } from "sonner";
 
 interface UserTimeOffRequestsProps {
   userRequests: TimeOffRequest[];
@@ -23,7 +22,6 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
     if (refresh) {
       try {
         refresh();
-        // Toast is shown in the TimeManagement context after successful fetch
       } catch (error) {
         console.error("Error refreshing time off requests:", error);
       }

@@ -10,13 +10,15 @@ interface TimeOffRequestsCardProps {
   loading?: boolean;
   error?: Error | null;
   onRefresh?: () => void;
+  showEmployeeName?: boolean;
 }
 
 export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ 
   requests, 
   loading,
   error,
-  onRefresh
+  onRefresh,
+  showEmployeeName = false
 }) => {
   return (
     <Card>
@@ -59,9 +61,16 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
           <ul className="space-y-2">
             {requests.map((timeOff) => (
               <li key={timeOff.id} className="flex justify-between items-center">
-                <span>
-                  {new Date(timeOff.start_date || timeOff.startDate).toLocaleDateString()} to{' '}
-                  {new Date(timeOff.end_date || timeOff.endDate).toLocaleDateString()}
+                <span className="flex flex-col">
+                  {showEmployeeName && timeOff.profiles && (
+                    <span className="text-sm font-medium">
+                      {timeOff.profiles.name || 'Unknown Employee'}
+                    </span>
+                  )}
+                  <span>
+                    {new Date(timeOff.start_date || timeOff.startDate).toLocaleDateString()} to{' '}
+                    {new Date(timeOff.end_date || timeOff.endDate).toLocaleDateString()}
+                  </span>
                 </span>
                 <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
                   {timeOff.status}

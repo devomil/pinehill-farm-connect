@@ -75,9 +75,20 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     
     try {
       console.log("Fetching time off requests for user:", currentUser.id);
-      const { data, error: fetchError } = await supabase
-        .from("time_off_requests")
-        .select("*");
+      
+      // For admins, include profile data to display employee names
+      const query = currentUser.role === 'admin' 
+        ? supabase
+            .from("time_off_requests")
+            .select(`
+              *,
+              profiles:user_id (id, name, email)
+            `)
+        : supabase
+            .from("time_off_requests")
+            .select("*");
+        
+      const { data, error: fetchError } = await query;
         
       if (fetchError) {
         console.error("Supabase error:", fetchError);
@@ -96,6 +107,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
             reason: r.reason,
             userId: r.user_id,
             notes: r.notes,
+            profiles: r.profiles // Keep the profiles data for admins
           }))
         );
         
@@ -132,8 +144,11 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
         event: '*', 
         schema: 'public', 
         table: 'time_off_requests' 
-      }, () => {
-        console.log('Received time-off request update via realtime');
+      }, (payload) => {
+        console.log('Received time-off request update via realtime:', payload);
+        // Instead of doing a full refetch which can cause flashing,
+        // we could update the local state based on the payload
+        // For simplicity, we'll still call fetchRequests here
         fetchRequests();
       })
       .subscribe((status) => {

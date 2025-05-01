@@ -14,15 +14,22 @@ export function useDashboardData() {
     queryKey: ['pendingTimeOff', retryCount],
     queryFn: async () => {
       if (!isAdmin) return [];
+      
+      // Join with profiles to get employee names
       const { data, error } = await supabase
         .from('time_off_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (name, email)
+        `)
         .eq('status', 'pending');
       
       if (error) throw error;
       return data || [];
     },
-    enabled: isAdmin
+    enabled: isAdmin,
+    staleTime: 30000, // Add stale time to reduce unnecessary refetches
+    retry: 3
   });
 
   // Fetch user's own time off requests
@@ -37,7 +44,9 @@ export function useDashboardData() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!currentUser?.id
+    enabled: !!currentUser?.id,
+    staleTime: 30000,
+    retry: 3
   });
 
   // Fetch recent announcements
@@ -52,7 +61,9 @@ export function useDashboardData() {
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 30000,
+    retry: 3
   });
 
   // Fetch assigned trainings
@@ -74,7 +85,9 @@ export function useDashboardData() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!currentUser?.id
+    enabled: !!currentUser?.id,
+    staleTime: 30000,
+    retry: 3
   });
 
   // Refetch time off data

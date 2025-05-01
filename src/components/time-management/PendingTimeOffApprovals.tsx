@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Calendar } from "lucide-react";
+import { Clock, Calendar, RefreshCw } from "lucide-react";
 import { TimeOffRequest, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 interface PendingTimeOffApprovalsProps {
   pendingRequests: TimeOffRequest[];
@@ -22,7 +22,10 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
   // Fetch employee names for all pending requests
   useEffect(() => {
     const fetchEmployeeNames = async () => {
-      if (!pendingRequests.length) return;
+      if (!pendingRequests.length) {
+        setLoadingNames(false);
+        return;
+      }
       
       setLoadingNames(true);
       
@@ -33,7 +36,7 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
         // Fetch profiles for these user IDs
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, name')
+          .select('id, name, email')
           .in('id', userIds);
           
         if (error) throw error;
@@ -41,7 +44,8 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
         // Create a mapping of user IDs to names
         const namesMap: Record<string, string> = {};
         data?.forEach(profile => {
-          namesMap[profile.id] = profile.name || 'Unknown Employee';
+          // Use name if available, otherwise fallback to email or unknown
+          namesMap[profile.id] = profile.name || profile.email?.split('@')[0] || 'Unknown Employee';
         });
         
         setEmployeeNames(namesMap);
@@ -57,21 +61,28 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
   }, [pendingRequests]);
 
   const handleAction = async (requestId: string, status: "approved" | "rejected") => {
-    const { error } = await supabase
-      .from("time_off_requests")
-      .update({ status })
-      .eq("id", requestId);
+    try {
+      const { error } = await supabase
+        .from("time_off_requests")
+        .update({ status })
+        .eq("id", requestId);
 
-    if (error) {
-      toast.error(`Failed to ${status === "approved" ? "approve" : "reject"} request`);
-      return;
+      if (error) {
+        throw error;
+      }
+      
+      toast.success(`Request ${status}!`);
+      refresh();
+      
+      // Send notification to employee (optional)
+      // This could be implemented through a Supabase function or edge function
+    } catch (error: any) {
+      console.error(`Error ${status === "approved" ? "approving" : "rejecting"} request:`, error);
+      toast.error(`Failed to ${status === "approved" ? "approve" : "reject"} request: ${error.message}`);
     }
-    toast.success(`Request ${status}!`);
-    refresh && refresh();
-    // Optionally: invoke notification logic for employee here
   };
 
-  if (!pendingRequests.length) {
+  if (pendingRequests.length === 0) {
     return (
       <div className="text-center py-12">
         <Clock className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
@@ -79,6 +90,10 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
         <p className="mt-2 text-sm text-muted-foreground">
           All time-off requests have been processed.
         </p>
+        <Button variant="outline" className="mt-4" onClick={refresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
     );
   }
@@ -130,4 +145,4 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
       ))}
     </div>
   );
-};
+}

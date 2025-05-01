@@ -81,7 +81,17 @@ export default function Dashboard() {
               <TrainingCard trainings={assignedTrainings} />
             )}
 
-            {userTimeOff && (
+            {isAdmin && pendingTimeOff && (
+              <TimeOffRequestsCard 
+                requests={pendingTimeOff} 
+                loading={dashboardDataLoading}
+                error={dashboardDataError}
+                onRefresh={handleRefreshTimeOff}
+                showEmployeeName={true}
+              />
+            )}
+
+            {userTimeOff && !isAdmin && (
               <TimeOffRequestsCard 
                 requests={userTimeOff} 
                 loading={dashboardDataLoading}
