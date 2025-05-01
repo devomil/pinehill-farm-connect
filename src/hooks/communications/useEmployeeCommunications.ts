@@ -1,16 +1,27 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Communication } from "@/types/communications/communicationTypes";
+import { Communication, MessageType } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
   setSelectedEmployee?: (employee: User | null) => void;
+}
+
+export interface SendMessageData {
+  recipientId: string;
+  message: string;
+  type: MessageType;
+  shiftDetails?: {
+    shift_date: string;
+    shift_start: string;
+    shift_end: string;
+  };
 }
 
 export function useEmployeeCommunications({
@@ -48,34 +59,34 @@ export function useEmployeeCommunications({
   // Mark messages as read when viewing a conversation
   useEffect(() => {
     const markMessagesAsRead = async () => {
-      if (selectedEmployee && currentUser && unreadMessages.length > 0) {
-        // Find unread messages from the selected employee
-        const toMarkAsRead = unreadMessages.filter(
-          msg => msg.sender_id === selectedEmployee.id && msg.recipient_id === currentUser.id
-        );
-        
-        if (toMarkAsRead.length > 0) {
-          console.log(`Marking ${toMarkAsRead.length} messages as read`);
-          
-          const messageIds = toMarkAsRead.map(msg => msg.id);
-          const { error } = await supabase
-            .from('employee_communications')
-            .update({ read_at: new Date().toISOString() })
-            .in('id', messageIds);
-          
-          if (error) {
-            console.error("Error marking messages as read:", error);
-          }
-        }
+      if (!selectedEmployee || !currentUser || !unreadMessages.length) return;
+
+      // Find unread messages from the selected employee
+      const toMarkAsRead = unreadMessages.filter(
+        msg => msg.sender_id === selectedEmployee.id && msg.recipient_id === currentUser.id
+      );
+      
+      if (toMarkAsRead.length === 0) return;
+      
+      console.log(`Marking ${toMarkAsRead.length} messages as read`);
+      
+      const messageIds = toMarkAsRead.map(msg => msg.id);
+      const { error } = await supabase
+        .from('employee_communications')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', messageIds);
+      
+      if (error) {
+        console.error("Error marking messages as read:", error);
       }
     };
     
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
-  // Process and type messages correctly
-  const processedMessages: Communication[] = useCallback(() => {
-    if (!messages) return [] as Communication[];
+  // Process messages with proper typing
+  const processedMessages = useMemo((): Communication[] => {
+    if (!messages || !messages.length) return [];
     
     return messages.map(msg => {
       // Cast message type to proper union type
@@ -107,16 +118,16 @@ export function useEmployeeCommunications({
         admin_cc: msg.admin_cc
       } as Communication;
     });
-  }, [messages])();
+  }, [messages]);
 
   const handleSendMessage = useCallback((message: string) => {
-    if (selectedEmployee) {
-      sendMessage({
-        recipientId: selectedEmployee.id,
-        message: message,
-        type: "general",
-      });
-    }
+    if (!selectedEmployee) return;
+    
+    sendMessage({
+      recipientId: selectedEmployee.id,
+      message,
+      type: "general",
+    });
   }, [selectedEmployee, sendMessage]);
 
   const handleSelectEmployee = useCallback((employee: User) => {
@@ -127,7 +138,7 @@ export function useEmployeeCommunications({
     }
   }, [propSetSelectedEmployee]);
 
-  const handleNewMessageSend = useCallback((data: any) => {
+  const handleNewMessageSend = useCallback((data: SendMessageData) => {
     sendMessage(data);
     setDialogOpen(false);
     
