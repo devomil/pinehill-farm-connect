@@ -1,14 +1,20 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Clock } from "lucide-react";
+import { Clock, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TimeOffRequestsCardProps {
   requests: any[];
   loading?: boolean;
+  error?: Error | null;
 }
 
-export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ requests, loading }) => {
+export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ 
+  requests, 
+  loading,
+  error
+}) => {
   return (
     <Card>
       <CardHeader>
@@ -19,7 +25,14 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ reques
         <CardDescription>Your pending requests</CardDescription>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {error ? (
+          <Alert variant="destructive" className="my-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load time off requests
+            </AlertDescription>
+          </Alert>
+        ) : loading ? (
           <div className="text-center py-4">
             <div className="animate-pulse h-6 bg-muted rounded w-3/4 mx-auto mb-2"></div>
             <div className="animate-pulse h-6 bg-muted rounded w-2/3 mx-auto"></div>

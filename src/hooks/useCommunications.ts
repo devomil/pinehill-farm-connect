@@ -48,10 +48,14 @@ export const useCommunications = () => {
   const refreshMessages = () => {
     console.log("Manually refreshing messages");
     queryClient.invalidateQueries({ queryKey: ['communications'] });
+    // Attempt to invalidate any cached errors
+    if (error) {
+      queryClient.resetQueries({ queryKey: ['communications'] });
+    }
   };
 
   return {
-    messages,
+    messages: messages || [],
     unreadMessages,
     isLoading,
     error,

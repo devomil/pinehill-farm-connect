@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/ShiftCoverageRequestsTab";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function TimeManagement() {
   const { currentUser } = useAuth();
@@ -20,9 +23,10 @@ export default function TimeManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState("my-requests");
+  const [retryCount, setRetryCount] = useState(0);
   
   // Get communications data for shift coverage requests
-  const { messages: rawMessages, isLoading: messagesLoading, respondToShiftRequest, refreshMessages } = useCommunications();
+  const { messages: rawMessages, isLoading: messagesLoading, error: messagesError, respondToShiftRequest, refreshMessages } = useCommunications();
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
   const fetchRequests = async () => {
@@ -32,13 +36,13 @@ export default function TimeManagement() {
     
     try {
       console.log("Fetching time off requests for user:", currentUser.id);
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("time_off_requests")
         .select("*");
         
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
+      if (fetchError) {
+        console.error("Supabase error:", fetchError);
+        throw fetchError;
       }
       
       if (data) {
@@ -55,20 +59,31 @@ export default function TimeManagement() {
             notes: r.notes,
           }))
         );
+      } else {
+        console.log("No time off requests data returned");
+        setTimeOffRequests([]);
       }
     } catch (err: any) {
       console.error("Failed to fetch time-off requests:", err);
       setError(err);
-      toast.error("Failed to fetch time-off requests");
+      toast.error("Failed to fetch time-off requests. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Retry logic for failed fetches
+  const handleRetry = () => {
+    setRetryCount(prevCount => prevCount + 1);
+    fetchRequests();
+    refreshMessages();
+    toast.info("Retrying data fetch...");
+  };
+
   useEffect(() => {
     fetchRequests();
     refreshMessages(); // Also fetch messages for shift coverage requests
-  }, [currentUser, refreshMessages]);
+  }, [currentUser, refreshMessages, retryCount]);
 
   // Handle tab changes
   const handleTabChange = (value: string) => {
@@ -97,9 +112,30 @@ export default function TimeManagement() {
     (request) => request.userId === currentUser.id
   );
 
+  // Display global error message if both requests fail
+  const showGlobalError = error && messagesError;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {showGlobalError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Data</AlertTitle>
+            <AlertDescription>
+              There was a problem loading your time management data.
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2" 
+                onClick={handleRetry}
+              >
+                <RefreshCw className="mr-2 h-3 w-3" /> Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+      
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">Time Management</h1>
@@ -134,6 +170,7 @@ export default function TimeManagement() {
               onRespond={respondToShiftRequest}
               currentUser={currentUser}
               onRefresh={refreshMessages}
+              error={messagesError}
             />
           </TabsContent>
           {isAdmin && (

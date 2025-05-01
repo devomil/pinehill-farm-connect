@@ -3,16 +3,18 @@ import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { format } from "date-fns";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { NewShiftCoverageRequestButton } from "./NewShiftCoverageRequestButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
   loading: boolean;
+  error?: any;
   onRespond: (data: {
     communicationId: string;
     shiftRequestId: string;
@@ -26,23 +28,24 @@ interface ShiftCoverageRequestsTabProps {
 export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> = ({
   messages,
   loading,
+  error,
   onRespond,
   currentUser,
   onRefresh,
 }) => {
-  const { unfilteredEmployees: allEmployees } = useEmployeeDirectory();
+  const { unfilteredEmployees: allEmployees, isLoading: employeesLoading } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
 
   // Filter shift coverage requests from messages
   const shiftCoverageRequests = useMemo(() => {
-    return messages.filter(
+    return messages?.filter(
       (message) => 
         message.type === "shift_coverage" && 
         (message.recipient_id === currentUser.id || 
          message.sender_id === currentUser.id) &&
         message.shift_coverage_requests && 
         message.shift_coverage_requests.length > 0
-    );
+    ) || [];
   }, [messages, currentUser]);
 
   // Apply status filter
@@ -58,12 +61,37 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     [shiftCoverageRequests]
   );
 
+  const acceptedCount = useMemo(() => 
+    shiftCoverageRequests.filter(req => req.status === 'accepted').length, 
+    [shiftCoverageRequests]
+  );
+
+  const declinedCount = useMemo(() => 
+    shiftCoverageRequests.filter(req => req.status === 'declined').length, 
+    [shiftCoverageRequests]
+  );
+
   // Find employee by ID
   const findEmployee = (id: string): User | undefined => {
     return allEmployees?.find(emp => emp.id === id);
   };
 
-  if (loading) {
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error loading shift coverage requests</AlertTitle>
+        <AlertDescription className="flex flex-col gap-2">
+          <p>There was a problem loading your shift coverage requests. Please try again.</p>
+          <Button variant="outline" size="sm" className="w-fit" onClick={onRefresh}>
+            <RefreshCw className="mr-2 h-3 w-3" /> Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (loading || employeesLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="flex flex-col items-center">
@@ -104,6 +132,11 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             onClick={() => setFilter('accepted')}
           >
             Accepted
+            {acceptedCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {acceptedCount}
+              </span>
+            )}
           </Button>
           <Button 
             size="sm" 
@@ -111,6 +144,11 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
             onClick={() => setFilter('declined')}
           >
             Declined
+            {declinedCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gray-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {declinedCount}
+              </span>
+            )}
           </Button>
         </div>
         <div>
