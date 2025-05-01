@@ -9,6 +9,7 @@ import { useMessageReadStatus } from "./useMessageReadStatus";
 import { useProcessMessages } from "./useProcessMessages";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 import { useMessageSending } from "./useMessageSending";
+import { Communication } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -38,8 +39,10 @@ export function useEmployeeCommunications({
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Use our newly extracted hooks
+  // Use our extracted hooks
   const { isMobileView } = useResponsiveLayout();
+  
+  // Process messages with proper typing
   const processedMessages = useProcessMessages(messages, currentUser);
   
   // Use message read status hook

@@ -8,7 +8,7 @@ import { CommunicationsLayout } from "@/components/communications/Communications
 import { ConversationTabs } from "@/components/communications/ConversationTabs";
 import { useErrorHandling } from "@/hooks/communications/useErrorHandling";
 import { toast } from "sonner";
-import { Communication, MessageType, MessageStatus } from "@/types/communications/communicationTypes";
+import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 
 export default function Communications() {
   const { currentUser } = useAuth();
@@ -19,6 +19,9 @@ export default function Communications() {
   
   const loading = employeesLoading || assignmentsLoading || messagesLoading;
   const error = employeeError || messagesError; // Combine errors from both hooks
+
+  // Use our common processing hook to ensure proper types
+  const processedMessages = useProcessMessages(messages, currentUser);
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
@@ -32,7 +35,7 @@ export default function Communications() {
       console.log("Auto-refreshing communications data");
       refetchEmployees();  // Refresh employee data too to keep recipient lists current
       refreshMessages();
-    }, 30000); // Refresh every 30 seconds (increased frequency)
+    }, 30000); // Refresh every 30 seconds
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
@@ -76,45 +79,6 @@ export default function Communications() {
     error: error ? formatErrorMessage(error) : "No error",
     isConnectionError: isConnectionError(error)
   });
-
-  // Ensure messages is always an array even if it's undefined
-  const safeMessages = messages || [];
-  
-  // Process and type-cast messages for proper type compatibility
-  const processedMessages = React.useMemo(() => {
-    if (!safeMessages.length) return [];
-    
-    return safeMessages.map(msg => {
-      // Cast message type to proper union type
-      const messageType = ['general', 'shift_coverage', 'urgent'].includes(msg.type) 
-        ? msg.type as MessageType
-        : 'general' as MessageType;
-      
-      // Cast message status to proper union type
-      const messageStatus = ['pending', 'accepted', 'declined'].includes(msg.status)
-        ? msg.status as MessageStatus
-        : 'pending' as MessageStatus;
-      
-      // Process shift coverage requests to ensure they have proper types
-      const typedShiftRequests = msg.shift_coverage_requests?.map(req => {
-        return {
-          ...req,
-          status: ['pending', 'accepted', 'declined'].includes(req.status)
-            ? req.status as MessageStatus
-            : 'pending' as MessageStatus
-        };
-      });
-      
-      // Add current user ID to each message for easier processing in child components
-      return {
-        ...msg,
-        type: messageType,
-        status: messageStatus,
-        shift_coverage_requests: typedShiftRequests,
-        current_user_id: currentUser ? currentUser.id : undefined
-      } as Communication;
-    });
-  }, [safeMessages, currentUser]);
 
   return (
     <CommunicationsLayout

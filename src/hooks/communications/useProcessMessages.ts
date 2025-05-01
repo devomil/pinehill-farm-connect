@@ -11,35 +11,35 @@ export function useProcessMessages(
   currentUser: User | null
 ): Communication[] {
   // Helper functions for type validation
-  function isValidMessageType(type: string): boolean {
+  function isValidMessageType(type: string): type is MessageType {
     return ['general', 'shift_coverage', 'urgent'].includes(type);
   }
 
-  function isValidMessageStatus(status: string): boolean {
+  function isValidMessageStatus(status: string): status is MessageStatus {
     return ['pending', 'accepted', 'declined'].includes(status);
   }
 
-  // Process messages with proper typing - explicitly return Communication[] type
+  // Process messages with proper typing
   return useMemo((): Communication[] => {
     if (!messages || !messages.length) return [];
     
     return messages.map(msg => {
-      // Cast message type to proper union type
-      const messageType = isValidMessageType(msg.type) 
-        ? msg.type as MessageType
-        : 'general' as MessageType;
+      // Cast message type to proper union type with validation
+      const messageType: MessageType = isValidMessageType(msg.type) 
+        ? msg.type 
+        : 'general';
       
-      // Cast message status to proper union type
-      const messageStatus = isValidMessageStatus(msg.status)
-        ? msg.status as MessageStatus
-        : 'pending' as MessageStatus;
+      // Cast message status to proper union type with validation
+      const messageStatus: MessageStatus = isValidMessageStatus(msg.status)
+        ? msg.status
+        : 'pending';
       
       // Process shift coverage requests to ensure they have proper types
       const typedShiftRequests = msg.shift_coverage_requests?.map((req: any) => {
         return {
           ...req,
           status: isValidMessageStatus(req.status)
-            ? req.status as MessageStatus
+            ? req.status
             : 'pending' as MessageStatus
         };
       });
@@ -50,7 +50,6 @@ export function useProcessMessages(
         type: messageType,
         status: messageStatus,
         shift_coverage_requests: typedShiftRequests,
-        admin_cc: msg.admin_cc,
         current_user_id: currentUser?.id
       } as Communication;
     });
