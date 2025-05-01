@@ -17,26 +17,37 @@ export const useCommunications = () => {
   
   // Enhanced debug logging for communications
   useEffect(() => {
+    console.log("useCommunications hook - Current user:", currentUser?.email);
+    
     if (error) {
       console.error("Error loading communications:", error);
     }
     
     if (messages) {
-      console.log("Communications loaded successfully:", messages.length);
+      console.log(`Communications loaded successfully for ${currentUser?.email}: ${messages.length} messages`);
       
       // Log shift coverage requests
       const shiftCoverageMessages = messages.filter(msg => msg.type === 'shift_coverage');
-      console.log("Shift coverage messages:", shiftCoverageMessages.length);
+      console.log(`Shift coverage messages for ${currentUser?.email}:`, shiftCoverageMessages.length);
       
       if (shiftCoverageMessages.length > 0) {
-        console.log("Sample shift coverage message:", shiftCoverageMessages[0]);
-        console.log("Shift coverage requests in sample:", 
-          shiftCoverageMessages[0]?.shift_coverage_requests?.length || 0);
+        console.log("Sample shift coverage message:", {
+          id: shiftCoverageMessages[0].id,
+          sender: shiftCoverageMessages[0].sender_id,
+          recipient: shiftCoverageMessages[0].recipient_id,
+          requests: shiftCoverageMessages[0].shift_coverage_requests?.length || 0
+        });
+        
+        if (shiftCoverageMessages[0].shift_coverage_requests?.length) {
+          console.log("Sample shift coverage request:", shiftCoverageMessages[0].shift_coverage_requests[0]);
+        } else {
+          console.log("No shift coverage requests in the sample message");
+        }
       }
     } else if (!isLoading && !error) {
-      console.log("No communications data found but no error reported");
+      console.log(`No communications data found for ${currentUser?.email} but no error reported`);
     }
-  }, [messages, isLoading, error]);
+  }, [messages, isLoading, error, currentUser]);
   
   const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
@@ -56,11 +67,21 @@ export const useCommunications = () => {
     });
   };
 
-  // Force initial fetch on first mount
+  // Force initial fetch on first mount and set up periodic refresh
   useEffect(() => {
-    console.log("Initial communications fetch");
+    console.log(`Initial communications fetch for ${currentUser?.email}`);
     refetch();
-  }, [refetch]);
+    
+    // Set up a periodic refresh to ensure we catch new messages
+    const refreshInterval = setInterval(() => {
+      console.log("Periodic refresh of communications data");
+      refetch();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [refetch, currentUser?.email]);
 
   return {
     messages: messages || [],

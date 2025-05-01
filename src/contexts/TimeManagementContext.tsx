@@ -25,7 +25,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   
   useEffect(() => {
-    console.log("TimeManagementProvider initialized with user:", currentUser?.id);
+    console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
   }, [currentUser]);
   
   // Get time off requests data
@@ -38,7 +38,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     fetchRequests
   } = useTimeOffRequests(currentUser, retryCount);
   
-  // Get communications data for shift coverage requests
+  // Get communications data for shift coverage requests with enhanced logging
   const { 
     messages: rawMessages, 
     isLoading: messagesLoading, 
@@ -47,16 +47,53 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     refreshMessages 
   } = useCommunications();
   
+  // Log raw message data before processing
+  useEffect(() => {
+    console.log("Raw messages in TimeManagementContext:", rawMessages?.length || 0);
+    
+    // Check for shift coverage messages in raw data
+    const shiftMessages = rawMessages?.filter(msg => msg.type === 'shift_coverage') || [];
+    console.log("Raw shift coverage messages count:", shiftMessages.length);
+    
+    if (shiftMessages.length > 0) {
+      console.log("Sample raw shift message:", {
+        id: shiftMessages[0].id,
+        sender: shiftMessages[0].sender_id,
+        recipient: shiftMessages[0].recipient_id,
+        type: shiftMessages[0].type,
+        shiftRequests: shiftMessages[0].shift_coverage_requests?.length || 0
+      });
+    }
+  }, [rawMessages]);
+  
+  // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
   
   // Additional logging for processed messages
   useEffect(() => {
-    console.log("Processed messages count:", processedMessages?.length || 0);
+    console.log("Processed messages in TimeManagementContext:", processedMessages?.length || 0);
     
     if (processedMessages && processedMessages.length > 0) {
-      console.log("First processed message:", processedMessages[0]);
+      // Check for shift coverage messages specifically
+      const shiftMessages = processedMessages.filter(msg => msg.type === 'shift_coverage');
+      console.log("Processed shift coverage messages:", shiftMessages.length);
+      
+      if (shiftMessages.length > 0) {
+        console.log("First processed shift message:", {
+          id: shiftMessages[0].id,
+          sender: shiftMessages[0].sender_id,
+          recipient: shiftMessages[0].recipient_id,
+          requests: shiftMessages[0].shift_coverage_requests?.length || 0
+        });
+        
+        // Check if any are relevant to current user
+        const relevantToUser = shiftMessages.filter(msg => 
+          msg.sender_id === currentUser?.id || msg.recipient_id === currentUser?.id
+        );
+        console.log(`Shift messages relevant to user ${currentUser?.email}:`, relevantToUser.length);
+      }
     }
-  }, [processedMessages]);
+  }, [processedMessages, currentUser]);
 
   // Retry logic for failed fetches
   const handleRetry = useCallback(() => {
@@ -78,7 +115,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   // Initial data load
   useEffect(() => {
     if (currentUser) {
-      console.log("Initial data load in TimeManagementProvider");
+      console.log("Initial data load in TimeManagementProvider for:", currentUser.email);
       fetchRequests();
       refreshMessages();
     }

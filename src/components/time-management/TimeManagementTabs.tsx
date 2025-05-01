@@ -32,20 +32,45 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     messagesError
   } = useTimeManagement();
 
-  // Debug information
+  // Enhanced debugging
   useEffect(() => {
     console.log("TimeManagementTabs - Current tab:", activeTab);
-    console.log("TimeManagementTabs - User requests:", userRequests);
+    console.log("TimeManagementTabs - User requests:", userRequests?.length || 0);
     console.log("TimeManagementTabs - Loading state:", loading);
-    console.log("TimeManagementTabs - Error state:", error);
-    console.log("TimeManagementTabs - Pending requests:", pendingRequests);
-    console.log("TimeManagementTabs - Processed messages:", processedMessages);
+    console.log("TimeManagementTabs - Error state:", error ? error.message : 'none');
+    console.log("TimeManagementTabs - Pending requests:", pendingRequests?.length || 0);
+    
+    // Detailed logging for messages
+    console.log("TimeManagementTabs - Processed messages count:", processedMessages?.length || 0);
+    
+    // Log shift coverage messages specifically
+    const shiftMessages = processedMessages?.filter(msg => msg.type === 'shift_coverage') || [];
+    console.log("TimeManagementTabs - Shift coverage messages:", shiftMessages.length);
+    
+    if (shiftMessages.length > 0) {
+      const relevantToUser = shiftMessages.filter(msg => 
+        msg.sender_id === currentUser.id || msg.recipient_id === currentUser.id
+      );
+      console.log(`TimeManagementTabs - Shift coverage messages relevant to ${currentUser.email}:`, relevantToUser.length);
+      
+      if (relevantToUser.length > 0) {
+        console.log("Sample shift message:", {
+          id: relevantToUser[0].id,
+          sender: relevantToUser[0].sender_id,
+          recipient: relevantToUser[0].recipient_id,
+          requests: relevantToUser[0].shift_coverage_requests?.length || 0
+        });
+      }
+    }
+    
     console.log("TimeManagementTabs - Messages loading:", messagesLoading);
-    console.log("TimeManagementTabs - Messages error:", messagesError);
-  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError]);
+    console.log("TimeManagementTabs - Messages error:", messagesError ? messagesError.message : 'none');
+  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser]);
 
   const handleTabChange = (value: string) => {
+    console.log(`Tab changing from ${activeTab} to ${value}`);
     setActiveTab(value);
+    
     // Refresh data when switching to specific tabs
     if (value === "shift-coverage") {
       console.log("Refreshing messages due to tab change to shift-coverage");

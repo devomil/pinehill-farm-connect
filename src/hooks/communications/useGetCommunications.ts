@@ -13,7 +13,7 @@ export function useGetCommunications(currentUser: User | null) {
         throw new Error("User must be logged in");
       }
       
-      console.log(`Fetching communications for user: ${currentUser.id}`);
+      console.log(`Fetching communications for user: ${currentUser.id}, email: ${currentUser.email}`);
       
       try {
         // First, fetch all communications for the user
@@ -31,11 +31,20 @@ export function useGetCommunications(currentUser: User | null) {
         }
 
         if (!allCommunications || allCommunications.length === 0) {
-          console.log("No communications data returned");
+          console.log(`No communications found for user ${currentUser.email}`);
           return [];
         }
 
-        console.log(`Retrieved ${allCommunications.length} communications, now fetching shift requests`);
+        console.log(`Retrieved ${allCommunications.length} communications for ${currentUser.email}`);
+        
+        // Log the raw communications data to debug
+        console.log("Communications raw data:", allCommunications.map(c => ({
+          id: c.id,
+          type: c.type,
+          sender: c.sender_id,
+          recipient: c.recipient_id,
+          status: c.status
+        })));
 
         // Now for each communication, fetch related shift coverage requests
         const communicationsWithRequests = await Promise.all(
@@ -55,9 +64,25 @@ export function useGetCommunications(currentUser: User | null) {
               
               if (shiftRequests && shiftRequests.length > 0) {
                 console.log(`Found ${shiftRequests.length} shift coverage requests for comm ${comm.id}`);
+                console.log(`Shift request details:`, shiftRequests[0]);
                 return { ...comm, shift_coverage_requests: shiftRequests };
               } else {
-                console.log(`No shift requests found for communication ${comm.id}`);
+                console.log(`No shift requests found for communication ${comm.id} despite type being shift_coverage`);
+                
+                // Let's check if there are any shift requests in the database that might match this communication
+                const { data: allShiftRequests, error: allShiftError } = await supabase
+                  .from('shift_coverage_requests')
+                  .select('*')
+                  .limit(10);
+                  
+                if (allShiftError) {
+                  console.error("Error checking all shift requests:", allShiftError);
+                } else {
+                  console.log(`Found ${allShiftRequests?.length || 0} total shift requests in database`);
+                  if (allShiftRequests && allShiftRequests.length > 0) {
+                    console.log("Sample shift request from database:", allShiftRequests[0]);
+                  }
+                }
               }
             }
             
@@ -66,21 +91,21 @@ export function useGetCommunications(currentUser: User | null) {
           })
         );
         
-        console.log(`Retrieved ${communicationsWithRequests.length} total communications`);
-        console.log(`Including ${communicationsWithRequests.filter(c => c.type === 'shift_coverage').length} shift coverage requests`);
-        
-        // Debug log shift coverage communications
+        // Count shift coverage messages with actual requests
         const shiftCoverageMessages = communicationsWithRequests.filter(
           c => c.type === 'shift_coverage' && c.shift_coverage_requests?.length > 0
         );
         
-        if (shiftCoverageMessages.length > 0) {
-          console.log("Sample shift coverage messages:", shiftCoverageMessages.slice(0, 2));
-        } else {
-          console.log("No shift coverage messages with requests found");
-        }
+        console.log(`Retrieved ${communicationsWithRequests.length} total communications`);
+        console.log(`Including ${shiftCoverageMessages.length} shift coverage requests with actual request data`);
         
-        return communicationsWithRequests;
+        // Add current user ID to each communication for easier filtering
+        const enhancedCommunications = communicationsWithRequests.map(comm => ({
+          ...comm,
+          current_user_id: currentUser.id
+        }));
+        
+        return enhancedCommunications;
       } catch (err) {
         console.error("Error in communications query:", err);
         throw err;

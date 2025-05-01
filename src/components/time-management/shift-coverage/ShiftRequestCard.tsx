@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,26 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
   const otherPersonId = isIncoming ? request.sender_id : request.recipient_id;
   const otherPerson = findEmployee(otherPersonId);
   const shiftDetails = request.shift_coverage_requests?.[0];
-  const isStatusPending = request.status === 'pending';
+  
+  // Debug logging for the card component
+  useEffect(() => {
+    console.log(`Rendering ShiftRequestCard for request ${request.id}:`, {
+      isIncoming,
+      otherPersonId,
+      otherPerson: otherPerson?.name || 'Unknown',
+      shiftDetails: shiftDetails ? {
+        id: shiftDetails.id,
+        date: shiftDetails.shift_date,
+        start: shiftDetails.shift_start,
+        end: shiftDetails.shift_end,
+        status: shiftDetails.status
+      } : 'No shift details'
+    });
+  }, [request, isIncoming, otherPersonId, otherPerson, shiftDetails]);
+  
+  // Use the status from the shift request, not the communication
+  const requestStatus = shiftDetails?.status || request.status;
+  const isStatusPending = requestStatus === 'pending';
   
   // Determine color scheme based on status
   const statusColors = {
@@ -52,7 +71,7 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
     }
   };
   
-  const colors = statusColors[request.status as keyof typeof statusColors];
+  const colors = statusColors[requestStatus as keyof typeof statusColors] || statusColors.pending;
 
   const handleResponseClick = (accept: boolean) => {
     setResponseType(accept);
@@ -61,6 +80,13 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
 
   const handleConfirmResponse = () => {
     if (responseType !== null && shiftDetails) {
+      console.log("Confirming response to shift request:", {
+        communicationId: request.id,
+        shiftRequestId: shiftDetails.id,
+        accept: responseType,
+        senderId: request.sender_id
+      });
+      
       onRespond({
         communicationId: request.id,
         shiftRequestId: shiftDetails.id,
@@ -80,7 +106,7 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
               {isIncoming ? "Shift Coverage Request" : "Your Coverage Request"}
             </CardTitle>
             <Badge variant="outline" className={colors.badge}>
-              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+              {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
             </Badge>
           </div>
         </CardHeader>

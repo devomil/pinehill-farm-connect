@@ -12,10 +12,15 @@ export function useProcessMessages(
   currentUser: User | null
 ): Communication[] {
   return useMemo((): Communication[] => {
-    if (!messages || !Array.isArray(messages) || messages.length === 0) return [];
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.log("No messages to process in useProcessMessages");
+      return [];
+    }
+    
+    console.log(`Processing ${messages.length} messages in useProcessMessages`);
     
     // Transform raw messages into properly typed Communication objects
-    return messages.map(msg => {
+    const processed = messages.map(msg => {
       // Ensure message type is valid or default to 'general'
       const validTypes: MessageType[] = ['general', 'shift_coverage', 'urgent'];
       const messageType: MessageType = validTypes.includes(msg.type as MessageType) 
@@ -38,6 +43,12 @@ export function useProcessMessages(
           }))
         : [];
       
+      // Special debug for shift coverage requests
+      if (messageType === 'shift_coverage' && typedShiftRequests.length > 0) {
+        console.log(`Processing shift coverage message ${msg.id} with ${typedShiftRequests.length} requests`);
+        console.log(`Message is ${msg.sender_id === currentUser?.id ? 'sent by' : 'received by'} current user`);
+      }
+      
       // Return a properly typed Communication object
       const typedMessage: Communication = {
         id: msg.id,
@@ -55,5 +66,18 @@ export function useProcessMessages(
       
       return typedMessage;
     });
+    
+    // Additional logging for processed shift coverage requests
+    const shiftCoverageMessages = processed.filter(
+      m => m.type === 'shift_coverage' && m.shift_coverage_requests.length > 0
+    );
+    
+    console.log(`Processed ${processed.length} total messages, including ${shiftCoverageMessages.length} shift coverage messages with requests`);
+    
+    if (shiftCoverageMessages.length > 0) {
+      console.log("Sample processed shift coverage message:", shiftCoverageMessages[0]);
+    }
+    
+    return processed;
   }, [messages, currentUser]);
 }
