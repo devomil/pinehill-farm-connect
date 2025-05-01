@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ShiftDetailsForm } from "@/components/communications/ShiftDetailsForm";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useSendMessage } from "@/hooks/communications/useSendMessage";
 import { toast } from "sonner";
+import { AlertCircle, UserPlus } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface NewShiftCoverageRequestButtonProps {
   currentUser: User;
@@ -29,6 +31,11 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
   const [shiftEnd, setShiftEnd] = useState<string>("");
 
   const sendMessageMutation = useSendMessage(currentUser);
+  
+  // Log available employees
+  useEffect(() => {
+    console.log(`NewShiftCoverageRequestButton - Available employees: ${allEmployees.length}`);
+  }, [allEmployees]);
 
   const handleSubmit = async () => {
     if (!recipientId || !message || !shiftDate || !shiftStart || !shiftEnd) {
@@ -74,11 +81,14 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
 
   // Filter out the current user from the employee list
   const availableEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
+  const hasAvailableEmployees = availableEmployees.length > 0;
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button>Request Shift Coverage</Button>
+        <Button disabled={!hasAvailableEmployees}>
+          {hasAvailableEmployees ? "Request Shift Coverage" : "No Available Employees"}
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -89,40 +99,57 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <RecipientSelect
-            employees={availableEmployees}
-            value={recipientId}
-            onChange={setRecipientId}
-          />
+          {!hasAvailableEmployees ? (
+            <Alert variant="warning" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                There are no other employees in the system to request shift coverage from.
+                <Button variant="link" className="p-0 h-auto ml-2">
+                  <UserPlus className="h-4 w-4 mr-1" /> Add Employees
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <RecipientSelect
+                employees={availableEmployees}
+                value={recipientId}
+                onChange={setRecipientId}
+              />
 
-          <ShiftDetailsForm
-            shiftDate={shiftDate}
-            shiftStart={shiftStart}
-            shiftEnd={shiftEnd}
-            onShiftDateChange={setShiftDate}
-            onShiftStartChange={setShiftStart}
-            onShiftEndChange={setShiftEnd}
-          />
+              <ShiftDetailsForm
+                shiftDate={shiftDate}
+                shiftStart={shiftStart}
+                shiftEnd={shiftEnd}
+                onShiftDateChange={setShiftDate}
+                onShiftStartChange={setShiftStart}
+                onShiftEndChange={setShiftEnd}
+              />
 
-          <div>
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              placeholder="Please let me know if you can cover my shift..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
+              <div>
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Please let me know if you can cover my shift..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!recipientId || !message || !shiftDate || !shiftStart || !shiftEnd}>
-              Send Request
-            </Button>
-          </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={!recipientId || !message || !shiftDate || !shiftStart || !shiftEnd}
+                >
+                  Send Request
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

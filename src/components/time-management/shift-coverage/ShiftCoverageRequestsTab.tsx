@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
@@ -34,26 +35,28 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   currentUser,
   onRefresh,
 }) => {
-  const { employees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
+  const { employees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   
-  // Add debug effect to log message data whenever it changes
+  // Log data when component mounts or dependencies change
   useEffect(() => {
-    console.log("ShiftCoverageRequestsTab - messages received:", messages);
-    console.log("ShiftCoverageRequestsTab - loading state:", loading);
-    console.log("ShiftCoverageRequestsTab - current user:", currentUser?.id);
+    console.log("ShiftCoverageRequestsTab - Current messages:", messages);
+    console.log("ShiftCoverageRequestsTab - Loading state:", loading);
+    console.log("ShiftCoverageRequestsTab - Available employees:", 
+      allEmployees?.filter(e => e.id !== currentUser?.id).length || 0);
+    console.log("ShiftCoverageRequestsTab - Current user:", currentUser?.id);
+    
     if (error) {
-      console.error("ShiftCoverageRequestsTab - error state:", error);
+      console.error("ShiftCoverageRequestsTab - Error state:", error);
     }
-  }, [messages, loading, error, currentUser]);
+  }, [messages, loading, error, currentUser, allEmployees]);
 
   // Filter shift coverage requests from messages
   const shiftCoverageRequests = useMemo(() => {
-    // Add debug logging
-    console.log("Processing shift coverage requests:", messages?.length);
+    console.log("Processing shift coverage requests from", messages?.length || 0, "messages");
     
     if (!messages?.length) {
-      console.log("No messages found");
+      console.log("No messages found to filter for shift coverage requests");
       return [];
     }
     
@@ -107,6 +110,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   // Handle manual refresh with feedback
   const handleManualRefresh = () => {
     toast.info("Refreshing shift coverage requests...");
+    refetchEmployees();
     onRefresh();
   };
 
@@ -119,6 +123,9 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   if (error) {
     return <ShiftRequestsErrorState onRetry={handleManualRefresh} />;
   }
+  
+  // Get available employees (excluding current user)
+  const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
 
   return (
     <>
@@ -137,7 +144,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
           </Button>
           <NewShiftCoverageRequestButton 
             currentUser={currentUser}
-            allEmployees={allEmployees || []}
+            allEmployees={availableEmployees}
             onRequestSent={onRefresh}
           />
         </div>
@@ -148,6 +155,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
           filter={filter}
           setFilter={setFilter}
           onRefresh={handleManualRefresh}
+          employeeCount={availableEmployees.length}
         />
       ) : (
         <div className="space-y-4">

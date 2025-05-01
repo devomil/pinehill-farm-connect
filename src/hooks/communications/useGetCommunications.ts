@@ -16,41 +16,72 @@ export function useGetCommunications(currentUser: User | null) {
       console.log(`Fetching communications for user: ${currentUser.id}`);
       
       try {
-        const { data, error } = await supabase
+        // First, fetch all communications for the user
+        const { data: allCommunications, error: commError } = await supabase
           .from('employee_communications')
           .select(`
-            *,
-            shift_coverage_requests(*)
+            *
           `)
           .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error("Supabase query error:", error);
-          throw error;
+        if (commError) {
+          console.error("Supabase communications query error:", commError);
+          throw commError;
         }
-        
-        if (!data) {
+
+        if (!allCommunications || allCommunications.length === 0) {
           console.log("No communications data returned");
           return [];
         }
+
+        // Now for each communication, fetch related shift coverage requests
+        const communicationsWithRequests = await Promise.all(
+          allCommunications.map(async (comm) => {
+            // Only fetch shift coverage requests for shift_coverage type messages
+            if (comm.type === 'shift_coverage') {
+              const { data: shiftRequests, error: shiftError } = await supabase
+                .from('shift_coverage_requests')
+                .select('*')
+                .eq('communication_id', comm.id);
+                
+              if (shiftError) {
+                console.error(`Error fetching shift requests for comm ${comm.id}:`, shiftError);
+                return { ...comm, shift_coverage_requests: [] };
+              }
+              
+              if (shiftRequests && shiftRequests.length > 0) {
+                console.log(`Found ${shiftRequests.length} shift coverage requests for comm ${comm.id}`);
+                return { ...comm, shift_coverage_requests: shiftRequests };
+              }
+            }
+            
+            // For non-shift coverage messages or if no requests found
+            return { ...comm, shift_coverage_requests: [] };
+          })
+        );
         
-        console.log(`Retrieved ${data.length} communications`);
-        // Log the first few items to help with debugging
-        if (data.length > 0) {
-          console.log("Sample communications data:", data.slice(0, 3));
+        console.log(`Retrieved ${communicationsWithRequests.length} total communications`);
+        console.log(`Including ${communicationsWithRequests.filter(c => c.type === 'shift_coverage').length} shift coverage requests`);
+        
+        // Debug log shift coverage communications
+        const shiftCoverageMessages = communicationsWithRequests.filter(
+          c => c.type === 'shift_coverage' && c.shift_coverage_requests?.length > 0
+        );
+        if (shiftCoverageMessages.length > 0) {
+          console.log("Sample shift coverage messages:", shiftCoverageMessages.slice(0, 2));
+        } else {
+          console.log("No shift coverage messages with requests found");
         }
         
-        return data;
+        return communicationsWithRequests;
       } catch (err) {
         console.error("Error in communications query:", err);
         throw err;
       }
     },
     enabled: !!currentUser?.id,
-    // Reduce stale time to ensure fresher data
     staleTime: 30000,
-    // Add retry configuration with more attempts for network issues
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
