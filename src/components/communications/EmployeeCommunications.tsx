@@ -7,6 +7,7 @@ import { EmployeeAlert } from "./EmployeeAlert";
 import { EmployeeListView } from "./EmployeeListView";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { useEmployeeCommunications } from "@/hooks/communications/useEmployeeCommunications";
+import { Communication, MessageType, MessageStatus } from "@/types/communications/communicationTypes";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -73,7 +74,7 @@ export function EmployeeCommunications({
         {showConversation && (
           <EmployeeConversationView
             selectedEmployee={selectedEmployee}
-            messages={processedMessages}
+            messages={processedMessages as Communication[]}
             isLoading={isLoading}
             onSendMessage={handleSendMessage}
             onBack={() => {

@@ -6,7 +6,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Communication, MessageType, SendMessageParams } from "@/types/communications/communicationTypes";
+import { Communication, MessageType, MessageStatus, SendMessageParams } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -85,27 +85,27 @@ export function useEmployeeCommunications({
   }, [selectedEmployee, currentUser, unreadMessages]);
 
   // Process messages with proper typing
-  const processedMessages = useMemo((): Communication[] => {
+  const processedMessages = useMemo(() => {
     if (!messages || !messages.length) return [];
     
     return messages.map(msg => {
       // Cast message type to proper union type
-      const messageType = ['general', 'shift_coverage', 'urgent'].includes(msg.type) 
+      const messageType = isValidMessageType(msg.type) 
         ? msg.type as MessageType
         : 'general' as MessageType;
       
       // Cast message status to proper union type
-      const messageStatus = ['pending', 'accepted', 'declined'].includes(msg.status)
-        ? msg.status as 'pending' | 'accepted' | 'declined'
-        : 'pending' as const;
+      const messageStatus = isValidMessageStatus(msg.status)
+        ? msg.status as MessageStatus
+        : 'pending' as MessageStatus;
       
       // Process shift coverage requests to ensure they have proper types
       const typedShiftRequests = msg.shift_coverage_requests?.map((req: any) => {
         return {
           ...req,
-          status: ['pending', 'accepted', 'declined'].includes(req.status)
-            ? req.status as 'pending' | 'accepted' | 'declined'
-            : 'pending' as const
+          status: isValidMessageStatus(req.status)
+            ? req.status as MessageStatus
+            : 'pending' as MessageStatus
         };
       });
       
@@ -119,6 +119,16 @@ export function useEmployeeCommunications({
       } as Communication;
     });
   }, [messages]);
+
+  // Helper function to validate message types
+  function isValidMessageType(type: string): boolean {
+    return ['general', 'shift_coverage', 'urgent'].includes(type);
+  }
+
+  // Helper function to validate message status
+  function isValidMessageStatus(status: string): boolean {
+    return ['pending', 'accepted', 'declined'].includes(status);
+  }
 
   const handleSendMessage = useCallback((message: string) => {
     if (!selectedEmployee) return;

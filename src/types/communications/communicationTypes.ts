@@ -13,6 +13,7 @@ export interface Communication {
   read_at: string | null;
   admin_cc: string | null;
   shift_coverage_requests?: ShiftCoverageRequest[];
+  current_user_id?: string;
 }
 
 export interface ShiftCoverageRequest {
