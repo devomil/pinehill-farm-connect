@@ -4,7 +4,7 @@ import { User } from "@/types";
 
 /**
  * Hook for filtering employees based on assignments
- * Updated: All employees can see each other - no filtering by role or assignments
+ * Updated: All employees should be visible to all users regardless of role
  */
 export function useEmployeeFiltering(
   employees: User[],
@@ -28,7 +28,7 @@ export function useEmployeeFiltering(
       return;
     }
     
-    // Include ALL employees without any filtering
+    // Include ALL employees without any filtering - ensuring everyone can see everyone
     console.log(`Including all ${employees.length} employees without filtering`);
     
     // Make a copy of all employees array to avoid mutation

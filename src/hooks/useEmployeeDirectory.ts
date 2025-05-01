@@ -15,10 +15,23 @@ export function useEmployeeDirectory() {
     setLoading(true);
     setError("");
     try {
-      // Get all profiles without any filtering
+      // First try to get all profiles using the edge function that bypasses RLS
+      const { data: edgeFunctionProfiles, error: edgeFunctionError } = await supabase
+        .functions.invoke('get_all_profiles');
+        
+      if (!edgeFunctionError && edgeFunctionProfiles && edgeFunctionProfiles.length > 0) {
+        console.log("Successfully fetched profiles using edge function:", edgeFunctionProfiles.length);
+        processProfileData(edgeFunctionProfiles);
+        return;
+      } else if (edgeFunctionError) {
+        console.warn("Error fetching profiles with edge function, falling back to direct query:", edgeFunctionError);
+      }
+      
+      // Fallback to direct profiles query if edge function fails
       const { data, error } = await supabase
         .from("profiles")
-        .select("*");
+        .select("*")
+        .order("name", { ascending: true });
 
       if (error) {
         console.error("Error fetching profiles:", error);
@@ -57,7 +70,21 @@ export function useEmployeeDirectory() {
       }
       
       console.log(`Retrieved ${data.length} employees from directory`);
-      const formattedEmployees = data.map((employee: any) => ({
+      processProfileData(data);
+      
+    } catch (error: any) {
+      console.error("Error fetching employee directory:", error);
+      setError(error.message || "Failed to fetch employees");
+      toast.error("Could not load employee directory");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Helper function to process profile data
+  const processProfileData = (profiles: any[]) => {
+    try {
+      const formattedEmployees = profiles.map((employee: any) => ({
         id: employee.id,
         name: employee.name || "Unknown",
         email: employee.email || "",
@@ -69,15 +96,11 @@ export function useEmployeeDirectory() {
       setUnfilteredEmployees(formattedEmployees);
       setEmployees(formattedEmployees);
       console.log("Employee directory loaded successfully:", formattedEmployees.length);
-      
-    } catch (error: any) {
-      console.error("Error fetching employee directory:", error);
-      setError(error.message || "Failed to fetch employees");
-      toast.error("Could not load employee directory");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error processing profile data:", error);
+      toast.error("Error processing employee data");
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchEmployees();

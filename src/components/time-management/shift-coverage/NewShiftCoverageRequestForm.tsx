@@ -55,7 +55,7 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     // Ensure all required fields are included and non-optional
     const formData: NewMessageFormData = {
-      recipientId: values.recipientId, // This is now guaranteed to exist
+      recipientId: values.recipientId,
       message: values.message,
       type: "shift_coverage",
       shiftDate: values.shiftDate,

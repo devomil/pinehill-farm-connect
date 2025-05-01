@@ -42,6 +42,9 @@ export function EmployeeCommunications({
     setSelectedEmployee: propSetSelectedEmployee
   });
   
+  // Only show the alert if there are 0 or 1 employees (just the current user)
+  const showEmployeeAlert = allEmployees?.length <= 1;
+  
   return (
     <div className="space-y-4">
       <EmployeeCommunicationsHeader 
@@ -52,7 +55,7 @@ export function EmployeeCommunications({
         onRefresh={handleRefresh}
       />
 
-      {allEmployees?.length <= 1 && <EmployeeAlert />}
+      {showEmployeeAlert && <EmployeeAlert />}
 
       <div className="space-y-4">
         {pendingShiftRequests.length > 0 && (
