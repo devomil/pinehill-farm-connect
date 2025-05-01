@@ -1,16 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ShiftDetailsForm } from "@/components/communications/ShiftDetailsForm";
 import { User } from "@/types";
-import { RecipientSelect } from "@/components/communications/RecipientSelect";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useSendMessage } from "@/hooks/communications/useSendMessage";
-import { toast } from "sonner";
-import { AlertCircle, UserPlus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Plus, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface NewShiftCoverageRequestButtonProps {
   currentUser: User;
@@ -21,136 +20,157 @@ interface NewShiftCoverageRequestButtonProps {
 export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButtonProps> = ({
   currentUser,
   allEmployees,
-  onRequestSent
+  onRequestSent,
 }) => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [recipientId, setRecipientId] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
-  const [shiftDate, setShiftDate] = useState<string>("");
-  const [shiftStart, setShiftStart] = useState<string>("");
-  const [shiftEnd, setShiftEnd] = useState<string>("");
-
-  const sendMessageMutation = useSendMessage(currentUser);
+  const [open, setOpen] = useState(false);
+  const [recipientId, setRecipientId] = useState("");
+  const [message, setMessage] = useState("");
+  const [shiftDate, setShiftDate] = useState("");
+  const [shiftStart, setShiftStart] = useState("");
+  const [shiftEnd, setShiftEnd] = useState("");
+  const [isSending, setIsSending] = useState(false);
   
-  // Log available employees
-  useEffect(() => {
-    console.log(`NewShiftCoverageRequestButton - Available employees: ${allEmployees.length}`);
-  }, [allEmployees]);
+  const hasAvailableEmployees = allEmployees && allEmployees.length > 0;
 
-  const handleSubmit = async () => {
-    if (!recipientId || !message || !shiftDate || !shiftStart || !shiftEnd) {
-      toast.error("Please fill in all fields");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!recipientId) {
+      toast.error("Please select an employee to request coverage from");
       return;
     }
-
-    // Find Jackie's user record for CC
-    const jackieUser = allEmployees.find(emp => emp.email === 'jackie@pinehillfarm.co') || null;
-
+    
+    if (!shiftDate || !shiftStart || !shiftEnd) {
+      toast.error("Please complete all shift details");
+      return;
+    }
+    
+    setIsSending(true);
+    
     try {
-      sendMessageMutation.mutate({
-        recipientId,
-        message,
-        type: "shift_coverage",
-        adminCc: jackieUser?.id,
-        shiftDetails: {
-          original_employee_id: currentUser.id,
-          covering_employee_id: recipientId,
-          shift_date: shiftDate,
-          shift_start: shiftStart,
-          shift_end: shiftEnd
-        }
+      const { data: supabaseData, error: supabaseError } = await supabase.functions.invoke("send-message", {
+        body: {
+          recipientId,
+          message: message || "Could you please cover my shift?",
+          type: "shift_coverage",
+          shiftDetails: {
+            original_employee_id: currentUser.id,
+            covering_employee_id: recipientId,
+            shift_date: shiftDate,
+            shift_start: shiftStart,
+            shift_end: shiftEnd,
+          },
+        },
       });
 
+      if (supabaseError) throw supabaseError;
+      
       toast.success("Shift coverage request sent successfully");
-      setDialogOpen(false);
-      resetForm();
+      setOpen(false);
       onRequestSent();
-    } catch (error) {
+      
+      // Reset form
+      setRecipientId("");
+      setMessage("");
+      setShiftDate("");
+      setShiftStart("");
+      setShiftEnd("");
+    } catch (error: any) {
       console.error("Error sending shift coverage request:", error);
-      toast.error("Failed to send shift coverage request");
+      toast.error(error.message || "Failed to send shift coverage request");
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const resetForm = () => {
-    setRecipientId("");
-    setMessage("");
-    setShiftDate("");
-    setShiftStart("");
-    setShiftEnd("");
-  };
-
-  // Filter out the current user from the employee list
-  const availableEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
-  const hasAvailableEmployees = availableEmployees.length > 0;
-
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button disabled={!hasAvailableEmployees}>
-          {hasAvailableEmployees ? "Request Shift Coverage" : "No Available Employees"}
+          <Plus className="h-4 w-4 mr-2" /> New Request
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New Shift Coverage Request</DialogTitle>
-          <DialogDescription>
-            Request another employee to cover your shift
-          </DialogDescription>
+          <DialogTitle>Request Shift Coverage</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 mt-4">
-          {!hasAvailableEmployees ? (
-            <Alert variant="warning" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                There are no other employees in the system to request shift coverage from.
-                <Button variant="link" className="p-0 h-auto ml-2">
-                  <UserPlus className="h-4 w-4 mr-1" /> Add Employees
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              <RecipientSelect
-                employees={availableEmployees}
-                value={recipientId}
-                onChange={setRecipientId}
+        
+        {!hasAvailableEmployees ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No other employees are available to request shift coverage from.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="recipient">Request Coverage From</Label>
+              <Select value={recipientId} onValueChange={setRecipientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allEmployees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name || employee.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="shift-date">Shift Date</Label>
+              <Input
+                id="shift-date"
+                type="date"
+                value={shiftDate}
+                onChange={(e) => setShiftDate(e.target.value)}
+                required
               />
-
-              <ShiftDetailsForm
-                shiftDate={shiftDate}
-                shiftStart={shiftStart}
-                shiftEnd={shiftEnd}
-                onShiftDateChange={setShiftDate}
-                onShiftStartChange={setShiftStart}
-                onShiftEndChange={setShiftEnd}
-              />
-
-              <div>
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Please let me know if you can cover my shift..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="min-h-[100px]"
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="shift-start">Start Time</Label>
+                <Input
+                  id="shift-start"
+                  type="time"
+                  value={shiftStart}
+                  onChange={(e) => setShiftStart(e.target.value)}
+                  required
                 />
               </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={!recipientId || !message || !shiftDate || !shiftStart || !shiftEnd}
-                >
-                  Send Request
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="shift-end">End Time</Label>
+                <Input
+                  id="shift-end"
+                  type="time"
+                  value={shiftEnd}
+                  onChange={(e) => setShiftEnd(e.target.value)}
+                  required
+                />
               </div>
-            </>
-          )}
-        </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="message">Message (Optional)</Label>
+              <Textarea
+                id="message"
+                placeholder="Add details about your shift coverage request"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSending}>
+                {isSending ? "Sending..." : "Send Request"}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
