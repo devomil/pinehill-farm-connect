@@ -5,9 +5,10 @@ import { Clock } from "lucide-react";
 
 interface TimeOffRequestsCardProps {
   requests: any[];
+  loading?: boolean;
 }
 
-export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ requests }) => {
+export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ requests, loading }) => {
   return (
     <Card>
       <CardHeader>
@@ -18,19 +19,30 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ reques
         <CardDescription>Your pending requests</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {requests.map((timeOff) => (
-            <li key={timeOff.id} className="flex justify-between items-center">
-              <span>
-                {new Date(timeOff.start_date).toLocaleDateString()} to{' '}
-                {new Date(timeOff.end_date).toLocaleDateString()}
-              </span>
-              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-                {timeOff.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {loading ? (
+          <div className="text-center py-4">
+            <div className="animate-pulse h-6 bg-muted rounded w-3/4 mx-auto mb-2"></div>
+            <div className="animate-pulse h-6 bg-muted rounded w-2/3 mx-auto"></div>
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            No pending time off requests
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {requests.map((timeOff) => (
+              <li key={timeOff.id} className="flex justify-between items-center">
+                <span>
+                  {new Date(timeOff.start_date).toLocaleDateString()} to{' '}
+                  {new Date(timeOff.end_date).toLocaleDateString()}
+                </span>
+                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                  {timeOff.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

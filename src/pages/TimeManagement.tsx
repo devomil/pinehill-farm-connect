@@ -9,7 +9,7 @@ import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffReq
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/ShiftCoverageRequestsTab";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
@@ -17,7 +17,8 @@ import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 export default function TimeManagement() {
   const { currentUser } = useAuth();
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   // Get communications data for shift coverage requests
   const { messages: rawMessages, isLoading: messagesLoading, respondToShiftRequest, refreshMessages } = useCommunications();
@@ -26,29 +27,41 @@ export default function TimeManagement() {
   const fetchRequests = async () => {
     if (!currentUser) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("time_off_requests")
-      .select("*");
-    if (error) {
+    setError(null);
+    
+    try {
+      console.log("Fetching time off requests for user:", currentUser.id);
+      const { data, error } = await supabase
+        .from("time_off_requests")
+        .select("*");
+        
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      if (data) {
+        console.log(`Retrieved ${data.length} time off requests:`, data);
+        setTimeOffRequests(
+          data.map((r: any) => ({
+            ...r,
+            startDate: new Date(r.start_date),
+            endDate: new Date(r.end_date),
+            status: r.status,
+            id: r.id,
+            reason: r.reason,
+            userId: r.user_id,
+            notes: r.notes,
+          }))
+        );
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch time-off requests:", err);
+      setError(err);
       toast.error("Failed to fetch time-off requests");
+    } finally {
       setLoading(false);
-      return;
     }
-    if (data) {
-      setTimeOffRequests(
-        data.map((r: any) => ({
-          ...r,
-          startDate: new Date(r.start_date),
-          endDate: new Date(r.end_date),
-          status: r.status,
-          id: r.id,
-          reason: r.reason,
-          userId: r.user_id,
-          notes: r.notes,
-        }))
-      );
-    }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -99,6 +112,7 @@ export default function TimeManagement() {
               userRequests={userRequests}
               loading={loading}
               refresh={fetchRequests}
+              error={error}
             />
           </TabsContent>
           <TabsContent value="shift-coverage" className="space-y-4 pt-4">
