@@ -36,6 +36,11 @@ export function useGetCommunications(currentUser: User | null) {
         }
         
         console.log(`Retrieved ${data.length} communications`);
+        // Log the first few items to help with debugging
+        if (data.length > 0) {
+          console.log("Sample communications data:", data.slice(0, 3));
+        }
+        
         return data;
       } catch (err) {
         console.error("Error in communications query:", err);
@@ -43,12 +48,10 @@ export function useGetCommunications(currentUser: User | null) {
       }
     },
     enabled: !!currentUser?.id,
-    // Add retry configuration but limit to avoid loops
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    // Increase stale time to reduce unnecessary refetches
-    staleTime: 60000,
-    // Add caching time to prevent frequent refetches
-    gcTime: 300000,
+    // Reduce stale time to ensure fresher data
+    staleTime: 30000,
+    // Add retry configuration with more attempts for network issues
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }

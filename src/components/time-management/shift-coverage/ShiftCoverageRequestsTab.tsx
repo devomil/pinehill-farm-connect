@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -35,8 +34,18 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   currentUser,
   onRefresh,
 }) => {
-  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
+  const { employees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
+  
+  // Add debug effect to log message data whenever it changes
+  useEffect(() => {
+    console.log("ShiftCoverageRequestsTab - messages received:", messages);
+    console.log("ShiftCoverageRequestsTab - loading state:", loading);
+    console.log("ShiftCoverageRequestsTab - current user:", currentUser?.id);
+    if (error) {
+      console.error("ShiftCoverageRequestsTab - error state:", error);
+    }
+  }, [messages, loading, error, currentUser]);
 
   // Filter shift coverage requests from messages
   const shiftCoverageRequests = useMemo(() => {
@@ -44,6 +53,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     console.log("Processing shift coverage requests:", messages?.length);
     
     if (!messages?.length) {
+      console.log("No messages found");
       return [];
     }
     
@@ -52,10 +62,17 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
       const isRelevantToUser = message.recipient_id === currentUser.id || message.sender_id === currentUser.id;
       const hasShiftRequests = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
       
+      if (isShiftCoverage) {
+        console.log(`Message ${message.id}: type=${message.type}, recipient=${message.recipient_id}, sender=${message.sender_id}, requests=${message.shift_coverage_requests?.length || 0}`);
+      }
+      
       return isShiftCoverage && isRelevantToUser && hasShiftRequests;
     });
     
     console.log("Filtered shift coverage requests:", filtered.length);
+    if (filtered.length > 0) {
+      console.log("First request details:", filtered[0]);
+    }
     return filtered;
   }, [messages, currentUser]);
 
@@ -93,12 +110,14 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     onRefresh();
   };
 
-  if (error) {
-    return <ShiftRequestsErrorState onRetry={handleManualRefresh} />;
-  }
-
+  // If still loading, show loading state
   if (loading || employeesLoading) {
     return <ShiftRequestsLoadingState />;
+  }
+
+  // If there's an error, show error state
+  if (error) {
+    return <ShiftRequestsErrorState onRetry={handleManualRefresh} />;
   }
 
   return (
@@ -125,7 +144,11 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
       </div>
 
       {filteredRequests.length === 0 ? (
-        <EmptyRequestsState filter={filter} setFilter={setFilter} />
+        <EmptyRequestsState 
+          filter={filter}
+          setFilter={setFilter}
+          onRefresh={handleManualRefresh}
+        />
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((request) => (
