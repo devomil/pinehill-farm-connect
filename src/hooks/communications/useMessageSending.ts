@@ -34,12 +34,14 @@ export function useMessageSending(
       shift_start: string;
       shift_end: string;
     };
+    adminCc?: string;
   }) => {
     // Convert SendMessageData to SendMessageParams by adding required fields for shift details
     const sendParams: SendMessageParams = {
       recipientId: data.recipientId,
       message: data.message,
       type: data.type,
+      adminCc: data.adminCc, // Pass along admin CC if provided
     };
     
     // Add shift details with appropriate field mapping if available

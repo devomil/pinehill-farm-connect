@@ -8,6 +8,7 @@ import { EmployeeDropdownSelect } from "./EmployeeDropdownSelect";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { useEmployeeCommunications } from "@/hooks/communications/useEmployeeCommunications";
 import { Communication } from "@/types/communications/communicationTypes";
+import { Badge } from "@/components/ui/badge";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -34,7 +35,8 @@ export function EmployeeCommunications({
     processedMessages,
     isMobileView,
     setSelectedEmployee,
-    recentConversations
+    recentConversations,
+    pendingShiftRequests
   } = useEmployeeCommunications({
     selectedEmployee: propSelectedEmployee,
     setSelectedEmployee: propSetSelectedEmployee
@@ -53,6 +55,43 @@ export function EmployeeCommunications({
       {allEmployees?.length <= 1 && <EmployeeAlert />}
 
       <div className="space-y-4">
+        {pendingShiftRequests.length > 0 && (
+          <Card className="p-4 border-2 border-orange-300 bg-orange-50">
+            <h3 className="font-semibold flex items-center mb-2">
+              <Badge variant="destructive" className="mr-2">URGENT</Badge>
+              Pending Shift Coverage Requests ({pendingShiftRequests.length})
+            </h3>
+            <div className="space-y-2">
+              {pendingShiftRequests.map(request => {
+                const sender = allEmployees?.find(emp => emp.id === request.sender_id);
+                const recipient = allEmployees?.find(emp => emp.id === request.recipient_id);
+                const shiftDetails = request.shift_coverage_requests?.[0];
+                
+                return (
+                  <div key={request.id} className="border rounded p-3 bg-white">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{sender?.name || 'Unknown'} needs coverage</span>
+                      <Badge variant="outline" className="bg-yellow-100">Pending</Badge>
+                    </div>
+                    {shiftDetails && (
+                      <div className="text-sm mt-1">
+                        <p>Date: {shiftDetails.shift_date}</p>
+                        <p>Time: {shiftDetails.shift_start} - {shiftDetails.shift_end}</p>
+                      </div>
+                    )}
+                    <button 
+                      onClick={() => handleSelectEmployee(sender || recipient || null)} 
+                      className="text-sm text-blue-600 mt-2"
+                    >
+                      View details
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+        
         {/* Employee Dropdown Selection */}
         <Card className="p-4">
           <EmployeeDropdownSelect

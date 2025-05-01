@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+
+import { useState, useCallback, useMemo } from "react";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -55,12 +56,26 @@ export function useEmployeeCommunications({
     allEmployees || [],
     7 // Last 7 days
   );
+
+  // Find Jackie's user record for CC
+  const jackieUser = useMemo(() => {
+    return allEmployees?.find(emp => emp.email === 'jackie@pinehillfarm.co') || null;
+  }, [allEmployees]);
+
+  // Get pending shift coverage requests
+  const pendingShiftRequests = useMemo(() => {
+    return processedMessages.filter(message => 
+      message.type === 'shift_coverage' && 
+      message.status === 'pending' && 
+      (message.recipient_id === currentUser?.id || message.sender_id === currentUser?.id)
+    );
+  }, [processedMessages, currentUser]);
   
   // Use message read status hook with properly typed unread messages
   useMessageReadStatus(selectedEmployee, currentUser, typedUnreadMessages);
 
   // Handle employee selection with sync to parent component if needed
-  const handleSelectEmployee = useCallback((employee: User) => {
+  const handleSelectEmployee = useCallback((employee: User | null) => {
     setSelectedEmployee(employee);
     // Update parent component if callback provided
     if (propSetSelectedEmployee) {
@@ -68,11 +83,24 @@ export function useEmployeeCommunications({
     }
   }, [propSetSelectedEmployee]);
 
-  // Use message sending hook
+  // Enhanced message sending hook with Jackie CC support
   const { handleSendMessage, handleNewMessageSend } = useMessageSending(
     selectedEmployee, 
     currentUser, 
-    sendMessage, 
+    (params) => {
+      // For shift coverage requests, always CC Jackie by including her ID
+      if (params.type === 'shift_coverage' && jackieUser) {
+        console.log(`Adding Jackie (${jackieUser.id}) as CC for shift coverage request`);
+        // Clone the params to avoid modifying the original
+        const enhancedParams = { ...params };
+        // Add Jackie's ID for the backend to handle CC'ing
+        enhancedParams.adminCc = jackieUser.id;
+        return sendMessage(enhancedParams);
+      } else {
+        // For regular messages, proceed as normal
+        return sendMessage(params);
+      }
+    }, 
     handleSelectEmployee,
     allEmployees
   );
@@ -101,6 +129,7 @@ export function useEmployeeCommunications({
     processedMessages,
     isMobileView,
     setSelectedEmployee: handleSelectEmployee,
-    recentConversations
+    recentConversations,
+    pendingShiftRequests
   };
 }

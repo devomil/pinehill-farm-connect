@@ -33,6 +33,7 @@ export interface SendMessageParams {
   recipientId: string;
   message: string;
   type: MessageType;
+  adminCc?: string;
   shiftDetails?: {
     original_employee_id: string;
     covering_employee_id: string; 

@@ -14,7 +14,8 @@ export function useSendMessage(currentUser: User | null) {
       recipientId, 
       message, 
       type,
-      shiftDetails 
+      shiftDetails,
+      adminCc
     }: SendMessageParams) => {
       if (!currentUser?.id) {
         throw new Error("You must be logged in to send messages");
@@ -47,18 +48,37 @@ export function useSendMessage(currentUser: User | null) {
         // Get requester's admin if this is a shift coverage request
         let adminData = null;
         if (type === 'shift_coverage') {
-          // Find the admin assigned to the current user (requester)
-          const { data: adminAssignment, error: adminError } = await supabase
-            .from('employee_assignments')
-            .select('admin_id, admin:profiles!employee_assignments_admin_id_fkey(id, name, email)')
-            .eq('employee_id', currentUser.id)
-            .maybeSingle();
+          // If adminCc is manually set, use that ID
+          if (adminCc) {
+            const { data: manualAdmin, error: manualAdminError } = await supabase
+              .from('profiles')
+              .select('id, name, email')
+              .eq('id', adminCc)
+              .maybeSingle();
+              
+            if (!manualAdminError && manualAdmin) {
+              adminData = manualAdmin;
+              console.log("Using specified admin CC:", adminData);
+            } else {
+              console.warn("Specified admin CC not found:", adminCc, manualAdminError);
+            }
+          } 
+          
+          // If no admin found yet, fall back to the employee's assigned admin
+          if (!adminData) {
+            // Find the admin assigned to the current user (requester)
+            const { data: adminAssignment, error: adminError } = await supabase
+              .from('employee_assignments')
+              .select('admin_id, admin:profiles!employee_assignments_admin_id_fkey(id, name, email)')
+              .eq('employee_id', currentUser.id)
+              .maybeSingle();
 
-          if (!adminError && adminAssignment?.admin) {
-            adminData = adminAssignment.admin;
-            console.log("Found requester's admin:", adminData);
-          } else {
-            console.warn("No admin found for requester:", currentUser.id, adminError);
+            if (!adminError && adminAssignment?.admin) {
+              adminData = adminAssignment.admin;
+              console.log("Found requester's admin:", adminData);
+            } else {
+              console.warn("No admin found for requester:", currentUser.id, adminError);
+            }
           }
         }
   
@@ -70,7 +90,7 @@ export function useSendMessage(currentUser: User | null) {
             message,
             type,
             status: 'pending',
-            admin_cc: adminData?.id || null // Store the admin ID for reference
+            admin_cc: adminData?.id || adminCc || null // Store the admin ID for reference
           })
           .select()
           .single();
