@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar, RefreshCw } from "lucide-react";
-import { TimeOffRequest, User } from "@/types";
+import { TimeOffRequest } from "@/types/timeManagement";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

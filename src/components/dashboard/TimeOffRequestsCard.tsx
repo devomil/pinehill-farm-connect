@@ -4,9 +4,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { TimeOffRequest } from "@/types/timeManagement";
 
 interface TimeOffRequestsCardProps {
-  requests: any[];
+  requests: TimeOffRequest[];
   loading?: boolean;
   error?: Error | null;
   onRefresh?: () => void;
@@ -68,8 +69,8 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
                     </span>
                   )}
                   <span>
-                    {new Date(timeOff.start_date || timeOff.startDate).toLocaleDateString()} to{' '}
-                    {new Date(timeOff.end_date || timeOff.endDate).toLocaleDateString()}
+                    {timeOff.startDate.toLocaleDateString()} to{' '}
+                    {timeOff.endDate.toLocaleDateString()}
                   </span>
                 </span>
                 <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">

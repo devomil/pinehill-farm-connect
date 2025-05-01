@@ -1,8 +1,8 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useCallback } from "react";
+import { TimeOffRequest } from "@/types/timeManagement";
 
 export function useDashboardData() {
   const { currentUser } = useAuth();
@@ -25,7 +25,18 @@ export function useDashboardData() {
         .eq('status', 'pending');
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our TimeOffRequest type
+      return data ? data.map((r: any) => ({
+        id: r.id,
+        startDate: new Date(r.start_date),
+        endDate: new Date(r.end_date),
+        status: r.status,
+        userId: r.user_id,
+        reason: r.reason,
+        notes: r.notes,
+        profiles: r.profiles
+      })) as TimeOffRequest[] : [];
     },
     enabled: isAdmin,
     staleTime: 30000, // Add stale time to reduce unnecessary refetches
@@ -42,7 +53,17 @@ export function useDashboardData() {
         .eq('user_id', currentUser?.id);
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our TimeOffRequest type
+      return data ? data.map((r: any) => ({
+        id: r.id,
+        startDate: new Date(r.start_date),
+        endDate: new Date(r.end_date),
+        status: r.status,
+        userId: r.user_id,
+        reason: r.reason,
+        notes: r.notes
+      })) as TimeOffRequest[] : [];
     },
     enabled: !!currentUser?.id,
     staleTime: 30000,

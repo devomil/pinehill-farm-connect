@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { TimeOffRequest, User } from "@/types";
+import { User } from "@/types";
+import { TimeOffRequest } from "@/types/timeManagement";
 import { CalendarItem, CompanyEvent } from "./TeamCalendar.types";
 
 export function useTeamCalendarData(currentUser: User) {
