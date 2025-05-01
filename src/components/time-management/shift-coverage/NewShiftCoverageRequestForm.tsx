@@ -52,10 +52,17 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit({
-      ...values,
+    // Ensure all required fields are included and non-optional
+    const formData: NewMessageFormData = {
+      recipientId: values.recipientId, // This is now guaranteed to exist
+      message: values.message,
       type: "shift_coverage",
-    });
+      shiftDate: values.shiftDate,
+      shiftStart: values.shiftStart, 
+      shiftEnd: values.shiftEnd
+    };
+    
+    onSubmit(formData);
   };
 
   // Filter out current user from employee list
