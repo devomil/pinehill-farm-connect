@@ -189,7 +189,7 @@ export function EmployeeCommunications({
           <Card className="md:col-span-2">
             <MessageConversation
               selectedEmployee={selectedEmployee}
-              messages={typedMessages} {/* Using the properly typed messages here */}
+              messages={typedMessages}
               isLoading={isLoading}
               onSendMessage={handleSendMessage}
               onBack={() => {
