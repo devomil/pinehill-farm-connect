@@ -74,7 +74,7 @@ export function useEmployeeCommunications({
   }, [selectedEmployee, currentUser, unreadMessages]);
 
   // Process and type messages correctly
-  const typedMessages = useCallback((messages: any[] = []): Communication[] => {
+  const processedMessages: Communication[] = useCallback(() => {
     if (!messages) return [] as Communication[];
     
     return messages.map(msg => {
@@ -107,10 +107,7 @@ export function useEmployeeCommunications({
         admin_cc: msg.admin_cc
       } as Communication;
     });
-  }, []);
-
-  // Process messages with type casting
-  const processedMessages = typedMessages(messages);
+  }, [messages])();
 
   const handleSendMessage = useCallback((message: string) => {
     if (selectedEmployee) {
