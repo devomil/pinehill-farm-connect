@@ -15,6 +15,13 @@ export function useEmployeeRoles(employee: User | null) {
   useEffect(() => {
     if (employee) {
       fetchEmployeeRoles(employee.id);
+    } else {
+      // Reset state when employee is null
+      setSelectedRoles({
+        admin: false,
+        employee: true
+      });
+      setUserRoles([]);
     }
   }, [employee]);
 

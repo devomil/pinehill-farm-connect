@@ -5,6 +5,7 @@ import { useSendMessage } from "./communications/useSendMessage";
 import { useRespondToShiftRequest } from "./communications/useRespondToShiftRequest";
 import { useUnreadMessages } from "./communications/useUnreadMessages";
 import { useRefreshMessages } from "./communications/useRefreshMessages";
+import { Communication } from "@/types/communications/communicationTypes";
 
 export const useCommunications = () => {
   const { currentUser } = useAuth();
@@ -24,13 +25,13 @@ export const useCommunications = () => {
     console.log("No communications data found but no error reported");
   }
   
-  const unreadMessages = useUnreadMessages(messages, currentUser);
+  const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
-  const sendMessage = (params) => {
+  const sendMessage = (params: any) => {
     return sendMessageMutation.mutate(params);
   };
 
-  const respondToShiftRequest = (params) => {
+  const respondToShiftRequest = (params: any) => {
     return respondToShiftRequestMutation.mutate(params, {
       onSuccess: () => {
         // Invalidate and refetch communications data after successful mutation

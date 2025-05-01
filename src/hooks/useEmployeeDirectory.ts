@@ -21,7 +21,27 @@ export function useEmployeeDirectory() {
         
       if (!edgeFunctionError && edgeFunctionProfiles && edgeFunctionProfiles.length > 0) {
         console.log("Successfully fetched profiles using edge function:", edgeFunctionProfiles.length);
-        processProfileData(edgeFunctionProfiles);
+        
+        // Get user roles
+        const { data: userRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('*');
+          
+        if (userRolesError) {
+          console.error("Error fetching user roles:", userRolesError);
+        }
+        
+        // Process profiles with roles
+        const processedProfiles = edgeFunctionProfiles.map(profile => {
+          // Find user roles for this profile
+          const userRole = userRoles?.find(role => role.user_id === profile.id);
+          return {
+            ...profile,
+            role: userRole?.role || 'employee' // Default to 'employee' if no role found
+          };
+        });
+        
+        processProfileData(processedProfiles);
         return;
       } else if (edgeFunctionError) {
         console.warn("Error fetching profiles with edge function, falling back to direct query:", edgeFunctionError);
@@ -36,6 +56,15 @@ export function useEmployeeDirectory() {
       if (error) {
         console.error("Error fetching profiles:", error);
         throw error;
+      }
+
+      // Get user roles
+      const { data: userRoles, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+        
+      if (userRolesError) {
+        console.error("Error fetching user roles:", userRolesError);
       }
 
       // Even if we get 0 profiles, let's not error but return an empty array
@@ -70,7 +99,18 @@ export function useEmployeeDirectory() {
       }
       
       console.log(`Retrieved ${data.length} employees from directory`);
-      processProfileData(data);
+      
+      // Process profiles with roles
+      const processedProfiles = data.map(profile => {
+        // Find user roles for this profile
+        const userRole = userRoles?.find(role => role.user_id === profile.id);
+        return {
+          ...profile,
+          role: userRole?.role || 'employee' // Default to 'employee' if no role found
+        };
+      });
+      
+      processProfileData(processedProfiles);
       
     } catch (error: any) {
       console.error("Error fetching employee directory:", error);
@@ -91,6 +131,7 @@ export function useEmployeeDirectory() {
         role: employee.role || "employee",
         department: employee.department || "",
         position: employee.position || "",
+        employeeId: employee.employeeId || "",
       }));
       
       setUnfilteredEmployees(formattedEmployees);

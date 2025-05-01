@@ -2,7 +2,7 @@
 import React from "react";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Key } from "lucide-react";
+import { Pencil, Trash2, Key, Eye } from "lucide-react";
 import { TableRow, TableCell } from "@/components/ui/table";
 
 interface EmployeeTableRowProps {
@@ -39,11 +39,22 @@ export function EmployeeTableRow({
         <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
           employee.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
         }`}>
-          {employee.role || "employee"}
+          {employee.role === 'admin' ? 'admin' : 'employee'}
         </span>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
+          {onView && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onView(employee)}
+              title="View Details"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="icon"

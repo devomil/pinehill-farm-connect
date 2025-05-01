@@ -52,7 +52,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
       </TabsList>
       <TabsContent value="my-requests" className="space-y-4 pt-4">
         <UserTimeOffRequests
-          userRequests={userRequests}
+          userRequests={userRequests as any[]}
           loading={loading}
           refresh={fetchRequests}
           error={error}
@@ -70,7 +70,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
       </TabsContent>
       {isAdmin && (
         <TabsContent value="pending-approvals" className="space-y-4 pt-4">
-          <PendingTimeOffApprovals pendingRequests={pendingRequests} refresh={fetchRequests} />
+          <PendingTimeOffApprovals pendingRequests={pendingRequests as any[]} refresh={fetchRequests} />
         </TabsContent>
       )}
       <TabsContent value="team-calendar" className="pt-4">
@@ -78,4 +78,4 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
       </TabsContent>
     </Tabs>
   );
-};
+}
