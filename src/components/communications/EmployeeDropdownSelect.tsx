@@ -9,8 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
-import { MessageCircle, ChevronDown, Search } from "lucide-react";
+import { MessageCircle, ChevronDown, Search, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { format, isToday, isSameWeek } from "date-fns";
 
 interface EmployeeDropdownSelectProps {
   employees: User[];
@@ -19,6 +21,7 @@ interface EmployeeDropdownSelectProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   unreadMessages?: Communication[];
+  recentConversations?: User[];
 }
 
 export function EmployeeDropdownSelect({
@@ -28,6 +31,7 @@ export function EmployeeDropdownSelect({
   searchQuery,
   setSearchQuery,
   unreadMessages = [],
+  recentConversations = [],
 }: EmployeeDropdownSelectProps) {
   // Filter employees based on search query
   const filteredEmployees = employees.filter(
@@ -40,6 +44,24 @@ export function EmployeeDropdownSelect({
   const getUnreadCount = (employeeId: string): number => {
     return unreadMessages.filter((msg) => msg.sender_id === employeeId).length;
   };
+
+  // Check if an employee is in recent conversations
+  const isRecentConversation = (employee: User): boolean => {
+    return recentConversations.some(recent => recent.id === employee.id);
+  };
+
+  // Sort employees - put recent conversations first, then others
+  const sortedEmployees = [...filteredEmployees].sort((a, b) => {
+    const aIsRecent = isRecentConversation(a);
+    const bIsRecent = isRecentConversation(b);
+    
+    // Sort by recent status first
+    if (aIsRecent && !bIsRecent) return -1;
+    if (!aIsRecent && bIsRecent) return 1;
+    
+    // Then by name
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   return (
     <div className="space-y-2">
@@ -62,28 +84,49 @@ export function EmployeeDropdownSelect({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-[280px] max-h-[400px] overflow-auto">
-            {filteredEmployees.length > 0 ? (
-              filteredEmployees.map((employee) => {
-                const unreadCount = getUnreadCount(employee.id);
-                return (
-                  <DropdownMenuItem 
-                    key={employee.id}
-                    onClick={() => onSelectEmployee(employee)} 
-                    className="flex items-center justify-between cursor-pointer py-2"
-                  >
-                    <div className="flex flex-col">
-                      <span>{employee.name || "Unknown"}</span>
-                      <span className="text-xs text-muted-foreground">{employee.email}</span>
-                    </div>
-                    {unreadCount > 0 && (
-                      <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-1.5 rounded-full text-xs font-medium">
-                        <MessageCircle className="h-3 w-3 mr-1" />
-                        {unreadCount}
+            {sortedEmployees.length > 0 ? (
+              <>
+                {/* Recent conversations section */}
+                {sortedEmployees.some(e => isRecentConversation(e)) && (
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Active Conversations
+                  </div>
+                )}
+                
+                {sortedEmployees.map((employee) => {
+                  const unreadCount = getUnreadCount(employee.id);
+                  const isRecent = isRecentConversation(employee);
+                  
+                  return (
+                    <DropdownMenuItem 
+                      key={employee.id}
+                      onClick={() => onSelectEmployee(employee)} 
+                      className={`flex items-center justify-between cursor-pointer py-2 ${
+                        isRecent ? "bg-muted/40" : ""
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center">
+                          <span>{employee.name || "Unknown"}</span>
+                          {isRecent && (
+                            <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 text-[10px] h-5">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Active
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{employee.email}</span>
                       </div>
-                    )}
-                  </DropdownMenuItem>
-                );
-              })
+                      {unreadCount > 0 && (
+                        <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-1.5 rounded-full text-xs font-medium">
+                          <MessageCircle className="h-3 w-3 mr-1" />
+                          {unreadCount}
+                        </div>
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </>
             ) : (
               <div className="py-2 px-2 text-sm text-muted-foreground text-center">
                 No employees found

@@ -33,7 +33,8 @@ export function EmployeeCommunications({
     unreadMessages,
     processedMessages,
     isMobileView,
-    setSelectedEmployee
+    setSelectedEmployee,
+    recentConversations
   } = useEmployeeCommunications({
     selectedEmployee: propSelectedEmployee,
     setSelectedEmployee: propSetSelectedEmployee
@@ -61,6 +62,7 @@ export function EmployeeCommunications({
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             unreadMessages={unreadMessages || []}
+            recentConversations={recentConversations}
           />
         </Card>
 

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { useMessageReadStatus } from "./useMessageReadStatus";
 import { useProcessMessages } from "./useProcessMessages";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 import { useMessageSending } from "./useMessageSending";
+import { useRecentCommunications } from "./useRecentCommunications";
 import { Communication, MessageType } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
@@ -47,6 +47,14 @@ export function useEmployeeCommunications({
   
   // Process unread messages to ensure proper typing
   const typedUnreadMessages: Communication[] = useProcessMessages(rawUnreadMessages, currentUser);
+  
+  // Get recent conversations
+  const recentConversations = useRecentCommunications(
+    processedMessages, 
+    currentUser?.id,
+    allEmployees || [],
+    7 // Last 7 days
+  );
   
   // Use message read status hook with properly typed unread messages
   useMessageReadStatus(selectedEmployee, currentUser, typedUnreadMessages);
@@ -92,6 +100,7 @@ export function useEmployeeCommunications({
     unreadMessages: typedUnreadMessages,
     processedMessages,
     isMobileView,
-    setSelectedEmployee: handleSelectEmployee
+    setSelectedEmployee: handleSelectEmployee,
+    recentConversations
   };
 }
