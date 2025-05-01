@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { User } from "@/types";
-import { TimeManagementContextType, TimeManagementProviderProps } from "@/types/timeManagement";
+import { TimeManagementContextType, TimeManagementProviderProps, TimeOffRequest } from "@/types/timeManagement";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 import { useTimeOffRequests } from "@/hooks/timeManagement/useTimeOffRequests";

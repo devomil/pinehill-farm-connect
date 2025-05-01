@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Plus, Calendar, RefreshCw } from "lucide-react";
-import { TimeOffRequest } from "@/types";
+import { TimeOffRequest } from "@/types/timeManagement";
 
 interface UserTimeOffRequestsProps {
   userRequests: TimeOffRequest[];

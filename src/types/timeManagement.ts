@@ -7,7 +7,7 @@ export interface TimeOffRequest {
   endDate: Date;
   status: "pending" | "approved" | "rejected";
   userId: string;
-  reason?: string;
+  reason?: string; // Making reason optional to match the implementation
   notes?: string;
   profiles?: {
     id: string;

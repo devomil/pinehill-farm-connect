@@ -60,7 +60,7 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
             endDate: new Date(r.end_date),
             status: r.status,
             id: r.id,
-            reason: r.reason,
+            reason: r.reason || '', // Ensure reason is never undefined
             userId: r.user_id,
             notes: r.notes,
             profiles: r.profiles // Keep the profiles data for admins
