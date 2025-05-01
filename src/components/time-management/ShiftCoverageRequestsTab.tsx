@@ -33,7 +33,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   currentUser,
   onRefresh,
 }) => {
-  const { unfilteredEmployees: allEmployees, isLoading: employeesLoading } = useEmployeeDirectory();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
 
   // Filter shift coverage requests from messages
