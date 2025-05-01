@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,11 +10,18 @@ import { PendingTimeOffApprovals } from "@/components/time-management/PendingTim
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { ShiftCoverageRequestsTab } from "@/components/time-management/ShiftCoverageRequestsTab";
+import { useCommunications } from "@/hooks/useCommunications";
+import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 
 export default function TimeManagement() {
   const { currentUser } = useAuth();
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequest[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Get communications data for shift coverage requests
+  const { messages: rawMessages, isLoading: messagesLoading, respondToShiftRequest, refreshMessages } = useCommunications();
+  const processedMessages = useProcessMessages(rawMessages, currentUser);
 
   const fetchRequests = async () => {
     if (!currentUser) return;
@@ -45,7 +53,8 @@ export default function TimeManagement() {
 
   useEffect(() => {
     fetchRequests();
-  }, [currentUser]);
+    refreshMessages(); // Also fetch messages for shift coverage requests
+  }, [currentUser, refreshMessages]);
 
   if (!currentUser) {
     return (
@@ -81,6 +90,7 @@ export default function TimeManagement() {
         <Tabs defaultValue="my-requests">
           <TabsList>
             <TabsTrigger value="my-requests">My Requests</TabsTrigger>
+            <TabsTrigger value="shift-coverage">Shift Coverage</TabsTrigger>
             {isAdmin && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
             <TabsTrigger value="team-calendar">Team Calendar</TabsTrigger>
           </TabsList>
@@ -89,6 +99,15 @@ export default function TimeManagement() {
               userRequests={userRequests}
               loading={loading}
               refresh={fetchRequests}
+            />
+          </TabsContent>
+          <TabsContent value="shift-coverage" className="space-y-4 pt-4">
+            <ShiftCoverageRequestsTab
+              messages={processedMessages}
+              loading={messagesLoading}
+              onRespond={respondToShiftRequest}
+              currentUser={currentUser}
+              onRefresh={refreshMessages}
             />
           </TabsContent>
           {isAdmin && (
