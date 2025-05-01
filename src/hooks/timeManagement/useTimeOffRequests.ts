@@ -35,7 +35,8 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
             `)
         : supabase
             .from("time_off_requests")
-            .select("*");
+            .select("*")
+            .eq("user_id", currentUser.id);
         
       const { data, error: fetchError } = await query;
         
@@ -46,6 +47,12 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
       
       if (data) {
         console.log(`Retrieved ${data.length} time off requests`);
+        
+        // Enhanced debug info
+        if (data.length > 0) {
+          console.log("Sample time off request:", data[0]);
+        }
+        
         setTimeOffRequests(
           data.map((r: any) => ({
             ...r,
@@ -86,6 +93,8 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   useEffect(() => {
     if (!currentUser || requestsSubscribed) return;
     
+    console.log("Setting up realtime subscription for time_off_requests");
+    
     // Set up subscription for real-time updates
     const channel = supabase
       .channel('time-off-changes')
@@ -115,6 +124,7 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   // Initial data fetch
   useEffect(() => {
     if (currentUser) {
+      console.log("Initial fetch of time off requests triggered");
       fetchRequests();
     }
   }, [currentUser, fetchRequests]);
@@ -127,6 +137,12 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   const userRequests = timeOffRequests.filter(
     (request) => request.userId === currentUser?.id
   );
+  
+  // Log derived states for debugging
+  useEffect(() => {
+    console.log("Pending requests count:", pendingRequests.length);
+    console.log("User requests count:", userRequests.length);
+  }, [pendingRequests.length, userRequests.length]);
 
   return {
     timeOffRequests,

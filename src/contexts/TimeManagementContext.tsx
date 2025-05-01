@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { User } from "@/types";
 import { TimeManagementContextType, TimeManagementProviderProps } from "@/types/timeManagement";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -24,6 +24,10 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [activeTab, setActiveTab] = useState("my-requests");
   const [retryCount, setRetryCount] = useState(0);
   
+  useEffect(() => {
+    console.log("TimeManagementProvider initialized with user:", currentUser?.id);
+  }, [currentUser]);
+  
   // Get time off requests data
   const {
     timeOffRequests,
@@ -44,9 +48,19 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   } = useCommunications();
   
   const processedMessages = useProcessMessages(rawMessages, currentUser);
+  
+  // Additional logging for processed messages
+  useEffect(() => {
+    console.log("Processed messages count:", processedMessages?.length || 0);
+    
+    if (processedMessages && processedMessages.length > 0) {
+      console.log("First processed message:", processedMessages[0]);
+    }
+  }, [processedMessages]);
 
   // Retry logic for failed fetches
   const handleRetry = useCallback(() => {
+    console.log("Manual retry triggered");
     setRetryCount(prevCount => prevCount + 1);
     toast.info("Retrying data fetch...");
     fetchRequests();
@@ -55,10 +69,20 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
 
   // Force refresh of data
   const forceRefreshData = useCallback(() => {
+    console.log("Force refresh triggered");
     setRetryCount(prevCount => prevCount + 1);
     fetchRequests();
     refreshMessages();
   }, [fetchRequests, refreshMessages]);
+  
+  // Initial data load
+  useEffect(() => {
+    if (currentUser) {
+      console.log("Initial data load in TimeManagementProvider");
+      fetchRequests();
+      refreshMessages();
+    }
+  }, [currentUser, fetchRequests, refreshMessages]);
 
   const value: TimeManagementContextType = {
     timeOffRequests,

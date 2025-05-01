@@ -35,11 +35,14 @@ export function useGetCommunications(currentUser: User | null) {
           return [];
         }
 
+        console.log(`Retrieved ${allCommunications.length} communications, now fetching shift requests`);
+
         // Now for each communication, fetch related shift coverage requests
         const communicationsWithRequests = await Promise.all(
           allCommunications.map(async (comm) => {
             // Only fetch shift coverage requests for shift_coverage type messages
             if (comm.type === 'shift_coverage') {
+              console.log(`Fetching shift requests for communication: ${comm.id}`);
               const { data: shiftRequests, error: shiftError } = await supabase
                 .from('shift_coverage_requests')
                 .select('*')
@@ -53,6 +56,8 @@ export function useGetCommunications(currentUser: User | null) {
               if (shiftRequests && shiftRequests.length > 0) {
                 console.log(`Found ${shiftRequests.length} shift coverage requests for comm ${comm.id}`);
                 return { ...comm, shift_coverage_requests: shiftRequests };
+              } else {
+                console.log(`No shift requests found for communication ${comm.id}`);
               }
             }
             
@@ -68,6 +73,7 @@ export function useGetCommunications(currentUser: User | null) {
         const shiftCoverageMessages = communicationsWithRequests.filter(
           c => c.type === 'shift_coverage' && c.shift_coverage_requests?.length > 0
         );
+        
         if (shiftCoverageMessages.length > 0) {
           console.log("Sample shift coverage messages:", shiftCoverageMessages.slice(0, 2));
         } else {
