@@ -10,7 +10,7 @@ import { PendingTimeOffApprovals } from "@/components/time-management/PendingTim
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ShiftCoverageRequestsTab } from "@/components/time-management/ShiftCoverageRequestsTab";
+import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 import { AlertCircle, RefreshCw } from "lucide-react";
