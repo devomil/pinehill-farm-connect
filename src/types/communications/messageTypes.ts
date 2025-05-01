@@ -1,4 +1,3 @@
-
 import { User } from "@/types";
 
 export interface MessageData {
@@ -8,7 +7,7 @@ export interface MessageData {
   message: string;
   type: 'general' | 'shift_coverage' | 'urgent';
   created_at: string;
-  status: string;
+  status: 'pending' | 'accepted' | 'declined';
   read_at: string | null;
   shift_coverage_requests?: ShiftCoverageRequest[];
   current_user_id?: string;
@@ -20,7 +19,7 @@ export interface ShiftCoverageRequest {
   shift_date: string;
   shift_start: string;
   shift_end: string;
-  status: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export interface MessageListProps {

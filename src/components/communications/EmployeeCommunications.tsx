@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -78,11 +77,22 @@ export function EmployeeCommunications({
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
-  // Type assertion to ensure compatibility with Communication type
-  const typedMessages = messages ? messages.map(msg => ({
-    ...msg,
-    type: msg.type as 'general' | 'shift_coverage' | 'urgent'
-  })) : [];
+  // Type correction: Explicitly cast each message to match Communication type
+  // This ensures that the 'type' property is recognized as the correct string literal union
+  const typedMessages: Communication[] = messages ? messages.map(msg => {
+    const typedMsg = {
+      ...msg,
+      // Ensure type is one of the allowed values, defaulting to 'general' if not
+      type: (['general', 'shift_coverage', 'urgent'].includes(msg.type) 
+        ? msg.type 
+        : 'general') as 'general' | 'shift_coverage' | 'urgent',
+      // Ensure status is one of the allowed values
+      status: (['pending', 'accepted', 'declined'].includes(msg.status)
+        ? msg.status
+        : 'pending') as 'pending' | 'accepted' | 'declined'
+    };
+    return typedMsg;
+  }) : [];
 
   const handleSendMessage = useCallback((message: string) => {
     if (selectedEmployee) {
