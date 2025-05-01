@@ -6,7 +6,20 @@ import { Button } from "@/components/ui/button";
 import { MessageStatus } from "./MessageStatus";
 import { MessageResponseButtons } from "./MessageResponseButtons";
 import { User } from "@/types";
-import { MessageItemProps } from "@/types/communications/messageTypes";
+import { Communication } from "@/types/communications/communicationTypes";
+
+export interface MessageItemProps {
+  message: Communication;
+  onRespond: (data: {
+    communicationId: string;
+    shiftRequestId: string;
+    accept: boolean;
+    senderId: string;
+  }) => void;
+  recipient: User;
+  isOutgoing: boolean;
+  onViewConversation?: () => void;
+}
 
 export function MessageItem({ 
   message, 

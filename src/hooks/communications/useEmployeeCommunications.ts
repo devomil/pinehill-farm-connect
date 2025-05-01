@@ -6,7 +6,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Communication, MessageType, MessageStatus, SendMessageParams } from "@/types/communications/communicationTypes";
+import { Communication, MessageType, MessageStatus, SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -84,8 +84,17 @@ export function useEmployeeCommunications({
     markMessagesAsRead();
   }, [selectedEmployee, currentUser, unreadMessages]);
 
-  // Process messages with proper typing
-  const processedMessages = useMemo(() => {
+  // Helper functions for type validation
+  function isValidMessageType(type: string): boolean {
+    return ['general', 'shift_coverage', 'urgent'].includes(type);
+  }
+
+  function isValidMessageStatus(status: string): boolean {
+    return ['pending', 'accepted', 'declined'].includes(status);
+  }
+
+  // Process messages with proper typing - explicitly return Communication[] type
+  const processedMessages = useMemo((): Communication[] => {
     if (!messages || !messages.length) return [];
     
     return messages.map(msg => {
@@ -115,20 +124,11 @@ export function useEmployeeCommunications({
         type: messageType,
         status: messageStatus,
         shift_coverage_requests: typedShiftRequests,
-        admin_cc: msg.admin_cc
+        admin_cc: msg.admin_cc,
+        current_user_id: currentUser?.id
       } as Communication;
     });
-  }, [messages]);
-
-  // Helper function to validate message types
-  function isValidMessageType(type: string): boolean {
-    return ['general', 'shift_coverage', 'urgent'].includes(type);
-  }
-
-  // Helper function to validate message status
-  function isValidMessageStatus(status: string): boolean {
-    return ['pending', 'accepted', 'declined'].includes(status);
-  }
+  }, [messages, currentUser?.id]);
 
   const handleSendMessage = useCallback((message: string) => {
     if (!selectedEmployee) return;

@@ -6,7 +6,21 @@ import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
-import { MessageListProps } from "@/types/communications/messageTypes";
+import { Communication } from "@/types/communications/communicationTypes";
+
+// Update the import to use the Communication type instead of MessageData
+interface MessageListProps {
+  messages: Communication[];
+  isLoading: boolean;
+  onRespond: (data: {
+    communicationId: string;
+    shiftRequestId: string;
+    accept: boolean;
+    senderId: string;
+  }) => void;
+  employees: User[];
+  onViewConversation: (employee: User) => void;
+}
 
 export function MessageList({ messages, isLoading, onRespond, employees, onViewConversation }: MessageListProps) {
   const { currentUser } = useAuth();
