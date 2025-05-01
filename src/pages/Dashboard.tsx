@@ -12,7 +12,7 @@ import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { addMonths, subMonths } from "date-fns";
 import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 
@@ -23,7 +23,10 @@ export default function Dashboard() {
     userTimeOff,
     announcements,
     assignedTrainings,
-    isAdmin 
+    isAdmin,
+    refetchTimeOff,
+    loading: dashboardDataLoading,
+    error: dashboardDataError 
   } = useDashboardData();
 
   const [date, setDate] = useState<Date>(new Date());
@@ -37,6 +40,12 @@ export default function Dashboard() {
   const goToNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
+
+  const handleRefreshTimeOff = useCallback(() => {
+    if (refetchTimeOff) {
+      refetchTimeOff();
+    }
+  }, [refetchTimeOff]);
 
   return (
     <DashboardLayout>
@@ -72,8 +81,13 @@ export default function Dashboard() {
               <TrainingCard trainings={assignedTrainings} />
             )}
 
-            {userTimeOff && userTimeOff.length > 0 && (
-              <TimeOffRequestsCard requests={userTimeOff} />
+            {userTimeOff && (
+              <TimeOffRequestsCard 
+                requests={userTimeOff} 
+                loading={dashboardDataLoading}
+                error={dashboardDataError}
+                onRefresh={handleRefreshTimeOff}
+              />
             )}
 
             {announcements && announcements.length > 0 && (
@@ -83,8 +97,6 @@ export default function Dashboard() {
               </>
             )}
           </div>
-
-          {/* Removed the separate admin section for AnnouncementStats */}
         </div>
 
         {assignedTrainings && assignedTrainings.length > 0 && (

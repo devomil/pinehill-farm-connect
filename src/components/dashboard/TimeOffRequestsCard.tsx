@@ -1,26 +1,34 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface TimeOffRequestsCardProps {
   requests: any[];
   loading?: boolean;
   error?: Error | null;
+  onRefresh?: () => void;
 }
 
 export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ 
   requests, 
   loading,
-  error
+  error,
+  onRefresh
 }) => {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Time Off Requests</CardTitle>
-          <Clock className="h-5 w-5 text-muted-foreground" />
+          {onRefresh && (
+            <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh requests">
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
+          {!onRefresh && <Clock className="h-5 w-5 text-muted-foreground" />}
         </div>
         <CardDescription>Your pending requests</CardDescription>
       </CardHeader>
@@ -28,14 +36,20 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
         {error ? (
           <Alert variant="destructive" className="my-2">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load time off requests
+            <AlertDescription className="flex justify-between w-full items-center">
+              <span>Failed to load time off requests</span>
+              {onRefresh && (
+                <Button size="sm" variant="ghost" onClick={onRefresh}>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry
+                </Button>
+              )}
             </AlertDescription>
           </Alert>
         ) : loading ? (
-          <div className="text-center py-4">
-            <div className="animate-pulse h-6 bg-muted rounded w-3/4 mx-auto mb-2"></div>
-            <div className="animate-pulse h-6 bg-muted rounded w-2/3 mx-auto"></div>
+          <div className="space-y-2">
+            <div className="animate-pulse h-6 bg-muted rounded w-3/4"></div>
+            <div className="animate-pulse h-6 bg-muted rounded w-2/3"></div>
           </div>
         ) : requests.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
@@ -46,8 +60,8 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
             {requests.map((timeOff) => (
               <li key={timeOff.id} className="flex justify-between items-center">
                 <span>
-                  {new Date(timeOff.start_date).toLocaleDateString()} to{' '}
-                  {new Date(timeOff.end_date).toLocaleDateString()}
+                  {new Date(timeOff.start_date || timeOff.startDate).toLocaleDateString()} to{' '}
+                  {new Date(timeOff.end_date || timeOff.endDate).toLocaleDateString()}
                 </span>
                 <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
                   {timeOff.status}

@@ -2,14 +2,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useCallback } from "react";
 
 export function useDashboardData() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
+  const [retryCount, setRetryCount] = useState(0);
 
   // Fetch pending time off requests (for admin)
-  const { data: pendingTimeOff } = useQuery({
-    queryKey: ['pendingTimeOff'],
+  const { data: pendingTimeOff, error: pendingTimeOffError, refetch: refetchPendingTimeOff } = useQuery({
+    queryKey: ['pendingTimeOff', retryCount],
     queryFn: async () => {
       if (!isAdmin) return [];
       const { data, error } = await supabase
@@ -24,14 +26,13 @@ export function useDashboardData() {
   });
 
   // Fetch user's own time off requests
-  const { data: userTimeOff } = useQuery({
-    queryKey: ['userTimeOff', currentUser?.id],
+  const { data: userTimeOff, error: userTimeOffError, refetch: refetchUserTimeOff } = useQuery({
+    queryKey: ['userTimeOff', currentUser?.id, retryCount],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('time_off_requests')
         .select('*')
-        .eq('user_id', currentUser?.id)
-        .eq('status', 'pending');
+        .eq('user_id', currentUser?.id);
       
       if (error) throw error;
       return data || [];
@@ -40,8 +41,8 @@ export function useDashboardData() {
   });
 
   // Fetch recent announcements
-  const { data: announcements } = useQuery({
-    queryKey: ['recentAnnouncements'],
+  const { data: announcements, error: announcementsError } = useQuery({
+    queryKey: ['recentAnnouncements', retryCount],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('announcements')
@@ -55,8 +56,8 @@ export function useDashboardData() {
   });
 
   // Fetch assigned trainings
-  const { data: assignedTrainings } = useQuery({
-    queryKey: ['assignedTrainings', currentUser?.id],
+  const { data: assignedTrainings, error: assignedTrainingsError } = useQuery({
+    queryKey: ['assignedTrainings', currentUser?.id, retryCount],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('training_assignments')
@@ -76,11 +77,25 @@ export function useDashboardData() {
     enabled: !!currentUser?.id
   });
 
+  // Refetch time off data
+  const refetchTimeOff = useCallback(() => {
+    setRetryCount(prev => prev + 1);
+  }, []);
+
+  // Determine if any data is still loading
+  const loading = (!pendingTimeOff && isAdmin) || (!userTimeOff && !!currentUser?.id) || !announcements;
+  
+  // Consolidate errors
+  const error = pendingTimeOffError || userTimeOffError || announcementsError || assignedTrainingsError || null;
+
   return {
     pendingTimeOff,
     userTimeOff,
     announcements,
     assignedTrainings,
-    isAdmin
+    isAdmin,
+    refetchTimeOff,
+    loading,
+    error
   };
 }

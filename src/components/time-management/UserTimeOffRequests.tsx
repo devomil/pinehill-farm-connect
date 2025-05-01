@@ -21,13 +21,11 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
 }) => {
   const handleRefresh = () => {
     if (refresh) {
-      toast.info("Refreshing time off requests...");
       try {
         refresh();
-        // Toast is shown on successful completion - moved to TimeManagement.tsx
+        // Toast is shown in the TimeManagement context after successful fetch
       } catch (error) {
         console.error("Error refreshing time off requests:", error);
-        toast.error("Failed to refresh time off requests");
       }
     }
   };
@@ -54,7 +52,7 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
     return (
       <div className="space-y-4">
         {[1, 2].map((index) => (
-          <Card key={`loading-${index}`}>
+          <Card key={`loading-${index}`} className="overflow-hidden">
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
                 <div className="w-2/3">

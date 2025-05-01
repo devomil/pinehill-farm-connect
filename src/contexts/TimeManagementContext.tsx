@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { TimeOffRequest, User } from "@/types";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
@@ -49,6 +49,8 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [error, setError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState("my-requests");
   const [retryCount, setRetryCount] = useState(0);
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+  const [requestsSubscribed, setRequestsSubscribed] = useState(false);
   
   // Get communications data for shift coverage requests
   const { 
@@ -63,7 +65,12 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
 
   const fetchRequests = useCallback(async () => {
     if (!currentUser) return;
-    setLoading(true);
+    
+    // Don't show loading state for subsequent refreshes if we already have data
+    if (!initialFetchDone) {
+      setLoading(true);
+    }
+    
     setError(null);
     
     try {
@@ -78,7 +85,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       }
       
       if (data) {
-        console.log(`Retrieved ${data.length} time off requests:`, data);
+        console.log(`Retrieved ${data.length} time off requests`);
         setTimeOffRequests(
           data.map((r: any) => ({
             ...r,
@@ -92,7 +99,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
           }))
         );
         
-        // Show success notification after successful fetch to provide user feedback
+        // Only show success notification for manual refreshes, not initial load
         if (retryCount > 0) {
           toast.success("Time off requests refreshed successfully");
         }
@@ -100,14 +107,46 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
         console.log("No time off requests data returned");
         setTimeOffRequests([]);
       }
+      
+      setInitialFetchDone(true);
     } catch (err: any) {
       console.error("Failed to fetch time-off requests:", err);
       setError(err);
-      toast.error("Failed to fetch time-off requests. Please try again.");
+      // Only show error for manual retries, not initial load failures which we'll handle silently
+      if (retryCount > 0) {
+        toast.error("Failed to fetch time-off requests. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   }, [currentUser, retryCount]);
+
+  // Setup realtime subscription for time_off_requests table
+  useEffect(() => {
+    if (!currentUser || requestsSubscribed) return;
+    
+    // Set up subscription for real-time updates
+    const channel = supabase
+      .channel('time-off-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'time_off_requests' 
+      }, () => {
+        console.log('Received time-off request update via realtime');
+        fetchRequests();
+      })
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        setRequestsSubscribed(true);
+      });
+
+    // Clean up subscription
+    return () => {
+      supabase.removeChannel(channel);
+      setRequestsSubscribed(false);
+    };
+  }, [currentUser, fetchRequests, requestsSubscribed]);
 
   // Retry logic for failed fetches
   const handleRetry = () => {
@@ -124,10 +163,11 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     refreshMessages();
   }, [fetchRequests, refreshMessages]);
 
-  React.useEffect(() => {
+  // Initial data fetch
+  useEffect(() => {
     if (currentUser) {
       fetchRequests();
-      refreshMessages(); // Also fetch messages for shift coverage requests
+      refreshMessages();
     }
   }, [currentUser, fetchRequests, refreshMessages]);
 
@@ -165,4 +205,3 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     </TimeManagementContext.Provider>
   );
 };
-

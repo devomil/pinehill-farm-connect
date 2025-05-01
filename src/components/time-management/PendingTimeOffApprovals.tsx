@@ -1,18 +1,11 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar } from "lucide-react";
-import { TimeOffRequest } from "@/types";
+import { TimeOffRequest, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-
-// Helper to get user's name (can be improved with join if employee info in db)
-const EMPLOYEE_NAMES: Record<string, string> = {
-  "1": "Admin User",
-  "2": "John Employee",
-  "3": "Sarah Johnson"
-};
 
 interface PendingTimeOffApprovalsProps {
   pendingRequests: TimeOffRequest[];
@@ -23,6 +16,45 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
   pendingRequests,
   refresh,
 }) => {
+  const [employeeNames, setEmployeeNames] = useState<Record<string, string>>({});
+  const [loadingNames, setLoadingNames] = useState(true);
+
+  // Fetch employee names for all pending requests
+  useEffect(() => {
+    const fetchEmployeeNames = async () => {
+      if (!pendingRequests.length) return;
+      
+      setLoadingNames(true);
+      
+      try {
+        // Get unique user IDs from pending requests
+        const userIds = [...new Set(pendingRequests.map(req => req.userId))];
+        
+        // Fetch profiles for these user IDs
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', userIds);
+          
+        if (error) throw error;
+        
+        // Create a mapping of user IDs to names
+        const namesMap: Record<string, string> = {};
+        data?.forEach(profile => {
+          namesMap[profile.id] = profile.name || 'Unknown Employee';
+        });
+        
+        setEmployeeNames(namesMap);
+      } catch (error) {
+        console.error("Error fetching employee names:", error);
+        toast.error("Failed to load employee information");
+      } finally {
+        setLoadingNames(false);
+      }
+    };
+    
+    fetchEmployeeNames();
+  }, [pendingRequests]);
 
   const handleAction = async (requestId: string, status: "approved" | "rejected") => {
     const { error } = await supabase
@@ -58,14 +90,21 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="font-medium mb-1">{EMPLOYEE_NAMES[request.userId] || "Unknown"}</h4>
+                <h4 className="font-medium mb-1">
+                  {loadingNames ? (
+                    <span className="inline-block w-32 h-5 bg-gray-200 animate-pulse rounded"></span>
+                  ) : (
+                    employeeNames[request.userId] || "Unknown Employee"
+                  )}
+                </h4>
                 <div className="flex items-center space-x-2 mb-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
                     {request.startDate.toLocaleDateString()} to {request.endDate.toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">{request.reason}</p>
+                <p className="text-sm text-muted-foreground mb-4">{request.reason || 'No reason provided'}</p>
+                {request.notes && <p className="text-xs text-muted-foreground italic mb-2">Note: {request.notes}</p>}
               </div>
               <div className="space-x-2">
                 <Button
