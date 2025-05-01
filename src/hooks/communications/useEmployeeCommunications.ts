@@ -6,7 +6,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { Communication, MessageType } from "@/types/communications/communicationTypes";
+import { Communication, MessageType, SendMessageParams } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -91,8 +91,8 @@ export function useEmployeeCommunications({
     return messages.map(msg => {
       // Cast message type to proper union type
       const messageType = ['general', 'shift_coverage', 'urgent'].includes(msg.type) 
-        ? msg.type as 'general' | 'shift_coverage' | 'urgent'
-        : 'general' as const;
+        ? msg.type as MessageType
+        : 'general' as MessageType;
       
       // Cast message status to proper union type
       const messageStatus = ['pending', 'accepted', 'declined'].includes(msg.status)
@@ -139,7 +139,25 @@ export function useEmployeeCommunications({
   }, [propSetSelectedEmployee]);
 
   const handleNewMessageSend = useCallback((data: SendMessageData) => {
-    sendMessage(data);
+    // Convert SendMessageData to SendMessageParams by adding required fields for shift details
+    const sendParams: SendMessageParams = {
+      recipientId: data.recipientId,
+      message: data.message,
+      type: data.type,
+    };
+    
+    // Add shift details with appropriate field mapping if available
+    if (data.shiftDetails) {
+      sendParams.shiftDetails = {
+        original_employee_id: currentUser?.id || '',
+        covering_employee_id: data.recipientId,
+        shift_date: data.shiftDetails.shift_date,
+        shift_start: data.shiftDetails.shift_start,
+        shift_end: data.shiftDetails.shift_end
+      };
+    }
+    
+    sendMessage(sendParams);
     setDialogOpen(false);
     
     // Find and select the employee that received the message
@@ -149,7 +167,7 @@ export function useEmployeeCommunications({
         handleSelectEmployee(recipient);
       }
     }
-  }, [sendMessage, allEmployees, handleSelectEmployee]);
+  }, [sendMessage, allEmployees, handleSelectEmployee, currentUser]);
   
   // Combined refresh function
   const handleRefresh = useCallback(() => {

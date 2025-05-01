@@ -64,7 +64,7 @@ export function EmployeeCommunications({
             selectedEmployee={selectedEmployee}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            unreadMessages={unreadMessages}
+            unreadMessages={unreadMessages || []}
             onRefresh={handleRefresh}
           />
         )}

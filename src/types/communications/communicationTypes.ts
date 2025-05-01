@@ -32,7 +32,13 @@ export interface SendMessageParams {
   recipientId: string;
   message: string;
   type: MessageType;
-  shiftDetails?: Omit<ShiftCoverageRequest, 'id' | 'communication_id' | 'status'>;
+  shiftDetails?: {
+    original_employee_id: string;
+    covering_employee_id: string; 
+    shift_date: string;
+    shift_start: string;
+    shift_end: string;
+  };
 }
 
 export interface RespondToShiftRequestParams {

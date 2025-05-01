@@ -8,7 +8,7 @@ import { CommunicationsLayout } from "@/components/communications/Communications
 import { ConversationTabs } from "@/components/communications/ConversationTabs";
 import { useErrorHandling } from "@/hooks/communications/useErrorHandling";
 import { toast } from "sonner";
-import { Communication } from "@/types/communications/communicationTypes";
+import { Communication, MessageType, MessageStatus } from "@/types/communications/communicationTypes";
 
 export default function Communications() {
   const { currentUser } = useAuth();
@@ -87,21 +87,21 @@ export default function Communications() {
     return safeMessages.map(msg => {
       // Cast message type to proper union type
       const messageType = ['general', 'shift_coverage', 'urgent'].includes(msg.type) 
-        ? msg.type as 'general' | 'shift_coverage' | 'urgent'
-        : 'general' as const;
+        ? msg.type as MessageType
+        : 'general' as MessageType;
       
       // Cast message status to proper union type
       const messageStatus = ['pending', 'accepted', 'declined'].includes(msg.status)
-        ? msg.status as 'pending' | 'accepted' | 'declined'
-        : 'pending' as const;
+        ? msg.status as MessageStatus
+        : 'pending' as MessageStatus;
       
       // Process shift coverage requests to ensure they have proper types
       const typedShiftRequests = msg.shift_coverage_requests?.map(req => {
         return {
           ...req,
           status: ['pending', 'accepted', 'declined'].includes(req.status)
-            ? req.status as 'pending' | 'accepted' | 'declined'
-            : 'pending' as const
+            ? req.status as MessageStatus
+            : 'pending' as MessageStatus
         };
       });
       
@@ -112,7 +112,7 @@ export default function Communications() {
         status: messageStatus,
         shift_coverage_requests: typedShiftRequests,
         current_user_id: currentUser ? currentUser.id : undefined
-      } as unknown as Communication;
+      } as Communication;
     });
   }, [safeMessages, currentUser]);
 

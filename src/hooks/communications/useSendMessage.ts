@@ -83,9 +83,11 @@ export function useSendMessage(currentUser: User | null) {
             .from('shift_coverage_requests')
             .insert({
               communication_id: communicationData.id,
-              original_employee_id: currentUser.id,
-              covering_employee_id: recipientId,
-              ...shiftDetails,
+              original_employee_id: shiftDetails.original_employee_id,
+              covering_employee_id: shiftDetails.covering_employee_id,
+              shift_date: shiftDetails.shift_date,
+              shift_start: shiftDetails.shift_start,
+              shift_end: shiftDetails.shift_end,
               status: 'pending'
             });
   
