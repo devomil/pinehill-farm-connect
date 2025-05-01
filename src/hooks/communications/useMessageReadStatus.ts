@@ -10,7 +10,7 @@ import { Communication } from "@/types/communications/communicationTypes";
 export function useMessageReadStatus(
   selectedEmployee: User | null,
   currentUser: User | null,
-  unreadMessages: any[]
+  unreadMessages: Communication[]
 ) {
   useEffect(() => {
     const markMessagesAsRead = async () => {

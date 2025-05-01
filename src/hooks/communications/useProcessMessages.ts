@@ -26,12 +26,12 @@ export function useProcessMessages(
     return messages.map(msg => {
       // Validate and convert message type to MessageType enum
       const messageType: MessageType = isValidMessageType(msg.type) 
-        ? msg.type 
+        ? msg.type as MessageType 
         : 'general';
       
       // Validate and convert message status to MessageStatus enum
       const messageStatus: MessageStatus = isValidMessageStatus(msg.status)
-        ? msg.status
+        ? msg.status as MessageStatus
         : 'pending';
       
       // Process shift coverage requests with proper typing
@@ -39,7 +39,7 @@ export function useProcessMessages(
         return {
           ...req,
           status: isValidMessageStatus(req.status)
-            ? req.status
+            ? req.status as MessageStatus
             : 'pending'
         };
       }) || [];
