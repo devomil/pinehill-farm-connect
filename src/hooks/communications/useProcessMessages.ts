@@ -24,34 +24,40 @@ export function useProcessMessages(
     if (!messages || !messages.length) return [];
     
     return messages.map(msg => {
-      // Cast message type to proper union type with validation
+      // Validate and convert message type to MessageType enum
       const messageType: MessageType = isValidMessageType(msg.type) 
-        ? msg.type 
+        ? msg.type as MessageType
         : 'general';
       
-      // Cast message status to proper union type with validation
+      // Validate and convert message status to MessageStatus enum
       const messageStatus: MessageStatus = isValidMessageStatus(msg.status)
-        ? msg.status
+        ? msg.status as MessageStatus
         : 'pending';
       
-      // Process shift coverage requests to ensure they have proper types
+      // Process shift coverage requests with proper typing
       const typedShiftRequests = msg.shift_coverage_requests?.map((req: any) => {
         return {
           ...req,
           status: isValidMessageStatus(req.status)
-            ? req.status
+            ? req.status as MessageStatus
             : 'pending' as MessageStatus
         };
-      });
+      }) || [];
       
-      // Build the properly typed message object
+      // Return a properly typed Communication object
       return {
-        ...msg,
+        id: msg.id,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        message: msg.message,
         type: messageType,
+        created_at: msg.created_at,
         status: messageStatus,
+        read_at: msg.read_at,
+        admin_cc: msg.admin_cc,
         shift_coverage_requests: typedShiftRequests,
         current_user_id: currentUser?.id
-      } as Communication;
+      };
     });
   }, [messages, currentUser?.id]);
 }

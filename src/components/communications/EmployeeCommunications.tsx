@@ -71,7 +71,7 @@ export function EmployeeCommunications({
         )}
 
         {/* Conversation Column */}
-        {showConversation && (
+        {showConversation && selectedEmployee && (
           <EmployeeConversationView
             selectedEmployee={selectedEmployee}
             messages={processedMessages}

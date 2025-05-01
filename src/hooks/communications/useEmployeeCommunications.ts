@@ -9,7 +9,7 @@ import { useMessageReadStatus } from "./useMessageReadStatus";
 import { useProcessMessages } from "./useProcessMessages";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 import { useMessageSending } from "./useMessageSending";
-import { Communication } from "@/types/communications/communicationTypes";
+import { Communication, MessageType } from "@/types/communications/communicationTypes";
 
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -19,7 +19,7 @@ interface UseEmployeeCommunicationsProps {
 export interface SendMessageData {
   recipientId: string;
   message: string;
-  type: 'general' | 'shift_coverage' | 'urgent';
+  type: MessageType;
   shiftDetails?: {
     shift_date: string;
     shift_start: string;
@@ -42,8 +42,8 @@ export function useEmployeeCommunications({
   // Use our extracted hooks
   const { isMobileView } = useResponsiveLayout();
   
-  // Process messages with proper typing
-  const processedMessages = useProcessMessages(messages, currentUser);
+  // Process messages with proper typing - ensure it returns correctly typed Communication[]
+  const processedMessages: Communication[] = useProcessMessages(messages, currentUser);
   
   // Use message read status hook
   useMessageReadStatus(selectedEmployee, currentUser, unreadMessages || []);
