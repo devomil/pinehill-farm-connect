@@ -5,47 +5,41 @@ import { Communication, MessageType, MessageStatus } from "@/types/communication
 
 /**
  * Hook to process and type-validate messages
+ * This transforms raw database messages into properly typed Communication objects
  */
 export function useProcessMessages(
   messages: any[] | null,
   currentUser: User | null
 ): Communication[] {
-  // Helper functions for type validation
-  function isValidMessageType(type: string): type is MessageType {
-    return ['general', 'shift_coverage', 'urgent'].includes(type);
-  }
-
-  function isValidMessageStatus(status: string): status is MessageStatus {
-    return ['pending', 'accepted', 'declined'].includes(status);
-  }
-
-  // Process messages with proper typing
   return useMemo((): Communication[] => {
-    if (!messages || !messages.length) return [];
+    if (!messages || !Array.isArray(messages) || messages.length === 0) return [];
     
+    // Transform raw messages into properly typed Communication objects
     return messages.map(msg => {
-      // Validate and convert message type to MessageType enum
-      const messageType: MessageType = isValidMessageType(msg.type) 
+      // Ensure message type is valid or default to 'general'
+      const validTypes: MessageType[] = ['general', 'shift_coverage', 'urgent'];
+      const messageType: MessageType = validTypes.includes(msg.type as MessageType) 
         ? msg.type as MessageType 
         : 'general';
       
-      // Validate and convert message status to MessageStatus enum
-      const messageStatus: MessageStatus = isValidMessageStatus(msg.status)
+      // Ensure message status is valid or default to 'pending'
+      const validStatuses: MessageStatus[] = ['pending', 'accepted', 'declined'];
+      const messageStatus: MessageStatus = validStatuses.includes(msg.status as MessageStatus)
         ? msg.status as MessageStatus
         : 'pending';
       
       // Process shift coverage requests with proper typing
-      const typedShiftRequests = msg.shift_coverage_requests?.map((req: any) => {
-        return {
-          ...req,
-          status: isValidMessageStatus(req.status)
-            ? req.status as MessageStatus
-            : 'pending'
-        };
-      }) || [];
+      const typedShiftRequests = Array.isArray(msg.shift_coverage_requests) 
+        ? msg.shift_coverage_requests.map((req: any) => ({
+            ...req,
+            status: validStatuses.includes(req.status as MessageStatus)
+              ? req.status as MessageStatus
+              : 'pending'
+          }))
+        : [];
       
       // Return a properly typed Communication object
-      const communication: Communication = {
+      const typedMessage: Communication = {
         id: msg.id,
         sender_id: msg.sender_id,
         recipient_id: msg.recipient_id,
@@ -59,7 +53,7 @@ export function useProcessMessages(
         current_user_id: currentUser?.id
       };
       
-      return communication;
+      return typedMessage;
     });
-  }, [messages, currentUser?.id]);
+  }, [messages, currentUser]);
 }

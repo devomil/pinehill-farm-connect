@@ -1,6 +1,5 @@
 
 import React, { useMemo } from "react";
-import { formatDistanceToNow } from "date-fns";
 import { MessageItem } from "./MessageItem";
 import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
@@ -8,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
 
-// Update the import to use the Communication type instead of MessageData
 interface MessageListProps {
   messages: Communication[];
   isLoading: boolean;

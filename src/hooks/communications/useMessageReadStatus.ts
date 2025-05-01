@@ -14,7 +14,7 @@ export function useMessageReadStatus(
 ) {
   useEffect(() => {
     const markMessagesAsRead = async () => {
-      if (!selectedEmployee || !currentUser || !unreadMessages.length) return;
+      if (!selectedEmployee || !currentUser || unreadMessages.length === 0) return;
 
       // Find unread messages from the selected employee
       const toMarkAsRead = unreadMessages.filter(

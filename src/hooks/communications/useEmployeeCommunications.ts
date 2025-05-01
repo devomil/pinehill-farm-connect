@@ -34,7 +34,7 @@ export function useEmployeeCommunications({
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
   const { assignments } = useEmployeeAssignments();
-  const { messages, isLoading, sendMessage, respondToShiftRequest, unreadMessages, refreshMessages } = useCommunications();
+  const { messages: rawMessages, isLoading, sendMessage, respondToShiftRequest, unreadMessages: rawUnreadMessages, refreshMessages } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,10 +43,13 @@ export function useEmployeeCommunications({
   const { isMobileView } = useResponsiveLayout();
   
   // Process messages with proper typing
-  const processedMessages = useProcessMessages(messages, currentUser);
+  const processedMessages: Communication[] = useProcessMessages(rawMessages, currentUser);
   
-  // Use message read status hook
-  useMessageReadStatus(selectedEmployee, currentUser, unreadMessages || []);
+  // Process unread messages to ensure proper typing
+  const typedUnreadMessages: Communication[] = useProcessMessages(rawUnreadMessages, currentUser);
+  
+  // Use message read status hook with properly typed unread messages
+  useMessageReadStatus(selectedEmployee, currentUser, typedUnreadMessages);
 
   // Handle employee selection with sync to parent component if needed
   const handleSelectEmployee = useCallback((employee: User) => {
@@ -86,7 +89,7 @@ export function useEmployeeCommunications({
     handleSendMessage,
     handleNewMessageSend,
     handleRefresh,
-    unreadMessages,
+    unreadMessages: typedUnreadMessages,
     processedMessages,
     isMobileView,
     setSelectedEmployee: handleSelectEmployee
