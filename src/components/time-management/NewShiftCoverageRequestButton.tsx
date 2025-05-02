@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CalendarPlus } from "lucide-react";
 import {
@@ -30,6 +30,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [validatedEmployees, setValidatedEmployees] = useState<User[]>([]);
   const { sendMessage } = useCommunications(false); // Important: set to false to include shift coverage
 
   // Check if there are available employees
@@ -38,10 +39,43 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     .length > 0;
     
   // Pre-validate employee data for potential issues
-  const validEmployees = React.useMemo(() => {
-    return allEmployees.filter(emp => {
-      return emp.id && emp.id !== currentUser.id && emp.id.length > 10;
-    });
+  useEffect(() => {
+    const validateEmployees = async () => {
+      try {
+        // Get valid user IDs directly from profiles table
+        const { data: validProfiles, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .neq('id', currentUser.id);
+        
+        if (error) {
+          console.error("Error pre-validating employees:", error);
+          return;
+        }
+        
+        // Create a set of valid IDs for efficient lookup
+        const validIds = new Set(validProfiles.map(profile => profile.id));
+        console.log(`Found ${validIds.size} valid employee IDs in database`);
+        
+        // Filter the employees list to only include validated IDs
+        const validated = allEmployees.filter(emp => 
+          emp.id !== currentUser.id && validIds.has(emp.id)
+        );
+        
+        console.log(`After validation: ${validated.length} valid employees available`);
+        setValidatedEmployees(validated);
+      } catch (error) {
+        console.error("Error during employee validation:", error);
+        // Fallback to regular filtering
+        setValidatedEmployees(allEmployees.filter(emp => 
+          emp.id && emp.id !== currentUser.id && emp.id.length > 10
+        ));
+      }
+    };
+    
+    if (allEmployees && allEmployees.length > 0) {
+      validateEmployees();
+    }
   }, [allEmployees, currentUser]);
 
   const handleNewRequest = async (formData: NewMessageFormData) => {
@@ -61,47 +95,37 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
 
-    // Verify the recipient exists
-    const recipientExists = validEmployees.some(emp => emp.id === formData.recipientId);
-    if (!recipientExists) {
-      toast.error("Selected recipient no longer exists or is invalid");
-      setIsLoading(false);
-      return;
-    }
-    
-    // Get recipient details to double-check
+    // Enhanced recipient validation
     try {
-      const { data: profileCheck } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', formData.recipientId)
-        .single();
+      // First check in our pre-validated list
+      const recipientExists = validatedEmployees.some(emp => emp.id === formData.recipientId);
+      
+      if (!recipientExists) {
+        console.error("Selected recipient not in validated list, attempting direct database check");
         
-      if (!profileCheck) {
-        toast.error("Cannot find recipient in database. Please try another employee.");
-        setIsLoading(false);
-        return;
+        // Double-check directly with the database
+        const { data: profileCheck, error } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('id', formData.recipientId)
+          .single();
+          
+        if (error || !profileCheck) {
+          console.error("Database check failed:", error);
+          toast.error("Cannot find recipient in database. Please try another employee.");
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("Recipient verified in database:", profileCheck);
+        }
+      } else {
+        console.log("Recipient exists in pre-validated list");
       }
     } catch (error) {
       console.error("Error verifying recipient:", error);
-      // Continue anyway, the main function will also check
-    }
-
-    // CRITICAL FIX: Debug check before attempting to create
-    try {
-      console.log("DEBUG: Before request - checking table access");
-      const { data: testAccess, error: accessError } = await supabase
-        .from('shift_coverage_requests')
-        .select('count(*)')
-        .limit(1);
-      
-      if (accessError) {
-        console.error("Error accessing shift_coverage_requests table:", accessError);
-      } else {
-        console.log(`Table access check succeeded. Found ${testAccess?.length || 0} rows`);
-      }
-    } catch (e) {
-      console.error("Error during debug check:", e);
+      toast.error("Error verifying recipient. Please try again.");
+      setIsLoading(false);
+      return;
     }
     
     // CRITICAL FIX: Create properly formatted shift coverage request that matches the schema
@@ -192,7 +216,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
           </SheetDescription>
         </SheetHeader>
         <NewShiftCoverageRequestForm
-          employees={validEmployees}
+          employees={validatedEmployees.length > 0 ? validatedEmployees : allEmployees.filter(emp => emp.id !== currentUser.id)}
           onSubmit={handleNewRequest}
           isLoading={isLoading}
           currentUser={currentUser}

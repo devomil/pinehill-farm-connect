@@ -13,37 +13,56 @@ export async function getRecipientData(recipientId: string) {
     throw new Error("No recipient ID provided");
   }
 
-  const { data: recipientData, error: recipientError } = await supabase
-    .from('profiles')
-    .select('id, name, email')
-    .eq('id', recipientId)
-    .maybeSingle(); // Use maybeSingle instead of expecting an array
-
-  if (recipientError) {
-    console.error("Error fetching recipient data:", recipientError);
-    throw new Error(`Database error when finding recipient: ${recipientError.message}`);
-  }
-
-  if (!recipientData) {
-    console.error(`No recipient found with ID: ${recipientId}`);
-    
-    // Double-check if recipient exists with a more basic query
-    const { data: checkData } = await supabase
+  try {
+    // Try getting the recipient with a more permissive query first
+    const { data: recipientData, error: recipientError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, name, email')
       .eq('id', recipientId)
-      .maybeSingle();
-      
-    if (!checkData) {
-      throw new Error(`Recipient not found. Please refresh and try again.`);
-    } else {
-      // Recipient exists but data wasn't retrieved correctly
-      throw new Error(`Error retrieving recipient details. Please try again.`);
+      .maybeSingle(); // Use maybeSingle instead of expecting an array
+
+    if (recipientError) {
+      console.error("Error fetching recipient data:", recipientError);
+      throw new Error(`Database error when finding recipient: ${recipientError.message}`);
     }
+
+    if (!recipientData) {
+      console.error(`No recipient found with ID: ${recipientId}`);
+      
+      // Double-check if recipient exists with a more basic query
+      const { data: checkData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', recipientId)
+        .maybeSingle();
+        
+      if (!checkData) {
+        // Try one more attempt with auth.users as a last resort
+        try {
+          const { data: userCheck } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .limit(10);  // Get some sample data to debug
+            
+          console.log("Sample profiles for debugging:", userCheck);
+          
+          throw new Error(`Recipient not found. Please refresh and try again.`);
+        } catch (e) {
+          console.error("Failed even backup query:", e);
+          throw new Error(`Recipient not found. Please refresh and try again.`);
+        }
+      } else {
+        // Recipient exists but data wasn't retrieved correctly
+        throw new Error(`Error retrieving recipient details. Please try again.`);
+      }
+    }
+    
+    console.log("Found recipient:", recipientData);
+    return recipientData;
+  } catch (error: any) {
+    console.error("Error in getRecipientData:", error);
+    throw error;
   }
-  
-  console.log("Found recipient:", recipientData);
-  return recipientData;
 }
 
 /**
