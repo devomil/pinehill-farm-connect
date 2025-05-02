@@ -14,11 +14,12 @@ export default function Communications() {
   const { currentUser } = useAuth();
   const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees, unfilteredEmployees: allEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
-  const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages, error: messagesError } = useCommunications();
+  // Exclude shift coverage messages from the communications page
+  const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages, error: messagesError } = useCommunications(true);
   const { retryCount, handleRetry, isConnectionError, formatErrorMessage } = useErrorHandling();
   
   const loading = employeesLoading || assignmentsLoading || messagesLoading;
-  const error = employeeError || messagesError; // Combine errors from both hooks
+  const error = employeeError || messagesError;
 
   // Use our common processing hook to ensure proper types
   const processedMessages = useProcessMessages(messages, currentUser);
@@ -30,12 +31,12 @@ export default function Communications() {
     refetchEmployees();
     refreshMessages();
     
-    // Set up refresh interval for regular updates
+    // Set up refresh interval for regular updates - less frequent
     const refreshInterval = setInterval(() => {
       console.log("Auto-refreshing communications data");
-      refetchEmployees();  // Refresh employee data too to keep recipient lists current
+      refetchEmployees();
       refreshMessages();
-    }, 30000); // Refresh every 30 seconds
+    }, 60000); // Refresh every minute (increased from 30s)
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
@@ -68,18 +69,6 @@ export default function Communications() {
     refreshMessages();
   };
 
-  // Debug information
-  console.log({
-    currentUser: currentUser?.id,
-    employeesCount: allEmployees?.length || 0,
-    messagesCount: messages?.length || 0,
-    unreadCount: unreadMessages?.length || 0,
-    isLoading: loading,
-    retryCount,
-    error: error ? formatErrorMessage(error) : "No error",
-    isConnectionError: isConnectionError(error)
-  });
-
   return (
     <CommunicationsLayout
       error={error}
@@ -87,7 +76,7 @@ export default function Communications() {
       isConnectionError={isConnectionError(error)}
       onRetry={handleRetryConnection}
       retryCount={retryCount}
-      onRefresh={handleManualRefresh} // Pass the new refresh function
+      onRefresh={handleManualRefresh}
     >
       {!loading && (
         <ConversationTabs
@@ -97,7 +86,7 @@ export default function Communications() {
           employees={allEmployees || []}
           onRespond={respondToShiftRequest}
           onSendMessage={sendMessage}
-          onRefresh={handleManualRefresh} // Pass the refresh function to tabs
+          onRefresh={handleManualRefresh}
         />
       )}
     </CommunicationsLayout>

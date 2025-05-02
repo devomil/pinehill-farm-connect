@@ -7,48 +7,21 @@ import { useUnreadMessages } from "./communications/useUnreadMessages";
 import { useRefreshMessages } from "./communications/useRefreshMessages";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 
-export const useCommunications = () => {
+export const useCommunications = (excludeShiftCoverage = false) => {
   const { currentUser } = useAuth();
-  const { data: messages, isLoading, error, refetch } = useGetCommunications(currentUser);
+  const location = useLocation();
+  const isTimeManagementPage = location.pathname === '/time';
+  
+  // Pass the excludeShiftCoverage parameter to the hook
+  const { data: messages, isLoading, error, refetch } = useGetCommunications(currentUser, excludeShiftCoverage);
   const sendMessageMutation = useSendMessage(currentUser);
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
   const refreshMessages = useCallback(() => {
     console.log("Manually refreshing communications data");
     return refetch();
   }, [refetch]);
-  
-  // Enhanced debug logging for communications
-  useEffect(() => {
-    console.log("useCommunications hook - Current user:", currentUser?.email);
-    
-    if (error) {
-      console.error("Error loading communications:", error);
-    }
-    
-    if (messages) {
-      console.log(`Communications loaded successfully for ${currentUser?.email}: ${messages.length} messages`);
-      
-      // Log shift coverage requests specifically
-      const shiftCoverageMessages = messages.filter(msg => msg.type === 'shift_coverage');
-      console.log(`Shift coverage messages for ${currentUser?.email}:`, shiftCoverageMessages.length);
-      
-      if (shiftCoverageMessages.length > 0) {
-        // Log each shift coverage message for debugging
-        shiftCoverageMessages.forEach((msg, idx) => {
-          console.log(`Shift message ${idx}: ${msg.id}, from ${msg.sender_id} to ${msg.recipient_id}`);
-          
-          if (msg.shift_coverage_requests?.length) {
-            console.log(`  Request details: ${msg.shift_coverage_requests.length} requests, status: ${msg.shift_coverage_requests[0].status}`);
-          } else {
-            console.log("  No shift coverage requests in this message");
-          }
-        });
-      }
-    } else if (!isLoading && !error) {
-      console.log(`No communications data found for ${currentUser?.email} but no error reported`);
-    }
-  }, [messages, isLoading, error, currentUser]);
   
   const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
@@ -61,28 +34,34 @@ export const useCommunications = () => {
     console.log("Responding to shift request with params:", params);
     return respondToShiftRequestMutation.mutate(params, {
       onSuccess: () => {
-        // Invalidate and refetch communications data after successful mutation
         console.log("Successfully responded to shift request, refreshing messages");
         refreshMessages();
       }
     });
   };
 
-  // Force initial fetch on first mount and set up more frequent periodic refresh
+  // Use a less aggressive fetch strategy with conditional refresh
   useEffect(() => {
+    // Initial fetch
     console.log(`Initial communications fetch for ${currentUser?.email}`);
     refetch();
     
-    // Set up a periodic refresh to ensure we catch new messages
-    const refreshInterval = setInterval(() => {
-      console.log("Periodic refresh of communications data");
-      refetch();
-    }, 15000); // Refresh every 15 seconds to ensure we don't miss updates
+    // Only set up periodic refresh for time management page or if we're including shift coverage messages
+    const shouldUsePeriodicRefresh = isTimeManagementPage || !excludeShiftCoverage;
+    
+    let refreshInterval: number | undefined;
+    
+    if (shouldUsePeriodicRefresh) {
+      refreshInterval = window.setInterval(() => {
+        console.log("Periodic refresh of communications data");
+        refetch();
+      }, 30000); // Refresh every 30 seconds (increased from 15s)
+    }
     
     return () => {
-      clearInterval(refreshInterval);
+      if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [refetch, currentUser?.email]);
+  }, [refetch, currentUser?.email, isTimeManagementPage, excludeShiftCoverage]);
 
   return {
     messages: messages || [],

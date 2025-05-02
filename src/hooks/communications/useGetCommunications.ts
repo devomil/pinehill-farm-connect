@@ -3,10 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
+import { useLocation } from "react-router-dom";
 
-export function useGetCommunications(currentUser: User | null) {
+export function useGetCommunications(currentUser: User | null, excludeShiftCoverage = false) {
+  const location = useLocation();
+  const isTimeManagementPage = location.pathname === '/time';
+  
   return useQuery({
-    queryKey: ['communications', currentUser?.id],
+    queryKey: ['communications', currentUser?.id, excludeShiftCoverage],
     queryFn: async () => {
       if (!currentUser?.id) {
         console.log("User not logged in, cannot fetch communications");
@@ -14,6 +18,7 @@ export function useGetCommunications(currentUser: User | null) {
       }
       
       console.log(`Fetching communications for user: ${currentUser.id}, email: ${currentUser.email}`);
+      console.log(`Exclude shift coverage: ${excludeShiftCoverage}`);
       
       try {
         // First, fetch all communications for the user
@@ -35,46 +40,46 @@ export function useGetCommunications(currentUser: User | null) {
           return [];
         }
 
-        console.log(`Retrieved ${allCommunications.length} communications for ${currentUser.email}`);
+        // If we're excluding shift coverage messages (for direct communications page)
+        // filter them out immediately before further processing
+        const filteredCommunications = excludeShiftCoverage 
+          ? allCommunications.filter(comm => comm.type !== 'shift_coverage')
+          : allCommunications;
         
-        // Log the raw communications data to debug
-        console.log("Communications raw data:", allCommunications.map(c => ({
-          id: c.id,
-          type: c.type,
-          sender: c.sender_id,
-          recipient: c.recipient_id,
-          status: c.status
-        })));
+        console.log(`Retrieved ${allCommunications.length} communications, filtered to ${filteredCommunications.length} after type filtering`);
         
-        // Find all communication ids of type "shift_coverage"
-        const shiftCoverageIds = allCommunications
+        // Find all communication ids of type "shift_coverage" that we need to process
+        const shiftCoverageIds = filteredCommunications
           .filter(comm => comm.type === 'shift_coverage')
           .map(comm => comm.id);
           
-        console.log(`Found ${shiftCoverageIds.length} shift coverage communications`);
+        console.log(`Found ${shiftCoverageIds.length} shift coverage communications to process`);
         
-        // For admin users, we should show all shift coverage requests
+        // For admin users in time management page, we should show all shift coverage requests
         // so let's also fetch any shift coverage messages where they're not sender/recipient
-        if (currentUser.role === 'admin') {
-          console.log("User is admin, fetching all shift coverage requests");
+        if (currentUser.role === 'admin' && !excludeShiftCoverage && isTimeManagementPage) {
+          console.log("User is admin on time management page, fetching all shift coverage requests");
           
-          const { data: adminCommunications, error: adminError } = await supabase
-            .from('employee_communications')
-            .select('*')
-            .eq('type', 'shift_coverage')
-            .not('id', 'in', `(${shiftCoverageIds.join(',')})`)
-            .order('created_at', { ascending: false });
-            
-          if (adminError) {
-            console.error("Error fetching admin shift communications:", adminError);
-          } else if (adminCommunications && adminCommunications.length > 0) {
-            console.log(`Found ${adminCommunications.length} additional shift coverage communications for admin`);
-            allCommunications.push(...adminCommunications);
-            
-            // Update shift coverage IDs to include the new messages
-            adminCommunications.forEach(comm => {
-              shiftCoverageIds.push(comm.id);
-            });
+          // Only fetch if there are existing shift ids to avoid empty query issues
+          if (shiftCoverageIds.length > 0) {
+            const { data: adminCommunications, error: adminError } = await supabase
+              .from('employee_communications')
+              .select('*')
+              .eq('type', 'shift_coverage')
+              .not('id', 'in', `(${shiftCoverageIds.join(',')})`)
+              .order('created_at', { ascending: false });
+              
+            if (adminError) {
+              console.error("Error fetching admin shift communications:", adminError);
+            } else if (adminCommunications && adminCommunications.length > 0) {
+              console.log(`Found ${adminCommunications.length} additional shift coverage communications for admin`);
+              filteredCommunications.push(...adminCommunications);
+              
+              // Update shift coverage IDs to include the new messages
+              adminCommunications.forEach(comm => {
+                shiftCoverageIds.push(comm.id);
+              });
+            }
           }
         }
 
@@ -82,8 +87,6 @@ export function useGetCommunications(currentUser: User | null) {
         let allShiftRequests = [];
         if (shiftCoverageIds.length > 0) {
           // Create a properly formatted IN clause
-          const formattedIds = shiftCoverageIds.map(id => `'${id}'`).join(',');
-          
           const { data: shiftRequests, error: shiftError } = await supabase
             .from('shift_coverage_requests')
             .select('*')
@@ -94,52 +97,19 @@ export function useGetCommunications(currentUser: User | null) {
           } else {
             allShiftRequests = shiftRequests || [];
             console.log(`Retrieved ${allShiftRequests.length} shift coverage requests`);
-            
-            if (allShiftRequests.length > 0) {
-              console.log("Sample shift request:", allShiftRequests[0]);
-            } else if (shiftCoverageIds.length > 0) {
-              // This is unexpected - we have shift coverage messages but no requests
-              console.warn("No shift requests found despite having shift coverage messages");
-              
-              // Let's check for any shift requests in the database
-              const { data: anyShiftRequests } = await supabase
-                .from('shift_coverage_requests')
-                .select('*')
-                .limit(5);
-                
-              console.log(`Total shift requests in database: ${anyShiftRequests?.length || 0}`);
-              if (anyShiftRequests && anyShiftRequests.length > 0) {
-                console.log("Sample shift request from database:", anyShiftRequests[0]);
-              }
-            }
           }
         }
 
         // Now for each communication, attach the related shift coverage requests
-        const communicationsWithRequests = allCommunications.map(comm => {
+        const communicationsWithRequests = filteredCommunications.map(comm => {
           if (comm.type === 'shift_coverage') {
             const requests = allShiftRequests.filter(req => req.communication_id === comm.id);
-            
-            if (requests.length > 0) {
-              console.log(`Communication ${comm.id} has ${requests.length} shift requests`);
-            } else {
-              console.log(`Communication ${comm.id} has no shift requests despite type being shift_coverage`);
-            }
-            
             return { ...comm, shift_coverage_requests: requests };
           }
           
           // For non-shift coverage messages
           return { ...comm, shift_coverage_requests: [] };
         });
-        
-        // Count shift coverage messages with actual requests
-        const shiftCoverageMessages = communicationsWithRequests.filter(
-          c => c.type === 'shift_coverage' && c.shift_coverage_requests?.length > 0
-        );
-        
-        console.log(`Retrieved ${communicationsWithRequests.length} total communications`);
-        console.log(`Including ${shiftCoverageMessages.length} shift coverage requests with actual request data`);
         
         // Add current user ID to each communication for easier filtering
         const enhancedCommunications = communicationsWithRequests.map(comm => ({
@@ -159,8 +129,8 @@ export function useGetCommunications(currentUser: User | null) {
       }
     },
     enabled: !!currentUser?.id,
-    staleTime: 30000,
-    retry: 3,
+    staleTime: 60000, // Increase stale time to reduce fetch frequency
+    retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }

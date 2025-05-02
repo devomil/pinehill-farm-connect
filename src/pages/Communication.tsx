@@ -14,7 +14,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 const Communication = () => {
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
-  const { unreadMessages, refreshMessages } = useCommunications();
+  // Exclude shift coverage messages from direct communications
+  const { unreadMessages, refreshMessages } = useCommunications(true);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -30,9 +31,8 @@ const Communication = () => {
   
   useEffect(() => {
     console.log("Communication page loaded - currentUser:", currentUser);
-    console.log("Communication page - employees:", allEmployees);
     
-    // Refresh messages when the page loads
+    // Refresh messages when the page loads - only if on messages tab
     if (activeTab === "messages") {
       refreshMessages();
     }
@@ -58,7 +58,7 @@ const Communication = () => {
       search: newSearchParams.toString()
     }, { replace: true });
     
-    // Refresh messages when switching to messages tab
+    // Only refresh messages when switching to messages tab
     if (value === "messages") {
       refreshMessages();
     }

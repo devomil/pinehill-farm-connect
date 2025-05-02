@@ -23,6 +23,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("my-requests");
   const [retryCount, setRetryCount] = useState(0);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
@@ -39,61 +40,17 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   } = useTimeOffRequests(currentUser, retryCount);
   
   // Get communications data for shift coverage requests with enhanced logging
+  // Pass false to ensure we include all shift coverage messages
   const { 
     messages: rawMessages, 
     isLoading: messagesLoading, 
     error: messagesError, 
     respondToShiftRequest, 
     refreshMessages 
-  } = useCommunications();
-  
-  // Log raw message data before processing
-  useEffect(() => {
-    console.log("Raw messages in TimeManagementContext:", rawMessages?.length || 0);
-    
-    // Check for shift coverage messages in raw data
-    const shiftMessages = rawMessages?.filter(msg => msg.type === 'shift_coverage') || [];
-    console.log("Raw shift coverage messages count:", shiftMessages.length);
-    
-    if (shiftMessages.length > 0) {
-      console.log("Sample raw shift message:", {
-        id: shiftMessages[0].id,
-        sender: shiftMessages[0].sender_id,
-        recipient: shiftMessages[0].recipient_id,
-        type: shiftMessages[0].type,
-        shiftRequests: shiftMessages[0].shift_coverage_requests?.length || 0
-      });
-    }
-  }, [rawMessages]);
+  } = useCommunications(false);
   
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
-  
-  // Additional logging for processed messages
-  useEffect(() => {
-    console.log("Processed messages in TimeManagementContext:", processedMessages?.length || 0);
-    
-    if (processedMessages && processedMessages.length > 0) {
-      // Check for shift coverage messages specifically
-      const shiftMessages = processedMessages.filter(msg => msg.type === 'shift_coverage');
-      console.log("Processed shift coverage messages:", shiftMessages.length);
-      
-      if (shiftMessages.length > 0) {
-        console.log("First processed shift message:", {
-          id: shiftMessages[0].id,
-          sender: shiftMessages[0].sender_id,
-          recipient: shiftMessages[0].recipient_id,
-          requests: shiftMessages[0].shift_coverage_requests?.length || 0
-        });
-        
-        // Check if any are relevant to current user
-        const relevantToUser = shiftMessages.filter(msg => 
-          msg.sender_id === currentUser?.id || msg.recipient_id === currentUser?.id
-        );
-        console.log(`Shift messages relevant to user ${currentUser?.email}:`, relevantToUser.length);
-      }
-    }
-  }, [processedMessages, currentUser]);
 
   // Retry logic for failed fetches
   const handleRetry = useCallback(() => {
@@ -102,7 +59,8 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     toast.info("Retrying data fetch...");
     fetchRequests();
     refreshMessages();
-  }, [fetchRequests, refreshMessages]);
+    return retryCount + 1;
+  }, [fetchRequests, refreshMessages, retryCount]);
 
   // Force refresh of data
   const forceRefreshData = useCallback(() => {
@@ -112,14 +70,15 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     refreshMessages();
   }, [fetchRequests, refreshMessages]);
   
-  // Initial data load
+  // Initial data load - only once
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !initialLoadDone) {
       console.log("Initial data load in TimeManagementProvider for:", currentUser.email);
       fetchRequests();
       refreshMessages();
+      setInitialLoadDone(true);
     }
-  }, [currentUser, fetchRequests, refreshMessages]);
+  }, [currentUser, fetchRequests, refreshMessages, initialLoadDone]);
 
   const value: TimeManagementContextType = {
     timeOffRequests,
