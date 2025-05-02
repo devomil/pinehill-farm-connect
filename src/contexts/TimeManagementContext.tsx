@@ -28,6 +28,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const pendingToasts = useRef<Set<string>>(new Set());
   const refreshInProgress = useRef<boolean>(false);
+  const initialLoadRef = useRef<boolean>(false);
   
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
@@ -63,9 +64,9 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     const now = Date.now();
     
     // Only show a toast if:
-    // 1. It's been at least 5 seconds since the last toast
+    // 1. It's been at least 10 seconds since the last toast (increased from 5s)
     // 2. This exact message isn't already pending/showing
-    if (now - lastToastTime > 5000 && !pendingToasts.current.has(toastKey)) {
+    if (now - lastToastTime > 10000 && !pendingToasts.current.has(toastKey)) {
       // Add to pending toasts set to prevent duplicates
       pendingToasts.current.add(toastKey);
       
@@ -89,10 +90,10 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       // Update last toast time
       setLastToastTime(now);
       
-      // Auto-clear from pending after 6 seconds (toast should be gone by then)
+      // Auto-clear from pending after 12 seconds (toast should be gone by then)
       setTimeout(() => {
         pendingToasts.current.delete(toastKey);
-      }, 6000);
+      }, 12000);
     }
   }, [lastToastTime]);
 
@@ -111,7 +112,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime < 3000) {
+    if (refreshInProgress.current || now - lastRefreshTime < 8000) { // Increased from 3000 to 8000ms
       console.log("Refresh skipped - too soon or already in progress");
       return;
     }
@@ -123,7 +124,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     setRetryCount(prevCount => prevCount + 1);
     
     // Only show toast for manual refreshes, not automatic ones
-    if (initialLoadDone) {
+    if (initialLoadRef.current) {
       showThrottledToast("Refreshing time management data...");
     }
     
@@ -133,8 +134,8 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     // Reset the refresh lock after a timeout
     setTimeout(() => {
       refreshInProgress.current = false;
-    }, 2000);
-  }, [fetchRequests, refreshMessages, initialLoadDone, showThrottledToast, lastRefreshTime]);
+    }, 3000); // Increased from 2000 to 3000ms
+  }, [fetchRequests, refreshMessages, showThrottledToast, lastRefreshTime]);
   
   // Initial data load - only once
   useEffect(() => {
@@ -143,6 +144,11 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       fetchRequests();
       refreshMessages();
       setInitialLoadDone(true);
+      
+      // Set initialLoadRef to true after a delay
+      setTimeout(() => {
+        initialLoadRef.current = true;
+      }, 5000); // Wait 5 seconds before considering initial load complete
     }
   }, [currentUser, fetchRequests, refreshMessages, initialLoadDone]);
 

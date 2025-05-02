@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorAlert } from "@/components/time-management/ErrorAlert";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 const TimeManagementContent = () => {
   const { currentUser } = useAuth();
   const { error, messagesError, handleRetry, forceRefreshData } = useTimeManagement();
+  const initialLoadDone = useRef(false);
   
   useEffect(() => {
     console.log("TimeManagementContent rendered with user:", currentUser?.id);
@@ -22,12 +23,15 @@ const TimeManagementContent = () => {
 
     // Force an initial load but wait a moment to let things settle
     // Use a shorter timeout to minimize waiting, but allow components to initialize
-    const loadTimeout = setTimeout(() => {
-      console.log("TimeManagementContent: Initial data refresh");
-      forceRefreshData();
-    }, 500);
+    if (!initialLoadDone.current) {
+      const loadTimeout = setTimeout(() => {
+        console.log("TimeManagementContent: Initial data refresh");
+        forceRefreshData();
+        initialLoadDone.current = true;
+      }, 1000);
 
-    return () => clearTimeout(loadTimeout);
+      return () => clearTimeout(loadTimeout);
+    }
   }, [currentUser, error, messagesError, forceRefreshData]);
   
   if (!currentUser) {
@@ -40,7 +44,9 @@ const TimeManagementContent = () => {
   const showGlobalError = error && messagesError;
 
   const handleManualRefresh = () => {
-    toast.info("Refreshing time management data...");
+    toast.info("Refreshing time management data...", {
+      id: "manual-refresh-toast", // Use consistent ID to prevent duplicates
+    });
     forceRefreshData();
   };
 
@@ -65,14 +71,18 @@ const TimeManagementContent = () => {
 // Main component that provides the context
 export default function TimeManagement() {
   const { currentUser } = useAuth();
+  const pageLoadRef = useRef(false);
   
   useEffect(() => {
-    console.log("TimeManagement page mounted", {
-      currentUser: currentUser ? {
-        id: currentUser.id,
-        role: currentUser.role
-      } : null
-    });
+    if (!pageLoadRef.current) {
+      console.log("TimeManagement page mounted", {
+        currentUser: currentUser ? {
+          id: currentUser.id,
+          role: currentUser.role
+        } : null
+      });
+      pageLoadRef.current = true;
+    }
   }, [currentUser]);
 
   return (

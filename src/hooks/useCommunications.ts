@@ -25,7 +25,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime.current < 3000) {
+    if (refreshInProgress.current || now - lastRefreshTime.current < 5000) { // Increased from 3000 to 5000ms
       console.log("Communications refresh skipped - too soon or already in progress");
       return Promise.resolve();
     }
@@ -39,16 +39,38 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     // Reset the refresh lock after a timeout
     setTimeout(() => {
       refreshInProgress.current = false;
-    }, 2000);
+    }, 3000); // Increased from 2000 to 3000ms
     
     return result;
   }, [refetch]);
   
   const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
+  // Enhanced send message function with better logging
   const sendMessage = (params: any) => {
-    console.log("Sending message with params:", params);
-    return sendMessageMutation.mutate(params);
+    console.log("Sending message with params:", JSON.stringify(params, null, 2));
+    
+    // Special handling for shift coverage requests to ensure they're properly saved
+    if (params.type === 'shift_coverage' && params.shiftDetails) {
+      console.log("Processing shift coverage request with details:", params.shiftDetails);
+      
+      // Validate shift details are complete before sending
+      if (!params.shiftDetails.shift_date || !params.shiftDetails.shift_start || !params.shiftDetails.shift_end) {
+        console.error("Missing required shift coverage details");
+        return Promise.reject("Incomplete shift details");
+      }
+    }
+    
+    return sendMessageMutation.mutate(params, {
+      onSuccess: (data) => {
+        console.log("Message sent successfully, response:", data);
+        // Add a small delay before refreshing to allow DB operations to complete
+        setTimeout(() => refreshMessages(), 1000);
+      },
+      onError: (error) => {
+        console.error("Error sending message:", error);
+      }
+    });
   };
 
   const respondToShiftRequest = (params: any) => {
@@ -56,13 +78,19 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     return respondToShiftRequestMutation.mutate(params, {
       onSuccess: () => {
         console.log("Successfully responded to shift request, refreshing messages");
-        refreshMessages();
+        // Add a small delay before refreshing
+        setTimeout(() => refreshMessages(), 1000);
+      },
+      onError: (error) => {
+        console.error("Error responding to shift request:", error);
       }
     });
   };
 
   // Use a less aggressive fetch strategy with conditional refresh
   useEffect(() => {
+    if (!currentUser?.id) return;
+    
     // Initial fetch
     console.log(`Initial communications fetch for ${currentUser?.email}`);
     refetch();
@@ -73,27 +101,28 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     let refreshInterval: number | undefined;
     
     if (shouldUsePeriodicRefresh) {
+      // Use a longer interval for periodic refreshes
       refreshInterval = window.setInterval(() => {
         const now = Date.now();
         
         // Only refresh if sufficient time has passed since the last refresh
-        if (now - lastRefreshTime.current > 15000 && !refreshInProgress.current) {
+        if (now - lastRefreshTime.current > 30000 && !refreshInProgress.current) {  // Increased from 15000 to 30000ms
           console.log("Periodic refresh of communications data");
           refreshInProgress.current = true;
           refetch().finally(() => {
             setTimeout(() => {
               refreshInProgress.current = false;
-            }, 2000);
+            }, 3000);
           });
           lastRefreshTime.current = now;
         }
-      }, 30000); // Check every 30 seconds, but only refresh if needed
+      }, 60000); // Increased from 30000 to 60000ms - Check every 60 seconds, but only refresh if needed
     }
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [refetch, currentUser?.email, isTimeManagementPage, excludeShiftCoverage]);
+  }, [refetch, currentUser?.id, currentUser?.email, isTimeManagementPage, excludeShiftCoverage]);
 
   return {
     messages: messages || [],

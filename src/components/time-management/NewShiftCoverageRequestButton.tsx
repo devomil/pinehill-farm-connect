@@ -30,7 +30,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { sendMessage } = useCommunications();
+  const { sendMessage } = useCommunications(false); // Important: set to false to include shift coverage
 
   // Check if there are available employees
   const hasAvailableEmployees = allEmployees && allEmployees
@@ -62,11 +62,25 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       }
     };
     
-    console.log("Sending shift coverage request with data:", requestData);
+    console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
     
     try {
       // Use the sendMessage function from useCommunications hook
-      await sendMessage(requestData);
+      await new Promise<void>((resolve, reject) => {
+        try {
+          sendMessage({
+            ...requestData,
+            onSuccess: () => resolve(),
+            onError: (error: any) => reject(error)
+          });
+          
+          // Since sendMessage uses mutation.mutate which doesn't return a promise,
+          // we'll set a timeout as a fallback to resolve the promise
+          setTimeout(() => resolve(), 2000);
+        } catch (error) {
+          reject(error);
+        }
+      });
       
       console.log("Shift coverage request sent successfully");
       
@@ -82,6 +96,25 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       } else {
         console.log("Recent shift coverage requests:", latestRequests);
       }
+      
+      // Verify if our request was saved
+      setTimeout(async () => {
+        const { data: verifyRequest, error: verifyError } = await supabase
+          .from('shift_coverage_requests')
+          .select('*')
+          .eq('original_employee_id', currentUser.id)
+          .eq('shift_date', formData.shiftDate)
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (verifyError) {
+          console.error("Error verifying shift request was saved:", verifyError);
+        } else if (verifyRequest && verifyRequest.length > 0) {
+          console.log("Verified shift request was saved successfully:", verifyRequest[0]);
+        } else {
+          console.warn("Could not verify shift request was saved");
+        }
+      }, 2000);
       
       setIsLoading(false);
       setIsOpen(false);
