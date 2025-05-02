@@ -1,4 +1,3 @@
-
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -81,7 +80,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         throw error;
       });
   };
-
+  
   const respondToShiftRequest = (params: any) => {
     console.log("Responding to shift request:", params);
     
