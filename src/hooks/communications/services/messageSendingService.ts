@@ -72,7 +72,8 @@ export async function sendMessageService(currentUser: User | null, params: SendM
           covering_employee_id: shiftDetails.covering_employee_id || recipientId,
           shift_date: shiftDetails.shift_date,
           shift_start: shiftDetails.shift_start,
-          shift_end: shiftDetails.shift_end
+          shift_end: shiftDetails.shift_end,
+          communication_id: communicationData.id // Ensure communication_id is properly passed
         };
         
         console.log("Creating shift coverage with details:", JSON.stringify(fullShiftDetails, null, 2));
@@ -95,8 +96,9 @@ export async function sendMessageService(currentUser: User | null, params: SendM
           
           console.log("Verification result:", verificationResult);
         }, 1000);
-      } catch (shiftError) {
+      } catch (shiftError: any) {
         console.error("Error creating shift coverage request:", shiftError);
+        console.error("Error details:", shiftError.message, shiftError.code);
         // Even if shift request creation fails, we'll still return the communication
         // as it was created successfully
         toast.error("Created message but failed to create shift coverage request");

@@ -105,7 +105,7 @@ export async function createCommunicationEntry(params: {
 }
 
 /**
- * Creates a shift coverage request
+ * Creates a shift coverage request - CRITICAL FIX: Completely rewritten with direct approach
  */
 export async function createShiftCoverageRequest(
   communicationId: string, 
@@ -115,6 +115,7 @@ export async function createShiftCoverageRequest(
     shift_date: string;
     shift_start: string;
     shift_end: string;
+    communication_id?: string;
   }
 ) {
   // CRITICAL FIX: Add additional logging before insert
@@ -138,25 +139,57 @@ export async function createShiftCoverageRequest(
   
   console.log("Sending shift coverage request payload:", JSON.stringify(shiftPayload, null, 2));
   
-  // CRITICAL FIX: Use explicit, detailed query
-  const { data: shiftData, error: shiftError } = await supabase
-    .from('shift_coverage_requests')
-    .insert([shiftPayload]) // Use array format to ensure consistent behavior
-    .select('*');
-
-  if (shiftError) {
-    console.error("Error creating shift coverage request:", shiftError);
-    console.error("Error details:", shiftError.details, shiftError.hint, shiftError.message);
-    throw shiftError;
+  // CRITICAL FIX: Use direct, simplified query to minimize points of failure
+  try {
+    const { data, error } = await supabase
+      .from('shift_coverage_requests')
+      .insert(shiftPayload)
+      .select();
+    
+    if (error) {
+      console.error("Supabase Error creating shift coverage request:", error);
+      console.error("Error details:", error.details, error.hint, error.message);
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      console.error("No data returned after insert");
+      throw new Error("No data returned after insert");
+    }
+    
+    console.log("Successfully created shift coverage request:", data);
+    return data;
+  } catch (e: any) {
+    console.error("Exception creating shift coverage request:", e);
+    // Let's try a direct API call as a fallback
+    try {
+      console.log("Attempting direct API call to create shift coverage request");
+      
+      const response = await fetch(
+        "https://pdeaxfhsodenefeckabm.supabase.co/rest/v1/shift_coverage_requests",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify(shiftPayload)
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Direct API call failed with status: ${response.status}`);
+      }
+      
+      const directData = await response.json();
+      console.log("Direct API call successful:", directData);
+      return directData;
+    } catch (directError: any) {
+      console.error("Direct API call failed:", directError);
+      throw new Error(`Failed to create shift coverage request: ${directError.message}`);
+    }
   }
-  
-  if (!shiftData || shiftData.length === 0) {
-    console.error("No shift data returned after insert");
-    throw new Error("Failed to create shift coverage request - no data returned");
-  }
-  
-  console.log("Successfully created shift coverage request:", shiftData);
-  return shiftData;
 }
 
 /**
@@ -203,6 +236,22 @@ export async function verifyShiftCoverageRequest(communicationId: string, shiftD
   }
   
   console.warn("⚠️ Could not verify shift request was saved - no matching requests found");
+  
+  // Direct check using raw SQL via supabase
+  try {
+    const { data: rawCheck, error: rawError } = await supabase.rpc('debug_check_shift_request', {
+      p_communication_id: communicationId
+    });
+    
+    if (rawError) {
+      console.error("Raw SQL check failed:", rawError);
+    } else {
+      console.log("Raw SQL check result:", rawCheck);
+    }
+  } catch (e) {
+    console.log("Raw check error:", e);
+  }
+  
   console.log("Recent shift requests:", allRecent);
   return { verified: false, data: allRecent };
 }

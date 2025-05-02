@@ -48,18 +48,26 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
 
-    // CRITICAL FIX: Improved direct database query to debug
+    // Verify the recipient exists
+    const recipientExists = allEmployees.some(emp => emp.id === formData.recipientId);
+    if (!recipientExists) {
+      toast.error("Selected recipient no longer exists");
+      setIsLoading(false);
+      return;
+    }
+
+    // CRITICAL FIX: Debug check before attempting to create
     try {
-      console.log("DEBUG: Before request - checking existing requests");
-      const { data: existingRequests, error: checkError } = await supabase
+      console.log("DEBUG: Before request - checking table access");
+      const { data: testAccess, error: accessError } = await supabase
         .from('shift_coverage_requests')
-        .select('*')
-        .limit(5);
+        .select('count(*)')
+        .limit(1);
       
-      if (checkError) {
-        console.error("Error checking existing requests:", checkError);
+      if (accessError) {
+        console.error("Error accessing shift_coverage_requests table:", accessError);
       } else {
-        console.log(`Found ${existingRequests?.length || 0} existing shift coverage requests`);
+        console.log(`Table access check succeeded. Found ${testAccess?.length || 0} rows`);
       }
     } catch (e) {
       console.error("Error during debug check:", e);
@@ -82,87 +90,39 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
     
     try {
-      // CRITICAL FIX: Use explicit Promise to wait for completion
-      await new Promise<void>((resolve, reject) => {
-        try {
-          sendMessage({
-            ...requestData,
-            onSuccess: () => {
-              console.log("sendMessage onSuccess callback fired");
-              resolve();
-            },
-            onError: (error: any) => {
-              console.error("sendMessage onError callback fired:", error);
-              reject(error);
-            }
-          });
-          
-          // Set a timeout as a fallback
-          setTimeout(() => {
-            console.log("sendMessage timeout fallback triggered");
-            resolve();
-          }, 5000); // Increased timeout for reliability
-        } catch (error) {
-          console.error("Error in sendMessage:", error);
-          reject(error);
-        }
-      });
+      // Send the message
+      await sendMessage(requestData);
+      console.log("Message sent successfully");
       
-      console.log("Shift coverage request sent successfully");
-      
-      // CRITICAL FIX: Improved verification with detailed error handling
+      // Add a delay to let the database operations complete
       setTimeout(async () => {
         try {
-          console.log("Verifying shift request was saved...");
-          
-          // Check for any recently created shift coverage requests by this user
-          const { data: verifyRequest, error: verifyError } = await supabase
+          // Verify the request was created in the database
+          const { data: verifyData, error: verifyError } = await supabase
             .from('shift_coverage_requests')
             .select('*')
             .eq('original_employee_id', currentUser.id)
+            .eq('covering_employee_id', formData.recipientId)
+            .eq('shift_date', formData.shiftDate)
             .order('created_at', { ascending: false })
-            .limit(5);
+            .limit(1);
             
           if (verifyError) {
-            console.error("Error verifying shift request was saved:", verifyError);
-            console.error("Error details:", verifyError.details, verifyError.hint);
-          } else if (verifyRequest && verifyRequest.length > 0) {
-            // Find requests that match our date
-            const matchingRequests = verifyRequest.filter(req => 
-              req.shift_date === formData.shiftDate
-            );
-            
-            if (matchingRequests.length > 0) {
-              console.log("✅ Verified shift request was saved successfully:", matchingRequests[0]);
-            } else {
-              console.warn("⚠️ No matching shift requests found for today's date");
-              console.log("Recent shift requests:", verifyRequest);
-            }
+            console.error("Error verifying request creation:", verifyError);
+          } else if (verifyData && verifyData.length > 0) {
+            console.log("✅ Shift coverage request verified in database:", verifyData[0]);
+            toast.success("Shift coverage request sent and saved successfully");
           } else {
-            console.warn("⚠️ Could not verify shift request was saved - no requests found");
-            
-            // CRITICAL FIX: Try a raw query to check permissions
-            const { data: tableInfo, error: tableError } = await supabase
-              .from('shift_coverage_requests')
-              .select('count(*)')
-              .limit(1);
-                
-            if (tableError) {
-              console.error("Error accessing shift_coverage_requests table:", tableError);
-              console.error("This may be a permissions issue");
-            } else {
-              console.log("Table is accessible but no matching records found");
-            }
+            console.warn("⚠️ Could not verify request was saved - not found in database");
           }
         } catch (error) {
-          console.error("Error during verification:", error);
+          console.error("Verification error:", error);
         }
-      }, 3000); // Increased delay for reliability
+      }, 2000);
       
       setIsLoading(false);
       setIsOpen(false);
       onRequestSent(); // Refresh the list after sending
-      toast.success("Shift coverage request sent successfully");
     } catch (error) {
       console.error("Error sending shift coverage request:", error);
       toast.error("Failed to send shift coverage request");

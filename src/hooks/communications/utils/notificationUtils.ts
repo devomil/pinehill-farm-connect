@@ -47,9 +47,14 @@ export async function sendMessageNotification(
  * Validates that the shift details contain all required fields
  */
 export const validateShiftDetails = (shiftDetails: any): boolean => {
-  if (!shiftDetails) return false;
+  if (!shiftDetails) {
+    console.error("Shift details are missing");
+    return false;
+  }
   
-  // CRITICAL FIX: More comprehensive validation
+  // CRITICAL FIX: More comprehensive validation with detailed logging
+  console.log("Validating shift details:", JSON.stringify(shiftDetails, null, 2));
+  
   const isValid = !!(
     shiftDetails.shift_date && 
     shiftDetails.shift_start && 
@@ -67,6 +72,8 @@ export const validateShiftDetails = (shiftDetails: any): boolean => {
       has_original_employee: !!shiftDetails.original_employee_id,
       has_covering_employee: !!shiftDetails.covering_employee_id
     });
+  } else {
+    console.log("Shift details validation passed");
   }
   
   return isValid;

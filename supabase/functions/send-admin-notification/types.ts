@@ -5,7 +5,7 @@ export interface NotificationRequest {
   adminEmail: string;
   adminName: string;
   adminId?: string;
-  type: "report" | "timeoff" | "message";
+  type: "report" | "timeoff" | "message" | "shift_coverage";
   priority?: string;
   employeeName: string;
   details?: any;
