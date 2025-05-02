@@ -5,6 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { FilterBar } from "./FilterBar";
 import { NewShiftCoverageRequestButton } from "../NewShiftCoverageRequestButton";
 import { User } from "@/types";
+import { Heading } from "@/components/ui/heading";
 
 interface ShiftCoverageHeaderProps {
   filter: 'all' | 'pending' | 'accepted' | 'declined';
@@ -29,12 +30,23 @@ export const ShiftCoverageHeader: React.FC<ShiftCoverageHeaderProps> = ({
   currentUser,
   availableEmployees,
 }) => {
-  const handleManualRefresh = () => {
-    onRefresh();
-  };
-
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    <div className="flex flex-col space-y-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <Heading title="Shift Coverage Requests" />
+        
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+          <NewShiftCoverageRequestButton 
+            currentUser={currentUser}
+            allEmployees={availableEmployees}
+            onRequestSent={onRefresh}
+          />
+        </div>
+      </div>
+      
       <FilterBar 
         filter={filter}
         setFilter={setFilter}
@@ -43,16 +55,6 @@ export const ShiftCoverageHeader: React.FC<ShiftCoverageHeaderProps> = ({
         declinedCount={declinedCount}
         totalCount={totalCount}
       />
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm" onClick={handleManualRefresh} className="mr-2">
-          <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-        </Button>
-        <NewShiftCoverageRequestButton 
-          currentUser={currentUser}
-          allEmployees={availableEmployees}
-          onRequestSent={onRefresh}
-        />
-      </div>
     </div>
   );
 };

@@ -1,9 +1,8 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { AdminAnnouncementDialog } from "./AdminAnnouncementDialog";
-import { Loader2 } from "lucide-react";
+import { Heading } from "@/components/ui/heading";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -19,26 +18,11 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   loading
 }) => {
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Communication Center</h1>
-        <p className="text-muted-foreground">
-          View and manage company announcements and communications.
-        </p>
-      </div>
-      {isAdmin && (
-        loading ? (
-          <Button disabled>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Loading...
-          </Button>
-        ) : (
-          <AdminAnnouncementDialog 
-            allEmployees={allEmployees} 
-            onCreate={onAnnouncementCreate}
-          />
-        )
-      )}
+    <div>
+      <Heading 
+        title="Communication Center" 
+        description="View and manage company announcements and communications."
+      />
     </div>
   );
 };

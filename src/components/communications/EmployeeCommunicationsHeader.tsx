@@ -5,6 +5,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { NewMessageDialog } from "./NewMessageDialog";
 import { RefreshCcw, Send } from "lucide-react";
 import { User } from "@/types";
+import { Heading } from "@/components/ui/heading";
 
 interface EmployeeCommunicationsHeaderProps {
   setDialogOpen: (open: boolean) => void;
@@ -22,32 +23,36 @@ export function EmployeeCommunicationsHeader({
   onRefresh,
 }: EmployeeCommunicationsHeaderProps) {
   return (
-    <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center space-x-2">
-        <h2 className="text-lg font-semibold">Employee Communications</h2>
-        {onRefresh && (
-          <Button
-            variant="outline"
-            size="sm"
-            title="Refresh communications"
-            onClick={onRefresh}
-            className="h-8 w-8 p-0"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-        )}
+    <div className="flex flex-col space-y-3 mb-4">
+      <div className="flex justify-between items-center">
+        <Heading title="Employee Communications" />
+        
+        <div className="flex items-center space-x-2">
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="sm"
+              title="Refresh communications"
+              onClick={onRefresh}
+              className="h-9"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+          )}
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Send className="h-4 w-4 mr-2" /> New Message
+            </Button>
+            <NewMessageDialog
+              employees={allEmployees}
+              onSend={handleNewMessageSend}
+              onClose={() => setDialogOpen(false)}
+              onRefresh={onRefresh}
+            />
+          </Dialog>
+        </div>
       </div>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Send className="mr-2 h-4 w-4" /> New Message
-        </Button>
-        <NewMessageDialog
-          employees={allEmployees}
-          onSend={handleNewMessageSend}
-          onClose={() => setDialogOpen(false)}
-          onRefresh={onRefresh}
-        />
-      </Dialog>
     </div>
   );
 }
