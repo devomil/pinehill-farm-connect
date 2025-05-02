@@ -71,22 +71,21 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     console.log(`Tab changing from ${activeTab} to ${value}`);
     setActiveTab(value);
     
-    // Refresh data when switching to specific tabs
-    if (value === "shift-coverage") {
+    // Only refresh data when explicitly switching to tabs that need fresh data
+    // This prevents excessive refreshes
+    if (value === "shift-coverage" && value !== activeTab) {
       console.log("Refreshing messages due to tab change to shift-coverage");
       refreshMessages();
-    } else if (value === "my-requests") {
+    } else if (value === "my-requests" && value !== activeTab) {
       console.log("Refreshing time-off requests due to tab change to my-requests");
       fetchRequests();
     }
   };
 
-  // Force initial data fetch on component mount
+  // Initial data fetch only once on component mount
   useEffect(() => {
     console.log("TimeManagementTabs - Initial fetch");
-    fetchRequests();
-    refreshMessages();
-  }, [fetchRequests, refreshMessages]);
+  }, []); // Empty dependency array to run only once
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange}>

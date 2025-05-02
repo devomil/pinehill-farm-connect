@@ -24,6 +24,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [activeTab, setActiveTab] = useState("my-requests");
   const [retryCount, setRetryCount] = useState(0);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [lastToastTime, setLastToastTime] = useState(0);
   
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
@@ -52,23 +53,43 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
+  // Throttled toast function to prevent excessive notifications
+  const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
+    const now = Date.now();
+    // Only show a toast if it's been at least 5 seconds since the last one
+    if (now - lastToastTime > 5000) {
+      if (type === 'success') {
+        toast.success(message);
+      } else {
+        toast.info(message);
+      }
+      setLastToastTime(now);
+    }
+  }, [lastToastTime]);
+
   // Retry logic for failed fetches
   const handleRetry = useCallback(() => {
     console.log("Manual retry triggered");
     setRetryCount(prevCount => prevCount + 1);
-    toast.info("Retrying data fetch...");
+    showThrottledToast("Retrying data fetch...");
     fetchRequests();
     refreshMessages();
     return retryCount + 1;
-  }, [fetchRequests, refreshMessages, retryCount]);
+  }, [fetchRequests, refreshMessages, retryCount, showThrottledToast]);
 
-  // Force refresh of data
+  // Force refresh of data with throttled notifications
   const forceRefreshData = useCallback(() => {
     console.log("Force refresh triggered");
     setRetryCount(prevCount => prevCount + 1);
+    
+    // Only show toast for manual refreshes, not automatic ones
+    if (initialLoadDone) {
+      showThrottledToast("Refreshing time management data...");
+    }
+    
     fetchRequests();
     refreshMessages();
-  }, [fetchRequests, refreshMessages]);
+  }, [fetchRequests, refreshMessages, initialLoadDone, showThrottledToast]);
   
   // Initial data load - only once
   useEffect(() => {
