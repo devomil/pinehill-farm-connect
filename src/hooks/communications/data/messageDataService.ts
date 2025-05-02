@@ -7,25 +7,44 @@ import { SendMessageParams } from "@/types/communications/communicationTypes";
  * Finds recipient data by ID
  */
 export async function getRecipientData(recipientId: string) {
+  console.log("Fetching recipient data for ID:", recipientId);
+  
+  if (!recipientId) {
+    console.error("No recipient ID provided");
+    throw new Error("No recipient ID provided");
+  }
+
   const { data: recipientData, error: recipientError } = await supabase
     .from('profiles')
     .select('id, name, email')
-    .eq('id', recipientId);
+    .eq('id', recipientId)
+    .maybeSingle(); // Use maybeSingle instead of expecting an array
 
   if (recipientError) {
     console.error("Error fetching recipient data:", recipientError);
     throw new Error(`Database error when finding recipient: ${recipientError.message}`);
   }
 
-  if (!recipientData || recipientData.length === 0) {
+  if (!recipientData) {
     console.error(`No recipient found with ID: ${recipientId}`);
-    throw new Error(`Recipient not found. Please refresh and try again.`);
+    
+    // Double-check if recipient exists with a more basic query
+    const { data: checkData } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', recipientId)
+      .maybeSingle();
+      
+    if (!checkData) {
+      throw new Error(`Recipient not found. Please refresh and try again.`);
+    } else {
+      // Recipient exists but data wasn't retrieved correctly
+      throw new Error(`Error retrieving recipient details. Please try again.`);
+    }
   }
   
-  // Use first matching recipient
-  const recipient = recipientData[0];
-  console.log("Found recipient:", recipient);
-  return recipient;
+  console.log("Found recipient:", recipientData);
+  return recipientData;
 }
 
 /**
@@ -82,6 +101,8 @@ export async function createCommunicationEntry(params: {
   type: string;
   adminId?: string | null;
 }) {
+  console.log("Creating communication entry with params:", params);
+  
   const { data: communicationData, error: communicationError } = await supabase
     .from('employee_communications')
     .insert({
@@ -165,13 +186,17 @@ export async function createShiftCoverageRequest(
     try {
       console.log("Attempting direct API call to create shift coverage request");
       
+      // Get the dynamic Supabase URL from the client
+      const supabaseUrl = supabase.supabaseUrl;
+      const supabaseKey = supabase.supabaseKey;
+      
       const response = await fetch(
-        "https://pdeaxfhsodenefeckabm.supabase.co/rest/v1/shift_coverage_requests",
+        `${supabaseUrl}/rest/v1/shift_coverage_requests`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA",
+            "apikey": supabaseKey,
             "Prefer": "return=representation"
           },
           body: JSON.stringify(shiftPayload)

@@ -16,6 +16,12 @@ export async function sendMessageService(currentUser: User | null, params: SendM
   const { recipientId, message, type, shiftDetails, adminCc } = params;
   console.log(`Attempting to send message to recipient ID: ${recipientId}, type: ${type}`);
   
+  // Verify recipient ID is provided
+  if (!recipientId) {
+    console.error("Missing recipient ID in request");
+    throw new Error("Missing recipient ID. Please select a valid recipient.");
+  }
+  
   // CRITICAL FIX: Detailed validation and logging for shift coverage requests
   if (type === 'shift_coverage') {
     console.log("Processing shift coverage request with details:", JSON.stringify(shiftDetails, null, 2));

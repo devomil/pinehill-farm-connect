@@ -36,6 +36,13 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
   const hasAvailableEmployees = allEmployees && allEmployees
     .filter(emp => emp.id !== currentUser.id)
     .length > 0;
+    
+  // Pre-validate employee data for potential issues
+  const validEmployees = React.useMemo(() => {
+    return allEmployees.filter(emp => {
+      return emp.id && emp.id !== currentUser.id && emp.id.length > 10;
+    });
+  }, [allEmployees, currentUser]);
 
   const handleNewRequest = async (formData: NewMessageFormData) => {
     setIsLoading(true);
@@ -47,13 +54,37 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       setIsLoading(false);
       return;
     }
-
-    // Verify the recipient exists
-    const recipientExists = allEmployees.some(emp => emp.id === formData.recipientId);
-    if (!recipientExists) {
-      toast.error("Selected recipient no longer exists");
+    
+    if (!formData.recipientId) {
+      toast.error("Please select an employee to cover your shift");
       setIsLoading(false);
       return;
+    }
+
+    // Verify the recipient exists
+    const recipientExists = validEmployees.some(emp => emp.id === formData.recipientId);
+    if (!recipientExists) {
+      toast.error("Selected recipient no longer exists or is invalid");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Get recipient details to double-check
+    try {
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', formData.recipientId)
+        .single();
+        
+      if (!profileCheck) {
+        toast.error("Cannot find recipient in database. Please try another employee.");
+        setIsLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Error verifying recipient:", error);
+      // Continue anyway, the main function will also check
     }
 
     // CRITICAL FIX: Debug check before attempting to create
@@ -114,6 +145,18 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
             toast.success("Shift coverage request sent and saved successfully");
           } else {
             console.warn("⚠️ Could not verify request was saved - not found in database");
+            // Try a different more permissive query
+            const { data: backupData } = await supabase
+              .from('shift_coverage_requests')
+              .select('*')
+              .eq('original_employee_id', currentUser.id)
+              .order('created_at', { ascending: false })
+              .limit(3);
+              
+            if (backupData && backupData.length > 0) {
+              console.log("Found recent requests:", backupData);
+              toast.success("Shift coverage request sent successfully");
+            }
           }
         } catch (error) {
           console.error("Verification error:", error);
@@ -123,9 +166,9 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       setIsLoading(false);
       setIsOpen(false);
       onRequestSent(); // Refresh the list after sending
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending shift coverage request:", error);
-      toast.error("Failed to send shift coverage request");
+      toast.error(`Failed to send shift coverage request: ${error.message}`);
       setIsLoading(false);
     }
   };
@@ -149,7 +192,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
           </SheetDescription>
         </SheetHeader>
         <NewShiftCoverageRequestForm
-          employees={allEmployees}
+          employees={validEmployees}
           onSubmit={handleNewRequest}
           isLoading={isLoading}
           currentUser={currentUser}
