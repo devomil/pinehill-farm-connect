@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,16 +73,23 @@ export function useDashboardData() {
       console.log(`Fetching shift coverage data for ${currentUser?.name} (${currentUser?.id}), role: ${currentUser?.role}`);
       
       try {
-        // First, fetch all shift coverage communications
-        const messageQuery = supabase
-          .from('employee_communications')
-          .select('*')
-          .eq('type', 'shift_coverage');
-          
-        // For admin users, fetch all shift coverage messages
-        // For regular users, fetch only messages where they're the sender or recipient
-        if (!isAdmin) {
-          messageQuery.or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`);
+        let messageQuery;
+        
+        // For admin users, fetch ALL shift coverage messages
+        if (isAdmin) {
+          console.log("Admin user - fetching ALL shift coverage messages");
+          messageQuery = supabase
+            .from('employee_communications')
+            .select('*')
+            .eq('type', 'shift_coverage');
+        } else {
+          // For regular users, fetch only messages where they're the sender or recipient
+          console.log("Regular user - fetching only relevant shift coverage messages");
+          messageQuery = supabase
+            .from('employee_communications')
+            .select('*')
+            .eq('type', 'shift_coverage')
+            .or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`);
         }
         
         const { data: messages, error: messagesError } = await messageQuery;

@@ -60,26 +60,26 @@ export function useGetCommunications(currentUser: User | null, excludeShiftCover
         if (currentUser.role === 'admin' && !excludeShiftCoverage && isTimeManagementPage) {
           console.log("User is admin on time management page, fetching all shift coverage requests");
           
-          // Only fetch if there are existing shift ids to avoid empty query issues
-          if (shiftCoverageIds.length > 0) {
-            const { data: adminCommunications, error: adminError } = await supabase
-              .from('employee_communications')
-              .select('*')
-              .eq('type', 'shift_coverage')
-              .not('id', 'in', `(${shiftCoverageIds.join(',')})`)
-              .order('created_at', { ascending: false });
+          const { data: adminCommunications, error: adminError } = await supabase
+            .from('employee_communications')
+            .select('*')
+            .eq('type', 'shift_coverage')
+            .order('created_at', { ascending: false });
               
-            if (adminError) {
-              console.error("Error fetching admin shift communications:", adminError);
-            } else if (adminCommunications && adminCommunications.length > 0) {
-              console.log(`Found ${adminCommunications.length} additional shift coverage communications for admin`);
-              filteredCommunications.push(...adminCommunications);
-              
-              // Update shift coverage IDs to include the new messages
-              adminCommunications.forEach(comm => {
-                shiftCoverageIds.push(comm.id);
-              });
-            }
+          if (adminError) {
+            console.error("Error fetching admin shift communications:", adminError);
+          } else if (adminCommunications && adminCommunications.length > 0) {
+            // Filter out messages that are already in the filtered list
+            const existingIds = new Set(filteredCommunications.map(comm => comm.id));
+            const newAdminMessages = adminCommunications.filter(comm => !existingIds.has(comm.id));
+            
+            console.log(`Found ${newAdminMessages.length} additional shift coverage communications for admin`);
+            filteredCommunications.push(...newAdminMessages);
+            
+            // Update shift coverage IDs to include the new messages
+            newAdminMessages.forEach(comm => {
+              shiftCoverageIds.push(comm.id);
+            });
           }
         }
 

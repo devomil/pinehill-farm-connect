@@ -26,7 +26,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime.current < 10000) {
+    if (refreshInProgress.current || now - lastRefreshTime.current < 5000) { // Reduced from 10000 to 5000ms
       console.log("Communications refresh skipped - too soon or already in progress");
       return Promise.resolve();
     }
@@ -72,7 +72,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         toast.success("Message sent successfully");
         
         // Wait a moment before refreshing to allow database operations to complete
-        setTimeout(() => refreshMessages(), 2000);
+        setTimeout(() => refreshMessages(), 1000); // Reduced from 2000 to 1000ms
         return data;
       })
       .catch(error => {
@@ -91,7 +91,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         toast.success(`You have ${params.accept ? 'accepted' : 'declined'} the shift coverage request`);
         
         // Refresh after a short delay
-        setTimeout(() => refreshMessages(), 2000);
+        setTimeout(() => refreshMessages(), 1000); // Reduced from 2000 to 1000ms
         return data;
       })
       .catch(error => {
@@ -118,7 +118,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       refreshInterval = window.setInterval(() => {
         const now = Date.now();
         
-        if (now - lastRefreshTime.current > 60000 && !refreshInProgress.current) {
+        if (now - lastRefreshTime.current > 45000 && !refreshInProgress.current) { // Reduced from 60000 to 45000ms
           console.log("Periodic refresh of communications data");
           refreshInProgress.current = true;
           refetch().finally(() => {
@@ -128,7 +128,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
           });
           lastRefreshTime.current = now;
         }
-      }, 90000); // Check every 90 seconds
+      }, 60000); // Reduced from 90000 to 60000ms
     }
     
     return () => {
