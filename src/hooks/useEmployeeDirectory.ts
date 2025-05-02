@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -278,6 +277,98 @@ export function useEmployeeDirectory() {
     return fetchEmployees();
   }, [fetchEmployees]);
 
+  // Add employee function
+  const addEmployee = useCallback(async (newEmployee: Partial<User>) => {
+    try {
+      setLoading(true);
+      
+      // Create auth user first if this is a complete new user
+      if (newEmployee.email) {
+        // In a real implementation, you would call an edge function to create a user
+        // For demonstration, we'll just simulate adding directly to profiles
+        const { data, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            name: newEmployee.name,
+            email: newEmployee.email,
+            department: newEmployee.department,
+            position: newEmployee.position,
+            employeeId: newEmployee.employeeId,
+          })
+          .select();
+
+        if (insertError) throw insertError;
+        
+        // Refresh employee list
+        await fetchEmployees();
+        return data;
+      }
+    } catch (err: any) {
+      console.error('Error adding employee:', err);
+      setError(err instanceof Error ? err : new Error(err?.message || 'Unknown error adding employee'));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchEmployees]);
+
+  // Update employee function
+  const updateEmployee = useCallback(async (id: string, updates: Partial<User>) => {
+    try {
+      setLoading(true);
+      
+      const { data, error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          name: updates.name,
+          department: updates.department,
+          position: updates.position,
+          employeeId: updates.employeeId,
+          email: updates.email,
+        })
+        .eq('id', id)
+        .select();
+
+      if (updateError) throw updateError;
+      
+      // Refresh employee list
+      await fetchEmployees();
+      return data;
+    } catch (err: any) {
+      console.error('Error updating employee:', err);
+      setError(err instanceof Error ? err : new Error(err?.message || 'Unknown error updating employee'));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchEmployees]);
+
+  // Delete employee function
+  const deleteEmployee = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, you might want to use an edge function to handle this
+      // as it may involve multiple operations (auth user deletion, profile deletion, etc.)
+      const { error: deleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      
+      // Refresh employee list
+      await fetchEmployees();
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting employee:', err);
+      setError(err instanceof Error ? err : new Error(err?.message || 'Unknown error deleting employee'));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchEmployees]);
+
   // Initial fetch
   useEffect(() => {
     fetchEmployees();
@@ -304,5 +395,8 @@ export function useEmployeeDirectory() {
     loading,
     error,
     refetch,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee
   };
 }
