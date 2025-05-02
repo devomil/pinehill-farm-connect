@@ -102,6 +102,8 @@ export function useEmployeeDirectory() {
   // Update an existing employee
   const updateEmployee = useCallback(async (id: string, employeeData: Partial<User>) => {
     try {
+      console.log('Updating employee:', id, employeeData);
+      
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -113,7 +115,10 @@ export function useEmployeeDirectory() {
         })
         .eq('id', id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error in supabase update:', updateError);
+        throw updateError;
+      }
       
       // Refetch to update the list
       await fetchEmployees();
@@ -145,6 +150,12 @@ export function useEmployeeDirectory() {
     }
   }, [fetchEmployees]);
 
+  // Define refetch function to be used from outside
+  const refetch = useCallback(() => {
+    console.log('Manually refetching employee directory');
+    return fetchEmployees();
+  }, [fetchEmployees]);
+
   // Initial fetch
   useEffect(() => {
     fetchEmployees();
@@ -170,7 +181,7 @@ export function useEmployeeDirectory() {
     unfilteredEmployees,
     loading,
     error,
-    refetch: fetchEmployees,
+    refetch,
     addEmployee,
     updateEmployee,
     deleteEmployee,

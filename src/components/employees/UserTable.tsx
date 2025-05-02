@@ -32,10 +32,10 @@ export function UserTable({
   onDelete,
   onRetry
 }: UserTableProps) {
+  // Update the handleEdit function to call onUpdate with the employee data
   const handleEdit = (employee: User) => {
-    // For now just log, would typically show an edit modal
     console.log('Edit employee:', employee);
-    // In a complete implementation, you'd show a modal here
+    onUpdate(employee.id, employee);
   };
 
   if (loading) {

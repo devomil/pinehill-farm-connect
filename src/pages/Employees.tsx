@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { UserTable } from "@/components/employees/UserTable";
@@ -18,9 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { formatErrorMessage } from "@/utils/errorUtils";
+import { User } from "@/types";
 
 export default function Employees() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [currentEmployee, setCurrentEmployee] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const {
     employees,
@@ -52,11 +56,39 @@ export default function Employees() {
 
   const handleUpdateEmployee = async (id: string, updatedEmployee: any) => {
     try {
-      await updateEmployee(id, updatedEmployee);
+      // Store the employee to be edited and open the edit dialog
+      const employeeToEdit = employees.find(emp => emp.id === id);
+      if (employeeToEdit) {
+        setCurrentEmployee(employeeToEdit);
+        setIsEditDialogOpen(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Employee not found",
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error updating employee",
+        description: formatErrorMessage(err),
+      });
+    }
+  };
+
+  const handleSaveEdit = async (editedEmployee: any) => {
+    if (!currentEmployee) return;
+    
+    try {
+      await updateEmployee(currentEmployee.id, editedEmployee);
       toast({
         title: "Employee updated successfully!",
-        description: `${updatedEmployee.name} has been updated.`,
+        description: `${editedEmployee.name} has been updated.`,
       });
+      setIsEditDialogOpen(false);
+      setCurrentEmployee(null);
+      refetch(); // Refresh the employee list
     } catch (err) {
       toast({
         variant: "destructive",
@@ -151,6 +183,30 @@ export default function Employees() {
           onDelete={handleDeleteEmployee}
           onRetry={handleRetry}
         />
+
+        {/* Edit Employee Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Employee</DialogTitle>
+              <DialogDescription>
+                Update employee information.
+              </DialogDescription>
+            </DialogHeader>
+            {currentEmployee && (
+              <EmployeeForm 
+                onSubmit={handleSaveEdit} 
+                initialValues={{
+                  name: currentEmployee.name || '',
+                  email: currentEmployee.email || '',
+                  department: currentEmployee.department || '',
+                  position: currentEmployee.position || '',
+                  employeeId: currentEmployee.employeeId || '',
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

@@ -19,17 +19,18 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface EmployeeFormProps {
   onSubmit: (data: FormValues) => void;
+  initialValues?: Partial<FormValues>;
 }
 
-export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
+export function EmployeeForm({ onSubmit, initialValues }: EmployeeFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      department: '',
-      position: '',
-      employeeId: '',
+      name: initialValues?.name || '',
+      email: initialValues?.email || '',
+      department: initialValues?.department || '',
+      position: initialValues?.position || '',
+      employeeId: initialValues?.employeeId || '',
     }
   });
 
@@ -112,7 +113,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
         
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Saving..." : "Save Employee"}
+            {form.formState.isSubmitting ? "Saving..." : initialValues ? "Update Employee" : "Save Employee"}
           </Button>
         </div>
       </form>
