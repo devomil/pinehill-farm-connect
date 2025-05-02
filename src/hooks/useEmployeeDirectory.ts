@@ -10,11 +10,14 @@ export function useEmployeeDirectory() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
 
   const fetchEmployees = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
+      console.log(`Fetching employee directory (last refresh: ${new Date(lastRefreshTime).toLocaleTimeString()})`);
+      
       // First try to get all profiles using the edge function that bypasses RLS
       const { data: edgeFunctionProfiles, error: edgeFunctionError } = await supabase
         .functions.invoke('get_all_profiles');
@@ -42,6 +45,7 @@ export function useEmployeeDirectory() {
         });
         
         processProfileData(processedProfiles);
+        setLastRefreshTime(Date.now());
         return;
       } else if (edgeFunctionError) {
         console.warn("Error fetching profiles with edge function, falling back to direct query:", edgeFunctionError);
@@ -89,12 +93,14 @@ export function useEmployeeDirectory() {
           const formattedEmployees = [fallbackUser];
           setUnfilteredEmployees(formattedEmployees);
           setEmployees(formattedEmployees);
+          setLastRefreshTime(Date.now());
           return;
         }
         
         // If we can't even get the current user, return empty arrays
         setUnfilteredEmployees([]);
         setEmployees([]);
+        setLastRefreshTime(Date.now());
         return;
       }
       
@@ -111,6 +117,7 @@ export function useEmployeeDirectory() {
       });
       
       processProfileData(processedProfiles);
+      setLastRefreshTime(Date.now());
       
     } catch (error: any) {
       console.error("Error fetching employee directory:", error);
@@ -119,7 +126,7 @@ export function useEmployeeDirectory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lastRefreshTime]);
 
   // Helper function to process profile data
   const processProfileData = (profiles: any[]) => {
@@ -137,6 +144,9 @@ export function useEmployeeDirectory() {
       setUnfilteredEmployees(formattedEmployees);
       setEmployees(formattedEmployees);
       console.log("Employee directory loaded successfully:", formattedEmployees.length);
+      
+      // Log the first few employees for debugging
+      console.log("Sample employees:", formattedEmployees.slice(0, 3));
     } catch (error) {
       console.error("Error processing profile data:", error);
       toast.error("Error processing employee data");
@@ -156,10 +166,10 @@ export function useEmployeeDirectory() {
     const filtered = unfilteredEmployees.filter((employee) => {
       const query = searchQuery.toLowerCase();
       return (
-        employee.name?.toLowerCase().includes(query) ||
-        employee.email?.toLowerCase().includes(query) ||
-        employee.department?.toLowerCase().includes(query) ||
-        employee.position?.toLowerCase().includes(query)
+        (employee.name?.toLowerCase() || "").includes(query) ||
+        (employee.email?.toLowerCase() || "").includes(query) ||
+        (employee.department?.toLowerCase() || "").includes(query) ||
+        (employee.position?.toLowerCase() || "").includes(query)
       );
     });
 
@@ -167,7 +177,10 @@ export function useEmployeeDirectory() {
   }, [searchQuery, unfilteredEmployees]);
 
   const refetch = useCallback(async () => {
+    console.log("Manually refreshing employee directory");
+    toast.info("Refreshing employee directory...");
     await fetchEmployees();
+    toast.success("Employee directory refreshed");
   }, [fetchEmployees]);
 
   return {
@@ -178,5 +191,6 @@ export function useEmployeeDirectory() {
     loading,
     error,
     refetch,
+    lastRefreshTime
   };
 }

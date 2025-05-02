@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { AnnouncementManager } from "@/components/communication/announcement/AnnouncementManager";
 import { AnnouncementHeader } from "@/components/communication/announcement/AnnouncementHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,10 +10,13 @@ import { useCommunications } from "@/hooks/useCommunications";
 import { EmployeeCommunications } from "@/components/communications/EmployeeCommunications";
 import { Card } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const Communication = () => {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees: allEmployees, loading: employeesLoading } = useEmployees();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
   // Exclude shift coverage messages from direct communications
   const { unreadMessages, refreshMessages } = useCommunications(true);
   const location = useLocation();
@@ -32,11 +35,17 @@ const Communication = () => {
   useEffect(() => {
     console.log("Communication page loaded - currentUser:", currentUser);
     
+    // Always fetch employees on page load to ensure we have the latest data
+    if (!allEmployees || allEmployees.length === 0) {
+      console.log("No employees found, fetching now");
+      refetchEmployees();
+    }
+    
     // Refresh messages when the page loads - only if on messages tab
     if (activeTab === "messages") {
       refreshMessages();
     }
-  }, [currentUser, allEmployees, activeTab, refreshMessages]);
+  }, [currentUser, allEmployees, activeTab, refreshMessages, refetchEmployees]);
 
   const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
 
@@ -63,16 +72,35 @@ const Communication = () => {
       refreshMessages();
     }
   };
+  
+  // Handle manual refresh of all data
+  const handleManualRefresh = () => {
+    toast.info("Refreshing all communication data");
+    refetchEmployees();
+    refreshMessages();
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <AnnouncementHeader 
-          isAdmin={isAdmin}
-          allEmployees={allEmployees}
-          onAnnouncementCreate={handleAnnouncementCreate}
-          loading={employeesLoading}
-        />
+        <div className="flex justify-between items-center">
+          <AnnouncementHeader 
+            isAdmin={isAdmin}
+            allEmployees={allEmployees}
+            onAnnouncementCreate={handleAnnouncementCreate}
+            loading={employeesLoading}
+          />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            className="ml-auto"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+        </div>
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-4">
