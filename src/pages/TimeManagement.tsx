@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ErrorAlert } from "@/components/time-management/ErrorAlert";
 import { TimeManagementHeader } from "@/components/time-management/TimeManagementHeader";
 import { TimeManagementTabs } from "@/components/time-management/TimeManagementTabs";
-import { TimeManagementProvider } from "@/contexts/timeManagement";
+import { TimeManagementProvider, useTimeManagement } from "@/contexts/timeManagement";
 import { toast } from "sonner";
 
 export default function TimeManagement() {
