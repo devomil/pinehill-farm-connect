@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -29,7 +28,7 @@ export function useEmployeeDirectory() {
           email,
           department,
           position,
-          created_at,
+          updated_at,
           employeeId
         `)
         .order('name');
@@ -59,7 +58,7 @@ export function useEmployeeDirectory() {
         department: profile.department || '',
         position: profile.position || '',
         avatar_url: '', // No avatar_url in the table
-        created_at: profile.created_at || '',
+        created_at: profile.updated_at || '', // Use updated_at instead of created_at
         employeeId: profile.employeeId || '',
       }));
 
