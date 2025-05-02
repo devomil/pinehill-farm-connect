@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeOffRequest } from '@/types/timeManagement';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   const [initialFetchDone, setInitialFetchDone] = useState(false);
   const [requestsSubscribed, setRequestsSubscribed] = useState(false);
   const [lastToastTime, setLastToastTime] = useState(0);
+  const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Local throttled toast function to prevent hooks dependency issues
   const showThrottledToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -142,6 +143,13 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
 
   // Setup realtime subscription for time_off_requests table
   useEffect(() => {
+    // Clear previous subscription if it exists to prevent duplicates
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+      setRequestsSubscribed(false);
+    }
+    
     if (!currentUser || requestsSubscribed) return;
     
     console.log("Setting up realtime subscription for time_off_requests");
@@ -156,29 +164,35 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
       }, (payload) => {
         console.log('Received time-off request update via realtime:', payload);
         // Instead of doing a full refetch which can cause flashing,
-        // we could update the local state based on the payload
-        // For simplicity, we'll still call fetchRequests here
+        // we'll update the local state based on the payload
         fetchRequests();
       })
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
         setRequestsSubscribed(true);
       });
+    
+    // Store the channel reference for cleanup
+    subscriptionRef.current = channel;
 
-    // Clean up subscription
+    // Clean up subscription on unmount
     return () => {
-      supabase.removeChannel(channel);
+      console.log("Cleaning up realtime subscription");
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
       setRequestsSubscribed(false);
     };
   }, [currentUser, fetchRequests, requestsSubscribed]);
 
   // Initial data fetch
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !initialFetchDone) {
       console.log("Initial fetch of time off requests triggered");
       fetchRequests();
     }
-  }, [currentUser, fetchRequests]);
+  }, [currentUser, fetchRequests, initialFetchDone]);
 
   // Derived state
   const pendingRequests = timeOffRequests.filter(
@@ -204,3 +218,4 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
     fetchRequests
   };
 }
+

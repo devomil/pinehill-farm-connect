@@ -13,6 +13,7 @@ const TimeManagementContent = () => {
   const { currentUser } = useAuth();
   const { error, messagesError, handleRetry, forceRefreshData } = useTimeManagement();
   const initialLoadDone = useRef(false);
+  const refreshTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
     console.log("TimeManagementContent rendered with user:", currentUser?.id);
@@ -24,14 +25,27 @@ const TimeManagementContent = () => {
     // Force an initial load but wait a moment to let things settle
     // Use a shorter timeout to minimize waiting, but allow components to initialize
     if (!initialLoadDone.current) {
-      const loadTimeout = setTimeout(() => {
+      // Clear any existing timeout to prevent multiple refreshes
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      // Set new timeout
+      refreshTimeoutRef.current = window.setTimeout(() => {
         console.log("TimeManagementContent: Initial data refresh");
         forceRefreshData();
         initialLoadDone.current = true;
+        refreshTimeoutRef.current = null;
       }, 1000);
-
-      return () => clearTimeout(loadTimeout);
     }
+    
+    // Cleanup function
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+    };
   }, [currentUser, error, messagesError, forceRefreshData]);
   
   if (!currentUser) {
