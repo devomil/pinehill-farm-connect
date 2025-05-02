@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,20 +40,20 @@ export default function TimeManagement() {
 // Keep TimeManagementContent as a separate component that uses the context
 const TimeManagementContent = () => {
   const { currentUser } = useAuth();
-  const { error, messagesError, handleRetry, forceRefreshData } = useTimeManagement();
+  const { error, messagesError, handleRetry, forceRefreshData, allEmployees } = useTimeManagement();
   const initialLoadDone = useRef(false);
   const refreshTimeoutRef = useRef<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   useEffect(() => {
     console.log("TimeManagementContent rendered with user:", currentUser?.id);
+    console.log("Available employees count:", allEmployees?.length || 0);
     
     // Log error states
     if (error) console.error("Time-off requests error:", error);
     if (messagesError) console.error("Messages error:", messagesError);
 
     // Force an initial load but wait a moment to let things settle
-    // Use a shorter timeout to minimize waiting, but allow components to initialize
     if (!initialLoadDone.current && currentUser) {
       // Clear any existing timeout to prevent multiple refreshes
       if (refreshTimeoutRef.current) {
@@ -76,7 +77,7 @@ const TimeManagementContent = () => {
         refreshTimeoutRef.current = null;
       }
     };
-  }, [currentUser, error, messagesError, forceRefreshData]);
+  }, [currentUser, error, messagesError, forceRefreshData, allEmployees]);
   
   if (!currentUser) {
     return <div className="p-6">You must be logged in to view this page.</div>;
