@@ -24,8 +24,8 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const refreshMessages = useCallback(() => {
     const now = Date.now();
     
-    // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime.current < 5000) { // Increased from 3000 to 5000ms
+    // CRITICAL FIX: Improved throttling to prevent multiple refreshes within a short time period
+    if (refreshInProgress.current || now - lastRefreshTime.current < 8000) { // Increased to 8000ms
       console.log("Communications refresh skipped - too soon or already in progress");
       return Promise.resolve();
     }
@@ -39,14 +39,14 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     // Reset the refresh lock after a timeout
     setTimeout(() => {
       refreshInProgress.current = false;
-    }, 3000); // Increased from 2000 to 3000ms
+    }, 5000); // Increased to 5000ms for more breathing room between refreshes
     
     return result;
   }, [refetch]);
   
   const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
-  // Enhanced send message function with better logging
+  // CRITICAL FIX: Enhanced send message function to better handle shift coverage requests
   const sendMessage = (params: any) => {
     console.log("Sending message with params:", JSON.stringify(params, null, 2));
     
@@ -59,13 +59,17 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         console.error("Missing required shift coverage details");
         return Promise.reject("Incomplete shift details");
       }
+      
+      // Log data being sent
+      console.log("Original employee ID:", params.shiftDetails.original_employee_id);
+      console.log("Covering employee ID:", params.shiftDetails.covering_employee_id);
     }
     
     return sendMessageMutation.mutate(params, {
       onSuccess: (data) => {
         console.log("Message sent successfully, response:", data);
-        // Add a small delay before refreshing to allow DB operations to complete
-        setTimeout(() => refreshMessages(), 1000);
+        // Add a longer delay before refreshing to allow DB operations to complete
+        setTimeout(() => refreshMessages(), 2000);
       },
       onError: (error) => {
         console.error("Error sending message:", error);
@@ -78,8 +82,8 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     return respondToShiftRequestMutation.mutate(params, {
       onSuccess: () => {
         console.log("Successfully responded to shift request, refreshing messages");
-        // Add a small delay before refreshing
-        setTimeout(() => refreshMessages(), 1000);
+        // Add a delay before refreshing
+        setTimeout(() => refreshMessages(), 2000);
       },
       onError: (error) => {
         console.error("Error responding to shift request:", error);
@@ -87,7 +91,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     });
   };
 
-  // Use a less aggressive fetch strategy with conditional refresh
+  // CRITICAL FIX: Use a less aggressive fetch strategy with longer intervals
   useEffect(() => {
     if (!currentUser?.id) return;
     
@@ -101,22 +105,22 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     let refreshInterval: number | undefined;
     
     if (shouldUsePeriodicRefresh) {
-      // Use a longer interval for periodic refreshes
+      // Use a much longer interval for periodic refreshes
       refreshInterval = window.setInterval(() => {
         const now = Date.now();
         
         // Only refresh if sufficient time has passed since the last refresh
-        if (now - lastRefreshTime.current > 30000 && !refreshInProgress.current) {  // Increased from 15000 to 30000ms
+        if (now - lastRefreshTime.current > 60000 && !refreshInProgress.current) {  // Increased to 60000ms (1 minute)
           console.log("Periodic refresh of communications data");
           refreshInProgress.current = true;
           refetch().finally(() => {
             setTimeout(() => {
               refreshInProgress.current = false;
-            }, 3000);
+            }, 5000);
           });
           lastRefreshTime.current = now;
         }
-      }, 60000); // Increased from 30000 to 60000ms - Check every 60 seconds, but only refresh if needed
+      }, 120000); // Increased to 120000ms (2 minutes) - Check less frequently
     }
     
     return () => {

@@ -22,11 +22,12 @@ export function useSendMessage(currentUser: User | null) {
       }
 
       console.log(`Attempting to send message to recipient ID: ${recipientId}, type: ${type}`);
+      
+      // Enhanced logging for shift coverage requests
       if (type === 'shift_coverage' && shiftDetails) {
-        console.log("Shift coverage request details:", shiftDetails);
+        console.log("Shift coverage request details:", JSON.stringify(shiftDetails, null, 2));
       }
       
-      // First check if the recipient exists in the employee directory
       try {
         // First, fetch full profile data from the database
         const { data: recipientData, error: recipientError } = await supabase
@@ -97,7 +98,7 @@ export function useSendMessage(currentUser: User | null) {
             status: 'pending',
             admin_cc: adminData?.id || adminCc || null // Store the admin ID for reference
           })
-          .select()
+          .select('*')
           .single();
   
         if (communicationError) {
@@ -111,13 +112,13 @@ export function useSendMessage(currentUser: User | null) {
         if (type === 'shift_coverage' && shiftDetails) {
           console.log(`Creating shift coverage request for communication ${communicationData.id}`);
           
-          // Ensure we have all required fields for the shift request
+          // CRITICAL FIX: Ensure we have all required fields for the shift request
           if (!shiftDetails.shift_date || !shiftDetails.shift_start || !shiftDetails.shift_end) {
             console.error("Missing required shift details:", shiftDetails);
             throw new Error("Missing required shift details");
           }
           
-          // Debugging the payload
+          // Debugging the payload with explicit conversion to match database schema
           const shiftPayload = {
             communication_id: communicationData.id,
             original_employee_id: shiftDetails.original_employee_id || currentUser.id,
@@ -128,13 +129,13 @@ export function useSendMessage(currentUser: User | null) {
             status: 'pending'
           };
           
-          console.log("Sending shift coverage request payload:", shiftPayload);
+          console.log("Sending shift coverage request payload:", JSON.stringify(shiftPayload, null, 2));
           
-          // Create the shift coverage request with explicit payload
+          // CRITICAL FIX: Use explicit insert with returning to get the created data
           const { data: shiftData, error: shiftError } = await supabase
             .from('shift_coverage_requests')
             .insert(shiftPayload)
-            .select();
+            .select('*');
   
           if (shiftError) {
             console.error("Error creating shift coverage request:", shiftError);
@@ -146,17 +147,34 @@ export function useSendMessage(currentUser: User | null) {
           
           console.log("Created shift coverage request:", shiftData);
 
-          // Verify the request was created
-          const { data: checkData, error: checkError } = await supabase
-            .from('shift_coverage_requests')
-            .select('*')
-            .eq('communication_id', communicationData.id);
-
-          if (checkError) {
-            console.error("Error verifying shift coverage request:", checkError);
-          } else {
-            console.log("Verification of created shift coverage request:", checkData);
-          }
+          // Verify the request was created - IMPORTANT for debugging
+          setTimeout(async () => {
+            const { data: checkData, error: checkError } = await supabase
+              .from('shift_coverage_requests')
+              .select('*')
+              .eq('communication_id', communicationData.id);
+  
+            if (checkError) {
+              console.error("Error verifying shift coverage request:", checkError);
+            } else if (checkData && checkData.length > 0) {
+              console.log("✅ Verification successful - shift coverage request exists:", checkData);
+            } else {
+              console.error("⚠️ Verification failed - shift coverage request not found for communication:", communicationData.id);
+              
+              // Try again with a direct query to see all recent requests
+              const { data: allRecent, error: allRecentError } = await supabase
+                .from('shift_coverage_requests')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(5);
+                
+              if (allRecentError) {
+                console.error("Error checking recent shift requests:", allRecentError);
+              } else {
+                console.log("Recent shift coverage requests:", allRecent);
+              }
+            }
+          }, 1000);
         }
   
         // Send notification to recipient using notifyManager
@@ -191,7 +209,6 @@ export function useSendMessage(currentUser: User | null) {
   
           if (!notifyResult.success) {
             console.warn("Notification sending failed, but message was saved:", notifyResult.error);
-            // Don't throw here, as we still created the communication successfully
           }
         } catch (notifyError) {
           console.error("Error sending notification:", notifyError);
@@ -199,12 +216,13 @@ export function useSendMessage(currentUser: User | null) {
         }
   
         return communicationData;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error in send message function:", error);
         throw error;
       }
     },
     onSuccess: () => {
+      // Invalidate relevant queries to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['communications'] });
       queryClient.invalidateQueries({ queryKey: ['shiftCoverage'] });
       console.log("Successfully sent message - invalidating queries");

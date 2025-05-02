@@ -48,7 +48,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
     
-    // Create properly formatted shift coverage request
+    // CRITICAL FIX: Create properly formatted shift coverage request that matches the schema
     const requestData = {
       recipientId: formData.recipientId,
       message: formData.message,
@@ -65,54 +65,64 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
     
     try {
-      // Use the sendMessage function from useCommunications hook
-      await new Promise<void>((resolve, reject) => {
+      // CRITICAL FIX: Ensure we wait for this to complete using Promise
+      const result = await new Promise<void>((resolve, reject) => {
         try {
           sendMessage({
             ...requestData,
-            onSuccess: () => resolve(),
-            onError: (error: any) => reject(error)
+            onSuccess: () => {
+              console.log("sendMessage onSuccess callback fired");
+              resolve();
+            },
+            onError: (error: any) => {
+              console.error("sendMessage onError callback fired:", error);
+              reject(error);
+            }
           });
           
-          // Since sendMessage uses mutation.mutate which doesn't return a promise,
-          // we'll set a timeout as a fallback to resolve the promise
-          setTimeout(() => resolve(), 2000);
+          // Set a timeout as a fallback since sendMessage uses mutation.mutate which doesn't return a promise
+          setTimeout(() => {
+            console.log("sendMessage timeout fallback triggered");
+            resolve();
+          }, 3000);
         } catch (error) {
+          console.error("Error in sendMessage:", error);
           reject(error);
         }
       });
       
       console.log("Shift coverage request sent successfully");
       
-      // Log additional debug information directly to the console
-      const { data: latestRequests, error: checkError } = await supabase
-        .from('shift_coverage_requests')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-        
-      if (checkError) {
-        console.error("Error checking recent shift coverage requests:", checkError);
-      } else {
-        console.log("Recent shift coverage requests:", latestRequests);
-      }
-      
-      // Verify if our request was saved
+      // CRITICAL FIX: Verify the request was saved after a short delay
       setTimeout(async () => {
-        const { data: verifyRequest, error: verifyError } = await supabase
-          .from('shift_coverage_requests')
-          .select('*')
-          .eq('original_employee_id', currentUser.id)
-          .eq('shift_date', formData.shiftDate)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (verifyError) {
-          console.error("Error verifying shift request was saved:", verifyError);
-        } else if (verifyRequest && verifyRequest.length > 0) {
-          console.log("Verified shift request was saved successfully:", verifyRequest[0]);
-        } else {
-          console.warn("Could not verify shift request was saved");
+        try {
+          // Check for any recently created shift coverage requests by this user
+          const { data: verifyRequest, error: verifyError } = await supabase
+            .from('shift_coverage_requests')
+            .select('*')
+            .eq('original_employee_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+          if (verifyError) {
+            console.error("Error verifying shift request was saved:", verifyError);
+          } else if (verifyRequest && verifyRequest.length > 0) {
+            // Find requests that match our date
+            const matchingRequests = verifyRequest.filter(req => 
+              req.shift_date === formData.shiftDate
+            );
+            
+            if (matchingRequests.length > 0) {
+              console.log("✅ Verified shift request was saved successfully:", matchingRequests[0]);
+            } else {
+              console.warn("⚠️ No matching shift requests found for today's date");
+              console.log("Recent shift requests:", verifyRequest);
+            }
+          } else {
+            console.warn("⚠️ Could not verify shift request was saved - no requests found");
+          }
+        } catch (error) {
+          console.error("Error during verification:", error);
         }
       }, 2000);
       

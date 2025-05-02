@@ -57,16 +57,16 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
-  // Enhanced toast system with deduplication and throttling
+  // CRITICAL FIX: Enhanced toast system with stricter deduplication and throttling
   const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
     // Create a unique key for this message + type combo
     const toastKey = `${message}-${type}`;
     const now = Date.now();
     
     // Only show a toast if:
-    // 1. It's been at least 10 seconds since the last toast (increased from 5s)
+    // 1. It's been at least 20 seconds since the last toast (increased from 10s)
     // 2. This exact message isn't already pending/showing
-    if (now - lastToastTime > 10000 && !pendingToasts.current.has(toastKey)) {
+    if (now - lastToastTime > 20000 && !pendingToasts.current.has(toastKey)) {
       // Add to pending toasts set to prevent duplicates
       pendingToasts.current.add(toastKey);
       
@@ -90,10 +90,12 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       // Update last toast time
       setLastToastTime(now);
       
-      // Auto-clear from pending after 12 seconds (toast should be gone by then)
+      // Auto-clear from pending after 20 seconds (toast should be gone by then)
       setTimeout(() => {
         pendingToasts.current.delete(toastKey);
-      }, 12000);
+      }, 20000);
+    } else {
+      console.log(`Toast "${message}" suppressed - too soon or duplicate`);
     }
   }, [lastToastTime]);
 
@@ -107,12 +109,12 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     return retryCount + 1;
   }, [fetchRequests, refreshMessages, retryCount, showThrottledToast]);
 
-  // Force refresh of data with improved throttling and deduplication
+  // CRITICAL FIX: Force refresh of data with improved throttling and deduplication
   const forceRefreshData = useCallback(() => {
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime < 8000) { // Increased from 3000 to 8000ms
+    if (refreshInProgress.current || now - lastRefreshTime < 15000) { // Increased to 15 seconds
       console.log("Refresh skipped - too soon or already in progress");
       return;
     }
@@ -126,15 +128,17 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     // Only show toast for manual refreshes, not automatic ones
     if (initialLoadRef.current) {
       showThrottledToast("Refreshing time management data...");
+    } else {
+      console.log("Initial load, not showing refresh toast");
     }
     
     fetchRequests();
     refreshMessages();
     
-    // Reset the refresh lock after a timeout
+    // Reset the refresh lock after a longer timeout
     setTimeout(() => {
       refreshInProgress.current = false;
-    }, 3000); // Increased from 2000 to 3000ms
+    }, 5000); // Increased to 5 seconds
   }, [fetchRequests, refreshMessages, showThrottledToast, lastRefreshTime]);
   
   // Initial data load - only once
