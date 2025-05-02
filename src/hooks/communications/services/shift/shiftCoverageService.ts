@@ -1,5 +1,6 @@
 
 import { createShiftCoverageRequest, verifyShiftCoverageRequest } from "../../data/messageDataService";
+import { validateEmployeeExists } from "../recipient/recipientLookupService";
 
 /**
  * Service for handling shift coverage requests
@@ -19,10 +20,27 @@ export async function handleShiftCoverageDetails(
   }
   
   try {
+    // Verify both users exist in the system
+    const originalEmployeeId = shiftDetails.original_employee_id || currentUserId;
+    const coveringEmployeeId = shiftDetails.covering_employee_id || recipientId;
+    
+    const originalUserExists = await validateEmployeeExists(originalEmployeeId);
+    const coveringUserExists = await validateEmployeeExists(coveringEmployeeId);
+    
+    if (!originalUserExists) {
+      console.error("Original employee does not exist:", originalEmployeeId);
+      throw new Error("Requester profile not found in database");
+    }
+    
+    if (!coveringUserExists) {
+      console.error("Covering employee does not exist:", coveringEmployeeId);
+      throw new Error("Selected employee not found in database");
+    }
+    
     // Create shift coverage request with explicit IDs
     const fullShiftDetails = {
-      original_employee_id: shiftDetails.original_employee_id || currentUserId,
-      covering_employee_id: shiftDetails.covering_employee_id || recipientId,
+      original_employee_id: originalEmployeeId,
+      covering_employee_id: coveringEmployeeId,
       shift_date: shiftDetails.shift_date,
       shift_start: shiftDetails.shift_start,
       shift_end: shiftDetails.shift_end,
@@ -38,26 +56,16 @@ export async function handleShiftCoverageDetails(
     
     console.log("Shift coverage request created successfully:", shiftRequestData);
     
-    // Verify the request was created after a short delay
-    setTimeout(async () => {
-      console.log("Verifying shift coverage request was created");
-      try {
-        const verificationResult = await verifyShiftCoverageRequest(
-          communicationId, 
-          shiftDetails.shift_date,
-          shiftDetails.original_employee_id || currentUserId
-        );
-        
-        console.log("Verification result:", verificationResult);
-      } catch (error) {
-        console.error("Error verifying shift coverage request:", error);
-      }
-    }, 1000);
+    // Verify the request was created
+    await verifyShiftCoverageRequest(
+      communicationId, 
+      shiftDetails.shift_date,
+      originalEmployeeId
+    );
     
     return shiftRequestData;
   } catch (error: any) {
     console.error("Error creating shift coverage request:", error);
-    console.error("Error details:", error.message, error.code);
     throw new Error(`Failed to create shift coverage request: ${error.message}`);
   }
 }
