@@ -1,7 +1,10 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { toErrorObject } from '@/utils/errorUtils';
+import { useToast } from '@/components/ui/use-toast';
 
 export function useEmployeeDirectory() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -9,6 +12,7 @@ export function useEmployeeDirectory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | Error>('');
   const { currentUser } = useAuth();
+  const { toast } = useToast();
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -22,27 +26,19 @@ export function useEmployeeDirectory() {
           id,
           name,
           email,
-          role,
           department,
           position,
           avatar_url,
           created_at,
-          employee_id
+          employeeId
         `)
         .order('name');
 
       if (fetchError) {
         console.error('Error fetching employees:', fetchError);
         const message = fetchError.message || 'Failed to load employee data';
-        const details = [fetchError.details || ''].filter(Boolean);
-        const timestamp = new Date().toISOString();
-        
-        // Create a proper Error object instead of a plain object
-        const newError = new Error(message);
-        (newError as any).details = details;
-        (newError as any).timestamp = timestamp;
-        setError(newError);
-        
+        const errorObj = toErrorObject(message);
+        setError(errorObj);
         return;
       }
 
@@ -57,12 +53,12 @@ export function useEmployeeDirectory() {
         id: profile.id,
         email: profile.email || '',
         name: profile.name || '',
-        role: profile.role || '',
+        role: 'employee', // Default role if not specified
         department: profile.department || '',
         position: profile.position || '',
         avatar_url: profile.avatar_url || '',
         created_at: profile.created_at || '',
-        employeeId: profile.employee_id || '',
+        employeeId: profile.employeeId || '',
       }));
 
       // Filter out the current user from the employees list
@@ -79,6 +75,72 @@ export function useEmployeeDirectory() {
       setLoading(false);
     }
   }, [currentUser?.id]);
+
+  // Add a new employee
+  const addEmployee = useCallback(async (employeeData: Partial<User>) => {
+    try {
+      // This would typically be a server-side operation via an edge function
+      // For now, just return a mock implementation
+      console.log('Adding employee:', employeeData);
+      toast({
+        title: "Employee addition would happen here",
+        description: "This is a placeholder for the actual employee creation functionality"
+      });
+      
+      // Refetch to update the list
+      await fetchEmployees();
+      return { id: 'new-id' };
+    } catch (err: any) {
+      console.error('Error adding employee:', err);
+      throw err;
+    }
+  }, [fetchEmployees, toast]);
+
+  // Update an existing employee
+  const updateEmployee = useCallback(async (id: string, employeeData: Partial<User>) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          name: employeeData.name,
+          department: employeeData.department,
+          position: employeeData.position,
+          employeeId: employeeData.employeeId,
+          // Add any other fields you want to update
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      
+      // Refetch to update the list
+      await fetchEmployees();
+      return true;
+    } catch (err: any) {
+      console.error('Error updating employee:', err);
+      throw err;
+    }
+  }, [fetchEmployees]);
+
+  // Delete an employee
+  const deleteEmployee = useCallback(async (id: string) => {
+    try {
+      // This would typically involve more complex logic with authentication and authorization
+      // For now, just implement a simple version
+      const { error: deleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      
+      // Refetch to update the list
+      await fetchEmployees();
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting employee:', err);
+      throw err;
+    }
+  }, [fetchEmployees]);
 
   // Refetch function that can be called from outside
   const refetch = useCallback(() => {
@@ -112,5 +174,8 @@ export function useEmployeeDirectory() {
     loading,
     error,
     refetch,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
   };
 }

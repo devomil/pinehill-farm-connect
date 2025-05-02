@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { formatErrorMessage } from "@/utils/errorUtils";
 
 export default function Reports() {
   const { loading, error } = useEmployeeDirectory();
@@ -23,7 +24,7 @@ export default function Reports() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Error loading employees: {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
+              Error loading employees: {formatErrorMessage(error)}
             </AlertDescription>
           </Alert>
         )}
