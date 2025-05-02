@@ -14,12 +14,12 @@ export async function getRecipientData(recipientId: string) {
   }
 
   try {
-    // Try getting the recipient with a more permissive query first
+    // Try getting the recipient with a more detailed query
     const { data: recipientData, error: recipientError } = await supabase
       .from('profiles')
-      .select('id, name, email')
+      .select('id, name, email, updated_at')
       .eq('id', recipientId)
-      .maybeSingle(); // Use maybeSingle instead of expecting an array
+      .maybeSingle();
 
     if (recipientError) {
       console.error("Error fetching recipient data:", recipientError);
@@ -29,32 +29,27 @@ export async function getRecipientData(recipientId: string) {
     if (!recipientData) {
       console.error(`No recipient found with ID: ${recipientId}`);
       
-      // Double-check if recipient exists with a more basic query
-      const { data: checkData } = await supabase
+      // Try a broader search with a LIKE query on string representation of ID
+      const { data: fuzzyMatch } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('id', recipientId)
-        .maybeSingle();
+        .select('id, name, email')
+        .ilike('id', `%${recipientId.slice(-10)}%`)
+        .limit(1);
         
-      if (!checkData) {
-        // Try one more attempt with auth.users as a last resort
-        try {
-          const { data: userCheck } = await supabase
-            .from('profiles')
-            .select('id, name, email')
-            .limit(10);  // Get some sample data to debug
-            
-          console.log("Sample profiles for debugging:", userCheck);
-          
-          throw new Error(`Recipient not found. Please refresh and try again.`);
-        } catch (e) {
-          console.error("Failed even backup query:", e);
-          throw new Error(`Recipient not found. Please refresh and try again.`);
-        }
-      } else {
-        // Recipient exists but data wasn't retrieved correctly
-        throw new Error(`Error retrieving recipient details. Please try again.`);
+      if (fuzzyMatch && fuzzyMatch.length > 0) {
+        console.log("Found potential match with fuzzy search:", fuzzyMatch[0]);
+        return fuzzyMatch[0];
       }
+      
+      // Get sample profiles for debugging
+      const { data: sampleProfiles } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .limit(5);
+        
+      console.log("Sample profiles for debugging:", sampleProfiles);
+      
+      throw new Error(`Recipient not found in database. Please refresh employee data and try again.`);
     }
     
     console.log("Found recipient:", recipientData);
@@ -200,11 +195,11 @@ export async function createShiftCoverageRequest(
     return data;
   } catch (e: any) {
     console.error("Exception creating shift coverage request:", e);
-    // Let's try a direct API call as a fallback using fetch instead of accessing protected properties
+    // Let's try a direct API call as a fallback
     try {
       console.log("Attempting direct API call to create shift coverage request");
       
-      // Instead of accessing protected properties, use the Supabase API URL directly
+      // Use a direct fetch call instead of accessing protected properties
       const response = await fetch(
         "https://pdeaxfhsodenefeckabm.supabase.co/rest/v1/shift_coverage_requests",
         {

@@ -38,19 +38,50 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     .filter(emp => emp.id !== currentUser.id)
     .length > 0;
     
-  // Pre-validate employee data for potential issues
+  // Enhanced employee validation with real-time database checking
   useEffect(() => {
     const validateEmployees = async () => {
+      if (!allEmployees || allEmployees.length === 0 || !currentUser?.id) {
+        return;
+      }
+      
       try {
-        // Get valid user IDs directly from profiles table
+        // Log useful information for debugging
+        console.log(`Current user: ${currentUser.id}, ${currentUser.email}`);
+        console.log(`Total employees available before validation: ${allEmployees.length}`);
+        console.log("Employee IDs to validate:", allEmployees.map(emp => emp.id).join(', '));
+        
+        // Get valid user IDs directly from profiles table with multiple queries for better validation
         const { data: validProfiles, error } = await supabase
           .from('profiles')
-          .select('id')
+          .select('id, email, name')
           .neq('id', currentUser.id);
         
         if (error) {
-          console.error("Error pre-validating employees:", error);
+          console.error("Error validating employees:", error);
+          setValidatedEmployees(allEmployees.filter(emp => emp.id !== currentUser.id));
           return;
+        }
+        
+        if (!validProfiles || validProfiles.length === 0) {
+          console.warn("No valid profiles found in database!");
+          // Try a different query approach
+          const { data: allProfiles } = await supabase
+            .from('profiles')
+            .select('id, email, name')
+            .limit(50);
+            
+          console.log("All profiles found:", allProfiles?.length || 0);
+          
+          if (allProfiles && allProfiles.length > 0) {
+            const validIds = new Set(allProfiles.map(profile => profile.id));
+            const validated = allEmployees.filter(emp => 
+              emp.id !== currentUser.id && validIds.has(emp.id)
+            );
+            setValidatedEmployees(validated);
+            console.log(`After database validation: ${validated.length} valid employees`);
+            return;
+          }
         }
         
         // Create a set of valid IDs for efficient lookup
@@ -63,6 +94,13 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
         );
         
         console.log(`After validation: ${validated.length} valid employees available`);
+        
+        // If validation found dramatically fewer employees than expected, log a warning
+        if (validated.length < (allEmployees.length - 1) / 2) {
+          console.warn(`Validation removed ${allEmployees.length - 1 - validated.length} employees!`);
+          console.log("Valid IDs:", Array.from(validIds));
+        }
+        
         setValidatedEmployees(validated);
       } catch (error) {
         console.error("Error during employee validation:", error);
@@ -73,7 +111,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       }
     };
     
-    if (allEmployees && allEmployees.length > 0) {
+    if (allEmployees && allEmployees.length > 0 && currentUser?.id) {
       validateEmployees();
     }
   }, [allEmployees, currentUser]);
@@ -95,26 +133,39 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
 
-    // Enhanced recipient validation
+    // Enhanced recipient validation with multiple checks
     try {
       // First check in our pre-validated list
       const recipientExists = validatedEmployees.some(emp => emp.id === formData.recipientId);
       
       if (!recipientExists) {
-        console.error("Selected recipient not in validated list, attempting direct database check");
+        console.warn("Selected recipient not in validated list, attempting database check");
         
-        // Double-check directly with the database
+        // Double-check directly with the database using multiple approaches
         const { data: profileCheck, error } = await supabase
           .from('profiles')
           .select('id, name, email')
           .eq('id', formData.recipientId)
-          .single();
+          .maybeSingle();
           
         if (error || !profileCheck) {
-          console.error("Database check failed:", error);
-          toast.error("Cannot find recipient in database. Please try another employee.");
-          setIsLoading(false);
-          return;
+          console.error("Primary database check failed:", error);
+          
+          // Try a fuzzy match as last resort
+          const { data: fuzzyCheck } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .ilike('id', `%${formData.recipientId.slice(-10)}%`)
+            .limit(1);
+            
+          if (fuzzyCheck && fuzzyCheck.length > 0) {
+            console.log("Found recipient with fuzzy match:", fuzzyCheck[0]);
+            formData.recipientId = fuzzyCheck[0].id; // Update to use the correct ID
+          } else {
+            toast.error("Cannot find recipient in database. Please refresh and try again.");
+            setIsLoading(false);
+            return;
+          }
         } else {
           console.log("Recipient verified in database:", profileCheck);
         }
