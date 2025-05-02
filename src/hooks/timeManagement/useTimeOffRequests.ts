@@ -11,6 +11,21 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   const [error, setError] = useState<Error | null>(null);
   const [initialFetchDone, setInitialFetchDone] = useState(false);
   const [requestsSubscribed, setRequestsSubscribed] = useState(false);
+  const [lastToastTime, setLastToastTime] = useState(0);
+
+  // Local throttled toast function to prevent hooks dependency issues
+  const showThrottledToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    const now = Date.now();
+    // Only show a toast if it's been at least 5 seconds since the last one
+    if (now - lastToastTime > 5000) {
+      if (type === 'success') {
+        toast.success(message);
+      } else {
+        toast.error(message);
+      }
+      setLastToastTime(now);
+    }
+  }, [lastToastTime]);
 
   const fetchRequests = useCallback(async () => {
     if (!currentUser) return;
@@ -67,10 +82,8 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
           }))
         );
         
-        // Only show success notification for manual refreshes, not initial load
-        if (retryCount > 0) {
-          toast.success("Time off requests refreshed successfully");
-        }
+        // Only show success notification for manual refreshes, not initial load or automatic background refreshes
+        // We now let the TimeManagementContext handle toast notifications
       } else {
         console.log("No time off requests data returned");
         setTimeOffRequests([]);
@@ -80,14 +93,15 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
     } catch (err: any) {
       console.error("Failed to fetch time-off requests:", err);
       setError(err);
-      // Only show error for manual retries, not initial load failures which we'll handle silently
+      
+      // Only show error for manual retries, not initial load failures
       if (retryCount > 0) {
-        toast.error("Failed to fetch time-off requests. Please try again.");
+        showThrottledToast("Failed to fetch time-off requests. Please try again.", 'error');
       }
     } finally {
       setLoading(false);
     }
-  }, [currentUser, retryCount]);
+  }, [currentUser, retryCount, initialFetchDone, showThrottledToast]);
 
   // Setup realtime subscription for time_off_requests table
   useEffect(() => {

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 // This component MUST be used within a TimeManagementProvider
 const TimeManagementContent = () => {
   const { currentUser } = useAuth();
-  const { error, messagesError, handleRetry, forceRefreshData, fetchRequests } = useTimeManagement();
+  const { error, messagesError, handleRetry, forceRefreshData } = useTimeManagement();
   
   useEffect(() => {
     console.log("TimeManagementContent rendered with user:", currentUser?.id);
@@ -20,11 +20,12 @@ const TimeManagementContent = () => {
     if (error) console.error("Time-off requests error:", error);
     if (messagesError) console.error("Messages error:", messagesError);
 
-    // Force an initial load
+    // Force an initial load but wait a moment to let things settle
+    // Use a shorter timeout to minimize waiting, but allow components to initialize
     const loadTimeout = setTimeout(() => {
       console.log("TimeManagementContent: Initial data refresh");
       forceRefreshData();
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(loadTimeout);
   }, [currentUser, error, messagesError, forceRefreshData]);
@@ -50,7 +51,7 @@ const TimeManagementContent = () => {
       <TimeManagementHeader 
         currentUser={currentUser}
         onRefresh={handleManualRefresh}
-        onRequestSubmitted={fetchRequests}
+        onRequestSubmitted={forceRefreshData}
       />
       
       <TimeManagementTabs 

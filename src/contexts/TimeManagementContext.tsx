@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { User } from "@/types";
 import { TimeManagementContextType, TimeManagementProviderProps, TimeOffRequest } from "@/types/timeManagement";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -25,6 +25,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [lastToastTime, setLastToastTime] = useState(0);
+  const pendingToasts = useRef<Set<string>>(new Set());
   
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
@@ -53,17 +54,43 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
-  // Throttled toast function to prevent excessive notifications
+  // Enhanced toast system with deduplication and throttling
   const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
+    // Create a unique key for this message + type combo
+    const toastKey = `${message}-${type}`;
     const now = Date.now();
-    // Only show a toast if it's been at least 5 seconds since the last one
-    if (now - lastToastTime > 5000) {
+    
+    // Only show a toast if:
+    // 1. It's been at least 5 seconds since the last toast
+    // 2. This exact message isn't already pending/showing
+    if (now - lastToastTime > 5000 && !pendingToasts.current.has(toastKey)) {
+      // Add to pending toasts set to prevent duplicates
+      pendingToasts.current.add(toastKey);
+      
+      // Show the toast with the appropriate type
       if (type === 'success') {
-        toast.success(message);
+        toast.success(message, {
+          id: toastKey,
+          onDismiss: () => {
+            pendingToasts.current.delete(toastKey);
+          }
+        });
       } else {
-        toast.info(message);
+        toast.info(message, {
+          id: toastKey,
+          onDismiss: () => {
+            pendingToasts.current.delete(toastKey);
+          }
+        });
       }
+      
+      // Update last toast time
       setLastToastTime(now);
+      
+      // Auto-clear from pending after 6 seconds (toast should be gone by then)
+      setTimeout(() => {
+        pendingToasts.current.delete(toastKey);
+      }, 6000);
     }
   }, [lastToastTime]);
 
@@ -77,7 +104,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     return retryCount + 1;
   }, [fetchRequests, refreshMessages, retryCount, showThrottledToast]);
 
-  // Force refresh of data with throttled notifications
+  // Force refresh of data with improved throttling and deduplication
   const forceRefreshData = useCallback(() => {
     console.log("Force refresh triggered");
     setRetryCount(prevCount => prevCount + 1);
