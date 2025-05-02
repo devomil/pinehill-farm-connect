@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -287,10 +288,13 @@ export function useEmployeeDirectory() {
         // In a real implementation, you would call an edge function to create a user
         // For demonstration, we'll just simulate adding directly to profiles
         
-        // Use upsert method which doesn't require ID for new records
+        // Generate a UUID for the new employee
+        const newEmployeeId = crypto.randomUUID();
+        
         const { data, error: insertError } = await supabase
           .from('profiles')
           .upsert({
+            id: newEmployeeId, // Add the required ID field
             name: newEmployee.name || '',
             email: newEmployee.email || '',
             department: newEmployee.department || '',
