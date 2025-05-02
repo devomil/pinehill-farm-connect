@@ -117,6 +117,14 @@ export async function createShiftCoverageRequest(
     shift_end: string;
   }
 ) {
+  // CRITICAL FIX: Add additional logging before insert
+  console.log("===== CREATING SHIFT COVERAGE REQUEST =====");
+  console.log("Communication ID:", communicationId);
+  console.log("Original employee:", shiftDetails.original_employee_id);
+  console.log("Covering employee:", shiftDetails.covering_employee_id);
+  console.log("Shift date:", shiftDetails.shift_date);
+  console.log("Shift time:", `${shiftDetails.shift_start} - ${shiftDetails.shift_end}`);
+  
   // Prepare shift coverage request payload
   const shiftPayload = {
     communication_id: communicationId,
@@ -130,17 +138,24 @@ export async function createShiftCoverageRequest(
   
   console.log("Sending shift coverage request payload:", JSON.stringify(shiftPayload, null, 2));
   
+  // CRITICAL FIX: Use explicit, detailed query
   const { data: shiftData, error: shiftError } = await supabase
     .from('shift_coverage_requests')
-    .insert(shiftPayload)
+    .insert([shiftPayload]) // Use array format to ensure consistent behavior
     .select('*');
 
   if (shiftError) {
     console.error("Error creating shift coverage request:", shiftError);
+    console.error("Error details:", shiftError.details, shiftError.hint, shiftError.message);
     throw shiftError;
   }
   
-  console.log("Created shift coverage request:", shiftData);
+  if (!shiftData || shiftData.length === 0) {
+    console.error("No shift data returned after insert");
+    throw new Error("Failed to create shift coverage request - no data returned");
+  }
+  
+  console.log("Successfully created shift coverage request:", shiftData);
   return shiftData;
 }
 

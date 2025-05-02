@@ -16,27 +16,42 @@ export async function sendMessageService(currentUser: User | null, params: SendM
   const { recipientId, message, type, shiftDetails, adminCc } = params;
   console.log(`Attempting to send message to recipient ID: ${recipientId}, type: ${type}`);
   
-  // Enhanced logging for shift coverage requests
-  if (type === 'shift_coverage' && shiftDetails) {
-    console.log("Shift coverage request details:", JSON.stringify(shiftDetails, null, 2));
+  // CRITICAL FIX: Detailed validation and logging for shift coverage requests
+  if (type === 'shift_coverage') {
+    console.log("Processing shift coverage request with details:", JSON.stringify(shiftDetails, null, 2));
+    
+    if (!shiftDetails) {
+      console.error("Missing shift details for shift coverage request");
+      throw new Error("Missing shift details for coverage request");
+    }
     
     // Validate shift details
     if (!validateShiftDetails(shiftDetails)) {
+      console.error("Invalid shift details:", shiftDetails);
       throw new Error("Missing required shift details");
     }
+    
+    console.log("Shift details validation passed");
+    console.log("Original employee ID:", shiftDetails.original_employee_id || currentUser.id);
+    console.log("Covering employee ID:", shiftDetails.covering_employee_id || recipientId);
   }
   
   try {
     // Step 1: Find recipient profile
+    console.log("Looking up recipient profile for ID:", recipientId);
     const recipient = await getRecipientData(recipientId);
+    console.log("Found recipient:", recipient);
 
     // Step 2: Find admin for CC if needed
     let adminData = null;
     if (type === 'shift_coverage') {
+      console.log("Looking for admin to CC for shift coverage request");
       adminData = await findAdminForMessage(currentUser, adminCc);
+      console.log("Admin data for CC:", adminData);
     }
 
     // Step 3: Create communication entry
+    console.log("Creating communication entry");
     const communicationData = await createCommunicationEntry({
       senderId: currentUser.id,
       recipientId,
@@ -44,30 +59,41 @@ export async function sendMessageService(currentUser: User | null, params: SendM
       type,
       adminId: adminData?.id || adminCc || null
     });
+    console.log("Communication created successfully:", communicationData.id);
 
     // Step 4: If it's a shift coverage request, add the shift details
     if (type === 'shift_coverage' && shiftDetails) {
       console.log(`Creating shift coverage request for communication ${communicationData.id}`);
       
       try {
+        // CRITICAL FIX: Create shift coverage request with explicit IDs
+        const fullShiftDetails = {
+          original_employee_id: shiftDetails.original_employee_id || currentUser.id,
+          covering_employee_id: shiftDetails.covering_employee_id || recipientId,
+          shift_date: shiftDetails.shift_date,
+          shift_start: shiftDetails.shift_start,
+          shift_end: shiftDetails.shift_end
+        };
+        
+        console.log("Creating shift coverage with details:", JSON.stringify(fullShiftDetails, null, 2));
+        
         const shiftRequestData = await createShiftCoverageRequest(
           communicationData.id,
-          {
-            original_employee_id: shiftDetails.original_employee_id || currentUser.id,
-            covering_employee_id: shiftDetails.covering_employee_id || recipientId,
-            shift_date: shiftDetails.shift_date,
-            shift_start: shiftDetails.shift_start,
-            shift_end: shiftDetails.shift_end
-          }
+          fullShiftDetails
         );
+        
+        console.log("Shift coverage request created successfully:", shiftRequestData);
         
         // Step 5: Verify the request was created after a short delay
         setTimeout(async () => {
+          console.log("Verifying shift coverage request was created");
           const verificationResult = await verifyShiftCoverageRequest(
             communicationData.id, 
             shiftDetails.shift_date,
             shiftDetails.original_employee_id || currentUser.id
           );
+          
+          console.log("Verification result:", verificationResult);
         }, 1000);
       } catch (shiftError) {
         console.error("Error creating shift coverage request:", shiftError);

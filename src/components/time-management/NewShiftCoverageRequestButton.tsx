@@ -47,6 +47,23 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       setIsLoading(false);
       return;
     }
+
+    // CRITICAL FIX: Improved direct database query to debug
+    try {
+      console.log("DEBUG: Before request - checking existing requests");
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('shift_coverage_requests')
+        .select('*')
+        .limit(5);
+      
+      if (checkError) {
+        console.error("Error checking existing requests:", checkError);
+      } else {
+        console.log(`Found ${existingRequests?.length || 0} existing shift coverage requests`);
+      }
+    } catch (e) {
+      console.error("Error during debug check:", e);
+    }
     
     // CRITICAL FIX: Create properly formatted shift coverage request that matches the schema
     const requestData = {
@@ -65,8 +82,8 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
     
     try {
-      // CRITICAL FIX: Ensure we wait for this to complete using Promise
-      const result = await new Promise<void>((resolve, reject) => {
+      // CRITICAL FIX: Use explicit Promise to wait for completion
+      await new Promise<void>((resolve, reject) => {
         try {
           sendMessage({
             ...requestData,
@@ -80,11 +97,11 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
             }
           });
           
-          // Set a timeout as a fallback since sendMessage uses mutation.mutate which doesn't return a promise
+          // Set a timeout as a fallback
           setTimeout(() => {
             console.log("sendMessage timeout fallback triggered");
             resolve();
-          }, 3000);
+          }, 5000); // Increased timeout for reliability
         } catch (error) {
           console.error("Error in sendMessage:", error);
           reject(error);
@@ -93,9 +110,11 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       
       console.log("Shift coverage request sent successfully");
       
-      // CRITICAL FIX: Verify the request was saved after a short delay
+      // CRITICAL FIX: Improved verification with detailed error handling
       setTimeout(async () => {
         try {
+          console.log("Verifying shift request was saved...");
+          
           // Check for any recently created shift coverage requests by this user
           const { data: verifyRequest, error: verifyError } = await supabase
             .from('shift_coverage_requests')
@@ -106,6 +125,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
             
           if (verifyError) {
             console.error("Error verifying shift request was saved:", verifyError);
+            console.error("Error details:", verifyError.details, verifyError.hint);
           } else if (verifyRequest && verifyRequest.length > 0) {
             // Find requests that match our date
             const matchingRequests = verifyRequest.filter(req => 
@@ -120,11 +140,24 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
             }
           } else {
             console.warn("⚠️ Could not verify shift request was saved - no requests found");
+            
+            // CRITICAL FIX: Try a raw query to check permissions
+            const { data: tableInfo, error: tableError } = await supabase
+              .from('shift_coverage_requests')
+              .select('count(*)')
+              .limit(1);
+                
+            if (tableError) {
+              console.error("Error accessing shift_coverage_requests table:", tableError);
+              console.error("This may be a permissions issue");
+            } else {
+              console.log("Table is accessible but no matching records found");
+            }
           }
         } catch (error) {
           console.error("Error during verification:", error);
         }
-      }, 2000);
+      }, 3000); // Increased delay for reliability
       
       setIsLoading(false);
       setIsOpen(false);

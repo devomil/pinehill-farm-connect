@@ -1,3 +1,4 @@
+
 import { User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -48,7 +49,8 @@ export async function sendMessageNotification(
 export const validateShiftDetails = (shiftDetails: any): boolean => {
   if (!shiftDetails) return false;
   
-  return !!(
+  // CRITICAL FIX: More comprehensive validation
+  const isValid = !!(
     shiftDetails.shift_date && 
     shiftDetails.shift_start && 
     shiftDetails.shift_end && 
@@ -56,4 +58,16 @@ export const validateShiftDetails = (shiftDetails: any): boolean => {
     (shiftDetails.original_employee_id || true) &&
     (shiftDetails.covering_employee_id || true)
   );
+  
+  if (!isValid) {
+    console.error("Shift details validation failed:", {
+      has_date: !!shiftDetails.shift_date,
+      has_start: !!shiftDetails.shift_start,
+      has_end: !!shiftDetails.shift_end,
+      has_original_employee: !!shiftDetails.original_employee_id,
+      has_covering_employee: !!shiftDetails.covering_employee_id
+    });
+  }
+  
+  return isValid;
 };
