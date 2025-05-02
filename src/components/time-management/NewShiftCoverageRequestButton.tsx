@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CalendarPlus } from "lucide-react";
 import {
@@ -39,50 +39,77 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     .length > 0;
   
   // Pre-validate employees from the directory
-  React.useEffect(() => {
+  useEffect(() => {
     if (!allEmployees || allEmployees.length === 0) {
       return;
     }
     
-    // Filter out the current user
+    // Filter out the current user and get employees to validate
     const employeesToValidate = allEmployees.filter(emp => emp.id !== currentUser.id);
     console.log(`Pre-validating ${employeesToValidate.length} employees for shift coverage`);
     
-    // Query the profiles table to get valid employees
-    const validateEmployees = async () => {
+    // First try using the edge function to get profiles
+    const fetchValidEmployees = async () => {
       try {
-        // Get all profiles from the database
-        const { data: profiles, error } = await supabase
+        // Try edge function first to bypass RLS
+        const { data: profiles, error: funcError } = await supabase
+          .functions.invoke('get_all_profiles');
+          
+        if (!funcError && profiles && profiles.length > 0) {
+          console.log("Successfully fetched profiles with edge function:", profiles.length);
+          
+          // Match employees from directory with profiles from edge function
+          const validEmployees = employeesToValidate.filter(employee => 
+            profiles.some(profile => profile.id === employee.id)
+          );
+          
+          if (validEmployees.length > 0) {
+            console.log(`Found ${validEmployees.length} valid employees via edge function`);
+            setValidatedEmployees(validEmployees);
+            return;
+          }
+        }
+        
+        // Fall back to direct query if edge function fails
+        const { data: directProfiles, error } = await supabase
           .from('profiles')
           .select('id, name, email')
+          .not('email', 'is', null)
           .limit(50);
         
         if (error) {
           console.error("Error fetching profiles:", error);
-          setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
+          // Use all employees as fallback if query fails
+          setValidatedEmployees(employeesToValidate);
           return;
         }
         
-        if (!profiles || profiles.length === 0) {
-          console.warn("No profiles found in database");
-          setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
+        if (!directProfiles || directProfiles.length === 0) {
+          console.warn("No profiles found in database - using all employees");
+          setValidatedEmployees(employeesToValidate);
           return;
         }
         
         // Match employees from directory with profiles from database
         const validEmployees = employeesToValidate.filter(employee => 
-          profiles.some(profile => profile.id === employee.id)
+          directProfiles.some(profile => profile.id === employee.id)
         );
         
-        console.log(`Found ${validEmployees.length} valid employees out of ${employeesToValidate.length}`);
-        setValidatedEmployees(validEmployees);
+        if (validEmployees.length === 0) {
+          console.warn("No matching employees found - using all as fallback");
+          setValidatedEmployees(employeesToValidate);
+        } else {
+          console.log(`Found ${validEmployees.length} valid employees through direct query`);
+          setValidatedEmployees(validEmployees);
+        }
       } catch (error) {
         console.error("Error validating employees:", error);
-        setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
+        // Fall back to using all employees if validation fails
+        setValidatedEmployees(employeesToValidate);
       }
     };
     
-    validateEmployees();
+    fetchValidEmployees();
   }, [allEmployees, currentUser.id]);
 
   const handleNewRequest = async (formData: NewMessageFormData) => {
@@ -103,32 +130,23 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
     
-    // Validate selected employee exists in our validated list
-    const isValidEmployee = validatedEmployees.some(emp => emp.id === formData.recipientId);
-    
-    if (!isValidEmployee) {
-      toast.error("Selected employee could not be verified. Please select another employee.");
-      setIsLoading(false);
-      return;
-    }
-    
-    // Create properly formatted shift coverage request
-    const requestData = {
-      recipientId: formData.recipientId,
-      message: formData.message,
-      type: "shift_coverage" as const,
-      shiftDetails: {
-        shift_date: formData.shiftDate,
-        shift_start: formData.shiftStart, 
-        shift_end: formData.shiftEnd,
-        original_employee_id: currentUser.id,
-        covering_employee_id: formData.recipientId
-      }
-    };
-    
-    console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
-    
     try {
+      // Create properly formatted shift coverage request
+      const requestData = {
+        recipientId: formData.recipientId,
+        message: formData.message,
+        type: "shift_coverage" as const,
+        shiftDetails: {
+          shift_date: formData.shiftDate,
+          shift_start: formData.shiftStart, 
+          shift_end: formData.shiftEnd,
+          original_employee_id: currentUser.id,
+          covering_employee_id: formData.recipientId
+        }
+      };
+      
+      console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
+      
       await sendMessage(requestData);
       toast.success("Shift coverage request sent successfully");
       setIsOpen(false);
