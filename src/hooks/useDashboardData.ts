@@ -80,13 +80,14 @@ export function useDashboardData() {
       console.log(`Fetching shift coverage data for ${currentUser?.name} (${currentUser?.id}), role: ${currentUser?.role}`);
       
       try {
-        // For admin users, fetch all shift coverage messages
-        // For regular users, fetch only messages where they're the sender or recipient
+        // First, fetch all shift coverage communications
         const messageQuery = supabase
           .from('employee_communications')
           .select('*')
           .eq('type', 'shift_coverage');
           
+        // For admin users, fetch all shift coverage messages
+        // For regular users, fetch only messages where they're the sender or recipient
         if (!isAdmin) {
           messageQuery.or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`);
         }
@@ -100,35 +101,47 @@ export function useDashboardData() {
         
         console.log(`Found ${messages?.length || 0} shift coverage messages`);
         
-        // Now fetch the related shift coverage requests
+        // If we have messages, fetch all related shift coverage requests in one batch
         if (messages && messages.length > 0) {
-          const messagesWithRequests = await Promise.all(
-            messages.map(async (msg) => {
-              try {
-                const { data: shiftRequests, error: shiftError } = await supabase
-                  .from('shift_coverage_requests')
-                  .select('*')
-                  .eq('communication_id', msg.id);
-                  
-                if (shiftError) {
-                  console.error(`Error fetching shift requests for message ${msg.id}:`, shiftError);
-                  return { ...msg, shift_coverage_requests: [] };
-                }
-                
-                if (shiftRequests && shiftRequests.length > 0) {
-                  console.log(`Message ${msg.id} has ${shiftRequests.length} shift requests`);
-                  console.log(`Status: ${shiftRequests[0].status}, From: ${shiftRequests[0].original_employee_id}, To: ${shiftRequests[0].covering_employee_id}`);
-                } else {
-                  console.log(`Message ${msg.id} has no shift requests despite being a shift_coverage type`);
-                }
-                
-                return { ...msg, shift_coverage_requests: shiftRequests || [] };
-              } catch (err) {
-                console.error(`Error processing message ${msg.id}:`, err);
-                return { ...msg, shift_coverage_requests: [] };
+          const messageIds = messages.map(msg => msg.id);
+          
+          const { data: allShiftRequests, error: shiftRequestsError } = await supabase
+            .from('shift_coverage_requests')
+            .select('*')
+            .in('communication_id', messageIds);
+          
+          if (shiftRequestsError) {
+            console.error("Error fetching shift requests:", shiftRequestsError);
+            throw shiftRequestsError;
+          }
+          
+          console.log(`Found ${allShiftRequests?.length || 0} shift coverage requests`);
+          
+          // Create a map of communication_id to shift requests for efficient lookup
+          const requestsByCommId = {};
+          if (allShiftRequests) {
+            allShiftRequests.forEach(req => {
+              if (!requestsByCommId[req.communication_id]) {
+                requestsByCommId[req.communication_id] = [];
               }
-            })
-          );
+              requestsByCommId[req.communication_id].push(req);
+            });
+          }
+          
+          // Attach shift coverage requests to each message
+          const messagesWithRequests = messages.map(msg => {
+            const shiftRequests = requestsByCommId[msg.id] || [];
+            
+            if (shiftRequests.length > 0) {
+              console.log(`Message ${msg.id} has ${shiftRequests.length} shift requests`);
+              const sampleRequest = shiftRequests[0];
+              console.log(`Status: ${sampleRequest.status}, From: ${sampleRequest.original_employee_id}, To: ${sampleRequest.covering_employee_id}`);
+            } else {
+              console.log(`Message ${msg.id} has no shift requests despite being a shift_coverage type`);
+            }
+            
+            return { ...msg, shift_coverage_requests: shiftRequests };
+          });
           
           // Filter to only include messages with actual shift coverage requests
           const validMessages = messagesWithRequests.filter(msg => 

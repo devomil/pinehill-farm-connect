@@ -21,7 +21,10 @@ export function useSendMessage(currentUser: User | null) {
         throw new Error("You must be logged in to send messages");
       }
 
-      console.log(`Attempting to send message to recipient ID: ${recipientId}`);
+      console.log(`Attempting to send message to recipient ID: ${recipientId}, type: ${type}`);
+      if (type === 'shift_coverage' && shiftDetails) {
+        console.log("Shift coverage request details:", shiftDetails);
+      }
       
       // First check if the recipient exists in the employee directory
       try {
@@ -82,6 +85,8 @@ export function useSendMessage(currentUser: User | null) {
           }
         }
   
+        // Step 1: Create the communication entry
+        console.log("Creating communication entry with type:", type);
         const { data: communicationData, error: communicationError } = await supabase
           .from('employee_communications')
           .insert({
@@ -95,11 +100,26 @@ export function useSendMessage(currentUser: User | null) {
           .select()
           .single();
   
-        if (communicationError) throw communicationError;
+        if (communicationError) {
+          console.error("Error creating communication:", communicationError);
+          throw communicationError;
+        }
+        
+        console.log("Created communication:", communicationData);
   
-        // If it's a shift coverage request, add the shift details
+        // Step 2: If it's a shift coverage request, add the shift details
         if (type === 'shift_coverage' && shiftDetails) {
-          const { error: shiftError } = await supabase
+          console.log(`Creating shift coverage request for communication ${communicationData.id}`);
+          console.log("Shift details:", {
+            communication_id: communicationData.id,
+            original_employee_id: shiftDetails.original_employee_id,
+            covering_employee_id: shiftDetails.covering_employee_id,
+            shift_date: shiftDetails.shift_date,
+            shift_start: shiftDetails.shift_start,
+            shift_end: shiftDetails.shift_end
+          });
+          
+          const { data: shiftData, error: shiftError } = await supabase
             .from('shift_coverage_requests')
             .insert({
               communication_id: communicationData.id,
@@ -109,9 +129,18 @@ export function useSendMessage(currentUser: User | null) {
               shift_start: shiftDetails.shift_start,
               shift_end: shiftDetails.shift_end,
               status: 'pending'
-            });
+            })
+            .select();
   
-          if (shiftError) throw shiftError;
+          if (shiftError) {
+            console.error("Error creating shift coverage request:", shiftError);
+            // Even if shift request creation fails, we'll still return the communication
+            // as it was created successfully
+            toast.error("Created message but failed to create shift coverage request");
+            throw shiftError;
+          }
+          
+          console.log("Created shift coverage request:", shiftData);
         }
   
         // Send notification to recipient using notifyManager
@@ -161,6 +190,7 @@ export function useSendMessage(currentUser: User | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });
+      queryClient.invalidateQueries({ queryKey: ['shiftCoverage'] });
       toast.success('Message sent successfully');
     },
     onError: (error) => {

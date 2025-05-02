@@ -1,7 +1,7 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Users, AlertCircle, RefreshCw } from "lucide-react";
+import { Users, AlertCircle, RefreshCw, UserCheck, UserX, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 interface ShiftCoverageCardProps {
   messages: Communication[];
@@ -28,6 +29,35 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
 }) => {
   const { employees } = useEmployeeDirectory();
 
+  useEffect(() => {
+    console.log(`ShiftCoverageCard: Received ${messages?.length || 0} messages for user ${currentUser?.id}`);
+    
+    // Debug information to help understand the data
+    if (messages && messages.length > 0) {
+      const shiftMessages = messages.filter(m => 
+        m.type === 'shift_coverage' && 
+        m.shift_coverage_requests?.length > 0
+      );
+      
+      console.log(`ShiftCoverageCard: Found ${shiftMessages.length} shift coverage messages with requests`);
+      
+      if (shiftMessages.length > 0) {
+        console.log("First shift message details:", {
+          id: shiftMessages[0].id,
+          sender: shiftMessages[0].sender_id,
+          recipient: shiftMessages[0].recipient_id,
+          request: shiftMessages[0].shift_coverage_requests?.[0] ? {
+            id: shiftMessages[0].shift_coverage_requests[0].id,
+            date: shiftMessages[0].shift_coverage_requests[0].shift_date,
+            status: shiftMessages[0].shift_coverage_requests[0].status
+          } : 'No request data'
+        });
+      }
+    } else {
+      console.log("ShiftCoverageCard: No messages to display");
+    }
+  }, [messages, currentUser]);
+
   // Filter to only show pending requests that are relevant to current user
   const filteredMessages = messages
     .filter(msg => {
@@ -36,7 +66,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
         return false;
       }
       
-      // Pending requests only
+      // Pending requests only for the card
       const isPending = msg.shift_coverage_requests[0].status === 'pending';
       
       // Admin sees all pending shift coverage requests
@@ -45,8 +75,11 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       }
       
       // Regular users only see their own requests
-      const isUserInvolved = msg.sender_id === currentUser.id || 
-                             msg.recipient_id === currentUser.id;
+      const originalEmployeeId = msg.shift_coverage_requests[0].original_employee_id;
+      const coveringEmployeeId = msg.shift_coverage_requests[0].covering_employee_id;
+      const isUserInvolved = 
+        originalEmployeeId === currentUser.id || 
+        coveringEmployeeId === currentUser.id;
       
       return isPending && isUserInvolved;
     })
@@ -60,13 +93,20 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
 
   const hasRequests = filteredMessages.length > 0;
 
+  const handleRefresh = () => {
+    if (onRefresh) {
+      toast.info("Refreshing shift coverage requests...");
+      onRefresh();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Shift Coverage Requests</CardTitle>
           {onRefresh && (
-            <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh requests">
+            <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh requests">
               <RefreshCw className="h-4 w-4 text-muted-foreground" />
             </Button>
           )}
@@ -81,7 +121,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
             <AlertDescription className="flex justify-between w-full items-center">
               <span>Failed to load shift coverage requests</span>
               {onRefresh && (
-                <Button size="sm" variant="ghost" onClick={onRefresh}>
+                <Button size="sm" variant="ghost" onClick={handleRefresh}>
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Retry
                 </Button>
@@ -95,22 +135,27 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
           </div>
         ) : !hasRequests ? (
           <div className="text-center py-4 text-muted-foreground">
-            No pending shift coverage requests
+            <p>No pending shift coverage requests</p>
+            <Button variant="ghost" size="sm" onClick={handleRefresh} className="mt-2">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Refresh
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">
             {filteredMessages.map((message) => {
               const shiftRequest = message.shift_coverage_requests![0];
-              const isIncoming = message.recipient_id === currentUser.id;
-              const otherPersonId = isIncoming ? message.sender_id : message.recipient_id;
+              const isRequester = shiftRequest.original_employee_id === currentUser.id;
+              const requesterId = shiftRequest.original_employee_id;
+              const covererId = shiftRequest.covering_employee_id;
               
               return (
                 <div key={message.id} className="flex justify-between items-center py-2 border-b last:border-0">
                   <div>
                     <p className="text-sm font-medium">
-                      {isIncoming ? 
-                        `${getEmployeeName(message.sender_id)} requested coverage` : 
-                        `You requested ${getEmployeeName(message.recipient_id)} to cover`}
+                      {isRequester ? 
+                        `You requested ${getEmployeeName(covererId)} to cover` : 
+                        `${getEmployeeName(requesterId)} requested coverage`}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {shiftRequest.shift_date} ({shiftRequest.shift_start} - {shiftRequest.shift_end})
@@ -119,8 +164,9 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
                       Sent on {format(new Date(message.created_at), "MMM d")}
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 mr-2">
+                  <div className="flex flex-col items-end">
+                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 mb-2">
+                      <Clock className="h-3 w-3 mr-1" />
                       Pending
                     </Badge>
                     <Link to="/time?tab=shift-coverage">
@@ -145,4 +191,4 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+}

@@ -45,51 +45,65 @@ export function useGetCommunications(currentUser: User | null) {
           recipient: c.recipient_id,
           status: c.status
         })));
+        
+        // Find all communication ids of type "shift_coverage"
+        const shiftCoverageIds = allCommunications
+          .filter(comm => comm.type === 'shift_coverage')
+          .map(comm => comm.id);
+          
+        console.log(`Found ${shiftCoverageIds.length} shift coverage communications`);
 
-        // Now for each communication, fetch related shift coverage requests
-        const communicationsWithRequests = await Promise.all(
-          allCommunications.map(async (comm) => {
-            // Only fetch shift coverage requests for shift_coverage type messages
-            if (comm.type === 'shift_coverage') {
-              console.log(`Fetching shift requests for communication: ${comm.id}`);
-              const { data: shiftRequests, error: shiftError } = await supabase
+        // If we have shift coverage communications, fetch all related requests at once
+        let allShiftRequests = [];
+        if (shiftCoverageIds.length > 0) {
+          const { data: shiftRequests, error: shiftError } = await supabase
+            .from('shift_coverage_requests')
+            .select('*')
+            .in('communication_id', shiftCoverageIds);
+            
+          if (shiftError) {
+            console.error("Error fetching shift requests:", shiftError);
+          } else {
+            allShiftRequests = shiftRequests || [];
+            console.log(`Retrieved ${allShiftRequests.length} shift coverage requests`);
+            
+            if (allShiftRequests.length > 0) {
+              console.log("Sample shift request:", allShiftRequests[0]);
+            } else if (shiftCoverageIds.length > 0) {
+              // This is unexpected - we have shift coverage messages but no requests
+              console.warn("No shift requests found despite having shift coverage messages");
+              
+              // Let's check for any shift requests in the database
+              const { data: anyShiftRequests } = await supabase
                 .from('shift_coverage_requests')
                 .select('*')
-                .eq('communication_id', comm.id);
+                .limit(5);
                 
-              if (shiftError) {
-                console.error(`Error fetching shift requests for comm ${comm.id}:`, shiftError);
-                return { ...comm, shift_coverage_requests: [] };
-              }
-              
-              if (shiftRequests && shiftRequests.length > 0) {
-                console.log(`Found ${shiftRequests.length} shift coverage requests for comm ${comm.id}`);
-                console.log(`Shift request details:`, shiftRequests[0]);
-                return { ...comm, shift_coverage_requests: shiftRequests };
-              } else {
-                console.log(`No shift requests found for communication ${comm.id} despite type being shift_coverage`);
-                
-                // Let's check if there are any shift requests in the database that might match this communication
-                const { data: allShiftRequests, error: allShiftError } = await supabase
-                  .from('shift_coverage_requests')
-                  .select('*')
-                  .limit(10);
-                  
-                if (allShiftError) {
-                  console.error("Error checking all shift requests:", allShiftError);
-                } else {
-                  console.log(`Found ${allShiftRequests?.length || 0} total shift requests in database`);
-                  if (allShiftRequests && allShiftRequests.length > 0) {
-                    console.log("Sample shift request from database:", allShiftRequests[0]);
-                  }
-                }
+              console.log(`Total shift requests in database: ${anyShiftRequests?.length || 0}`);
+              if (anyShiftRequests && anyShiftRequests.length > 0) {
+                console.log("Sample shift request from database:", anyShiftRequests[0]);
               }
             }
+          }
+        }
+
+        // Now for each communication, attach the related shift coverage requests
+        const communicationsWithRequests = allCommunications.map(comm => {
+          if (comm.type === 'shift_coverage') {
+            const requests = allShiftRequests.filter(req => req.communication_id === comm.id);
             
-            // For non-shift coverage messages or if no requests found
-            return { ...comm, shift_coverage_requests: [] };
-          })
-        );
+            if (requests.length > 0) {
+              console.log(`Communication ${comm.id} has ${requests.length} shift requests`);
+            } else {
+              console.log(`Communication ${comm.id} has no shift requests despite type being shift_coverage`);
+            }
+            
+            return { ...comm, shift_coverage_requests: requests };
+          }
+          
+          // For non-shift coverage messages
+          return { ...comm, shift_coverage_requests: [] };
+        });
         
         // Count shift coverage messages with actual requests
         const shiftCoverageMessages = communicationsWithRequests.filter(
