@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffRequests";
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
@@ -40,7 +40,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
   
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  // Enhanced debugging
+  // Enhanced debugging with less frequent logging to prevent re-renders
   useEffect(() => {
     console.log("TimeManagementTabs - Current tab:", activeTab);
     console.log("TimeManagementTabs - User requests:", userRequests?.length || 0);
@@ -52,21 +52,26 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     // Log shift coverage messages specifically
     const shiftMessages = processedMessages?.filter(msg => msg.type === 'shift_coverage') || [];
     console.log("TimeManagementTabs - Shift coverage messages:", shiftMessages.length);
-  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser]);
+  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError]);
 
-  const handleTabChange = (value: string) => {
+  // Memoize tab change handler to prevent recreation on every render
+  const handleTabChange = useCallback((value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
-    setActiveTab(value);
     
-    // Force full refresh when switching to shift coverage to ensure we have the latest data
-    if (value === "shift-coverage" && value !== activeTab) {
-      console.log("Refreshing all data due to tab change to shift-coverage");
-      forceRefreshData();
-    } else if (value === "my-requests" && value !== activeTab) {
-      console.log("Refreshing time-off requests due to tab change to my-requests");
-      fetchRequests();
+    // Only update if actually changing tabs
+    if (value !== activeTab) {
+      setActiveTab(value);
+      
+      // Force full refresh when switching to shift coverage to ensure we have the latest data
+      if (value === "shift-coverage") {
+        console.log("Refreshing all data due to tab change to shift-coverage");
+        forceRefreshData();
+      } else if (value === "my-requests") {
+        console.log("Refreshing time-off requests due to tab change to my-requests");
+        fetchRequests();
+      }
     }
-  };
+  }, [activeTab, setActiveTab, forceRefreshData, fetchRequests]);
 
   // Format error messages safely for display
   const formatErrorMessage = (err: any): React.ReactNode => {

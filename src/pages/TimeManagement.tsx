@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorAlert } from "@/components/time-management/ErrorAlert";
@@ -14,6 +14,7 @@ const TimeManagementContent = () => {
   const { error, messagesError, handleRetry, forceRefreshData } = useTimeManagement();
   const initialLoadDone = useRef(false);
   const refreshTimeoutRef = useRef<number | null>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   useEffect(() => {
     console.log("TimeManagementContent rendered with user:", currentUser?.id);
@@ -24,7 +25,7 @@ const TimeManagementContent = () => {
 
     // Force an initial load but wait a moment to let things settle
     // Use a shorter timeout to minimize waiting, but allow components to initialize
-    if (!initialLoadDone.current) {
+    if (!initialLoadDone.current && currentUser) {
       // Clear any existing timeout to prevent multiple refreshes
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -36,6 +37,7 @@ const TimeManagementContent = () => {
         forceRefreshData();
         initialLoadDone.current = true;
         refreshTimeoutRef.current = null;
+        setIsDataLoaded(true);
       }, 1000);
     }
     
@@ -74,10 +76,13 @@ const TimeManagementContent = () => {
         onRequestSubmitted={forceRefreshData}
       />
       
-      <TimeManagementTabs 
-        currentUser={currentUser}
-        isAdmin={isAdmin}
-      />
+      {/* Only render tabs once initial load attempt is done to prevent constant refreshes */}
+      {initialLoadDone.current && (
+        <TimeManagementTabs 
+          currentUser={currentUser}
+          isAdmin={isAdmin}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar, RefreshCw } from "lucide-react";
@@ -18,29 +18,53 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
 }) => {
   const [employeeNames, setEmployeeNames] = useState<Record<string, string>>({});
   const [loadingNames, setLoadingNames] = useState(true);
+  const isMounted = useRef(true);
+  const lastFetchTime = useRef<number>(0);
 
-  // Fetch employee names for all pending requests
+  // Fetch employee names for all pending requests - with throttling
   useEffect(() => {
-    const fetchEmployeeNames = async () => {
-      if (!pendingRequests.length) {
+    // Set up cleanup reference
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const fetchEmployeeNames = useCallback(async () => {
+    // Skip if no pending requests
+    if (!pendingRequests.length) {
+      setLoadingNames(false);
+      return;
+    }
+    
+    // Throttle fetches to prevent too many requests
+    const now = Date.now();
+    if (now - lastFetchTime.current < 3000) {
+      return; // Skip if less than 3 seconds since last fetch
+    }
+    
+    lastFetchTime.current = now;
+    setLoadingNames(true);
+    
+    try {
+      // Get unique user IDs from pending requests
+      const userIds = [...new Set(pendingRequests.map(req => req.user_id))];
+      
+      // Skip if no unique user IDs
+      if (userIds.length === 0) {
         setLoadingNames(false);
         return;
       }
       
-      setLoadingNames(true);
+      // Fetch profiles for these user IDs
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds);
+        
+      if (error) throw error;
       
-      try {
-        // Get unique user IDs from pending requests
-        const userIds = [...new Set(pendingRequests.map(req => req.user_id))];
-        
-        // Fetch profiles for these user IDs
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .in('id', userIds);
-          
-        if (error) throw error;
-        
+      // Only update state if component is still mounted
+      if (isMounted.current) {
         // Create a mapping of user IDs to names
         const namesMap: Record<string, string> = {};
         data?.forEach(profile => {
@@ -49,18 +73,23 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
         });
         
         setEmployeeNames(namesMap);
-      } catch (error) {
-        console.error("Error fetching employee names:", error);
-        toast.error("Failed to load employee information");
-      } finally {
         setLoadingNames(false);
       }
-    };
-    
-    fetchEmployeeNames();
+    } catch (error) {
+      console.error("Error fetching employee names:", error);
+      if (isMounted.current) {
+        toast.error("Failed to load employee information");
+        setLoadingNames(false);
+      }
+    }
   }, [pendingRequests]);
 
-  const handleAction = async (requestId: string, status: "approved" | "rejected") => {
+  // Trigger fetch when pending requests change
+  useEffect(() => {
+    fetchEmployeeNames();
+  }, [fetchEmployeeNames]);
+
+  const handleAction = useCallback(async (requestId: string, status: "approved" | "rejected") => {
     try {
       const { error } = await supabase
         .from("time_off_requests")
@@ -80,7 +109,7 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
       console.error(`Error ${status === "approved" ? "approving" : "rejecting"} request:`, error);
       toast.error(`Failed to ${status === "approved" ? "approve" : "reject"} request: ${error.message}`);
     }
-  };
+  }, [refresh]);
 
   if (pendingRequests.length === 0) {
     return (
