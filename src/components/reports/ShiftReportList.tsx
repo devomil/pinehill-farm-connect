@@ -75,7 +75,13 @@ export function ShiftReportList() {
       {employeeError && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{employeeError}</AlertDescription>
+          <AlertDescription>
+            {typeof employeeError === 'string' 
+              ? employeeError 
+              : employeeError instanceof Error 
+                ? employeeError.message 
+                : 'Error loading employees'}
+          </AlertDescription>
         </Alert>
       )}
       

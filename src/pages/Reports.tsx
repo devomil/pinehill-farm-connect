@@ -23,7 +23,7 @@ export default function Reports() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Error loading employees: {error}
+              Error loading employees: {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
             </AlertDescription>
           </Alert>
         )}

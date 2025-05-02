@@ -1,147 +1,157 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { User as UserType } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEmployeeModal } from "@/hooks/useEmployeeModal";
-import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
+import { UserTable } from "@/components/employees/UserTable";
+import { EmployeeForm } from "@/components/employees/EmployeeForm";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { EmployeeContent } from "@/components/employee/EmployeeContent";
-import { EmployeeModals } from "@/components/employee/EmployeeModals";
-import { EmployeeAssignments } from "@/components/employee/EmployeeAssignments";
-import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
+import { formatErrorMessage } from "@/utils/errorUtils";
 
 export default function Employees() {
-  const { currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'admin';
-
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const {
-    selectedEmployee,
-    isDetailModalOpen,
-    openModal,
-    closeModal
-  } = useEmployeeModal();
-
-  const {
-    searchQuery,
-    setSearchQuery,
     employees,
     loading,
     error,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
     refetch,
   } = useEmployeeDirectory();
+  const { toast } = useToast();
 
-  const [resetEmployee, setResetEmployee] = useState<UserType | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<UserType | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(`Error loading employees: ${error}`);
+  const handleAddEmployee = async (newEmployee: any) => {
+    try {
+      await addEmployee(newEmployee);
+      toast({
+        title: "Employee added successfully!",
+        description: `${newEmployee.name} has been added to the employee directory.`,
+      });
+      setIsFormOpen(false);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error adding employee",
+        description: formatErrorMessage(err),
+      });
     }
-  }, [error]);
+  };
 
-  const handleAddEmployee = useCallback(() => {
-    setIsAddModalOpen(true);
-  }, []);
-
-  const handleEmployeeCreated = useCallback(() => {
-    setIsAddModalOpen(false);
-    console.log("Employee created - refreshing list...");
-    
-    setIsUpdating(true);
-    // Run the refetch with a slight delay to ensure database updates are complete
-    setTimeout(() => {
-      refetch().finally(() => {
-        setIsUpdating(false);
+  const handleUpdateEmployee = async (id: string, updatedEmployee: any) => {
+    try {
+      await updateEmployee(id, updatedEmployee);
+      toast({
+        title: "Employee updated successfully!",
+        description: `${updatedEmployee.name} has been updated.`,
       });
-    }, 300);
-  }, [refetch]);
-
-  const handleEditEmployee = useCallback((employee: UserType) => {
-    console.log("Editing employee:", employee);
-    setEditingEmployee(employee);
-    setIsEditModalOpen(true);
-  }, []);
-  
-  const handleViewEmployee = useCallback((employee: UserType) => {
-    openModal(employee);
-  }, [openModal]);
-  
-  const handleDeleteEmployee = useCallback((id: string) => {
-    toast.info(`Delete employee with ID ${id} - Coming soon!`);
-  }, []);
-  
-  const handleEmployeeUpdate = useCallback(() => {
-    console.log("Employee updated - refreshing list");
-    setIsUpdating(true);
-    
-    // Use a timeout to avoid UI freezing during state updates
-    setTimeout(() => {
-      refetch().finally(() => {
-        // Delay closing the modal to ensure state is properly updated
-        setTimeout(() => {
-          setIsEditModalOpen(false);
-          setEditingEmployee(null);
-          setIsUpdating(false);
-          toast.success("Employee data updated successfully");
-        }, 200);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error updating employee",
+        description: formatErrorMessage(err),
       });
-    }, 300);
-  }, [refetch]);
-  
-  const handleResetPassword = useCallback((employee: UserType) => {
-    setResetEmployee(employee);
-  }, []);
+    }
+  };
 
-  const closeEditModal = useCallback(() => {
-    // Small delay before clearing the employee data to prevent UI jank
-    setTimeout(() => {
-      setIsEditModalOpen(false);
-      setTimeout(() => {
-        setEditingEmployee(null);
-      }, 100);
-    }, 50);
-  }, []);
+  const handleDeleteEmployee = async (id: string) => {
+    try {
+      await deleteEmployee(id);
+      toast({
+        title: "Employee deleted successfully!",
+        description: "Employee has been removed from the directory.",
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error deleting employee",
+        description: formatErrorMessage(err),
+      });
+    }
+  };
+
+  const handleRetry = useCallback(() => {
+    refetch();
+    toast({
+      title: "Attempting to reload employee data...",
+      description: "Retrying data fetch.",
+    });
+  }, [refetch, toast]);
+
+  const filteredEmployees = React.useMemo(() => {
+    if (!employees) return [];
+    return employees.filter((employee) => {
+      const searchStr = `${employee.name} ${employee.email} ${employee.employeeId}`.toLowerCase();
+      return searchStr.includes(searchQuery.toLowerCase());
+    });
+  }, [employees, searchQuery]);
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 p-8">
-        <EmployeeHeader 
-          onAddEmployee={handleAddEmployee} 
-          isAdmin={isAdmin}
-        />
-        
-        <EmployeeContent 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery}
-          employees={employees}
-          loading={loading || isUpdating}
-          onEdit={handleEditEmployee}
-          onDelete={handleDeleteEmployee}
-          onResetPassword={handleResetPassword}
-          onView={handleViewEmployee}
-          isAdmin={isAdmin}
-          error={error}
-        />
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Employee Directory</h1>
+            <p className="text-muted-foreground">
+              Manage and view all employees
+            </p>
+          </div>
+          <div className="space-x-2 flex items-center">
+            <Label htmlFor="search">Search:</Label>
+            <Input
+              id="search"
+              type="search"
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Add Employee</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add Employee</DialogTitle>
+                  <DialogDescription>
+                    Create a new employee account.
+                  </DialogDescription>
+                </DialogHeader>
+                <EmployeeForm onSubmit={handleAddEmployee} />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
-        {isAdmin && <EmployeeAssignments />}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <UserTable
+          employees={filteredEmployees}
+          loading={loading}
+          error={error}
+          onUpdate={handleUpdateEmployee}
+          onDelete={handleDeleteEmployee}
+          onRetry={handleRetry}
+        />
       </div>
-      <EmployeeModals 
-        selectedEmployee={editingEmployee || selectedEmployee}
-        isDetailModalOpen={isDetailModalOpen}
-        closeDetailModal={closeModal}
-        handleEmployeeUpdate={handleEmployeeUpdate}
-        resetEmployee={resetEmployee}
-        setResetEmployee={setResetEmployee}
-        isAddModalOpen={isAddModalOpen}
-        setIsAddModalOpen={setIsAddModalOpen}
-        handleEmployeeCreated={handleEmployeeCreated}
-        isEditModalOpen={isEditModalOpen}
-        closeEditModal={closeEditModal}
-      />
     </DashboardLayout>
   );
 }

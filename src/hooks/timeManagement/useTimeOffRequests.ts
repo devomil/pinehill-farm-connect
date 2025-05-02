@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeOffRequest } from '@/types/timeManagement';
@@ -71,14 +70,15 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
         setTimeOffRequests(
           data.map((r: any) => ({
             ...r,
+            // Keep the original snake_case properties
+            // Add camelCase aliases for compatibility
             startDate: new Date(r.start_date),
             endDate: new Date(r.end_date),
-            status: r.status,
-            id: r.id,
-            reason: r.reason || '', // Ensure reason is never undefined
             userId: r.user_id,
-            notes: r.notes,
-            profiles: r.profiles // Keep the profiles data for admins
+            // Ensure reason is never undefined
+            reason: r.reason || '',
+            // Keep profiles data for admins
+            profiles: r.profiles
           }))
         );
         
@@ -149,7 +149,7 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
   );
   
   const userRequests = timeOffRequests.filter(
-    (request) => request.userId === currentUser?.id
+    (request) => request.user_id === currentUser?.id
   );
   
   // Log derived states for debugging

@@ -27,13 +27,10 @@ export function useTeamCalendarData(currentUser: User) {
         setRequests(
           requestData.map((r: any) => ({
             ...r,
+            // Add the camelCase versions for compatibility
             startDate: new Date(r.start_date),
             endDate: new Date(r.end_date),
-            status: r.status,
-            id: r.id,
-            reason: r.reason,
-            userId: r.user_id,
-            notes: r.notes,
+            userId: r.user_id
           }))
         );
       }
@@ -79,8 +76,8 @@ export function useTeamCalendarData(currentUser: User) {
     id: r.id,
     type: "timeoff",
     label: `Time off (${r.status})${r.reason ? ": " + r.reason : ""}`,
-    startDate: r.startDate,
-    endDate: r.endDate,
+    startDate: r.startDate || new Date(r.start_date),
+    endDate: r.endDate || new Date(r.end_date),
     status: r.status,
   }));
   const eventItems: CalendarItem[] = events.map((e) => ({

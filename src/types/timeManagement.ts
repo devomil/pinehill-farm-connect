@@ -12,6 +12,15 @@ export interface TimeOffRequest {
   notes?: string;
   created_at?: string;
   admin_id?: string;
+  // Add camelCase aliases for compatibility
+  userId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  // Add profiles for admin view
+  profiles?: {
+    name?: string;
+    email?: string;
+  } | null;
 }
 
 export interface TimeManagementContextType {

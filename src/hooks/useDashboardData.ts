@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,17 +28,13 @@ export function useDashboardData() {
       
       if (error) throw error;
       
-      // Transform the data to match our TimeOffRequest type
+      // Transform the data to match our TimeOffRequest type with both snake_case and camelCase
       return data ? data.map((r: any) => ({
-        id: r.id,
+        ...r,  // Keep original fields
         startDate: new Date(r.start_date),
         endDate: new Date(r.end_date),
-        status: r.status,
-        userId: r.user_id,
-        reason: r.reason,
-        notes: r.notes,
-        profiles: r.profiles
-      })) as TimeOffRequest[] : [];
+        userId: r.user_id
+      })) as unknown as TimeOffRequest[] : [];
     },
     enabled: isAdmin,
     staleTime: 30000, // Add stale time to reduce unnecessary refetches
@@ -59,14 +54,11 @@ export function useDashboardData() {
       
       // Transform the data to match our TimeOffRequest type
       return data ? data.map((r: any) => ({
-        id: r.id,
+        ...r,  // Keep original fields
         startDate: new Date(r.start_date),
         endDate: new Date(r.end_date),
-        status: r.status,
-        userId: r.user_id,
-        reason: r.reason,
-        notes: r.notes
-      })) as TimeOffRequest[] : [];
+        userId: r.user_id
+      })) as unknown as TimeOffRequest[] : [];
     },
     enabled: !!currentUser?.id,
     staleTime: 30000,

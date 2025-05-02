@@ -94,7 +94,7 @@ export const UserTimeOffRequests: React.FC<UserTimeOffRequestsProps> = ({
                 <div className="flex items-center space-x-2 mb-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">
-                    {request.startDate.toLocaleDateString()} to {request.endDate.toLocaleDateString()}
+                    {new Date(request.start_date).toLocaleDateString()} to {new Date(request.end_date).toLocaleDateString()}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{request.reason || "No reason provided"}</p>

@@ -31,7 +31,7 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
       
       try {
         // Get unique user IDs from pending requests
-        const userIds = [...new Set(pendingRequests.map(req => req.userId))];
+        const userIds = [...new Set(pendingRequests.map(req => req.user_id))];
         
         // Fetch profiles for these user IDs
         const { data, error } = await supabase
@@ -109,13 +109,13 @@ export const PendingTimeOffApprovals: React.FC<PendingTimeOffApprovalsProps> = (
                   {loadingNames ? (
                     <span className="inline-block w-32 h-5 bg-gray-200 animate-pulse rounded"></span>
                   ) : (
-                    employeeNames[request.userId] || "Unknown Employee"
+                    employeeNames[request.user_id] || "Unknown Employee"
                   )}
                 </h4>
                 <div className="flex items-center space-x-2 mb-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    {request.startDate.toLocaleDateString()} to {request.endDate.toLocaleDateString()}
+                    {new Date(request.start_date).toLocaleDateString()} to {new Date(request.end_date).toLocaleDateString()}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">{request.reason || 'No reason provided'}</p>
