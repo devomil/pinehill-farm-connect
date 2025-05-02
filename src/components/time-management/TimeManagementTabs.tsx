@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffRequests";
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
@@ -8,8 +8,9 @@ import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-cov
 import { useTimeManagement } from "@/contexts/TimeManagementContext";
 import { User } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, Bug, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface TimeManagementTabsProps {
   currentUser: User;
@@ -30,14 +31,15 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     pendingRequests,
     processedMessages,
     messagesLoading,
+    messagesError,
     respondToShiftRequest,
     refreshMessages,
-    messagesError,
     handleRetry,
-    allEmployees,
     forceRefreshData
   } = useTimeManagement();
-
+  
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  
   // Enhanced debugging
   useEffect(() => {
     console.log("TimeManagementTabs - Current tab:", activeTab);
@@ -45,15 +47,12 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     console.log("TimeManagementTabs - Loading state:", loading);
     console.log("TimeManagementTabs - Error state:", error ? error.message : 'none');
     console.log("TimeManagementTabs - Pending requests:", pendingRequests?.length || 0);
-    console.log("TimeManagementTabs - Available employees:", allEmployees?.length || 0);
-    
-    // Detailed logging for messages
     console.log("TimeManagementTabs - Processed messages count:", processedMessages?.length || 0);
     
     // Log shift coverage messages specifically
     const shiftMessages = processedMessages?.filter(msg => msg.type === 'shift_coverage') || [];
     console.log("TimeManagementTabs - Shift coverage messages:", shiftMessages.length);
-  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser, allEmployees]);
+  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser]);
 
   const handleTabChange = (value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
@@ -69,6 +68,13 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     }
   };
 
+  // Format error messages safely for display
+  const formatErrorMessage = (err: any): React.ReactNode => {
+    if (typeof err === 'string') return err;
+    if (err?.message) return err.message;
+    return "Unknown error";
+  };
+
   // Show any errors at the top of the tabs area
   const hasErrors = error || messagesError;
 
@@ -78,7 +84,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Error loading data: {error?.message || messagesError?.message || "Unknown error"}
+            Error loading data: {formatErrorMessage(error || messagesError)}
             <Button 
               variant="outline" 
               size="sm" 
@@ -89,6 +95,67 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
             </Button>
           </AlertDescription>
         </Alert>
+      )}
+      
+      {/* Debug toggle button */}
+      <div className="flex justify-end mb-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setShowDebugInfo(!showDebugInfo)}
+          className="h-8 text-xs"
+        >
+          <Bug className="h-3 w-3 mr-1" /> {showDebugInfo ? "Hide Debug" : "Show Debug"}
+        </Button>
+      </div>
+
+      {/* Debug information panel */}
+      {showDebugInfo && (
+        <Accordion type="single" collapsible className="mb-4">
+          <AccordionItem value="debug-info">
+            <AccordionTrigger className="text-sm">Time Management Debug Information</AccordionTrigger>
+            <AccordionContent className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
+              <p><strong>Active Tab:</strong> {activeTab}</p>
+              <p><strong>Loading state:</strong> {loading ? "true" : "false"}</p>
+              <p><strong>Messages Loading state:</strong> {messagesLoading ? "true" : "false"}</p>
+              <p><strong>User requests count:</strong> {userRequests?.length || 0}</p>
+              <p><strong>Pending requests count:</strong> {pendingRequests?.length || 0}</p>
+              <p><strong>Processed messages count:</strong> {processedMessages?.length || 0}</p>
+              <p><strong>Current user:</strong> {currentUser?.email} (ID: {currentUser?.id})</p>
+              <p><strong>Is admin:</strong> {isAdmin ? "true" : "false"}</p>
+              
+              {error && (
+                <>
+                  <p className="mt-2 font-semibold text-red-500">Error:</p>
+                  <pre className="whitespace-pre-wrap text-red-500">
+                    {typeof error === 'object' ? JSON.stringify(error, null, 2) : String(error)}
+                  </pre>
+                </>
+              )}
+              
+              {messagesError && (
+                <>
+                  <p className="mt-2 font-semibold text-red-500">Messages Error:</p>
+                  <pre className="whitespace-pre-wrap text-red-500">
+                    {typeof messagesError === 'object' ? JSON.stringify(messagesError, null, 2) : String(messagesError)}
+                  </pre>
+                </>
+              )}
+
+              <div className="mt-3">
+                <Button size="sm" variant="outline" onClick={forceRefreshData} className="mr-2">
+                  Force Refresh All
+                </Button>
+                <Button size="sm" variant="outline" onClick={fetchRequests} className="mr-2">
+                  Refresh Requests
+                </Button>
+                <Button size="sm" variant="outline" onClick={refreshMessages}>
+                  Refresh Messages
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
       
       <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -114,7 +181,6 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
             currentUser={currentUser}
             onRefresh={refreshMessages}
             error={messagesError}
-            allEmployees={allEmployees}
           />
         </TabsContent>
         {isAdmin && (

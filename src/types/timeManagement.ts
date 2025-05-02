@@ -1,38 +1,37 @@
 
-import { User } from "@/types";
+import { User } from '@/types';
+import { Communication } from './communications/communicationTypes';
 
 export interface TimeOffRequest {
   id: string;
-  startDate: Date;
-  endDate: Date;
-  status: "pending" | "approved" | "rejected";
-  userId: string;
-  reason?: string; // Making reason optional to match the implementation
+  user_id: string;
+  start_date: string;
+  end_date: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reason?: string;
   notes?: string;
-  profiles?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  created_at?: string;
+  admin_id?: string;
 }
 
 export interface TimeManagementContextType {
-  timeOffRequests: TimeOffRequest[];
+  timeOffRequests: TimeOffRequest[] | null;
   loading: boolean;
-  error: Error | null;
+  error: any;
   activeTab: string;
+  pendingRequests: TimeOffRequest[] | null;
+  userRequests: TimeOffRequest[] | null;
   retryCount: number;
-  pendingRequests: TimeOffRequest[];
-  userRequests: TimeOffRequest[];
-  processedMessages: any[];
+  processedMessages: Communication[] | null;
   messagesLoading: boolean;
   messagesError: any;
-  respondToShiftRequest: any;
+  respondToShiftRequest: (data: any) => void;
   setActiveTab: (tab: string) => void;
-  fetchRequests: () => Promise<void>;
+  fetchRequests: () => void;
   refreshMessages: () => void;
   forceRefreshData: () => void;
-  handleRetry: () => void;
+  handleRetry: () => number;
+  allEmployees?: User[] | null;
 }
 
 export interface TimeManagementProviderProps {

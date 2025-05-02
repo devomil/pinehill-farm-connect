@@ -56,8 +56,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     isLoading: messagesLoading, 
     error: messagesError, 
     respondToShiftRequest, 
-    refreshMessages,
-    sendMessage 
+    refreshMessages 
   } = useCommunications(false);
   
   // Process messages with the enhanced hook
@@ -193,7 +192,6 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     refreshMessages,
     forceRefreshData,
     handleRetry,
-    sendMessage,
     allEmployees
   };
 
