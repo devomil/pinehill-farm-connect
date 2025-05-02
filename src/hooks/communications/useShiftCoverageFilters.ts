@@ -55,7 +55,8 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
   
   // Filter functions wrapped in useCallback
   const filterByStatus = useCallback((status: 'all' | 'pending' | 'accepted' | 'declined', requests: Communication[]) => {
-    setLatestFilterCall(Date.now());
+    // Don't set latest filter call here - it causes too many re-renders
+    // Instead, only update when explicitly filtering from UI
     
     if (status === 'all') {
       return requests;
@@ -76,9 +77,15 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
     });
   }, []);
   
+  // Function to explicitly update filter - separate from the filtering function
+  const updateFilter = useCallback(() => {
+    setLatestFilterCall(Date.now());
+  }, []);
+  
   return {
     ...counts,
     shiftCoverageRequests,
-    filterByStatus
+    filterByStatus,
+    updateFilter
   };
 }

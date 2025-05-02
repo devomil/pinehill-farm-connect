@@ -44,7 +44,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Use either the provided employees or the ones from the directory hook
-  const allEmployees = propEmployees || directoryEmployees;
+  const allEmployees = useMemo(() => propEmployees || directoryEmployees, [propEmployees, directoryEmployees]);
   
   // Show more detailed loading logs - but memoize them to prevent excessive logging
   useEffect(() => {
