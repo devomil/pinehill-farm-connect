@@ -15,7 +15,6 @@ import { NewMessageFormData } from "@/types/communications";
 import { toast } from "sonner";
 import { NewShiftCoverageRequestForm } from "./shift-coverage/NewShiftCoverageRequestForm";
 import { useCommunications } from "@/hooks/useCommunications";
-import { supabase } from "@/integrations/supabase/client";
 import { validateEmployeeExists } from "@/hooks/communications/services/recipient/recipientLookupService";
 
 interface NewShiftCoverageRequestButtonProps {
@@ -39,7 +38,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     .filter(emp => emp.id !== currentUser.id)
     .length > 0;
     
-  // Enhanced employee validation with more reliable validation
+  // Enhanced employee validation with reliable validation
   useEffect(() => {
     const validateEmployees = async () => {
       if (!allEmployees || allEmployees.length === 0 || !currentUser?.id) {
@@ -49,19 +48,25 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       try {
         // Filter out current user and ensure we have valid employee IDs
         const employeesToValidate = allEmployees.filter(emp => 
-          emp.id && emp.id !== currentUser.id && emp.id.length > 10
+          emp.id && emp.id !== currentUser.id
         );
         
         console.log(`Validating ${employeesToValidate.length} potential recipients...`);
         
-        // Use a batch approach to validate employees more efficiently
+        // Validate all employees to ensure they're in the profiles table
         const validatedEmployeeList: User[] = [];
         
-        for (const employee of employeesToValidate) {
-          const isValid = await validateEmployeeExists(employee.id);
-          if (isValid) {
-            validatedEmployeeList.push(employee);
-          }
+        // Process employees in batches to avoid too many parallel requests
+        const batchSize = 5;
+        for (let i = 0; i < employeesToValidate.length; i += batchSize) {
+          const batch = employeesToValidate.slice(i, i + batchSize);
+          const validationPromises = batch.map(async (employee) => {
+            const isValid = await validateEmployeeExists(employee.id);
+            return isValid ? employee : null;
+          });
+          
+          const results = await Promise.all(validationPromises);
+          validatedEmployeeList.push(...results.filter(Boolean) as User[]);
         }
         
         console.log(`Found ${validatedEmployeeList.length} valid employees after validation`);
@@ -70,7 +75,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
         console.error("Error during employee validation:", error);
         // Fallback to regular filtering
         setValidatedEmployees(allEmployees.filter(emp => 
-          emp.id && emp.id !== currentUser.id && emp.id.length > 10
+          emp.id && emp.id !== currentUser.id
         ));
       }
     };
@@ -97,22 +102,26 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       return;
     }
 
-    // Verify recipient exists before sending
+    // Enhanced employee validation
     try {
-      const recipientExists = await validateEmployeeExists(formData.recipientId);
+      // Check if recipient is in our pre-validated list
+      const isInValidatedList = validatedEmployees.some(emp => emp.id === formData.recipientId);
       
-      if (!recipientExists) {
-        // Try finding the recipient in the validated employees list
-        const foundInList = validatedEmployees.some(emp => emp.id === formData.recipientId);
+      if (isInValidatedList) {
+        console.log("Recipient already validated in pre-check");
+      } else {
+        // Double check with direct validation if not in our list
+        const recipientExists = await validateEmployeeExists(formData.recipientId);
         
-        if (!foundInList) {
-          toast.error("Selected employee could not be verified. Please try again.");
+        if (!recipientExists) {
+          toast.error("Selected employee could not be verified. Please try again or select another employee.");
           setIsLoading(false);
           return;
         }
       }
     } catch (error) {
       console.error("Error verifying recipient:", error);
+      // Continue anyway to give it a chance
     }
     
     // Create properly formatted shift coverage request that matches the schema

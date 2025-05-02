@@ -24,18 +24,27 @@ export async function handleShiftCoverageDetails(
     const originalEmployeeId = shiftDetails.original_employee_id || currentUserId;
     const coveringEmployeeId = shiftDetails.covering_employee_id || recipientId;
     
-    const originalUserExists = await validateEmployeeExists(originalEmployeeId);
-    const coveringUserExists = await validateEmployeeExists(coveringEmployeeId);
+    console.log("Verifying original employee:", originalEmployeeId);
+    console.log("Verifying covering employee:", coveringEmployeeId);
+    
+    // Run validations in parallel for better performance
+    const [originalUserExists, coveringUserExists] = await Promise.all([
+      validateEmployeeExists(originalEmployeeId),
+      validateEmployeeExists(coveringEmployeeId)
+    ]);
     
     if (!originalUserExists) {
       console.error("Original employee does not exist:", originalEmployeeId);
-      throw new Error("Requester profile not found in database");
+      throw new Error("Your user profile was not found. Please refresh the page and try again.");
     }
     
     if (!coveringUserExists) {
       console.error("Covering employee does not exist:", coveringEmployeeId);
-      throw new Error("Selected employee not found in database");
+      throw new Error("The selected employee could not be found. Please choose another employee.");
     }
+    
+    // Both users exist, proceed with creating the request
+    console.log("Both employees validated successfully");
     
     // Create shift coverage request with explicit IDs
     const fullShiftDetails = {
