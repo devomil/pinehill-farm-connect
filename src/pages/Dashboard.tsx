@@ -13,7 +13,7 @@ import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { addMonths, subMonths } from "date-fns";
 import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 
@@ -35,6 +35,38 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"month" | "team">("month");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
+  // Add auto-refresh logic for dashboard data
+  useEffect(() => {
+    console.log("Setting up dashboard auto-refresh");
+    
+    // Initial fetch
+    refetchData();
+    
+    // Auto refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      console.log("Auto-refreshing dashboard data");
+      refetchData();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [refetchData]);
+  
+  // Log shift coverage data for debugging
+  useEffect(() => {
+    console.log("Dashboard shift coverage messages:", shiftCoverageMessages?.length || 0);
+    
+    if (shiftCoverageMessages && shiftCoverageMessages.length > 0) {
+      console.log("Sample shift message:", {
+        id: shiftCoverageMessages[0].id,
+        type: shiftCoverageMessages[0].type,
+        sender: shiftCoverageMessages[0].sender_id,
+        recipient: shiftCoverageMessages[0].recipient_id,
+        hasRequests: shiftCoverageMessages[0].shift_coverage_requests?.length > 0,
+        status: shiftCoverageMessages[0].shift_coverage_requests?.[0]?.status
+      });
+    }
+  }, [shiftCoverageMessages]);
+
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
   };
@@ -44,9 +76,8 @@ export default function Dashboard() {
   };
 
   const handleRefreshData = useCallback(() => {
-    if (refetchData) {
-      refetchData();
-    }
+    console.log("Manual dashboard refresh triggered");
+    refetchData();
   }, [refetchData]);
 
   return (
@@ -102,7 +133,7 @@ export default function Dashboard() {
               />
             )}
 
-            {/* Add Shift Coverage Card for both admins and employees */}
+            {/* Show Shift Coverage Card for both admins and employees */}
             {currentUser && shiftCoverageMessages && (
               <ShiftCoverageCard 
                 messages={shiftCoverageMessages} 

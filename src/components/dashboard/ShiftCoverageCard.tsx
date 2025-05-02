@@ -29,18 +29,36 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   const { employees } = useEmployeeDirectory();
 
   // Filter to only show pending requests that are relevant to current user
-  const filteredMessages = messages.filter(msg => 
-    msg.shift_coverage_requests && 
-    msg.shift_coverage_requests.length > 0 && 
-    msg.shift_coverage_requests[0].status === 'pending' &&
-    (msg.sender_id === currentUser.id || msg.recipient_id === currentUser.id)
-  ).slice(0, 5); // Limit to 5 most recent
+  const filteredMessages = messages
+    .filter(msg => {
+      // Must have shift coverage requests
+      if (!msg.shift_coverage_requests || msg.shift_coverage_requests.length === 0) {
+        return false;
+      }
+      
+      // Pending requests only
+      const isPending = msg.shift_coverage_requests[0].status === 'pending';
+      
+      // Admin sees all pending shift coverage requests
+      if (currentUser.role === 'admin') {
+        return isPending;
+      }
+      
+      // Regular users only see their own requests
+      const isUserInvolved = msg.sender_id === currentUser.id || 
+                             msg.recipient_id === currentUser.id;
+      
+      return isPending && isUserInvolved;
+    })
+    .slice(0, 5); // Limit to 5 most recent
 
   // Helper function to find employee name by ID
   const getEmployeeName = (id: string): string => {
     const employee = employees?.find(emp => emp.id === id);
     return employee?.name || 'Unknown Employee';
   };
+
+  const hasRequests = filteredMessages.length > 0;
 
   return (
     <Card>
@@ -75,7 +93,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
             <div className="animate-pulse h-6 bg-muted rounded w-3/4"></div>
             <div className="animate-pulse h-6 bg-muted rounded w-2/3"></div>
           </div>
-        ) : filteredMessages.length === 0 ? (
+        ) : !hasRequests ? (
           <div className="text-center py-4 text-muted-foreground">
             No pending shift coverage requests
           </div>
@@ -113,7 +131,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
               );
             })}
             
-            {filteredMessages.length > 0 && (
+            {hasRequests && (
               <div className="pt-2 text-center">
                 <Link to="/time?tab=shift-coverage">
                   <Button variant="link" size="sm">

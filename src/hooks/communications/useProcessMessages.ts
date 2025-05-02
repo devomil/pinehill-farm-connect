@@ -33,21 +33,41 @@ export function useProcessMessages(
         ? msg.status as MessageStatus
         : 'pending';
       
-      // Process shift coverage requests with proper typing
+      // Process shift coverage requests with proper typing and validation
       const typedShiftRequests = Array.isArray(msg.shift_coverage_requests) 
-        ? msg.shift_coverage_requests.map((req: any) => ({
-            ...req,
-            status: validStatuses.includes(req.status as MessageStatus)
+        ? msg.shift_coverage_requests.map((req: any) => {
+            // Ensure each request has a valid status
+            const requestStatus: MessageStatus = validStatuses.includes(req.status as MessageStatus)
               ? req.status as MessageStatus
-              : 'pending'
-          }))
+              : 'pending';
+              
+            // Return a properly typed shift coverage request
+            return {
+              id: req.id,
+              communication_id: req.communication_id,
+              original_employee_id: req.original_employee_id,
+              covering_employee_id: req.covering_employee_id,
+              shift_date: req.shift_date,
+              shift_start: req.shift_start,
+              shift_end: req.shift_end,
+              status: requestStatus,
+              created_at: req.created_at,
+              updated_at: req.updated_at
+            };
+          })
         : [];
       
       // Special debug for shift coverage requests
-      if (messageType === 'shift_coverage' && typedShiftRequests.length > 0) {
-        console.log(`Processing shift coverage message ${msg.id} with ${typedShiftRequests.length} requests`);
-        console.log(`Message is ${msg.sender_id === currentUser?.id ? 'sent by' : 'received by'} current user`);
-        console.log(`Shift request details: date=${typedShiftRequests[0].shift_date}, start=${typedShiftRequests[0].shift_start}, status=${typedShiftRequests[0].status}`);
+      if (messageType === 'shift_coverage') {
+        console.log(`Processing shift coverage message ${msg.id}`);
+        
+        if (typedShiftRequests.length > 0) {
+          console.log(`Message has ${typedShiftRequests.length} shift requests`);
+          console.log(`Message is ${msg.sender_id === currentUser?.id ? 'sent by' : 'received by'} current user`);
+          console.log(`Shift request details: date=${typedShiftRequests[0].shift_date}, start=${typedShiftRequests[0].shift_start}, status=${typedShiftRequests[0].status}`);
+        } else {
+          console.log(`WARNING: Shift coverage message ${msg.id} has no shift requests data!`);
+        }
       }
       
       // Return a properly typed Communication object
@@ -74,6 +94,18 @@ export function useProcessMessages(
     );
     
     console.log(`Processed ${processed.length} total messages, including ${shiftCoverageMessages.length} shift coverage messages with requests`);
+    
+    if (shiftCoverageMessages.length > 0) {
+      // Log sample message for debugging
+      const sample = shiftCoverageMessages[0];
+      console.log("Sample shift coverage message after processing:", {
+        id: sample.id,
+        sender: sample.sender_id,
+        recipient: sample.recipient_id,
+        requestStatus: sample.shift_coverage_requests![0].status,
+        date: sample.shift_coverage_requests![0].shift_date
+      });
+    }
     
     return processed;
   }, [messages, currentUser]);
