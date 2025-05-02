@@ -15,6 +15,7 @@ import { NewMessageFormData } from "@/types/communications";
 import { toast } from "sonner";
 import { NewShiftCoverageRequestForm } from "./shift-coverage/NewShiftCoverageRequestForm";
 import { useCommunications } from "@/hooks/useCommunications";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewShiftCoverageRequestButtonProps {
   currentUser: User;
@@ -36,10 +37,16 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     .filter(emp => emp.id !== currentUser.id)
     .length > 0;
 
-  const handleNewRequest = (formData: NewMessageFormData) => {
+  const handleNewRequest = async (formData: NewMessageFormData) => {
     setIsLoading(true);
     
     console.log("Submitting shift coverage request:", formData);
+    
+    if (!formData.shiftDate || !formData.shiftStart || !formData.shiftEnd) {
+      toast.error("Missing required shift details");
+      setIsLoading(false);
+      return;
+    }
     
     // Create properly formatted shift coverage request
     const requestData = {
@@ -47,25 +54,44 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       message: formData.message,
       type: "shift_coverage" as const,
       shiftDetails: {
+        shift_date: formData.shiftDate,
+        shift_start: formData.shiftStart, 
+        shift_end: formData.shiftEnd,
         original_employee_id: currentUser.id,
-        covering_employee_id: formData.recipientId,
-        shift_date: formData.shiftDate || "",
-        shift_start: formData.shiftStart || "", 
-        shift_end: formData.shiftEnd || ""
+        covering_employee_id: formData.recipientId
       }
     };
     
     console.log("Sending shift coverage request with data:", requestData);
     
-    // Use the sendMessage function from useCommunications hook
-    sendMessage(requestData);
-    
-    setTimeout(() => {
+    try {
+      // Use the sendMessage function from useCommunications hook
+      await sendMessage(requestData);
+      
+      console.log("Shift coverage request sent successfully");
+      
+      // Log additional debug information directly to the console
+      const { data: latestRequests, error: checkError } = await supabase
+        .from('shift_coverage_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (checkError) {
+        console.error("Error checking recent shift coverage requests:", checkError);
+      } else {
+        console.log("Recent shift coverage requests:", latestRequests);
+      }
+      
       setIsLoading(false);
       setIsOpen(false);
       onRequestSent(); // Refresh the list after sending
       toast.success("Shift coverage request sent successfully");
-    }, 500);
+    } catch (error) {
+      console.error("Error sending shift coverage request:", error);
+      toast.error("Failed to send shift coverage request");
+      setIsLoading(false);
+    }
   };
 
   return (

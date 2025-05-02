@@ -25,7 +25,9 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [lastToastTime, setLastToastTime] = useState(0);
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const pendingToasts = useRef<Set<string>>(new Set());
+  const refreshInProgress = useRef<boolean>(false);
   
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
@@ -106,7 +108,18 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
 
   // Force refresh of data with improved throttling and deduplication
   const forceRefreshData = useCallback(() => {
+    const now = Date.now();
+    
+    // Prevent multiple refreshes within a short time period
+    if (refreshInProgress.current || now - lastRefreshTime < 3000) {
+      console.log("Refresh skipped - too soon or already in progress");
+      return;
+    }
+    
     console.log("Force refresh triggered");
+    refreshInProgress.current = true;
+    setLastRefreshTime(now);
+    
     setRetryCount(prevCount => prevCount + 1);
     
     // Only show toast for manual refreshes, not automatic ones
@@ -116,7 +129,12 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     
     fetchRequests();
     refreshMessages();
-  }, [fetchRequests, refreshMessages, initialLoadDone, showThrottledToast]);
+    
+    // Reset the refresh lock after a timeout
+    setTimeout(() => {
+      refreshInProgress.current = false;
+    }, 2000);
+  }, [fetchRequests, refreshMessages, initialLoadDone, showThrottledToast, lastRefreshTime]);
   
   // Initial data load - only once
   useEffect(() => {

@@ -145,6 +145,18 @@ export function useSendMessage(currentUser: User | null) {
           }
           
           console.log("Created shift coverage request:", shiftData);
+
+          // Verify the request was created
+          const { data: checkData, error: checkError } = await supabase
+            .from('shift_coverage_requests')
+            .select('*')
+            .eq('communication_id', communicationData.id);
+
+          if (checkError) {
+            console.error("Error verifying shift coverage request:", checkError);
+          } else {
+            console.log("Verification of created shift coverage request:", checkData);
+          }
         }
   
         // Send notification to recipient using notifyManager
@@ -195,6 +207,7 @@ export function useSendMessage(currentUser: User | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });
       queryClient.invalidateQueries({ queryKey: ['shiftCoverage'] });
+      console.log("Successfully sent message - invalidating queries");
       toast.success('Message sent successfully');
     },
     onError: (error) => {

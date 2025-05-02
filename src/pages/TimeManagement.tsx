@@ -25,7 +25,7 @@ const TimeManagementContent = () => {
     const loadTimeout = setTimeout(() => {
       console.log("TimeManagementContent: Initial data refresh");
       forceRefreshData();
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(loadTimeout);
   }, [currentUser, error, messagesError, forceRefreshData]);
