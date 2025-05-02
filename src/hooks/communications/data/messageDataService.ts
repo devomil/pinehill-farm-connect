@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { SendMessageParams } from "@/types/communications/communicationTypes";
@@ -182,21 +181,18 @@ export async function createShiftCoverageRequest(
     return data;
   } catch (e: any) {
     console.error("Exception creating shift coverage request:", e);
-    // Let's try a direct API call as a fallback
+    // Let's try a direct API call as a fallback using fetch instead of accessing protected properties
     try {
       console.log("Attempting direct API call to create shift coverage request");
       
-      // Get the dynamic Supabase URL from the client
-      const supabaseUrl = supabase.supabaseUrl;
-      const supabaseKey = supabase.supabaseKey;
-      
+      // Instead of accessing protected properties, use the Supabase API URL directly
       const response = await fetch(
-        `${supabaseUrl}/rest/v1/shift_coverage_requests`,
+        "https://pdeaxfhsodenefeckabm.supabase.co/rest/v1/shift_coverage_requests",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": supabaseKey,
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA",
             "Prefer": "return=representation"
           },
           body: JSON.stringify(shiftPayload)
