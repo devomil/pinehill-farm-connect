@@ -76,9 +76,19 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
         let userProfiles: Record<string, any> = {};
         
         if (currentUser.role === 'admin' && data.length > 0) {
-          // Get unique user IDs from requests
-          // Explicitly cast the user_id values to string to fix the TypeScript error
-          const userIds = [...new Set(data.map(r => r.user_id as string))];
+          // Get unique user IDs from requests and ensure they are strings
+          // Create string array explicitly to satisfy TypeScript
+          const userIdsSet = new Set<string>();
+          
+          // Explicitly add each user_id as a string to the Set
+          data.forEach(request => {
+            if (request.user_id) {
+              userIdsSet.add(String(request.user_id));
+            }
+          });
+          
+          // Convert Set to Array
+          const userIds = Array.from(userIdsSet);
           
           if (userIds.length > 0) {
             const { data: profilesData } = await supabase
