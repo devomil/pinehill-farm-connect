@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -38,6 +38,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   onRefresh,
   allEmployees: propEmployees
 }) => {
+  // Use the provided employees list if available, otherwise fetch it
   const { employees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -45,7 +46,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   // Use either the provided employees or the ones from the directory hook
   const allEmployees = propEmployees || directoryEmployees;
   
-  // Show more detailed loading logs
+  // Show more detailed loading logs - but memoize them to prevent excessive logging
   useEffect(() => {
     console.log("ShiftCoverageRequestsTab - Loading state:", loading);
     console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
@@ -66,24 +67,24 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   // Apply status filter
   const filteredRequests = filterByStatus(filter, shiftCoverageRequests);
   
-  // Find employee by ID
-  const findEmployee = (id: string): User | undefined => {
+  // Find employee by ID - memoize to prevent recreation on each render
+  const findEmployee = useCallback((id: string): User | undefined => {
     return allEmployees?.find(emp => emp.id === id);
-  };
+  }, [allEmployees]);
 
-  // Handle manual refresh with feedback
-  const handleManualRefresh = () => {
+  // Handle manual refresh with feedback - memoize to prevent recreation on each render
+  const handleManualRefresh = useCallback(() => {
     toast.info("Refreshing shift coverage requests...");
     refetchEmployees();
     onRefresh();
-  };
+  }, [refetchEmployees, onRefresh]);
 
-  // Format error message safely
-  const formatErrorMessage = (err: any): string => {
+  // Format error message safely - memoize to prevent recreation on each render
+  const formatErrorMessage = useCallback((err: any): string => {
     if (typeof err === 'string') return err;
     if (err?.message) return err.message;
     return "Unknown error";
-  };
+  }, []);
 
   // If still loading, show loading state
   if (loading || employeesLoading) {

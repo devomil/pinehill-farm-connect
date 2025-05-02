@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 
@@ -19,9 +19,9 @@ export function useTimeOffRealtime(
     if (subscriptionRef.current) {
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
-      setRequestsSubscribed(false);
     }
     
+    // Only set up subscription if we have a current user and we haven't already subscribed
     if (!currentUser || requestsSubscribed) return;
     
     console.log("Setting up realtime subscription for time_off_requests");
@@ -39,7 +39,9 @@ export function useTimeOffRealtime(
       })
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
-        setRequestsSubscribed(true);
+        if (!requestsSubscribed) {
+          setRequestsSubscribed(true);
+        }
       });
     
     // Store the channel reference for cleanup
@@ -58,5 +60,3 @@ export function useTimeOffRealtime(
 
   return { requestsSubscribed };
 }
-
-import { useState } from 'react'; // Add missing import
