@@ -19,6 +19,7 @@ export function useEmployeeDirectory() {
       setLoading(true);
       setError('');
 
+      console.log('Fetching employees from profiles table...');
       // Fetch all users with their profiles
       const { data, error: fetchError } = await supabase
         .from('profiles')
@@ -28,7 +29,6 @@ export function useEmployeeDirectory() {
           email,
           department,
           position,
-          avatar_url,
           created_at,
           employeeId
         `)
@@ -48,6 +48,8 @@ export function useEmployeeDirectory() {
         return;
       }
 
+      console.log(`Fetched ${data.length} employee profiles`);
+      
       // Transform the data to match our User type
       const transformedData = data.map((profile) => ({
         id: profile.id,
@@ -56,7 +58,7 @@ export function useEmployeeDirectory() {
         role: 'employee', // Default role if not specified
         department: profile.department || '',
         position: profile.position || '',
-        avatar_url: profile.avatar_url || '',
+        avatar_url: '', // No avatar_url in the table
         created_at: profile.created_at || '',
         employeeId: profile.employeeId || '',
       }));
