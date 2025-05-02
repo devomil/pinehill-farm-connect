@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Creates a shift coverage request - Optimized and simplified approach
+ * Creates a shift coverage request - Simplified for reliability
  */
 export async function createShiftCoverageRequest(
   communicationId: string, 
@@ -15,16 +15,11 @@ export async function createShiftCoverageRequest(
     communication_id?: string;
   }
 ) {
-  // Add additional logging before insert
-  console.log("===== CREATING SHIFT COVERAGE REQUEST =====");
-  console.log("Communication ID:", communicationId);
-  console.log("Original employee:", shiftDetails.original_employee_id);
-  console.log("Covering employee:", shiftDetails.covering_employee_id);
-  console.log("Shift date:", shiftDetails.shift_date);
-  console.log("Shift time:", `${shiftDetails.shift_start} - ${shiftDetails.shift_end}`);
+  console.log("Creating shift coverage request for communication:", communicationId);
+  console.log("Shift details:", JSON.stringify(shiftDetails, null, 2));
   
-  // Prepare shift coverage request payload
-  const shiftPayload = {
+  // Create the record to insert
+  const insertData = {
     communication_id: communicationId,
     original_employee_id: shiftDetails.original_employee_id,
     covering_employee_id: shiftDetails.covering_employee_id,
@@ -33,129 +28,86 @@ export async function createShiftCoverageRequest(
     shift_end: shiftDetails.shift_end,
     status: 'pending'
   };
-  
-  console.log("Sending shift coverage request payload:", JSON.stringify(shiftPayload, null, 2));
-  
+
   try {
+    // Insert directly into the database
     const { data, error } = await supabase
       .from('shift_coverage_requests')
-      .insert(shiftPayload)
+      .insert(insertData)
       .select();
     
     if (error) {
-      console.error("Supabase Error creating shift coverage request:", error);
-      console.error("Error details:", error.details, error.hint, error.message);
+      console.error("Error creating shift coverage request:", error);
       throw error;
     }
     
     if (!data || data.length === 0) {
-      console.error("No data returned after insert");
-      throw new Error("No data returned after insert");
+      console.error("No data returned from insert");
+      throw new Error("Failed to create shift coverage request");
     }
     
-    console.log("Successfully created shift coverage request:", data);
-    return data;
-  } catch (e: any) {
-    console.error("Exception creating shift coverage request:", e);
-    // Use a direct fetch call as a fallback
-    try {
-      console.log("Attempting direct API call to create shift coverage request");
-      
-      // Use direct fetch without accessing protected properties
-      const response = await fetch(
-        "https://pdeaxfhsodenefeckabm.supabase.co/rest/v1/shift_coverage_requests",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZWF4Zmhzb2RlbmVmZWNrYWJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMzIxNTcsImV4cCI6MjA2MDkwODE1N30.Na375_2UPefjCbmBLrWWwhX0G6QhZuyrUxgQieV1TlA",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify(shiftPayload)
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Direct API call failed with status: ${response.status}`);
-      }
-      
-      const directData = await response.json();
-      console.log("Direct API call successful:", directData);
-      return directData;
-    } catch (directError: any) {
-      console.error("Direct API call failed:", directError);
-      throw new Error(`Failed to create shift coverage request: ${directError.message}`);
-    }
+    console.log("Shift coverage request created successfully:", data[0]);
+    return data[0];
+  } catch (error) {
+    console.error("Exception creating shift coverage request:", error);
+    throw error;
   }
 }
 
 /**
  * Verifies a shift coverage request was created
  */
-export async function verifyShiftCoverageRequest(communicationId: string, shiftDate: string, originalEmployeeId: string) {
-  // First check by communication ID
-  const { data: checkData, error: checkError } = await supabase
-    .from('shift_coverage_requests')
-    .select('*')
-    .eq('communication_id', communicationId);
-
-  if (checkError) {
-    console.error("Error verifying shift coverage request:", checkError);
-    return { verified: false, error: checkError };
-  }
+export async function verifyShiftCoverageRequest(
+  communicationId: string, 
+  shiftDate?: string,
+  originalEmployeeId?: string
+) {
+  console.log("Verifying shift coverage request exists for:", communicationId);
   
-  if (checkData && checkData.length > 0) {
-    console.log("✅ Verification successful - shift coverage request exists:", checkData);
-    return { verified: true, data: checkData };
-  }
-  
-  // If not found by communication ID, try by date and employee
-  const { data: allRecent, error: allRecentError } = await supabase
-    .from('shift_coverage_requests')
-    .select('*')
-    .eq('original_employee_id', originalEmployeeId)
-    .order('created_at', { ascending: false })
-    .limit(5);
-    
-  if (allRecentError) {
-    console.error("Error checking recent shift requests:", allRecentError);
-    return { verified: false, error: allRecentError };
-  }
-  
-  // Find requests that match our date
-  const matchingRequests = allRecent?.filter(req => 
-    req.shift_date === shiftDate
-  );
-  
-  if (matchingRequests && matchingRequests.length > 0) {
-    console.log("✅ Found matching shift request by date:", matchingRequests[0]);
-    return { verified: true, data: matchingRequests };
-  }
-  
-  console.warn("⚠️ Could not verify shift request was saved - no matching requests found");
-  
-  // Perform a more detailed raw query using supabase's query builder
   try {
-    console.log("Attempting additional detailed query to find the shift request");
-    const { data: detailedCheck, error: detailedError } = await supabase
+    // Check by communication ID first
+    const { data: requestData, error } = await supabase
       .from('shift_coverage_requests')
       .select('*')
-      .or(`communication_id.eq.${communicationId},original_employee_id.eq.${originalEmployeeId}`)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .eq('communication_id', communicationId)
+      .maybeSingle();
     
-    if (detailedError) {
-      console.error("Detailed query check failed:", detailedError);
-    } else {
-      console.log("Detailed query results:", detailedCheck);
-      if (detailedCheck && detailedCheck.length > 0) {
-        return { verified: true, data: detailedCheck };
+    if (!error && requestData) {
+      console.log("Verification successful - found request:", requestData);
+      return { verified: true, data: requestData };
+    }
+    
+    // If not found by communication ID and we have additional search criteria
+    if (shiftDate && originalEmployeeId) {
+      console.log("Trying to find request by date and employee");
+      
+      const { data: alternateData, error: alternateError } = await supabase
+        .from('shift_coverage_requests')
+        .select('*')
+        .eq('shift_date', shiftDate)
+        .eq('original_employee_id', originalEmployeeId)
+        .limit(1);
+      
+      if (!alternateError && alternateData && alternateData.length > 0) {
+        console.log("Found request by date and employee:", alternateData[0]);
+        return { verified: true, data: alternateData[0] };
       }
     }
-  } catch (e) {
-    console.log("Detailed check error:", e);
+    
+    // Check if the table exists and has data
+    const { count, error: countError } = await supabase
+      .from('shift_coverage_requests')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      console.error("Error accessing shift_coverage_requests table:", countError);
+      return { verified: false, error: countError };
+    }
+    
+    console.log("Total shift coverage requests in database:", count);
+    return { verified: false, reason: "Request not found" };
+  } catch (error) {
+    console.error("Error verifying shift coverage request:", error);
+    return { verified: false, error };
   }
-  
-  console.log("Recent shift requests:", allRecent);
-  return { verified: false, data: allRecent };
 }

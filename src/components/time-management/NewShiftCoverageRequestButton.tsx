@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CalendarPlus } from "lucide-react";
 import {
@@ -15,7 +15,7 @@ import { NewMessageFormData } from "@/types/communications";
 import { toast } from "sonner";
 import { NewShiftCoverageRequestForm } from "./shift-coverage/NewShiftCoverageRequestForm";
 import { useCommunications } from "@/hooks/useCommunications";
-import { validateEmployeeExists } from "@/hooks/communications/services/recipient/recipientLookupService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewShiftCoverageRequestButtonProps {
   currentUser: User;
@@ -37,61 +37,62 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
   const hasAvailableEmployees = allEmployees && allEmployees
     .filter(emp => emp.id !== currentUser.id)
     .length > 0;
+  
+  // Pre-validate employees from the directory
+  React.useEffect(() => {
+    if (!allEmployees || allEmployees.length === 0) {
+      return;
+    }
     
-  // Enhanced employee validation with reliable validation
-  useEffect(() => {
+    // Filter out the current user
+    const employeesToValidate = allEmployees.filter(emp => emp.id !== currentUser.id);
+    console.log(`Pre-validating ${employeesToValidate.length} employees for shift coverage`);
+    
+    // Query the profiles table to get valid employees
     const validateEmployees = async () => {
-      if (!allEmployees || allEmployees.length === 0 || !currentUser?.id) {
-        return;
-      }
-      
       try {
-        // Filter out current user and ensure we have valid employee IDs
-        const employeesToValidate = allEmployees.filter(emp => 
-          emp.id && emp.id !== currentUser.id
-        );
+        // Get all profiles from the database
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .limit(50);
         
-        console.log(`Validating ${employeesToValidate.length} potential recipients...`);
-        
-        // Validate all employees to ensure they're in the profiles table
-        const validatedEmployeeList: User[] = [];
-        
-        // Process employees in batches to avoid too many parallel requests
-        const batchSize = 5;
-        for (let i = 0; i < employeesToValidate.length; i += batchSize) {
-          const batch = employeesToValidate.slice(i, i + batchSize);
-          const validationPromises = batch.map(async (employee) => {
-            const isValid = await validateEmployeeExists(employee.id);
-            return isValid ? employee : null;
-          });
-          
-          const results = await Promise.all(validationPromises);
-          validatedEmployeeList.push(...results.filter(Boolean) as User[]);
+        if (error) {
+          console.error("Error fetching profiles:", error);
+          setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
+          return;
         }
         
-        console.log(`Found ${validatedEmployeeList.length} valid employees after validation`);
-        setValidatedEmployees(validatedEmployeeList);
+        if (!profiles || profiles.length === 0) {
+          console.warn("No profiles found in database");
+          setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
+          return;
+        }
+        
+        // Match employees from directory with profiles from database
+        const validEmployees = employeesToValidate.filter(employee => 
+          profiles.some(profile => profile.id === employee.id)
+        );
+        
+        console.log(`Found ${validEmployees.length} valid employees out of ${employeesToValidate.length}`);
+        setValidatedEmployees(validEmployees);
       } catch (error) {
-        console.error("Error during employee validation:", error);
-        // Fallback to regular filtering
-        setValidatedEmployees(allEmployees.filter(emp => 
-          emp.id && emp.id !== currentUser.id
-        ));
+        console.error("Error validating employees:", error);
+        setValidatedEmployees(employeesToValidate); // Fallback to unvalidated list
       }
     };
     
-    if (allEmployees && allEmployees.length > 0 && currentUser?.id) {
-      validateEmployees();
-    }
-  }, [allEmployees, currentUser]);
+    validateEmployees();
+  }, [allEmployees, currentUser.id]);
 
   const handleNewRequest = async (formData: NewMessageFormData) => {
     setIsLoading(true);
     
     console.log("Submitting shift coverage request:", formData);
     
+    // Validate required fields
     if (!formData.shiftDate || !formData.shiftStart || !formData.shiftEnd) {
-      toast.error("Missing required shift details");
+      toast.error("Please fill in all shift details");
       setIsLoading(false);
       return;
     }
@@ -101,30 +102,17 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
       setIsLoading(false);
       return;
     }
-
-    // Enhanced employee validation
-    try {
-      // Check if recipient is in our pre-validated list
-      const isInValidatedList = validatedEmployees.some(emp => emp.id === formData.recipientId);
-      
-      if (isInValidatedList) {
-        console.log("Recipient already validated in pre-check");
-      } else {
-        // Double check with direct validation if not in our list
-        const recipientExists = await validateEmployeeExists(formData.recipientId);
-        
-        if (!recipientExists) {
-          toast.error("Selected employee could not be verified. Please try again or select another employee.");
-          setIsLoading(false);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error("Error verifying recipient:", error);
-      // Continue anyway to give it a chance
+    
+    // Validate selected employee exists in our validated list
+    const isValidEmployee = validatedEmployees.some(emp => emp.id === formData.recipientId);
+    
+    if (!isValidEmployee) {
+      toast.error("Selected employee could not be verified. Please select another employee.");
+      setIsLoading(false);
+      return;
     }
     
-    // Create properly formatted shift coverage request that matches the schema
+    // Create properly formatted shift coverage request
     const requestData = {
       recipientId: formData.recipientId,
       message: formData.message,
@@ -141,15 +129,14 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
     console.log("Sending shift coverage request with data:", JSON.stringify(requestData, null, 2));
     
     try {
-      // Send the message
       await sendMessage(requestData);
       toast.success("Shift coverage request sent successfully");
-      setIsLoading(false);
       setIsOpen(false);
-      onRequestSent(); // Refresh the list after sending
+      onRequestSent();
     } catch (error: any) {
-      console.error("Error sending shift coverage request:", error);
-      toast.error(`Failed to send request: ${error.message}`);
+      console.error("Failed to send shift coverage request:", error);
+      toast.error(error.message || "Failed to send request");
+    } finally {
       setIsLoading(false);
     }
   };

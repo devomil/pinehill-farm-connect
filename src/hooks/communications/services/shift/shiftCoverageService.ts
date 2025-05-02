@@ -1,9 +1,10 @@
 
-import { createShiftCoverageRequest, verifyShiftCoverageRequest } from "../../data/messageDataService";
+import { supabase } from "@/integrations/supabase/client";
 import { validateEmployeeExists } from "../recipient/recipientLookupService";
 
 /**
  * Service for handling shift coverage requests
+ * Completely rewritten for reliability
  */
 export async function handleShiftCoverageDetails(
   communicationId: string,
@@ -20,59 +21,69 @@ export async function handleShiftCoverageDetails(
   }
   
   try {
-    // Verify both users exist in the system
+    // Get employee IDs from parameters or details
     const originalEmployeeId = shiftDetails.original_employee_id || currentUserId;
     const coveringEmployeeId = shiftDetails.covering_employee_id || recipientId;
     
-    console.log("Verifying original employee:", originalEmployeeId);
-    console.log("Verifying covering employee:", coveringEmployeeId);
+    console.log("Original employee ID:", originalEmployeeId);
+    console.log("Covering employee ID:", coveringEmployeeId);
     
-    // Run validations in parallel for better performance
+    // Validate both employees exist
     const [originalUserExists, coveringUserExists] = await Promise.all([
       validateEmployeeExists(originalEmployeeId),
       validateEmployeeExists(coveringEmployeeId)
     ]);
     
     if (!originalUserExists) {
-      console.error("Original employee does not exist:", originalEmployeeId);
-      throw new Error("Your user profile was not found. Please refresh the page and try again.");
+      throw new Error("Your user profile was not found in the system. Please try again.");
     }
     
     if (!coveringUserExists) {
-      console.error("Covering employee does not exist:", coveringEmployeeId);
-      throw new Error("The selected employee could not be found. Please choose another employee.");
+      throw new Error("The selected employee could not be verified in the system.");
     }
     
-    // Both users exist, proceed with creating the request
     console.log("Both employees validated successfully");
     
-    // Create shift coverage request with explicit IDs
-    const fullShiftDetails = {
+    // Create shift coverage request
+    const shiftCoverageData = {
+      communication_id: communicationId,
       original_employee_id: originalEmployeeId,
       covering_employee_id: coveringEmployeeId,
       shift_date: shiftDetails.shift_date,
       shift_start: shiftDetails.shift_start,
       shift_end: shiftDetails.shift_end,
-      communication_id: communicationId
+      status: 'pending'
     };
     
-    console.log("Creating shift coverage with details:", JSON.stringify(fullShiftDetails, null, 2));
+    console.log("Inserting shift coverage with data:", JSON.stringify(shiftCoverageData, null, 2));
     
-    const shiftRequestData = await createShiftCoverageRequest(
-      communicationId,
-      fullShiftDetails
-    );
+    // Use direct insert with error handling
+    const { data, error } = await supabase
+      .from('shift_coverage_requests')
+      .insert(shiftCoverageData)
+      .select();
     
-    console.log("Shift coverage request created successfully:", shiftRequestData);
+    if (error) {
+      console.error("Database error creating shift coverage request:", error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
+    if (!data || data.length === 0) {
+      console.error("No data returned after insert");
+      throw new Error("Failed to create shift coverage request - no data returned");
+    }
+    
+    console.log("Successfully created shift coverage request:", data[0]);
     
     // Verify the request was created
-    await verifyShiftCoverageRequest(
-      communicationId, 
-      shiftDetails.shift_date,
-      originalEmployeeId
-    );
+    const verificationResult = await verifyShiftCoverageRequest(communicationId);
     
-    return shiftRequestData;
+    if (!verificationResult.verified) {
+      console.warn("Could not verify shift request was saved, but insert succeeded");
+      // Continue anyway since the insert was successful
+    }
+    
+    return data[0];
   } catch (error: any) {
     console.error("Error creating shift coverage request:", error);
     throw new Error(`Failed to create shift coverage request: ${error.message}`);
@@ -87,9 +98,41 @@ function validateShiftDetails(shiftDetails: any): boolean {
     return false;
   }
   
+  // Check for all required fields
   return Boolean(
     shiftDetails.shift_date && 
     shiftDetails.shift_start && 
     shiftDetails.shift_end
   );
+}
+
+/**
+ * Verifies a shift coverage request exists in the database
+ */
+export async function verifyShiftCoverageRequest(communicationId: string) {
+  console.log("Verifying shift coverage request for communication:", communicationId);
+  
+  try {
+    // Direct query by communication ID
+    const { data, error } = await supabase
+      .from('shift_coverage_requests')
+      .select('*')
+      .eq('communication_id', communicationId);
+    
+    if (error) {
+      console.error("Error verifying shift coverage request:", error);
+      return { verified: false, error };
+    }
+    
+    if (data && data.length > 0) {
+      console.log("✅ Verification successful - shift coverage exists:", data[0]);
+      return { verified: true, data };
+    }
+    
+    console.warn("⚠️ Could not verify shift request was saved - not found");
+    return { verified: false, reason: "Request not found" };
+  } catch (error) {
+    console.error("Exception during verification:", error);
+    return { verified: false, error };
+  }
 }

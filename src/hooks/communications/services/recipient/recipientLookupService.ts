@@ -15,31 +15,32 @@ export async function findRecipientProfile(recipientId: string) {
   }
 
   try {
-    // First attempt - try getting from the dataService for backward compatibility
-    try {
-      const recipient = await getRecipientData(recipientId);
-      if (recipient) {
-        console.log("Found recipient via data service:", recipient);
-        return recipient;
-      }
-    } catch (error) {
-      console.log("Recipient not found via data service, trying direct lookup");
-    }
-    
-    // Second attempt - try direct profiles lookup
-    const { data: directRecipient, error: directError } = await supabase
+    // First attempt - directly query profiles table with exact match
+    const { data: recipient, error } = await supabase
       .from('profiles')
       .select('id, name, email, updated_at')
       .eq('id', recipientId)
       .maybeSingle();
       
-    if (directRecipient) {
-      console.log("Found recipient via direct lookup:", directRecipient);
-      return directRecipient;
+    if (recipient) {
+      console.log("Found recipient with direct lookup:", recipient);
+      return recipient;
     }
     
-    if (directError) {
-      console.error("Error in direct lookup:", directError);
+    if (error) {
+      console.error("Error in direct lookup:", error);
+      // Continue to try other methods
+    }
+    
+    // Second attempt - try using data service for backward compatibility
+    try {
+      const serviceRecipient = await getRecipientData(recipientId);
+      if (serviceRecipient) {
+        console.log("Found recipient via data service:", serviceRecipient);
+        return serviceRecipient;
+      }
+    } catch (serviceError) {
+      console.log("Recipient not found via data service, continuing with other methods");
     }
     
     // Third attempt - try fuzzy match if ID might be truncated or malformed
@@ -56,41 +57,40 @@ export async function findRecipientProfile(recipientId: string) {
       }
     }
     
-    // Fourth attempt - lookup from cached employee directory (if available)
-    try {
-      const { data: cachedEmployees } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .order('name', { ascending: true })
-        .limit(100);  // Increased limit to find more potential matches
-        
-      if (cachedEmployees && cachedEmployees.length > 0) {
-        console.log(`Found ${cachedEmployees.length} employees to check against`);
-        
-        // Enhanced matching logic - check for exact match first, then partial matches
-        const exactMatch = cachedEmployees.find(emp => emp.id === recipientId);
-        if (exactMatch) {
-          console.log("Found exact recipient match in employee directory:", exactMatch);
-          return exactMatch;
-        }
-        
-        // Try partial matches
-        const partialMatch = cachedEmployees.find(emp => 
-          emp.id?.includes(recipientId) || recipientId?.includes(emp.id)
-        );
-        
-        if (partialMatch) {
-          console.log("Found partial recipient match in employee directory:", partialMatch);
-          return partialMatch;
-        }
+    // Last attempt - check entire employee directory as a fallback
+    const { data: allEmployees, error: employeeError } = await supabase
+      .from('profiles')
+      .select('id, name, email')
+      .order('updated_at', { ascending: false })
+      .limit(20);
+      
+    if (employeeError) {
+      console.error("Error fetching employee directory:", employeeError);
+    }
+    
+    if (allEmployees && allEmployees.length > 0) {
+      // First try for exact match
+      const exactMatch = allEmployees.find(emp => emp.id === recipientId);
+      if (exactMatch) {
+        console.log("Found exact match in employee directory:", exactMatch);
+        return exactMatch;
       }
-    } catch (e) {
-      console.error("Error checking employee directory:", e);
+      
+      // Then try for partial match
+      const partialMatch = allEmployees.find(emp => 
+        emp.id.includes(recipientId) || recipientId.includes(emp.id)
+      );
+      
+      if (partialMatch) {
+        console.log("Found partial match in employee directory:", partialMatch);
+        return partialMatch;
+      }
+      
+      console.log("No matching employee found in directory with ID:", recipientId);
     }
     
     // If we get here, no recipient was found
-    console.error(`Recipient not found in database with ID: ${recipientId}`);
-    throw new Error("Recipient not found in database. Please refresh and try with another employee.");
+    throw new Error("Employee not found in database. Please try again with another employee.");
   } catch (error: any) {
     console.error("Error in findRecipientProfile:", error);
     throw error;
@@ -110,7 +110,7 @@ export function normalizeRecipientData(employee: User) {
 
 /**
  * Validate if an employee exists in the profiles table
- * Enhanced with multiple lookup strategies
+ * Completely rewritten for more robust validation
  */
 export async function validateEmployeeExists(employeeId: string): Promise<boolean> {
   if (!employeeId) return false;
@@ -118,80 +118,39 @@ export async function validateEmployeeExists(employeeId: string): Promise<boolea
   console.log("Validating employee exists:", employeeId);
   
   try {
-    // Try exact match first
+    // Direct query with exact match - most reliable
     const { data, error } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', employeeId)
-      .maybeSingle();
+      .limit(1);
       
-    if (data) {
-      console.log("Employee validated with exact match");
+    if (data && data.length > 0) {
+      console.log("✅ Employee validated successfully with exact match");
       return true;
     }
     
-    if (error) {
-      console.error("Error in exact validation:", error);
-    }
-    
-    // Try partial match as fallback for ID format issues
-    if (employeeId.length > 5) {
-      const { data: fuzzyData, error: fuzzyError } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('id', `%${employeeId.slice(-10)}%`)
-        .limit(1);
-        
-      if (fuzzyData && fuzzyData.length > 0) {
-        console.log("Employee validated with partial match:", fuzzyData[0].id);
-        return true;
-      }
-      
-      if (fuzzyError) {
-        console.error("Error in fuzzy validation:", fuzzyError);
-      }
-    }
-    
-    // Final attempt - check if any employees match
-    const { data: allEmployees } = await supabase
+    // If exact match fails, try fetching all profiles and check manually
+    // This is a fallback in case of database connection issues
+    const { data: allProfiles } = await supabase
       .from('profiles')
       .select('id')
-      .order('updated_at', { ascending: false }) 
       .limit(50);
+    
+    if (allProfiles && allProfiles.length > 0) {
+      // Check if any profile matches the employee ID
+      const matchingProfile = allProfiles.some(profile => profile.id === employeeId);
       
-    if (allEmployees && allEmployees.length > 0) {
-      // Check for any ID that might match
-      const matchingEmployee = allEmployees.find(emp => 
-        emp.id === employeeId || 
-        emp.id?.includes(employeeId) || 
-        employeeId?.includes(emp.id)
-      );
-      
-      if (matchingEmployee) {
-        console.log("Employee validated with directory scan:", matchingEmployee.id);
+      if (matchingProfile) {
+        console.log("✅ Employee validated with fallback method");
         return true;
       }
     }
     
-    console.warn("Employee validation failed for ID:", employeeId);
+    console.warn("❌ Employee validation failed for ID:", employeeId);
     return false;
-  } catch (e) {
-    console.error("Exception validating employee:", e);
-    // If validation fails due to an error, we'll try a direct check as last resort
-    try {
-      const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-      
-      // If we can reach the database and there are employees, give benefit of doubt
-      // This prevents blocking shift coverage due to technical issues
-      if (count && count > 0) {
-        console.log("Database accessible with employees, allowing operation as fallback");
-        return true;
-      }
-    } catch (directError) {
-      console.error("Final validation attempt failed:", directError);
-    }
+  } catch (error) {
+    console.error("Error validating employee:", error);
     return false;
   }
 }
