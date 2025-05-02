@@ -1,8 +1,11 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useCallback } from "react";
 import { TimeOffRequest } from "@/types/timeManagement";
+import { Communication } from "@/types/communications/communicationTypes";
+import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 
 export function useDashboardData() {
   const { currentUser } = useAuth();
@@ -70,6 +73,50 @@ export function useDashboardData() {
     retry: 3
   });
 
+  // Fetch shift coverage requests
+  const { data: shiftCoverageMessagesRaw, error: shiftCoverageError, refetch: refetchShiftCoverage } = useQuery({
+    queryKey: ['shiftCoverage', currentUser?.id, retryCount],
+    queryFn: async () => {
+      // Fetch messages of type shift_coverage
+      const { data: messages, error: messagesError } = await supabase
+        .from('employee_communications')
+        .select('*')
+        .eq('type', 'shift_coverage')
+        .or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`);
+      
+      if (messagesError) throw messagesError;
+      
+      // Now fetch the related shift coverage requests
+      if (messages && messages.length > 0) {
+        const messagesWithRequests = await Promise.all(
+          messages.map(async (msg) => {
+            const { data: shiftRequests, error: shiftError } = await supabase
+              .from('shift_coverage_requests')
+              .select('*')
+              .eq('communication_id', msg.id);
+              
+            if (shiftError) {
+              console.error(`Error fetching shift requests for message ${msg.id}:`, shiftError);
+              return { ...msg, shift_coverage_requests: [] };
+            }
+            
+            return { ...msg, shift_coverage_requests: shiftRequests || [] };
+          })
+        );
+        
+        return messagesWithRequests;
+      }
+      
+      return [];
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 30000,
+    retry: 3
+  });
+
+  // Process the raw messages into properly typed Communication objects
+  const shiftCoverageMessages = useProcessMessages(shiftCoverageMessagesRaw, currentUser);
+
   // Fetch recent announcements
   const { data: announcements, error: announcementsError } = useQuery({
     queryKey: ['recentAnnouncements', retryCount],
@@ -111,24 +158,33 @@ export function useDashboardData() {
     retry: 3
   });
 
-  // Refetch time off data
-  const refetchTimeOff = useCallback(() => {
+  // Refetch data
+  const refetchData = useCallback(() => {
     setRetryCount(prev => prev + 1);
   }, []);
 
   // Determine if any data is still loading
-  const loading = (!pendingTimeOff && isAdmin) || (!userTimeOff && !!currentUser?.id) || !announcements;
+  const loading = (!pendingTimeOff && isAdmin) || 
+                  (!userTimeOff && !!currentUser?.id) || 
+                  (!shiftCoverageMessages && !!currentUser?.id) || 
+                  !announcements;
   
   // Consolidate errors
-  const error = pendingTimeOffError || userTimeOffError || announcementsError || assignedTrainingsError || null;
+  const error = pendingTimeOffError || 
+                userTimeOffError || 
+                shiftCoverageError || 
+                announcementsError || 
+                assignedTrainingsError || 
+                null;
 
   return {
     pendingTimeOff,
     userTimeOff,
+    shiftCoverageMessages,
     announcements,
     assignedTrainings,
     isAdmin,
-    refetchTimeOff,
+    refetchData,
     loading,
     error
   };

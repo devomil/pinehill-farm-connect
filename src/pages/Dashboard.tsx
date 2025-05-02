@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AdminTimeOffCard } from "@/components/dashboard/AdminTimeOffCard";
 import { TrainingCard } from "@/components/dashboard/TrainingCard";
 import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
+import { ShiftCoverageCard } from "@/components/dashboard/ShiftCoverageCard";
 import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
 import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
 import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
@@ -21,10 +22,11 @@ export default function Dashboard() {
   const { 
     pendingTimeOff,
     userTimeOff,
+    shiftCoverageMessages,
     announcements,
     assignedTrainings,
     isAdmin,
-    refetchTimeOff,
+    refetchData,
     loading: dashboardDataLoading,
     error: dashboardDataError 
   } = useDashboardData();
@@ -41,11 +43,11 @@ export default function Dashboard() {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
-  const handleRefreshTimeOff = useCallback(() => {
-    if (refetchTimeOff) {
-      refetchTimeOff();
+  const handleRefreshData = useCallback(() => {
+    if (refetchData) {
+      refetchData();
     }
-  }, [refetchTimeOff]);
+  }, [refetchData]);
 
   return (
     <DashboardLayout>
@@ -86,7 +88,7 @@ export default function Dashboard() {
                 requests={pendingTimeOff} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
-                onRefresh={handleRefreshTimeOff}
+                onRefresh={handleRefreshData}
                 showEmployeeName={true}
               />
             )}
@@ -96,7 +98,18 @@ export default function Dashboard() {
                 requests={userTimeOff} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
-                onRefresh={handleRefreshTimeOff}
+                onRefresh={handleRefreshData}
+              />
+            )}
+
+            {/* Add Shift Coverage Card for both admins and employees */}
+            {currentUser && shiftCoverageMessages && (
+              <ShiftCoverageCard 
+                messages={shiftCoverageMessages} 
+                currentUser={currentUser}
+                loading={dashboardDataLoading}
+                error={dashboardDataError}
+                onRefresh={handleRefreshData}
               />
             )}
 
