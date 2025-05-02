@@ -1,75 +1,59 @@
-
-import { notifyManager } from "@/utils/notifyManager";
 import { User } from "@/types";
-
-interface RecipientData {
-  id: string;
-  name: string;
-  email: string;
-}
-
-interface AdminCCData {
-  id: string;
-  name: string;
-  email: string;
-}
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Sends notifications for message events
+ * Sends a notification using Supabase edge functions
  */
 export async function sendMessageNotification(
-  actionType: 'new_message' | 'shift_coverage_request',
-  currentUser: User,
-  recipientData: RecipientData,
-  messageDetails: {
-    message: string;
-    communicationId: string;
-    shiftDetails?: any;
-    adminCc?: AdminCCData | null;
-  }
+  actionType: string,
+  actor: User,
+  assignedTo: { id: string; name: string; email: string },
+  details: any
 ) {
-  try {
-    console.log(`Sending notification to ${recipientData.name} (${recipientData.email}) with ID: ${recipientData.id}`);
-    
-    const notifyResult = await notifyManager(
-      actionType,
-      {
-        id: currentUser.id || "unknown",
-        name: currentUser.name || "Unknown User",
-        email: currentUser.email || "unknown"
-      },
-      {
-        message: messageDetails.message,
-        communicationId: messageDetails.communicationId,
-        adminCc: messageDetails.adminCc,
-        ...(messageDetails.shiftDetails || {})
-      },
-      {
-        id: recipientData.id,
-        name: recipientData.name,
-        email: recipientData.email
-      }
-    );
+  console.log(`Sending notification of type ${actionType} from ${actor.name} to ${assignedTo.name}`);
+  
+  const payload = {
+    actionType,
+    actor: {
+      id: actor.id,
+      name: actor.name,
+      email: actor.email
+    },
+    assignedTo: {
+      id: assignedTo.id,
+      name: assignedTo.name,
+      email: assignedTo.email
+    },
+    details
+  };
+  
+  console.log("Sending notification payload:", JSON.stringify(payload, null, 2));
 
-    if (!notifyResult.success) {
-      console.warn("Notification sending failed, but message was saved:", notifyResult.error);
-    }
-    
-    return notifyResult;
-  } catch (notifyError) {
-    console.error("Error sending notification:", notifyError);
-    // Return error info but don't throw since message was still saved
-    return { success: false, error: notifyError };
+  const { data, error } = await supabase.functions.invoke('notify-manager', {
+    body: payload
+  });
+
+  if (error) {
+    console.error("Error sending notification:", error);
+    throw error;
   }
+
+  console.log("Notification sent successfully:", data);
+  return data;
 }
 
 /**
- * Validates shift coverage request details
+ * Validates that the shift details contain all required fields
  */
-export function validateShiftDetails(shiftDetails: any): boolean {
-  if (!shiftDetails.shift_date || !shiftDetails.shift_start || !shiftDetails.shift_end) {
-    console.error("Missing required shift details:", shiftDetails);
-    return false;
-  }
-  return true;
-}
+export const validateShiftDetails = (shiftDetails: any): boolean => {
+  if (!shiftDetails) return false;
+  
+  return !!(
+    shiftDetails.shift_date && 
+    shiftDetails.shift_start && 
+    shiftDetails.shift_end && 
+    // Make sure we have either explicit IDs or will use defaults
+    (shiftDetails.original_employee_id || true) &&
+    (shiftDetails.covering_employee_id || true)
+  );
+};
