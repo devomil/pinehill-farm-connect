@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -21,7 +22,7 @@ export function useEmployeeDirectory() {
       console.log('Fetching employees from profiles table...');
       
       // Only select columns that actually exist in the profiles table
-      // Based on the database schema
+      // Based on the database schema from the error message
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select(`
@@ -142,12 +143,6 @@ export function useEmployeeDirectory() {
       console.error('Error deleting employee:', err);
       throw err;
     }
-  }, [fetchEmployees]);
-
-  // Refetch function that can be called from outside
-  const refetch = useCallback(() => {
-    console.log('Manually refetching employee directory');
-    return fetchEmployees();
   }, [fetchEmployees]);
 
   // Initial fetch

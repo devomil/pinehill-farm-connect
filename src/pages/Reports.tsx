@@ -6,11 +6,17 @@ import { ShiftReportList } from "@/components/reports/ShiftReportList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { formatErrorMessage } from "@/utils/errorUtils";
+import { Button } from "@/components/ui/button";
 
 export default function Reports() {
-  const { loading, error } = useEmployeeDirectory();
+  const { employees, loading, error, refetch } = useEmployeeDirectory();
+
+  const handleRetry = () => {
+    console.log("Retrying employee data fetch");
+    refetch();
+  };
 
   return (
     <DashboardLayout>
@@ -23,8 +29,16 @@ export default function Reports() {
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Error loading employees: {formatErrorMessage(error)}
+            <AlertDescription className="flex justify-between w-full items-center">
+              <span>Error loading employees: {formatErrorMessage(error)}</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRetry}
+                className="whitespace-nowrap ml-2"
+              >
+                <RefreshCw className="h-3 w-3 mr-2" /> Retry
+              </Button>
             </AlertDescription>
           </Alert>
         )}
