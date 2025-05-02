@@ -9,17 +9,19 @@ export function useEmployeeDirectory() {
   const [employees, setEmployees] = useState<User[]>([]);
   const [unfilteredEmployees, setUnfilteredEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | Error>('');
+  const [error, setError] = useState<string | Error | null>(null);
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      setError(null);
 
       console.log('Fetching employees from profiles table...');
-      // Fetch all users with their profiles
+      
+      // Only select columns that actually exist in the profiles table
+      // Based on the database schema
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select(`
@@ -36,8 +38,7 @@ export function useEmployeeDirectory() {
       if (fetchError) {
         console.error('Error fetching employees:', fetchError);
         const message = fetchError.message || 'Failed to load employee data';
-        const errorObj = toErrorObject(message);
-        setError(errorObj);
+        setError(toErrorObject(message));
         return;
       }
 
@@ -57,8 +58,8 @@ export function useEmployeeDirectory() {
         role: 'employee', // Default role if not specified
         department: profile.department || '',
         position: profile.position || '',
-        avatar_url: '', // No avatar_url in the table
-        created_at: profile.updated_at || '', // Use updated_at instead of created_at
+        avatar_url: '', // Not in the database but required by User type
+        created_at: profile.updated_at || '', // Use updated_at as a substitute since created_at doesn't exist
         employeeId: profile.employeeId || '',
       }));
 
@@ -174,7 +175,7 @@ export function useEmployeeDirectory() {
     unfilteredEmployees,
     loading,
     error,
-    refetch,
+    refetch: fetchEmployees,
     addEmployee,
     updateEmployee,
     deleteEmployee,
