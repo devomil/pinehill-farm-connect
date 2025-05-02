@@ -1,22 +1,28 @@
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from 'react';
 
-/**
- * Hook to detect mobile vs desktop view for responsive layouts
- */
-export function useResponsiveLayout() {
+export const useResponsiveLayout = () => {
   const [isMobileView, setIsMobileView] = useState(false);
-
+  
   useEffect(() => {
-    const checkMobile = () => {
+    const checkSize = () => {
       setIsMobileView(window.innerWidth < 768);
     };
     
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
+    // Initial check
+    checkSize();
     
-    return () => window.removeEventListener("resize", checkMobile);
+    // Listen for window resize
+    window.addEventListener('resize', checkSize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkSize);
+    };
   }, []);
-
-  return { isMobileView };
-}
+  
+  return {
+    isMobileView,
+    isDesktop: !isMobileView
+  };
+};

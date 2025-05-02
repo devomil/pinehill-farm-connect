@@ -16,7 +16,7 @@ export const EmployeeCommunications: React.FC = () => {
   // Exclude shift coverage messages from employee communications
   const { messages, isLoading: messagesLoading, sendMessage, refreshMessages } = useCommunications(true);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
-  const { isMobile, isDesktop } = useResponsiveLayout();
+  const { isMobileView } = useResponsiveLayout();
   
   const processedMessages = useProcessMessages(messages, currentUser);
   
@@ -27,14 +27,18 @@ export const EmployeeCommunications: React.FC = () => {
   const loading = employeesLoading || messagesLoading;
 
   // For mobile layout, show either conversations list or specific conversation
-  if (isMobile) {
+  if (isMobileView) {
     return selectedEmployee ? (
       <EmployeeConversationView
-        employee={selectedEmployee}
+        selectedEmployee={selectedEmployee}
         messages={processedMessages}
         loading={loading}
         onBack={() => setSelectedEmployee(null)}
-        onSendMessage={sendMessage}
+        onSendMessage={(message) => sendMessage({
+          recipientId: selectedEmployee.id,
+          message,
+          type: 'general'
+        })}
         onRefresh={refreshMessages}
       />
     ) : (
@@ -65,10 +69,14 @@ export const EmployeeCommunications: React.FC = () => {
       <div className="md:w-2/3 pl-4 mt-4 md:mt-0">
         {selectedEmployee ? (
           <EmployeeConversationView
-            employee={selectedEmployee}
+            selectedEmployee={selectedEmployee}
             messages={processedMessages}
             loading={loading}
-            onSendMessage={sendMessage}
+            onSendMessage={(message) => sendMessage({
+              recipientId: selectedEmployee.id,
+              message,
+              type: 'general'
+            })}
             onRefresh={refreshMessages}
           />
         ) : (

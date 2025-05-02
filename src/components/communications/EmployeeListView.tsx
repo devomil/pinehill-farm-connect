@@ -7,30 +7,30 @@ import { Communication } from "@/types/communications/communicationTypes";
 
 interface EmployeeListViewProps {
   employees: User[];
-  isLoading: boolean;
+  loading: boolean;
   onSelectEmployee: (employee: User) => void;
-  selectedEmployee: User | null;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  unreadMessages: Communication[];
+  selectedEmployee?: User | null;
   onRefresh: () => void;
+  messages?: Communication[];
+  unreadMessages?: Communication[];
 }
 
 export function EmployeeListView({
   employees,
-  isLoading,
+  loading,
   onSelectEmployee,
-  selectedEmployee,
-  searchQuery,
-  setSearchQuery,
-  unreadMessages,
-  onRefresh
+  selectedEmployee = null,
+  onRefresh,
+  messages = [],
+  unreadMessages = []
 }: EmployeeListViewProps) {
+  const [searchQuery, setSearchQuery] = React.useState("");
+
   return (
     <Card className="md:col-span-1 p-4">
       <EmployeeList
         employees={employees}
-        isLoading={isLoading}
+        isLoading={loading}
         onSelectEmployee={onSelectEmployee}
         selectedEmployee={selectedEmployee}
         searchQuery={searchQuery}

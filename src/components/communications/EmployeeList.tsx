@@ -29,8 +29,8 @@ export function EmployeeList({
 }: EmployeeListProps) {
   const filteredEmployees = employees.filter(
     (employee) =>
-      employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      (employee.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (employee.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
   // Count unread messages per employee
