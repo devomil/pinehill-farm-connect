@@ -286,14 +286,16 @@ export function useEmployeeDirectory() {
       if (newEmployee.email) {
         // In a real implementation, you would call an edge function to create a user
         // For demonstration, we'll just simulate adding directly to profiles
+        
+        // Use upsert method which doesn't require ID for new records
         const { data, error: insertError } = await supabase
           .from('profiles')
-          .insert({
-            name: newEmployee.name,
-            email: newEmployee.email,
-            department: newEmployee.department,
-            position: newEmployee.position,
-            employeeId: newEmployee.employeeId,
+          .upsert({
+            name: newEmployee.name || '',
+            email: newEmployee.email || '',
+            department: newEmployee.department || '',
+            position: newEmployee.position || '',
+            employeeId: newEmployee.employeeId || '',
           })
           .select();
 

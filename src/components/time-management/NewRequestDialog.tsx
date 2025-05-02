@@ -33,8 +33,7 @@ export const NewRequestDialog: React.FC<NewRequestDialogProps> = ({
           <DialogTitle>New Time-Off Request</DialogTitle>
         </DialogHeader>
         <TimeOffRequestForm 
-          onSubmit={onSubmit} 
-          onCancel={onClose}
+          onRequestSubmitted={onSubmit} 
           currentUser={currentUser}
         />
       </DialogContent>
