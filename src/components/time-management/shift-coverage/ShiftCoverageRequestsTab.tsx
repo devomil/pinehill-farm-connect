@@ -9,6 +9,9 @@ import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
 import { ShiftCoverageHeader } from "./ShiftCoverageHeader";
 import { ShiftRequestsList } from "./ShiftRequestsList";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -22,6 +25,7 @@ interface ShiftCoverageRequestsTabProps {
   }) => void;
   currentUser: User;
   onRefresh: () => void;
+  allEmployees?: User[];
 }
 
 export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> = ({
@@ -31,9 +35,21 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   onRespond,
   currentUser,
   onRefresh,
+  allEmployees: propEmployees
 }) => {
-  const { employees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
+  const { employees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
+  
+  // Use either the provided employees or the ones from the directory hook
+  const allEmployees = propEmployees || directoryEmployees;
+  
+  // Show more detailed loading logs
+  useEffect(() => {
+    console.log("ShiftCoverageRequestsTab - Loading state:", loading);
+    console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
+    console.log("ShiftCoverageRequestsTab - Employee count:", allEmployees?.length || 0);
+    console.log("ShiftCoverageRequestsTab - Messages count:", messages?.length || 0);
+  }, [loading, employeesLoading, allEmployees, messages]);
   
   const {
     shiftCoverageRequests,
@@ -46,20 +62,6 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   // Apply status filter
   const filteredRequests = filterByStatus(filter, shiftCoverageRequests);
   
-  // Enhanced logging for debugging
-  useEffect(() => {
-    console.log("ShiftCoverageRequestsTab - Render with messages:", messages.length);
-    console.log(`ShiftCoverageRequestsTab - Final filtered requests count: ${filteredRequests.length}`);
-    
-    if (filteredRequests.length > 0) {
-      filteredRequests.forEach(req => {
-        console.log(`Filtered request: ${req.id}, from ${req.sender_id} to ${req.recipient_id}, status: ${req.shift_coverage_requests?.[0]?.status}`);
-      });
-    } else {
-      console.log("No shift coverage requests found after filtering");
-    }
-  }, [messages, filteredRequests]);
-
   // Find employee by ID
   const findEmployee = (id: string): User | undefined => {
     return allEmployees?.find(emp => emp.id === id);
@@ -77,13 +79,47 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     return <ShiftRequestsLoadingState />;
   }
 
-  // If there's an error, show error state
-  if (error) {
-    return <ShiftRequestsErrorState onRetry={handleManualRefresh} />;
+  // If there's an error, show error state with retry option
+  if (error || employeesError) {
+    return (
+      <>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error loading shift coverage data: {error?.message || employeesError?.message || "Unknown error"}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleManualRefresh} 
+              className="ml-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+        <ShiftRequestsErrorState onRetry={handleManualRefresh} />
+      </>
+    );
   }
   
   // Get available employees (excluding current user)
   const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
+  
+  // Show a message if no employees are available
+  if (!allEmployees || allEmployees.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">No employees available</h3>
+        <p className="text-muted-foreground text-center mb-4">
+          Could not load employees. You need employees to manage shift coverage.
+        </p>
+        <Button onClick={handleManualRefresh} className="mt-2">
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh Employee List
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>

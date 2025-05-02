@@ -11,26 +11,40 @@ import { useResponsiveLayout } from "@/hooks/communications/useResponsiveLayout"
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
   setSelectedEmployee?: React.Dispatch<React.SetStateAction<User | null>>;
+  onRefresh?: () => void;
+  retryCount?: number;
 }
 
 export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({ 
   selectedEmployee: propSelectedEmployee,
-  setSelectedEmployee: propSetSelectedEmployee
+  setSelectedEmployee: propSetSelectedEmployee,
+  onRefresh: propsOnRefresh,
+  retryCount = 0
 }) => {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
+  const { unfilteredEmployees, loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployeeDirectory();
   // Exclude shift coverage messages from employee communications
-  const { messages, isLoading: messagesLoading, sendMessage, refreshMessages } = useCommunications(true);
+  const { messages, isLoading: messagesLoading, sendMessage, refreshMessages, error: messagesError } = useCommunications(true);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const { isMobileView } = useResponsiveLayout();
   
   const processedMessages = useProcessMessages(messages, currentUser);
   const loading = employeesLoading || messagesLoading;
+  const error = employeeError || messagesError;
+
+  // Force a refresh when retryCount changes
+  useEffect(() => {
+    if (retryCount > 0) {
+      refetchEmployees();
+      refreshMessages();
+    }
+  }, [retryCount, refetchEmployees, refreshMessages]);
 
   useEffect(() => {
     // When component mounts, ensure we have fresh employee data
@@ -52,7 +66,36 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     toast.info("Refreshing employee data and messages");
     refetchEmployees();
     refreshMessages();
+    
+    // Also call parent's onRefresh if provided
+    if (propsOnRefresh) {
+      propsOnRefresh();
+    }
   };
+
+  // Show error message if there's an issue
+  if (error && !loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error loading communications data: {error?.message || "Unknown error"}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="p-4 text-center">
+          <Button 
+            variant="default" 
+            onClick={handleRefresh}
+            className="w-full"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // For mobile layout, show either conversations list or specific conversation
   if (isMobileView) {
@@ -89,6 +132,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
           loading={loading}
           onSelectEmployee={handleSelectEmployee}
           onRefresh={handleRefresh}
+          error={error}
         />
       </div>
     );
@@ -116,6 +160,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
           onSelectEmployee={handleSelectEmployee}
           selectedEmployee={selectedEmployee}
           onRefresh={handleRefresh}
+          error={error}
         />
       </div>
       <Separator orientation="vertical" className="hidden md:block" />

@@ -1,92 +1,72 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Follow this setup guide to integrate the Deno runtime into your Supabase project:
+// https://supabase.com/docs/guides/functions/deno-runtime
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // Create a Supabase client with the service role key
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
-
-    // Use the service role to bypass RLS
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('*');
-
-    if (error) {
-      console.error('Error fetching profiles:', error);
-      throw error;
-    }
-
-    // Validate and enhance profile data
-    const enhancedProfiles = data.map(profile => {
-      // Check if the profile has an email with an @ symbol
-      if (!profile.email || !profile.email.includes('@')) {
-        console.warn(`Profile ${profile.id} (${profile.name}) has invalid email: ${profile.email}`);
-        
-        // Print the original email for debugging
-        console.log(`Original email value: "${profile.email}"`);
-        
-        // Add standard domain to emails without @ symbol
-        if (profile.email && profile.email.trim() !== '') {
-          const emailWithDomain = `${profile.email}@pinehillfarm.co`;
-          console.log(`Adding domain to email for ${profile.name}: ${profile.email} -> ${emailWithDomain}`);
-          profile.email = emailWithDomain;
-        } else {
-          // If no email is provided, create one based on the name
-          if (profile.name && profile.name.trim() !== '') {
-            // Create a sanitized name for the email (lowercase, spaces to dots)
-            const sanitizedName = profile.name.toLowerCase().replace(/\s+/g, '.');
-            const generatedEmail = `${sanitizedName}@pinehillfarm.co`;
-            console.log(`Generating email for ${profile.name}: ${generatedEmail}`);
-            profile.email = generatedEmail;
-          } else {
-            // If all else fails, use a placeholder with the ID
-            const fallbackEmail = `user.${profile.id.substring(0, 8)}@pinehillfarm.co`;
-            console.log(`Using fallback email for profile ${profile.id}: ${fallbackEmail}`);
-            profile.email = fallbackEmail;
-          }
-        }
-      }
-      
-      return profile;
-    });
-
-    console.log(`Successfully fetched and enhanced ${enhancedProfiles?.length || 0} profiles`);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // Log each profile's email for debugging
-    enhancedProfiles.forEach(profile => {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase URL or service role key not found in environment');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get all profiles bypassing RLS
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, name, email, department, position, employeeId, updated_at');
+      
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      throw profilesError;
+    }
+    
+    if (!profiles || profiles.length === 0) {
+      console.log('No profiles found');
+      return new Response(
+        JSON.stringify([]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Log successful operation
+    console.log(`Successfully fetched and enhanced ${profiles.length} profiles`);
+    
+    // Log some sample profiles for debugging
+    profiles.slice(0, 5).forEach(profile => {
       console.log(`Profile: ${profile.name} | Email: ${profile.email}`);
     });
     
-    return new Response(JSON.stringify(enhancedProfiles), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    // Return the enhanced profiles
+    return new Response(
+      JSON.stringify(profiles),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
   } catch (error) {
     console.error('Error in get_all_profiles function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    });
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });

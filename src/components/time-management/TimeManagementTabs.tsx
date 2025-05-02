@@ -7,6 +7,9 @@ import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
 import { useTimeManagement } from "@/contexts/TimeManagementContext";
 import { User } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TimeManagementTabsProps {
   currentUser: User;
@@ -29,7 +32,10 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     messagesLoading,
     respondToShiftRequest,
     refreshMessages,
-    messagesError
+    messagesError,
+    handleRetry,
+    allEmployees,
+    forceRefreshData
   } = useTimeManagement();
 
   // Enhanced debugging
@@ -39,6 +45,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     console.log("TimeManagementTabs - Loading state:", loading);
     console.log("TimeManagementTabs - Error state:", error ? error.message : 'none');
     console.log("TimeManagementTabs - Pending requests:", pendingRequests?.length || 0);
+    console.log("TimeManagementTabs - Available employees:", allEmployees?.length || 0);
     
     // Detailed logging for messages
     console.log("TimeManagementTabs - Processed messages count:", processedMessages?.length || 0);
@@ -46,81 +53,79 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     // Log shift coverage messages specifically
     const shiftMessages = processedMessages?.filter(msg => msg.type === 'shift_coverage') || [];
     console.log("TimeManagementTabs - Shift coverage messages:", shiftMessages.length);
-    
-    if (shiftMessages.length > 0) {
-      const relevantToUser = shiftMessages.filter(msg => 
-        msg.sender_id === currentUser.id || msg.recipient_id === currentUser.id
-      );
-      console.log(`TimeManagementTabs - Shift coverage messages relevant to ${currentUser.email}:`, relevantToUser.length);
-      
-      if (relevantToUser.length > 0) {
-        console.log("Sample shift message:", {
-          id: relevantToUser[0].id,
-          sender: relevantToUser[0].sender_id,
-          recipient: relevantToUser[0].recipient_id,
-          requests: relevantToUser[0].shift_coverage_requests?.length || 0
-        });
-      }
-    }
-    
-    console.log("TimeManagementTabs - Messages loading:", messagesLoading);
-    console.log("TimeManagementTabs - Messages error:", messagesError ? messagesError.message : 'none');
-  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser]);
+  }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError, currentUser, allEmployees]);
 
   const handleTabChange = (value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
     setActiveTab(value);
     
-    // Only refresh data when explicitly switching to tabs that need fresh data
-    // This prevents excessive refreshes
+    // Force full refresh when switching to shift coverage to ensure we have the latest data
     if (value === "shift-coverage" && value !== activeTab) {
-      console.log("Refreshing messages due to tab change to shift-coverage");
-      refreshMessages();
+      console.log("Refreshing all data due to tab change to shift-coverage");
+      forceRefreshData();
     } else if (value === "my-requests" && value !== activeTab) {
       console.log("Refreshing time-off requests due to tab change to my-requests");
       fetchRequests();
     }
   };
 
-  // Initial data fetch only once on component mount
-  useEffect(() => {
-    console.log("TimeManagementTabs - Initial fetch");
-  }, []); // Empty dependency array to run only once
+  // Show any errors at the top of the tabs area
+  const hasErrors = error || messagesError;
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-        <TabsTrigger value="shift-coverage">Shift Coverage</TabsTrigger>
-        {isAdmin && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
-        <TabsTrigger value="team-calendar">Team Calendar</TabsTrigger>
-      </TabsList>
-      <TabsContent value="my-requests" className="space-y-4 pt-4">
-        <UserTimeOffRequests
-          userRequests={userRequests || []}
-          loading={loading}
-          refresh={fetchRequests}
-          error={error}
-        />
-      </TabsContent>
-      <TabsContent value="shift-coverage" className="space-y-4 pt-4">
-        <ShiftCoverageRequestsTab
-          messages={processedMessages || []}
-          loading={messagesLoading}
-          onRespond={respondToShiftRequest}
-          currentUser={currentUser}
-          onRefresh={refreshMessages}
-          error={messagesError}
-        />
-      </TabsContent>
-      {isAdmin && (
-        <TabsContent value="pending-approvals" className="space-y-4 pt-4">
-          <PendingTimeOffApprovals pendingRequests={pendingRequests || []} refresh={fetchRequests} />
-        </TabsContent>
+    <>
+      {hasErrors && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error loading data: {error?.message || messagesError?.message || "Unknown error"}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetry} 
+              className="ml-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
-      <TabsContent value="team-calendar" className="pt-4">
-        <TeamCalendar currentUser={currentUser} />
-      </TabsContent>
-    </Tabs>
+      
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="my-requests">My Requests</TabsTrigger>
+          <TabsTrigger value="shift-coverage">Shift Coverage</TabsTrigger>
+          {isAdmin && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          <TabsTrigger value="team-calendar">Team Calendar</TabsTrigger>
+        </TabsList>
+        <TabsContent value="my-requests" className="space-y-4 pt-4">
+          <UserTimeOffRequests
+            userRequests={userRequests || []}
+            loading={loading}
+            refresh={fetchRequests}
+            error={error}
+          />
+        </TabsContent>
+        <TabsContent value="shift-coverage" className="space-y-4 pt-4">
+          <ShiftCoverageRequestsTab
+            messages={processedMessages || []}
+            loading={messagesLoading}
+            onRespond={respondToShiftRequest}
+            currentUser={currentUser}
+            onRefresh={refreshMessages}
+            error={messagesError}
+            allEmployees={allEmployees}
+          />
+        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="pending-approvals" className="space-y-4 pt-4">
+            <PendingTimeOffApprovals pendingRequests={pendingRequests || []} refresh={fetchRequests} />
+          </TabsContent>
+        )}
+        <TabsContent value="team-calendar" className="pt-4">
+          <TeamCalendar currentUser={currentUser} />
+        </TabsContent>
+      </Tabs>
+    </>
   );
-}
+};

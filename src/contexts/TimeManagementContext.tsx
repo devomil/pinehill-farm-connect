@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { User } from "@/types";
-import { TimeManagementContextType, TimeManagementProviderProps, TimeOffRequest } from "@/types/timeManagement";
+import { TimeManagementContextType, TimeManagementProviderProps } from "@/types/timeManagement";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 import { useTimeOffRequests } from "@/hooks/timeManagement/useTimeOffRequests";
 import { toast } from "sonner";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 const TimeManagementContext = createContext<TimeManagementContextType | undefined>(undefined);
 
@@ -30,9 +31,13 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
   const refreshInProgress = useRef<boolean>(false);
   const initialLoadRef = useRef<boolean>(false);
   
+  // Fetch employee directory for shift coverage operations
+  const { unfilteredEmployees: allEmployees, refetch: refetchEmployees } = useEmployeeDirectory();
+  
   useEffect(() => {
     console.log("TimeManagementProvider initialized with user:", currentUser?.id, currentUser?.email);
-  }, [currentUser]);
+    console.log("Available employees:", allEmployees?.length || 0);
+  }, [currentUser, allEmployees]);
   
   // Get time off requests data
   const {
@@ -51,20 +56,21 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     isLoading: messagesLoading, 
     error: messagesError, 
     respondToShiftRequest, 
-    refreshMessages 
+    refreshMessages,
+    sendMessage 
   } = useCommunications(false);
   
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
-  // CRITICAL FIX: Enhanced toast system with stricter deduplication and throttling
+  // Enhanced toast system with deduplication and throttling
   const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
     // Create a unique key for this message + type combo
     const toastKey = `${message}-${type}`;
     const now = Date.now();
     
     // Only show a toast if:
-    // 1. It's been at least 20 seconds since the last toast (increased from 10s)
+    // 1. It's been at least 20 seconds since the last toast
     // 2. This exact message isn't already pending/showing
     if (now - lastToastTime > 20000 && !pendingToasts.current.has(toastKey)) {
       // Add to pending toasts set to prevent duplicates
@@ -90,7 +96,7 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       // Update last toast time
       setLastToastTime(now);
       
-      // Auto-clear from pending after 20 seconds (toast should be gone by then)
+      // Auto-clear from pending after 20 seconds
       setTimeout(() => {
         pendingToasts.current.delete(toastKey);
       }, 20000);
@@ -104,17 +110,21 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     console.log("Manual retry triggered");
     setRetryCount(prevCount => prevCount + 1);
     showThrottledToast("Retrying data fetch...");
-    fetchRequests();
-    refreshMessages();
+    refetchEmployees().then(() => {
+      setTimeout(() => {
+        fetchRequests();
+        refreshMessages();
+      }, 1000);
+    });
     return retryCount + 1;
-  }, [fetchRequests, refreshMessages, retryCount, showThrottledToast]);
+  }, [fetchRequests, refreshMessages, retryCount, showThrottledToast, refetchEmployees]);
 
-  // CRITICAL FIX: Force refresh of data with improved throttling and deduplication
+  // Force refresh of all data with improved handling
   const forceRefreshData = useCallback(() => {
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime < 15000) { // Increased to 15 seconds
+    if (refreshInProgress.current || now - lastRefreshTime < 15000) {
       console.log("Refresh skipped - too soon or already in progress");
       return;
     }
@@ -132,29 +142,39 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
       console.log("Initial load, not showing refresh toast");
     }
     
-    fetchRequests();
-    refreshMessages();
+    // First refresh employees, then do the rest
+    refetchEmployees().then(() => {
+      setTimeout(() => {
+        fetchRequests();
+        refreshMessages();
+      }, 1000);
+    });
     
-    // Reset the refresh lock after a longer timeout
+    // Reset the refresh lock after a timeout
     setTimeout(() => {
       refreshInProgress.current = false;
-    }, 5000); // Increased to 5 seconds
-  }, [fetchRequests, refreshMessages, showThrottledToast, lastRefreshTime]);
+    }, 5000);
+  }, [fetchRequests, refreshMessages, showThrottledToast, lastRefreshTime, refetchEmployees]);
   
   // Initial data load - only once
   useEffect(() => {
     if (currentUser && !initialLoadDone) {
       console.log("Initial data load in TimeManagementProvider for:", currentUser.email);
-      fetchRequests();
-      refreshMessages();
+      // First fetch employees
+      refetchEmployees().then(() => {
+        setTimeout(() => {
+          fetchRequests();
+          refreshMessages();
+        }, 1000);
+      });
       setInitialLoadDone(true);
       
       // Set initialLoadRef to true after a delay
       setTimeout(() => {
         initialLoadRef.current = true;
-      }, 5000); // Wait 5 seconds before considering initial load complete
+      }, 5000);
     }
-  }, [currentUser, fetchRequests, refreshMessages, initialLoadDone]);
+  }, [currentUser, fetchRequests, refreshMessages, initialLoadDone, refetchEmployees]);
 
   const value: TimeManagementContextType = {
     timeOffRequests,
@@ -172,7 +192,9 @@ export const TimeManagementProvider: React.FC<TimeManagementProviderProps> = ({
     fetchRequests,
     refreshMessages,
     forceRefreshData,
-    handleRetry
+    handleRetry,
+    sendMessage,
+    allEmployees
   };
 
   return (

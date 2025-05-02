@@ -11,14 +11,15 @@ import { EmployeeCommunications } from "@/components/communications/EmployeeComm
 import { Card } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Communication = () => {
   const { currentUser } = useAuth();
-  const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
+  const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeeError } = useEmployeeDirectory();
   // Exclude shift coverage messages from direct communications
-  const { unreadMessages, refreshMessages } = useCommunications(true);
+  const { unreadMessages, refreshMessages, error: messagesError } = useCommunications(true);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -26,6 +27,7 @@ const Communication = () => {
   const searchParams = new URLSearchParams(location.search);
   const tabFromUrl = searchParams.get("tab") || "announcements";
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl);
+  const [retryCount, setRetryCount] = useState(0);
   
   useEffect(() => {
     // Set active tab based on URL parameter
@@ -78,15 +80,36 @@ const Communication = () => {
     toast.info("Refreshing all communication data");
     refetchEmployees();
     refreshMessages();
+    setRetryCount(prev => prev + 1);
   };
+  
+  // Are there any errors to display?
+  const hasErrors = employeeError || messagesError;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {hasErrors && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Error loading data: {employeeError || messagesError}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleManualRefresh} 
+                className="ml-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex justify-between items-center">
           <AnnouncementHeader 
             isAdmin={isAdmin}
-            allEmployees={allEmployees}
+            allEmployees={allEmployees || []}
             onAnnouncementCreate={handleAnnouncementCreate}
             loading={employeesLoading}
           />
@@ -118,14 +141,17 @@ const Communication = () => {
           <TabsContent value="announcements">
             <AnnouncementManager
               currentUser={currentUser}
-              allEmployees={allEmployees}
+              allEmployees={allEmployees || []}
               isAdmin={isAdmin}
             />
           </TabsContent>
           
           <TabsContent value="messages">
             <Card className="p-4">
-              <EmployeeCommunications />
+              <EmployeeCommunications 
+                onRefresh={handleManualRefresh}
+                retryCount={retryCount}
+              />
             </Card>
           </TabsContent>
         </Tabs>
