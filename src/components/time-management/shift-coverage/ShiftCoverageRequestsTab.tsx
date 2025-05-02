@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -39,7 +39,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   allEmployees: propEmployees
 }) => {
   // Use the provided employees list if available, otherwise fetch it
-  const { employees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
+  const { unfilteredEmployees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
@@ -56,6 +56,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
   }, [loading, employeesLoading, allEmployees, messages, error, employeesError]);
   
+  // Using useMemo to prevent recalculation on every render
   const {
     shiftCoverageRequests,
     pendingCount,
@@ -64,8 +65,10 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     filterByStatus
   } = useShiftCoverageFilters(messages, currentUser);
   
-  // Apply status filter
-  const filteredRequests = filterByStatus(filter, shiftCoverageRequests);
+  // Apply status filter with useMemo to prevent recalculation on every render
+  const filteredRequests = useMemo(() => {
+    return filterByStatus(filter, shiftCoverageRequests);
+  }, [filter, shiftCoverageRequests, filterByStatus]);
   
   // Find employee by ID - memoize to prevent recreation on each render
   const findEmployee = useCallback((id: string): User | undefined => {
@@ -126,7 +129,9 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   }
   
   // Get available employees (excluding current user)
-  const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
+  const availableEmployees = useMemo(() => {
+    return allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
+  }, [allEmployees, currentUser.id]);
   
   return (
     <>

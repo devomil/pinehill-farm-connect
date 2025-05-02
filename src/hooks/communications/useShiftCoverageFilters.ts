@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 
@@ -9,7 +9,7 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
   // Log filter debug info
   console.log(`Filtering shift requests by status: all`);
   
-  // Extract all shift coverage requests
+  // Extract all shift coverage requests with useMemo
   const shiftCoverageRequests = useMemo(() => {
     if (!messages || !currentUser) {
       return [];
@@ -26,7 +26,7 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
     );
   }, [messages, currentUser, latestFilterCall]);
   
-  // Count requests by status for filtering UI
+  // Count requests by status for filtering UI using useMemo
   const counts = useMemo(() => {
     const pending = shiftCoverageRequests.filter(req => 
       (req.shift_coverage_requests && req.shift_coverage_requests.length > 0 && 
@@ -53,8 +53,8 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
     };
   }, [shiftCoverageRequests]);
   
-  // Filter functions
-  const filterByStatus = (status: 'all' | 'pending' | 'accepted' | 'declined', requests: Communication[]) => {
+  // Filter functions wrapped in useCallback
+  const filterByStatus = useCallback((status: 'all' | 'pending' | 'accepted' | 'declined', requests: Communication[]) => {
     setLatestFilterCall(Date.now());
     
     if (status === 'all') {
@@ -74,7 +74,7 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
         req.shift_coverage_requests.length > 0 && 
         req.shift_coverage_requests[0]?.status === status;
     });
-  };
+  }, []);
   
   return {
     ...counts,
