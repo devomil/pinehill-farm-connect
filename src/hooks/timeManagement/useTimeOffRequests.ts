@@ -73,11 +73,12 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
         }
         
         // If admin, fetch user names separately for display purposes
-        let userProfiles = {};
+        let userProfiles: Record<string, any> = {};
         
         if (currentUser.role === 'admin' && data.length > 0) {
           // Get unique user IDs from requests
-          const userIds = [...new Set(data.map(r => r.user_id))];
+          // Explicitly cast the user_id values to string to fix the TypeScript error
+          const userIds = [...new Set(data.map(r => r.user_id as string))];
           
           if (userIds.length > 0) {
             const { data: profilesData } = await supabase
@@ -87,7 +88,7 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
               
             if (profilesData) {
               // Create a map of user_id to profile data
-              userProfiles = profilesData.reduce((acc, profile) => {
+              userProfiles = profilesData.reduce<Record<string, any>>((acc, profile) => {
                 acc[profile.id] = profile;
                 return acc;
               }, {});
