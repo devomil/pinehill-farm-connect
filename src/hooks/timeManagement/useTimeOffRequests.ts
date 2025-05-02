@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeOffRequest } from '@/types/timeManagement';
@@ -39,21 +40,25 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
     try {
       console.log("Fetching time off requests for user:", currentUser.id);
       
-      // For admins, include profile data to display employee names
-      const query = currentUser.role === 'admin' 
-        ? supabase
-            .from("time_off_requests")
-            .select(`
-              *,
-              profiles:user_id (id, name, email)
-            `)
-        : supabase
-            .from("time_off_requests")
-            .select("*")
-            .eq("user_id", currentUser.id);
-        
+      let query;
+      
+      // For admins, we need to fetch all requests but without trying to join with profiles
+      if (currentUser.role === 'admin') {
+        console.log("Admin user, fetching all time off requests");
+        query = supabase
+          .from("time_off_requests")
+          .select("*");
+      } else {
+        // For regular users, fetch only their own requests
+        console.log("Regular user, fetching their own time off requests");
+        query = supabase
+          .from("time_off_requests")
+          .select("*")
+          .eq("user_id", currentUser.id);
+      }
+      
       const { data, error: fetchError } = await query;
-        
+      
       if (fetchError) {
         console.error("Supabase error:", fetchError);
         throw fetchError;
@@ -67,6 +72,30 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
           console.log("Sample time off request:", data[0]);
         }
         
+        // If admin, fetch user names separately for display purposes
+        let userProfiles = {};
+        
+        if (currentUser.role === 'admin' && data.length > 0) {
+          // Get unique user IDs from requests
+          const userIds = [...new Set(data.map(r => r.user_id))];
+          
+          if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, name, email')
+              .in('id', userIds);
+              
+            if (profilesData) {
+              // Create a map of user_id to profile data
+              userProfiles = profilesData.reduce((acc, profile) => {
+                acc[profile.id] = profile;
+                return acc;
+              }, {});
+            }
+          }
+        }
+        
+        // Transform the data to match our TimeOffRequest type
         setTimeOffRequests(
           data.map((r: any) => ({
             ...r,
@@ -77,13 +106,10 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
             userId: r.user_id,
             // Ensure reason is never undefined
             reason: r.reason || '',
-            // Keep profiles data for admins
-            profiles: r.profiles
+            // Add profile data if available (for admin view)
+            profiles: userProfiles[r.user_id] || null
           }))
         );
-        
-        // Only show success notification for manual refreshes, not initial load or automatic background refreshes
-        // We now let the TimeManagementContext handle toast notifications
       } else {
         console.log("No time off requests data returned");
         setTimeOffRequests([]);
