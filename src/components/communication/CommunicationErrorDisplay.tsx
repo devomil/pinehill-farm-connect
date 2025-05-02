@@ -21,10 +21,10 @@ export const CommunicationErrorDisplay: React.FC<CommunicationErrorDisplayProps>
   };
 
   return (
-    <Alert variant="destructive" className="mb-4">
+    <Alert variant="destructive" className="mb-4 max-w-3xl">
       <AlertCircle className="h-4 w-4" />
-      <AlertDescription>
-        Error loading data: {formatErrorMessage(error)}
+      <AlertDescription className="flex items-center justify-between w-full">
+        <span>Error loading data: {formatErrorMessage(error)}</span>
         <Button 
           variant="outline" 
           size="sm" 

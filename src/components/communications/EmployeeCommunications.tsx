@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -97,10 +96,18 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   if (error && !loading) {
     return (
       <div className="flex flex-col gap-4">
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="max-w-3xl">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error loading communications data: {formatErrorMessage(error)}
+          <AlertDescription className="flex items-center justify-between w-full">
+            <span>Error loading communications data: {formatErrorMessage(error)}</span>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="ml-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh Data
+            </Button>
           </AlertDescription>
         </Alert>
         
