@@ -5,7 +5,7 @@ import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffReq
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
-import { useTimeManagement } from "@/contexts/TimeManagementContext";
+import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Bug, RefreshCw } from "lucide-react";
