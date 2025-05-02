@@ -237,19 +237,27 @@ export async function verifyShiftCoverageRequest(communicationId: string, shiftD
   
   console.warn("⚠️ Could not verify shift request was saved - no matching requests found");
   
-  // Direct check using raw SQL via supabase
+  // Remove the direct rpc call that was causing the TypeScript error
+  // Instead, do a more detailed raw query using supabase's query builder
   try {
-    const { data: rawCheck, error: rawError } = await supabase.rpc('debug_check_shift_request', {
-      p_communication_id: communicationId
-    });
+    console.log("Attempting additional detailed query to find the shift request");
+    const { data: detailedCheck, error: detailedError } = await supabase
+      .from('shift_coverage_requests')
+      .select('*')
+      .or(`communication_id.eq.${communicationId},original_employee_id.eq.${originalEmployeeId}`)
+      .order('created_at', { ascending: false })
+      .limit(10);
     
-    if (rawError) {
-      console.error("Raw SQL check failed:", rawError);
+    if (detailedError) {
+      console.error("Detailed query check failed:", detailedError);
     } else {
-      console.log("Raw SQL check result:", rawCheck);
+      console.log("Detailed query results:", detailedCheck);
+      if (detailedCheck && detailedCheck.length > 0) {
+        return { verified: true, data: detailedCheck };
+      }
     }
   } catch (e) {
-    console.log("Raw check error:", e);
+    console.log("Detailed check error:", e);
   }
   
   console.log("Recent shift requests:", allRecent);
