@@ -37,8 +37,9 @@ export function useShiftCoverageFilters(
         return true;
       }
       
-      // For non-admin users, only show messages relevant to them
+      // For non-admin users, show messages relevant to them
       // This includes both requests they've sent and requests they've received
+      // as well as requests where they are the original or covering employee
       const isRelevantToUser = message.sender_id === currentUser.id || 
                                message.recipient_id === currentUser.id ||
                                message.shift_coverage_requests.some(req => 
