@@ -10,18 +10,29 @@ import { User } from "@/types";
 import { useResponsiveLayout } from "@/hooks/communications/useResponsiveLayout";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 
-export const EmployeeCommunications: React.FC = () => {
+interface EmployeeCommunicationsProps {
+  selectedEmployee?: User | null;
+  setSelectedEmployee?: React.Dispatch<React.SetStateAction<User | null>>;
+}
+
+export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({ 
+  selectedEmployee: propSelectedEmployee,
+  setSelectedEmployee: propSetSelectedEmployee
+}) => {
   const { currentUser } = useAuth();
   const { employees, loading: employeesLoading } = useEmployeeDirectory();
   // Exclude shift coverage messages from employee communications
   const { messages, isLoading: messagesLoading, sendMessage, refreshMessages } = useCommunications(true);
-  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const { isMobileView } = useResponsiveLayout();
   
   const processedMessages = useProcessMessages(messages, currentUser);
   
   const handleSelectEmployee = (employee: User) => {
     setSelectedEmployee(employee);
+    if (propSetSelectedEmployee) {
+      propSetSelectedEmployee(employee);
+    }
   };
 
   const loading = employeesLoading || messagesLoading;

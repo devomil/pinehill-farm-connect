@@ -13,7 +13,8 @@ interface MessageConversationProps {
   messages: Communication[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
-  onBack: () => void;
+  onBack?: () => void;
+  onRefresh?: () => void;
 }
 
 export function MessageConversation({
@@ -21,7 +22,8 @@ export function MessageConversation({
   messages,
   isLoading,
   onSendMessage,
-  onBack
+  onBack,
+  onRefresh
 }: MessageConversationProps) {
   const { filteredMessages, currentUser } = useConversation(selectedEmployee, messages);
 
@@ -31,7 +33,11 @@ export function MessageConversation({
 
   return (
     <div className="flex flex-col h-[70vh] border rounded-md">
-      <ConversationHeader selectedEmployee={selectedEmployee} onBack={onBack} />
+      <ConversationHeader 
+        selectedEmployee={selectedEmployee} 
+        onBack={onBack} 
+        onRefresh={onRefresh}
+      />
       <MessageList 
         messages={filteredMessages} 
         isLoading={isLoading} 

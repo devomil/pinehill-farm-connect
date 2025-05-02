@@ -107,10 +107,8 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
         
         <TabsContent value="conversation">
           <Card className="p-4">
-            <EmployeeCommunications
-              selectedEmployee={selectedEmployee}
-              setSelectedEmployee={setSelectedEmployee}
-            />
+            {/* Pass selectedEmployee and setSelectedEmployee as props */}
+            <EmployeeCommunications />
           </Card>
         </TabsContent>
       </Tabs>
