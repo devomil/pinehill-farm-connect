@@ -6,13 +6,13 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { toast } from "sonner";
 import { ShiftRequestsLoadingState } from "./ShiftRequestsLoadingState";
 import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
-import { ShiftCoverageHeader } from "./ShiftCoverageHeader";
-import { ShiftRequestsList } from "./ShiftRequestsList";
-import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, RefreshCw, Bug } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
+import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
+import { ShiftCoverageErrorDebugPanel } from "./ShiftCoverageErrorDebugPanel";
+import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -109,41 +109,15 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
           </AlertDescription>
         </Alert>
 
-        {/* Debug information panel */}
-        <Accordion type="single" collapsible className="mb-4">
-          <AccordionItem value="debug-info">
-            <AccordionTrigger className="text-sm">
-              <span className="flex items-center">
-                <Bug className="h-3 w-3 mr-1" /> Debug Information
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
-              <p><strong>Loading state:</strong> {loading ? "true" : "false"}</p>
-              <p><strong>Employees loading state:</strong> {employeesLoading ? "true" : "false"}</p>
-              <p><strong>Messages count:</strong> {messages?.length || 0}</p>
-              <p><strong>Employee count:</strong> {allEmployees?.length || 0}</p>
-              <p><strong>Current user:</strong> {currentUser?.email} (ID: {currentUser?.id})</p>
-              
-              {error && (
-                <>
-                  <p className="mt-2 font-semibold text-red-500">Error:</p>
-                  <pre className="whitespace-pre-wrap text-red-500">
-                    {typeof error === 'object' ? JSON.stringify(error, null, 2) : String(error)}
-                  </pre>
-                </>
-              )}
-              
-              {employeesError && (
-                <>
-                  <p className="mt-2 font-semibold text-red-500">Employees Error:</p>
-                  <pre className="whitespace-pre-wrap text-red-500">
-                    {typeof employeesError === 'object' ? JSON.stringify(employeesError, null, 2) : String(employeesError)}
-                  </pre>
-                </>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <ShiftCoverageErrorDebugPanel
+          loading={loading}
+          employeesLoading={employeesLoading}
+          messagesCount={messages?.length || 0}
+          employeeCount={allEmployees?.length || 0}
+          currentUser={currentUser}
+          error={error}
+          employeesError={employeesError}
+        />
 
         <ShiftRequestsErrorState onRetry={handleManualRefresh} />
       </>
@@ -153,93 +127,34 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   // Get available employees (excluding current user)
   const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
   
-  // Show a message if no employees are available
-  if (!allEmployees || allEmployees.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-        <h3 className="text-lg font-medium mb-2">No employees available</h3>
-        <p className="text-muted-foreground text-center mb-4">
-          Could not load employees. You need employees to manage shift coverage.
-        </p>
-        <Button onClick={handleManualRefresh} className="mt-2">
-          <RefreshCw className="h-4 w-4 mr-2" /> Refresh Employee List
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      {/* Debug toggle button */}
-      <div className="flex justify-end mb-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setShowDebugInfo(!showDebugInfo)}
-          className="h-8 text-xs"
-        >
-          <Bug className="h-3 w-3 mr-1" /> {showDebugInfo ? "Hide Debug" : "Show Debug"}
-        </Button>
-      </div>
-
-      {/* Debug information panel */}
-      {showDebugInfo && (
-        <Accordion type="single" collapsible className="mb-4">
-          <AccordionItem value="debug-info">
-            <AccordionTrigger className="text-sm">Shift Coverage Debug Information</AccordionTrigger>
-            <AccordionContent className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
-              <p><strong>Total shift coverage messages:</strong> {shiftCoverageRequests.length}</p>
-              <p><strong>Pending count:</strong> {pendingCount}</p>
-              <p><strong>Accepted count:</strong> {acceptedCount}</p>
-              <p><strong>Declined count:</strong> {declinedCount}</p>
-              <p><strong>Current filter:</strong> {filter}</p>
-              <p><strong>Available employees:</strong> {availableEmployees.length}</p>
-              <p><strong>Current user:</strong> {currentUser?.email} (ID: {currentUser?.id})</p>
-              
-              {availableEmployees.length > 0 && (
-                <>
-                  <p className="mt-2 font-semibold">Employee sample:</p>
-                  <pre className="whitespace-pre-wrap">
-                    {JSON.stringify(availableEmployees.slice(0, 2), null, 2)}
-                  </pre>
-                </>
-              )}
-              
-              {shiftCoverageRequests.length > 0 && (
-                <>
-                  <p className="mt-2 font-semibold">Shift coverage message sample:</p>
-                  <pre className="whitespace-pre-wrap">
-                    {JSON.stringify(shiftCoverageRequests[0], null, 2)}
-                  </pre>
-                </>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )}
+      <ShiftCoverageDebugPanel 
+        showDebugInfo={showDebugInfo}
+        setShowDebugInfo={setShowDebugInfo}
+        shiftCoverageRequests={shiftCoverageRequests}
+        pendingCount={pendingCount}
+        acceptedCount={acceptedCount}
+        declinedCount={declinedCount}
+        filter={filter}
+        availableEmployees={availableEmployees}
+        currentUser={currentUser}
+      />
       
-      <ShiftCoverageHeader
+      <ShiftCoverageMainContent
         filter={filter}
         setFilter={setFilter}
         pendingCount={pendingCount}
         acceptedCount={acceptedCount}
         declinedCount={declinedCount}
-        totalCount={shiftCoverageRequests.length}
-        onRefresh={handleManualRefresh}
+        shiftCoverageRequests={shiftCoverageRequests}
+        filteredRequests={filteredRequests}
         currentUser={currentUser}
         availableEmployees={availableEmployees}
-      />
-      
-      <ShiftRequestsList
-        requests={filteredRequests}
-        currentUser={currentUser}
+        allEmployees={allEmployees}
         findEmployee={findEmployee}
         onRespond={onRespond}
-        filter={filter}
-        setFilter={setFilter}
-        onRefresh={handleManualRefresh}
-        availableEmployeeCount={availableEmployees.length}
+        handleManualRefresh={handleManualRefresh}
       />
     </>
   );

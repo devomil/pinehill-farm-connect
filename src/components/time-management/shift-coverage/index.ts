@@ -7,4 +7,7 @@ export * from './ShiftRequestsLoadingState';
 export * from './ShiftRequestsErrorState';
 export * from './ShiftCoverageHeader';
 export * from './ShiftRequestsList';
-
+export * from './ShiftCoverageDebugPanel';
+export * from './ShiftCoverageErrorDebugPanel';
+export * from './ShiftCoverageMainContent';
+export * from './ShiftResponseConfirmDialog';

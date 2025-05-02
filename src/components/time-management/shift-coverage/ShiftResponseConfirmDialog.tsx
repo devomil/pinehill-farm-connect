@@ -29,19 +29,29 @@ export const ShiftResponseConfirmDialog: React.FC<ShiftResponseConfirmDialogProp
   isAccepting,
   requesterName,
   shiftDate,
-  shiftTime,
+  shiftTime
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isAccepting ? "Accept" : "Decline"} Shift Coverage Request
+            {isAccepting ? "Accept Shift Coverage Request?" : "Decline Shift Coverage Request?"}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {isAccepting
-              ? `Are you sure you want to accept ${requesterName}'s request to cover their shift on ${shiftDate} from ${shiftTime}?`
-              : `Are you sure you want to decline ${requesterName}'s request to cover their shift on ${shiftDate} from ${shiftTime}?`}
+            {isAccepting ? (
+              <>
+                You are about to <strong className="text-green-600">accept</strong> the shift coverage request from <strong>{requesterName}</strong> for <strong>{shiftDate}</strong> ({shiftTime}).
+                <br /><br />
+                By accepting, you are committing to cover this shift.
+              </>
+            ) : (
+              <>
+                You are about to <strong className="text-red-600">decline</strong> the shift coverage request from <strong>{requesterName}</strong> for <strong>{shiftDate}</strong> ({shiftTime}).
+                <br /><br />
+                The requester will be notified that you've declined this shift.
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -51,13 +61,9 @@ export const ShiftResponseConfirmDialog: React.FC<ShiftResponseConfirmDialogProp
             className={isAccepting ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
           >
             {isAccepting ? (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Accept
-              </>
+              <><Check className="mr-2 h-4 w-4" /> Confirm Accept</>
             ) : (
-              <>
-                <X className="mr-2 h-4 w-4" /> Decline
-              </>
+              <><X className="mr-2 h-4 w-4" /> Confirm Decline</>
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
