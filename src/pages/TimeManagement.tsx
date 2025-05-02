@@ -6,6 +6,7 @@ import { ErrorAlert } from "@/components/time-management/ErrorAlert";
 import { TimeManagementHeader } from "@/components/time-management/TimeManagementHeader";
 import { TimeManagementTabs } from "@/components/time-management/TimeManagementTabs";
 import { TimeManagementProvider, useTimeManagement } from "@/contexts/TimeManagementContext";
+import { toast } from "sonner";
 
 // Internal component that uses the context
 const TimeManagementContent = () => {
@@ -18,7 +19,15 @@ const TimeManagementContent = () => {
     // Log error states
     if (error) console.error("Time-off requests error:", error);
     if (messagesError) console.error("Messages error:", messagesError);
-  }, [currentUser, error, messagesError]);
+
+    // Force an initial load
+    const loadTimeout = setTimeout(() => {
+      console.log("TimeManagementContent: Initial data refresh");
+      forceRefreshData();
+    }, 500);
+
+    return () => clearTimeout(loadTimeout);
+  }, [currentUser, error, messagesError, forceRefreshData]);
   
   if (!currentUser) {
     return <div className="p-6">You must be logged in to view this page.</div>;
@@ -29,13 +38,18 @@ const TimeManagementContent = () => {
   // Display global error message if both requests fail
   const showGlobalError = error && messagesError;
 
+  const handleManualRefresh = () => {
+    toast.info("Refreshing time management data...");
+    forceRefreshData();
+  };
+
   return (
     <div className="space-y-6">
       {showGlobalError && <ErrorAlert onRetry={handleRetry} />}
       
       <TimeManagementHeader 
         currentUser={currentUser}
-        onRefresh={forceRefreshData}
+        onRefresh={handleManualRefresh}
         onRequestSubmitted={fetchRequests}
       />
       

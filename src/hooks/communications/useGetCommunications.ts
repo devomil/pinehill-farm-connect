@@ -52,10 +52,38 @@ export function useGetCommunications(currentUser: User | null) {
           .map(comm => comm.id);
           
         console.log(`Found ${shiftCoverageIds.length} shift coverage communications`);
+        
+        // For admin users, we should show all shift coverage requests
+        // so let's also fetch any shift coverage messages where they're not sender/recipient
+        if (currentUser.role === 'admin') {
+          console.log("User is admin, fetching all shift coverage requests");
+          
+          const { data: adminCommunications, error: adminError } = await supabase
+            .from('employee_communications')
+            .select('*')
+            .eq('type', 'shift_coverage')
+            .not('id', 'in', `(${shiftCoverageIds.join(',')})`)
+            .order('created_at', { ascending: false });
+            
+          if (adminError) {
+            console.error("Error fetching admin shift communications:", adminError);
+          } else if (adminCommunications && adminCommunications.length > 0) {
+            console.log(`Found ${adminCommunications.length} additional shift coverage communications for admin`);
+            allCommunications.push(...adminCommunications);
+            
+            // Update shift coverage IDs to include the new messages
+            adminCommunications.forEach(comm => {
+              shiftCoverageIds.push(comm.id);
+            });
+          }
+        }
 
         // If we have shift coverage communications, fetch all related requests at once
         let allShiftRequests = [];
         if (shiftCoverageIds.length > 0) {
+          // Create a properly formatted IN clause
+          const formattedIds = shiftCoverageIds.map(id => `'${id}'`).join(',');
+          
           const { data: shiftRequests, error: shiftError } = await supabase
             .from('shift_coverage_requests')
             .select('*')
@@ -118,6 +146,11 @@ export function useGetCommunications(currentUser: User | null) {
           ...comm,
           current_user_id: currentUser.id
         }));
+        
+        // Sort communications by most recent first
+        enhancedCommunications.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
         
         return enhancedCommunications;
       } catch (err) {

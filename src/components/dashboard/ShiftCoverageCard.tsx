@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
 
 interface ShiftCoverageCardProps {
   messages: Communication[];
@@ -28,9 +29,11 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   onRefresh
 }) => {
   const { employees } = useEmployeeDirectory();
+  const { shiftCoverageRequests } = useShiftCoverageFilters(messages, currentUser);
 
   useEffect(() => {
     console.log(`ShiftCoverageCard: Received ${messages?.length || 0} messages for user ${currentUser?.id}`);
+    console.log(`ShiftCoverageCard: After filtering, found ${shiftCoverageRequests?.length || 0} shift coverage requests`);
     
     // Debug information to help understand the data
     if (messages && messages.length > 0) {
@@ -56,10 +59,10 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
     } else {
       console.log("ShiftCoverageCard: No messages to display");
     }
-  }, [messages, currentUser]);
+  }, [messages, currentUser, shiftCoverageRequests]);
 
   // Filter to only show pending requests that are relevant to current user
-  const filteredMessages = messages
+  const filteredMessages = shiftCoverageRequests
     .filter(msg => {
       // Must have shift coverage requests
       if (!msg.shift_coverage_requests || msg.shift_coverage_requests.length === 0) {
@@ -69,19 +72,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       // Pending requests only for the card
       const isPending = msg.shift_coverage_requests[0].status === 'pending';
       
-      // Admin sees all pending shift coverage requests
-      if (currentUser.role === 'admin') {
-        return isPending;
-      }
-      
-      // Regular users only see their own requests
-      const originalEmployeeId = msg.shift_coverage_requests[0].original_employee_id;
-      const coveringEmployeeId = msg.shift_coverage_requests[0].covering_employee_id;
-      const isUserInvolved = 
-        originalEmployeeId === currentUser.id || 
-        coveringEmployeeId === currentUser.id;
-      
-      return isPending && isUserInvolved;
+      return isPending;
     })
     .slice(0, 5); // Limit to 5 most recent
 

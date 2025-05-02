@@ -47,6 +47,10 @@ export function useShiftCoverageFilters(
                                  req.covering_employee_id === currentUser.id
                                );
       
+      if (!isRelevantToUser) {
+        console.log(`Message ${message.id} not relevant to user ${currentUser.id}, skipping`);
+      }
+      
       return isRelevantToUser;
     });
     
@@ -58,7 +62,9 @@ export function useShiftCoverageFilters(
         sender: filtered[0].sender_id,
         recipient: filtered[0].recipient_id,
         status: filtered[0].shift_coverage_requests?.[0]?.status || 'unknown',
-        shift_date: filtered[0].shift_coverage_requests?.[0]?.shift_date
+        shift_date: filtered[0].shift_coverage_requests?.[0]?.shift_date,
+        original_employee: filtered[0].shift_coverage_requests?.[0]?.original_employee_id,
+        covering_employee: filtered[0].shift_coverage_requests?.[0]?.covering_employee_id
       });
     } else {
       console.log("No shift coverage requests found after filtering");

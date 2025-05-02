@@ -110,26 +110,30 @@ export function useSendMessage(currentUser: User | null) {
         // Step 2: If it's a shift coverage request, add the shift details
         if (type === 'shift_coverage' && shiftDetails) {
           console.log(`Creating shift coverage request for communication ${communicationData.id}`);
-          console.log("Shift details:", {
+          
+          // Ensure we have all required fields for the shift request
+          if (!shiftDetails.shift_date || !shiftDetails.shift_start || !shiftDetails.shift_end) {
+            console.error("Missing required shift details:", shiftDetails);
+            throw new Error("Missing required shift details");
+          }
+          
+          // Debugging the payload
+          const shiftPayload = {
             communication_id: communicationData.id,
-            original_employee_id: shiftDetails.original_employee_id,
-            covering_employee_id: shiftDetails.covering_employee_id,
+            original_employee_id: shiftDetails.original_employee_id || currentUser.id,
+            covering_employee_id: shiftDetails.covering_employee_id || recipientId,
             shift_date: shiftDetails.shift_date,
             shift_start: shiftDetails.shift_start,
-            shift_end: shiftDetails.shift_end
-          });
+            shift_end: shiftDetails.shift_end,
+            status: 'pending'
+          };
           
+          console.log("Sending shift coverage request payload:", shiftPayload);
+          
+          // Create the shift coverage request with explicit payload
           const { data: shiftData, error: shiftError } = await supabase
             .from('shift_coverage_requests')
-            .insert({
-              communication_id: communicationData.id,
-              original_employee_id: shiftDetails.original_employee_id,
-              covering_employee_id: shiftDetails.covering_employee_id,
-              shift_date: shiftDetails.shift_date,
-              shift_start: shiftDetails.shift_start,
-              shift_end: shiftDetails.shift_end,
-              status: 'pending'
-            })
+            .insert(shiftPayload)
             .select();
   
           if (shiftError) {

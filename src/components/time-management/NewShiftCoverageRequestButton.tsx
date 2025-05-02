@@ -14,6 +14,7 @@ import { User } from "@/types";
 import { NewMessageFormData } from "@/types/communications";
 import { toast } from "sonner";
 import { NewShiftCoverageRequestForm } from "./shift-coverage/NewShiftCoverageRequestForm";
+import { useCommunications } from "@/hooks/useCommunications";
 
 interface NewShiftCoverageRequestButtonProps {
   currentUser: User;
@@ -28,6 +29,7 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { sendMessage } = useCommunications();
 
   // Check if there are available employees
   const hasAvailableEmployees = allEmployees && allEmployees
@@ -36,35 +38,34 @@ export const NewShiftCoverageRequestButton: React.FC<NewShiftCoverageRequestButt
 
   const handleNewRequest = (formData: NewMessageFormData) => {
     setIsLoading(true);
-    // Create shift coverage request
-    fetch('/api/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        recipientId: formData.recipientId,
-        message: formData.message,
-        type: "shift_coverage",
-        shiftDetails: {
-          shift_date: formData.shiftDate || "",
-          shift_start: formData.shiftStart || "",
-          shift_end: formData.shiftEnd || "",
-        }
-      })
-    })
-      .then(() => {
-        setIsOpen(false);
-        toast.success("Shift coverage request sent successfully");
-        onRequestSent(); // Refresh the list after sending
-      })
-      .catch((error) => {
-        console.error("Error sending shift coverage request:", error);
-        toast.error("Failed to send shift coverage request");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    
+    console.log("Submitting shift coverage request:", formData);
+    
+    // Create properly formatted shift coverage request
+    const requestData = {
+      recipientId: formData.recipientId,
+      message: formData.message,
+      type: "shift_coverage" as const,
+      shiftDetails: {
+        original_employee_id: currentUser.id,
+        covering_employee_id: formData.recipientId,
+        shift_date: formData.shiftDate || "",
+        shift_start: formData.shiftStart || "", 
+        shift_end: formData.shiftEnd || ""
+      }
+    };
+    
+    console.log("Sending shift coverage request with data:", requestData);
+    
+    // Use the sendMessage function from useCommunications hook
+    sendMessage(requestData);
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsOpen(false);
+      onRequestSent(); // Refresh the list after sending
+      toast.success("Shift coverage request sent successfully");
+    }, 500);
   };
 
   return (
