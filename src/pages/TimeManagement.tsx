@@ -8,7 +8,7 @@ import { TimeManagementTabs } from "@/components/time-management/TimeManagementT
 import { TimeManagementProvider, useTimeManagement } from "@/contexts/TimeManagementContext";
 import { toast } from "sonner";
 
-// Internal component that uses the context
+// This component MUST be used within a TimeManagementProvider
 const TimeManagementContent = () => {
   const { currentUser } = useAuth();
   const { error, messagesError, handleRetry, forceRefreshData, fetchRequests } = useTimeManagement();
@@ -74,19 +74,15 @@ export default function TimeManagement() {
     });
   }, [currentUser]);
 
-  if (!currentUser) {
-    return (
-      <DashboardLayout>
-        <div className="p-6">You must be logged in to view this page.</div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <TimeManagementProvider currentUser={currentUser}>
-        <TimeManagementContent />
-      </TimeManagementProvider>
+      {!currentUser ? (
+        <div className="p-6">You must be logged in to view this page.</div>
+      ) : (
+        <TimeManagementProvider currentUser={currentUser}>
+          <TimeManagementContent />
+        </TimeManagementProvider>
+      )}
     </DashboardLayout>
   );
 }
