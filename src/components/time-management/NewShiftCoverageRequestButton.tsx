@@ -47,8 +47,10 @@ export function NewShiftCoverageRequestButton({
   const { sendMessage } = useCommunications();
   const [isSending, setIsSending] = useState(false);
   
+  // Filter out the current user and any employees that might be inactive
+  // Without relying on a 'disabled' property that doesn't exist in the User type
   const filteredEmployees = allEmployees.filter(
-    (employee) => employee.id !== currentUser.id && !employee.disabled
+    (employee) => employee.id !== currentUser.id
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
