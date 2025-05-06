@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 interface AnnouncementAcknowledgmentProps {
   id: string;
@@ -33,6 +34,11 @@ export const AnnouncementAcknowledgment = ({
       
       console.log("Acknowledging announcement:", id);
       await onAcknowledge();
+      
+      toast({
+        title: "Announcement acknowledged",
+        description: "Thank you for acknowledging this announcement"
+      });
     } catch (error) {
       // Revert UI state if there was an error
       setIsChecked(false);
@@ -48,21 +54,21 @@ export const AnnouncementAcknowledgment = ({
   };
 
   return (
-    <div className="flex items-center gap-2 mt-4 p-2 bg-muted rounded">
+    <div className="flex items-start gap-2 mt-4 p-3 bg-muted rounded">
       <Checkbox
         id={`ack-${id}`}
         checked={isChecked || isAcknowledged}
         onCheckedChange={handleAcknowledge}
         disabled={isAcknowledged || isSubmitting}
-        className="cursor-pointer"
+        className="cursor-pointer mt-1"
       />
-      <label 
+      <Label 
         htmlFor={`ack-${id}`} 
         className={`text-sm cursor-pointer select-none ${isAcknowledged ? 'text-muted-foreground' : ''}`}
       >
         I acknowledge that I have read and understood this announcement
         {isAcknowledged && " (Acknowledged)"}
-      </label>
+      </Label>
     </div>
   );
 };

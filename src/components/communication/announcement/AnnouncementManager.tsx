@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
@@ -30,7 +31,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
-  const { acknowledgeAnnouncement, isAcknowledging } = useAnnouncementAcknowledge(currentUser?.id);
+  const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
 
   const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
     console.log("Saving edited announcement:", updatedAnnouncement);
@@ -54,7 +55,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     console.log("Acknowledging announcement:", announcementId);
     if (!currentUser?.id) {
       console.error("No current user ID available");
-      return;
+      return Promise.reject("No current user ID available");
     }
 
     try {
@@ -68,6 +69,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
           title: "Announcement acknowledged",
           description: "Thank you for acknowledging this announcement"
         });
+        return Promise.resolve();
       } else {
         throw new Error("Failed to acknowledge announcement");
       }
@@ -78,7 +80,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
         description: "There was an issue acknowledging this announcement",
         variant: "destructive"
       });
-      throw error; // Re-throw to allow the component to handle visual feedback
+      return Promise.reject(error);
     }
   };
 
