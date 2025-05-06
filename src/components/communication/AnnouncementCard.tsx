@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ interface AnnouncementCardProps {
   isRead: boolean;
   isAcknowledged?: boolean;
   onMarkAsRead?: () => void;
-  onAcknowledge?: () => void;
+  onAcknowledge?: (announcementId: string) => Promise<void>;
   showMarkAsRead?: boolean;
   getPriorityBadge: (priority: string) => JSX.Element;
   isAdmin?: boolean;
@@ -75,6 +76,14 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     }
   };
 
+  // Create a wrapper function that properly returns a Promise
+  const handleAcknowledgement = async () => {
+    if (onAcknowledge) {
+      return onAcknowledge(announcement.id);
+    }
+    return Promise.resolve();
+  };
+
   return (
     <Card
       className={`transition-colors ${
@@ -122,7 +131,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <AnnouncementAcknowledgment
             id={announcement.id}
             isAcknowledged={isAcknowledged}
-            onAcknowledge={onAcknowledge}
+            onAcknowledge={handleAcknowledgement}
           />
         )}
 
