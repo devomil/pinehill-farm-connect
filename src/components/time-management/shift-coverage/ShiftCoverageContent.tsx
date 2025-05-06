@@ -49,6 +49,7 @@ export const ShiftCoverageMainContent: React.FC<ShiftCoverageContentProps> = ({
         pendingCount={pendingCount}
         acceptedCount={acceptedCount}
         declinedCount={declinedCount}
+        totalCount={shiftCoverageRequests.length}
       />
 
       <ShiftRequestsList
