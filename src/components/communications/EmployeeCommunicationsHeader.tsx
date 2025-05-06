@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { NewMessageDialog } from "./NewMessageDialog";
-import { RefreshCcw, Send } from "lucide-react";
+import { RefreshCw, Send } from "lucide-react";
 import { User } from "@/types";
 import { Heading } from "@/components/ui/heading";
 
@@ -36,7 +36,7 @@ export function EmployeeCommunicationsHeader({
               onClick={onRefresh}
               className="h-9"
             >
-              <RefreshCcw className="h-4 w-4 mr-2" /> Refresh
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
           )}
           

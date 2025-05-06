@@ -10,9 +10,13 @@ import {
   Megaphone, 
   Users, 
   BookOpenCheck,
-  BookOpen
+  BookOpen,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { useCommunications } from "@/hooks/useCommunications";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 interface SidebarNavProps {
   collapsed: boolean;
@@ -21,6 +25,16 @@ interface SidebarNavProps {
 export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
+  const { unreadMessages } = useCommunications();
+  const { announcements } = useDashboardData();
+  
+  // Count unread messages
+  const unreadMessageCount = unreadMessages?.length || 0;
+  
+  // Count unread announcements - simplified check
+  const unreadAnnouncementCount = announcements?.filter(a => 
+    !a.requires_acknowledgment
+  ).length || 0;
 
   // Group for main navigation
   const mainNavItems = [
@@ -29,18 +43,21 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
       icon: <Home className="h-5 w-5 mr-3" />,
       label: "Dashboard",
       showIf: true,
+      badge: null,
     },
     {
       to: "/employees",
       icon: <Users className="h-5 w-5 mr-3" />,
       label: "Employees",
       showIf: currentUser?.role === "admin",
+      badge: null,
     },
     {
       to: "/time",
       icon: <CalendarIcon className="h-5 w-5 mr-3" />,
       label: "Time Management",
       showIf: true,
+      badge: null,
     }
   ];
 
@@ -49,8 +66,20 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
     {
       to: "/communication",
       icon: <Megaphone className="h-5 w-5 mr-3" />,
-      label: "Communication",
+      label: "Announcements",
       showIf: true,
+      badge: unreadAnnouncementCount > 0 ? (
+        <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
+      ) : null,
+    },
+    {
+      to: "/communication?tab=messages",
+      icon: <MessageSquare className="h-5 w-5 mr-3" />,
+      label: "Messages",
+      showIf: true,
+      badge: unreadMessageCount > 0 ? (
+        <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
+      ) : null,
     }
   ];
 
@@ -61,18 +90,21 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
       icon: <BarChart3 className="h-5 w-5 mr-3" />,
       label: "Reports",
       showIf: true,
+      badge: null,
     },
     {
       to: "/training",
       icon: <BookOpen className="h-5 w-5 mr-3" />,
       label: "Training Portal",
       showIf: true,
+      badge: null,
     },
     {
       to: "/admin-training",
       icon: <BookOpenCheck className="h-5 w-5 mr-3" />,
       label: "Training Admin",
       showIf: currentUser?.role === "admin",
+      badge: null,
     }
   ];
 
@@ -91,9 +123,10 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
               )}
               asChild
             >
-              <Link to={item.to}>
+              <Link to={item.to} className="flex w-full items-center">
                 {item.icon}
                 <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+                {!collapsed && item.badge}
               </Link>
             </Button>
           )
@@ -112,16 +145,25 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
             item.showIf && (
               <Button
                 key={item.to}
-                variant="ghost"
+                variant={item.badge !== null ? "default" : "ghost"}
                 className={cn(
                   "justify-start font-normal",
                   (pathname === item.to || pathname === "/communications") && "bg-accent"
                 )}
                 asChild
               >
-                <Link to={item.to}>
+                <Link to={item.to} className="flex w-full items-center">
                   {item.icon}
                   <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+                  {!collapsed && item.badge}
+                  {collapsed && item.badge && (
+                    <Badge 
+                      variant={item.to.includes("messages") ? "destructive" : "default"} 
+                      className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+                    >
+                      {item.to.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
             )
@@ -149,9 +191,10 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
                 )}
                 asChild
               >
-                <Link to={item.to}>
+                <Link to={item.to} className="flex w-full items-center">
                   {item.icon}
                   <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+                  {!collapsed && item.badge}
                 </Link>
               </Button>
             )
