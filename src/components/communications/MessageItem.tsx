@@ -114,7 +114,11 @@ export function MessageItem({
               - {shiftCoverage.shift_end}
             </p>
             <div className="mt-1">
-              <MessageStatus status={message.status} />
+              <MessageStatus 
+                status={message.status} 
+                type={message.type} 
+                shiftRequest={shiftCoverage} 
+              />
             </div>
           </div>
         )}

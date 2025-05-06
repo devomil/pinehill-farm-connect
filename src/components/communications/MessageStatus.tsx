@@ -1,11 +1,12 @@
 
 import React from "react";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { MessageType, MessageStatus as StatusType, ShiftCoverageRequest } from "@/types/communications/communicationTypes";
 
-interface MessageStatusProps {
-  status: string;
-  type: string;
-  shiftRequest: any;
+export interface MessageStatusProps {
+  status: StatusType;
+  type: MessageType;
+  shiftRequest: ShiftCoverageRequest | null;
 }
 
 export function MessageStatus({ status, type, shiftRequest }: MessageStatusProps) {
