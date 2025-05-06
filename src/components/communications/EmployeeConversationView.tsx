@@ -1,44 +1,39 @@
 
 import React from "react";
-import { Card } from "@/components/ui/card";
-import { MessageConversation } from "./MessageConversation";
 import { User } from "@/types";
+import { MessageConversation } from "./MessageConversation";
 import { Communication } from "@/types/communications/communicationTypes";
 
 interface EmployeeConversationViewProps {
-  employee?: User | null;
-  selectedEmployee?: User | null;
+  selectedEmployee: User;
   messages: Communication[];
   loading: boolean;
-  isLoading?: boolean;
   onSendMessage: (message: string) => void;
   onBack?: () => void;
   onRefresh?: () => void;
 }
 
 export function EmployeeConversationView({
-  employee,
   selectedEmployee,
   messages,
   loading,
-  isLoading,
   onSendMessage,
   onBack,
   onRefresh
 }: EmployeeConversationViewProps) {
-  // Use either employee or selectedEmployee, whichever is provided
-  const employeeToUse = employee || selectedEmployee;
+  // Mark messages as read immediately when viewing a conversation
+  // This is just visual feedback; the actual marking happens in the backend
 
   return (
-    <Card className="md:col-span-2">
+    <div className="h-full">
       <MessageConversation
-        selectedEmployee={employeeToUse}
+        selectedEmployee={selectedEmployee}
         messages={messages}
-        isLoading={isLoading || loading}
+        isLoading={loading}
         onSendMessage={onSendMessage}
         onBack={onBack}
         onRefresh={onRefresh}
       />
-    </Card>
+    </div>
   );
 }

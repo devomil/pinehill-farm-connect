@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,10 @@ export function EmployeeList({
     // Then sort alphabetically by name
     return (a.name || "").localeCompare(b.name || "");
   });
+  
+  // Group employees with unread messages for better visualization
+  const employeesWithUnread = sortedEmployees.filter(emp => getUnreadCount(emp.id) > 0);
+  const employeesWithoutUnread = sortedEmployees.filter(emp => getUnreadCount(emp.id) === 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -86,11 +91,11 @@ export function EmployeeList({
         )}
       </div>
 
-      {unreadMessages && unreadMessages.length > 0 && (
+      {unreadMessages.length > 0 && employeesWithUnread.length > 0 && (
         <div className="mb-4">
-          <div className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
-            <MessageSquare className="h-4 w-4 mr-1.5" /> 
-            <span>New Messages</span> 
+          <div className="text-sm font-medium mb-2 flex items-center">
+            <MessageSquare className="h-4 w-4 mr-1.5 text-primary" /> 
+            <span className="text-primary">New Messages</span> 
             <Badge variant="secondary" className="ml-2">{unreadMessages.length}</Badge>
           </div>
         </div>
@@ -103,10 +108,66 @@ export function EmployeeList({
         </div>
       ) : sortedEmployees.length > 0 ? (
         <div className="overflow-y-auto flex-1 -mx-4 px-4">
+          {/* Employees with unread messages section */}
+          {employeesWithUnread.length > 0 && (
+            <div className="mb-3">
+              <div className="space-y-2">
+                {employeesWithUnread.map((employee) => {
+                  const unreadCount = getUnreadCount(employee.id);
+                  const latestMessage = getLatestUnreadMessage(employee.id);
+                  const isActive = selectedEmployee?.id === employee.id;
+                  
+                  return (
+                    <div
+                      key={employee.id}
+                      onClick={() => onSelectEmployee(employee)}
+                      className={`flex flex-col p-3 rounded-md cursor-pointer hover:bg-accent transition-colors ${
+                        isActive ? "bg-accent" : ""
+                      } border-l-4 border-primary`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground mr-3">
+                            <UserIcon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="font-medium flex items-center">
+                              {employee.name || "Unknown"}
+                              <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-2 rounded-full text-xs font-medium ml-2">
+                                <MessageCircle className="h-3 w-3 mr-1" />
+                                {unreadCount}
+                              </div>
+                            </div>
+                            <div className="text-sm text-muted-foreground truncate max-w-[160px]">
+                              {employee.email || "No email"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {latestMessage && (
+                        <div className="mt-2 ml-13 pl-12 text-sm bg-muted/30 p-2 rounded">
+                          <span className="line-clamp-2">{latestMessage}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {employeesWithoutUnread.length > 0 && (
+                <div className="my-3 border-t pt-3">
+                  <div className="text-xs uppercase text-muted-foreground font-medium mb-2">
+                    Other employees
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Employees without unread messages section */}
           <div className="space-y-2">
-            {sortedEmployees.map((employee) => {
-              const unreadCount = getUnreadCount(employee.id);
-              const latestMessage = getLatestUnreadMessage(employee.id);
+            {employeesWithoutUnread.map((employee) => {
               const isActive = selectedEmployee?.id === employee.id;
               
               return (
@@ -115,37 +176,19 @@ export function EmployeeList({
                   onClick={() => onSelectEmployee(employee)}
                   className={`flex flex-col p-3 rounded-md cursor-pointer hover:bg-accent transition-colors ${
                     isActive ? "bg-accent" : ""
-                  } ${unreadCount > 0 ? "border-l-4 border-primary" : ""}`}
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`flex items-center justify-center h-10 w-10 rounded-full ${
-                        unreadCount > 0 ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                      } mr-3`}>
-                        <UserIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="font-medium flex items-center">
-                          {employee.name || "Unknown"}
-                          {unreadCount > 0 && (
-                            <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-2 rounded-full text-xs font-medium ml-2">
-                              <MessageCircle className="h-3 w-3 mr-1" />
-                              {unreadCount}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[160px]">
-                          {employee.email || "No email"}
-                        </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary mr-3">
+                      <UserIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{employee.name || "Unknown"}</div>
+                      <div className="text-sm text-muted-foreground truncate max-w-[160px]">
+                        {employee.email || "No email"}
                       </div>
                     </div>
                   </div>
-                  
-                  {latestMessage && (
-                    <div className="mt-2 ml-13 pl-12 text-sm text-muted-foreground line-clamp-1 bg-muted/30 p-2 rounded">
-                      {latestMessage}
-                    </div>
-                  )}
                 </div>
               );
             })}
