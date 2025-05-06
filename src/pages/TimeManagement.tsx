@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +12,7 @@ export default function TimeManagement() {
   const pageLoadRef = useRef(false);
   
   useEffect(() => {
-    if (!pageLoadRef.current) {
+    if (!pageLoadRef.current && currentUser) {
       console.log("TimeManagement page mounted", {
         currentUser: currentUser ? {
           id: currentUser.id,
@@ -95,9 +94,7 @@ const TimeManagementContent = () => {
   const showGlobalError = error && messagesError;
 
   const handleManualRefresh = () => {
-    toast.info("Refreshing time management data...", {
-      id: "manual-refresh-toast", // Use consistent ID to prevent duplicates
-    });
+    toast.info("Refreshing time management data...");
     forceRefreshData();
   };
 

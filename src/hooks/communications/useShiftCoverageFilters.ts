@@ -29,19 +29,21 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
   
   // Count requests by status for filtering UI using useMemo
   const counts = useMemo(() => {
-    const pending = shiftCoverageRequests.filter(req => 
+    const safeRequests = shiftCoverageRequests || [];
+    
+    const pending = safeRequests.filter(req => 
       (req.shift_coverage_requests && req.shift_coverage_requests.length > 0 && 
       req.shift_coverage_requests[0]?.status === 'pending') || 
       (!req.shift_coverage_requests || req.shift_coverage_requests.length === 0)
     );
     
-    const accepted = shiftCoverageRequests.filter(req => 
+    const accepted = safeRequests.filter(req => 
       req.shift_coverage_requests && 
       req.shift_coverage_requests.length > 0 && 
       req.shift_coverage_requests[0]?.status === 'accepted'
     );
     
-    const declined = shiftCoverageRequests.filter(req => 
+    const declined = safeRequests.filter(req => 
       req.shift_coverage_requests && 
       req.shift_coverage_requests.length > 0 && 
       req.shift_coverage_requests[0]?.status === 'declined'

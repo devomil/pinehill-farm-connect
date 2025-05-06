@@ -44,12 +44,12 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Use either the provided employees or the ones from the directory hook - always memoize
-  const allEmployees = useMemo(() => propEmployees || directoryEmployees, [propEmployees, directoryEmployees]);
+  const allEmployees = useMemo(() => propEmployees || directoryEmployees || [], [propEmployees, directoryEmployees]);
   
-  // Always define the filter hook, but safely handle missing currentUser
-  const filterHookResult = useShiftCoverageFilters(messages || [], currentUser);
+  // Ensure we always pass valid arrays to hooks, never undefined
+  const safeMessages = useMemo(() => messages || [], [messages]);
   
-  // Extract values from the hook result
+  // Always define the filter hook with safe values
   const {
     shiftCoverageRequests,
     pendingCount,
@@ -57,7 +57,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     declinedCount,
     filterByStatus,
     updateFilter
-  } = filterHookResult;
+  } = useShiftCoverageFilters(safeMessages, currentUser);
   
   // Apply status filter with useMemo to prevent recalculation on every render
   const filteredRequests = useMemo(() => {
@@ -75,10 +75,10 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     console.log("ShiftCoverageRequestsTab - Loading state:", loading);
     console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
     console.log("ShiftCoverageRequestsTab - Employee count:", allEmployees?.length || 0);
-    console.log("ShiftCoverageRequestsTab - Messages count:", messages?.length || 0);
+    console.log("ShiftCoverageRequestsTab - Messages count:", safeMessages.length);
     console.log("ShiftCoverageRequestsTab - Error:", error ? (typeof error === 'string' ? error : error.message || 'Unknown error') : 'None');
     console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
-  }, [loading, employeesLoading, allEmployees, messages, error, employeesError]);
+  }, [loading, employeesLoading, allEmployees, safeMessages, error, employeesError]);
   
   // Find employee by ID - memoize to prevent recreation on each render
   const findEmployee = useCallback((id: string): User | undefined => {
@@ -128,7 +128,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
         <ShiftCoverageErrorDebugPanel
           loading={loading}
           employeesLoading={employeesLoading}
-          messagesCount={messages?.length || 0}
+          messagesCount={safeMessages.length}
           employeeCount={allEmployees?.length || 0}
           currentUser={currentUser}
           error={error}
