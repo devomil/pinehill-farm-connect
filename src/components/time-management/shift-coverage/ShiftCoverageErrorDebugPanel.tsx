@@ -1,16 +1,15 @@
 
 import React from "react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bug } from "lucide-react";
+import { User } from "@/types";
 
 interface ShiftCoverageErrorDebugPanelProps {
   loading: boolean;
   employeesLoading: boolean;
   messagesCount: number;
   employeeCount: number;
-  currentUser: any;
-  error?: any;
-  employeesError?: any;
+  currentUser: User;
+  error: any;
+  employeesError: any;
 }
 
 export const ShiftCoverageErrorDebugPanel: React.FC<ShiftCoverageErrorDebugPanelProps> = ({
@@ -23,39 +22,25 @@ export const ShiftCoverageErrorDebugPanel: React.FC<ShiftCoverageErrorDebugPanel
   employeesError
 }) => {
   return (
-    <Accordion type="single" collapsible className="mb-4">
-      <AccordionItem value="debug-info">
-        <AccordionTrigger className="text-sm">
-          <span className="flex items-center">
-            <Bug className="h-3 w-3 mr-1" /> Debug Information
-          </span>
-        </AccordionTrigger>
-        <AccordionContent className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
-          <p><strong>Loading state:</strong> {loading ? "true" : "false"}</p>
-          <p><strong>Employees loading state:</strong> {employeesLoading ? "true" : "false"}</p>
-          <p><strong>Messages count:</strong> {messagesCount}</p>
-          <p><strong>Employee count:</strong> {employeeCount}</p>
-          <p><strong>Current user:</strong> {currentUser?.email} (ID: {currentUser?.id})</p>
-          
-          {error && (
-            <>
-              <p className="mt-2 font-semibold text-red-500">Error:</p>
-              <pre className="whitespace-pre-wrap text-red-500">
-                {typeof error === 'object' ? JSON.stringify(error, null, 2) : String(error)}
-              </pre>
-            </>
-          )}
-          
-          {employeesError && (
-            <>
-              <p className="mt-2 font-semibold text-red-500">Employees Error:</p>
-              <pre className="whitespace-pre-wrap text-red-500">
-                {typeof employeesError === 'object' ? JSON.stringify(employeesError, null, 2) : String(employeesError)}
-              </pre>
-            </>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+    <div className="mb-4 p-4 bg-red-50 border border-red-300 rounded-md text-xs">
+      <h3 className="font-bold text-red-800 mb-2">Error Debug Information</h3>
+      <div className="space-y-1">
+        <div><strong>Loading State:</strong> {loading ? "Loading" : "Not Loading"}</div>
+        <div><strong>Employees Loading:</strong> {employeesLoading ? "Loading" : "Not Loading"}</div>
+        <div><strong>Messages Count:</strong> {messagesCount}</div>
+        <div><strong>Employee Count:</strong> {employeeCount}</div>
+        <div><strong>Current User:</strong> {currentUser?.name} ({currentUser?.id})</div>
+        
+        <div className="mt-2"><strong>Error:</strong></div>
+        <div className="whitespace-pre-wrap text-red-600 p-1 bg-red-100 rounded">
+          {error ? (typeof error === 'string' ? error : JSON.stringify(error, null, 2)) : 'None'}
+        </div>
+        
+        <div className="mt-2"><strong>Employees Error:</strong></div>
+        <div className="whitespace-pre-wrap text-red-600 p-1 bg-red-100 rounded">
+          {employeesError ? (typeof employeesError === 'string' ? employeesError : JSON.stringify(employeesError, null, 2)) : 'None'}
+        </div>
+      </div>
+    </div>
   );
 };

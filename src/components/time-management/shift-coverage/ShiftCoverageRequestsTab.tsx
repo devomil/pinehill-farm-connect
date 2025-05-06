@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
 import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
 import { ShiftCoverageErrorDebugPanel } from "./ShiftCoverageErrorDebugPanel";
-import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
+import { ShiftCoverageMainContent } from "./ShiftCoverageContent";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -89,16 +89,6 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     if (onRefresh) onRefresh();
     if (updateFilter) updateFilter();
   }, [refetchEmployees, onRefresh, updateFilter]);
-
-  // Show more detailed loading logs
-  useEffect(() => {
-    console.log("ShiftCoverageRequestsTab - Loading state:", loading);
-    console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
-    console.log("ShiftCoverageRequestsTab - Employee count:", allEmployees?.length || 0);
-    console.log("ShiftCoverageRequestsTab - Messages count:", safeMessages.length);
-    console.log("ShiftCoverageRequestsTab - Error:", error ? (typeof error === 'string' ? error : error.message || 'Unknown error') : 'None');
-    console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
-  }, [loading, employeesLoading, allEmployees, safeMessages, error, employeesError]);
 
   // If still loading, show loading state
   if (loading || employeesLoading) {
