@@ -30,7 +30,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     handleDelete
   } = useAnnouncements(currentUser, allEmployees);
 
-  const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
+  const { acknowledgeAnnouncement, isAcknowledging } = useAnnouncementAcknowledge(currentUser?.id);
 
   const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
     console.log("Saving edited announcement:", updatedAnnouncement);

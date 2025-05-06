@@ -1,12 +1,12 @@
 
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementAcknowledgmentProps {
   id: string;
   isAcknowledged?: boolean;
-  onAcknowledge?: () => void;
+  onAcknowledge?: () => Promise<void>;
 }
 
 export const AnnouncementAcknowledgment = ({
@@ -17,13 +17,14 @@ export const AnnouncementAcknowledgment = ({
   // Track local state for immediate UI feedback
   const [isChecked, setIsChecked] = useState(isAcknowledged);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   // Don't render if no acknowledgment handler is provided
   if (!onAcknowledge) return null;
 
-  const handleAcknowledge = async (checked: boolean) => {
-    // Only proceed if the checkbox is being checked and isn't already acknowledged
-    if (!checked || isAcknowledged) return;
+  const handleAcknowledge = async (checked: boolean | "indeterminate") => {
+    // Only proceed if the checkbox is being checked (true) and isn't already acknowledged
+    if (checked !== true || isAcknowledged) return;
     
     try {
       setIsSubmitting(true);
