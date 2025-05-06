@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AdminTimeOffCard } from "@/components/dashboard/AdminTimeOffCard";
 import { TrainingCard } from "@/components/dashboard/TrainingCard";
 import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
-import { ShiftCoverageCard } from "@/components/dashboard/ShiftCoverageCard";
+import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage";
 import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
 import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
 import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
