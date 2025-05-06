@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Users, AlertCircle, RefreshCw, Clock } from "lucide-react";
@@ -66,7 +65,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   }, [safeMessages, currentUser, shiftCoverageRequests]);
 
   // Filter to only show pending requests that are relevant to current user
-  const filteredMessages = React.useMemo(() => {
+  const filteredMessages = useMemo(() => {
     if (!shiftCoverageRequests || shiftCoverageRequests.length === 0) return [];
     
     return shiftCoverageRequests

@@ -43,7 +43,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  // Use either the provided employees or the ones from the directory hook - always memoize
+  // Use either the provided employees or the ones from the directory hook - memoize once
   const allEmployees = useMemo(() => propEmployees || directoryEmployees || [], [propEmployees, directoryEmployees]);
   
   // Ensure we always pass valid arrays to hooks, never undefined
@@ -61,7 +61,6 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   
   // Apply status filter with useMemo to prevent recalculation on every render
   const filteredRequests = useMemo(() => {
-    // Make sure we always return an array even if filterByStatus fails
     try {
       return filterByStatus(filter, shiftCoverageRequests || []);
     } catch (err) {
@@ -70,16 +69,13 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     }
   }, [filter, shiftCoverageRequests, filterByStatus]);
   
-  // Show more detailed loading logs - but memoize them to prevent excessive logging
-  useEffect(() => {
-    console.log("ShiftCoverageRequestsTab - Loading state:", loading);
-    console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
-    console.log("ShiftCoverageRequestsTab - Employee count:", allEmployees?.length || 0);
-    console.log("ShiftCoverageRequestsTab - Messages count:", safeMessages.length);
-    console.log("ShiftCoverageRequestsTab - Error:", error ? (typeof error === 'string' ? error : error.message || 'Unknown error') : 'None');
-    console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
-  }, [loading, employeesLoading, allEmployees, safeMessages, error, employeesError]);
-  
+  // Format error message safely - memoize to prevent recreation on each render
+  const formatErrorMessage = useCallback((err: any): string => {
+    if (typeof err === 'string') return err;
+    if (err?.message) return err.message;
+    return "Unknown error";
+  }, []);
+
   // Find employee by ID - memoize to prevent recreation on each render
   const findEmployee = useCallback((id: string): User | undefined => {
     if (!allEmployees) return undefined;
@@ -94,12 +90,15 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     if (updateFilter) updateFilter();
   }, [refetchEmployees, onRefresh, updateFilter]);
 
-  // Format error message safely - memoize to prevent recreation on each render
-  const formatErrorMessage = useCallback((err: any): string => {
-    if (typeof err === 'string') return err;
-    if (err?.message) return err.message;
-    return "Unknown error";
-  }, []);
+  // Show more detailed loading logs
+  useEffect(() => {
+    console.log("ShiftCoverageRequestsTab - Loading state:", loading);
+    console.log("ShiftCoverageRequestsTab - Employees loading:", employeesLoading);
+    console.log("ShiftCoverageRequestsTab - Employee count:", allEmployees?.length || 0);
+    console.log("ShiftCoverageRequestsTab - Messages count:", safeMessages.length);
+    console.log("ShiftCoverageRequestsTab - Error:", error ? (typeof error === 'string' ? error : error.message || 'Unknown error') : 'None');
+    console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
+  }, [loading, employeesLoading, allEmployees, safeMessages, error, employeesError]);
 
   // If still loading, show loading state
   if (loading || employeesLoading) {
@@ -140,10 +139,8 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     );
   }
   
-  // Get available employees (excluding current user)
-  const availableEmployees = useMemo(() => {
-    return (allEmployees?.filter(emp => emp.id !== currentUser?.id) || []);
-  }, [allEmployees, currentUser?.id]);
+  // Get available employees (excluding current user) - this must be outside the hooks
+  const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser?.id) || [];
   
   return (
     <>
