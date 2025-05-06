@@ -142,8 +142,8 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   
   // Get available employees (excluding current user)
   const availableEmployees = useMemo(() => {
-    return (allEmployees?.filter(emp => emp.id !== currentUser.id) || []);
-  }, [allEmployees, currentUser.id]);
+    return (allEmployees?.filter(emp => emp.id !== currentUser?.id) || []);
+  }, [allEmployees, currentUser?.id]);
   
   return (
     <>

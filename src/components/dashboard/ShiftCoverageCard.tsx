@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Users, AlertCircle, RefreshCw, Clock } from "lucide-react";
@@ -28,16 +29,19 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   onRefresh
 }) => {
   const { employees } = useEmployeeDirectory();
-  // Always provide a non-null messages array
-  const { shiftCoverageRequests, updateFilter } = useShiftCoverageFilters(messages || [], currentUser);
+  // Ensure we have safe values for messages
+  const safeMessages = useMemo(() => messages || [], [messages]);
+  
+  // Always provide a non-null messages array and currentUser
+  const { shiftCoverageRequests, updateFilter } = useShiftCoverageFilters(safeMessages, currentUser);
 
   useEffect(() => {
-    console.log(`ShiftCoverageCard: Received ${messages?.length || 0} messages for user ${currentUser?.id}`);
+    console.log(`ShiftCoverageCard: Received ${safeMessages.length || 0} messages for user ${currentUser?.id}`);
     console.log(`ShiftCoverageCard: After filtering, found ${shiftCoverageRequests?.length || 0} shift coverage requests`);
     
     // Debug information to help understand the data
-    if (messages && messages.length > 0) {
-      const shiftMessages = messages.filter(m => 
+    if (safeMessages.length > 0) {
+      const shiftMessages = safeMessages.filter(m => 
         m.type === 'shift_coverage' && 
         m.shift_coverage_requests?.length > 0
       );
@@ -59,11 +63,11 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
     } else {
       console.log("ShiftCoverageCard: No messages to display");
     }
-  }, [messages, currentUser, shiftCoverageRequests]);
+  }, [safeMessages, currentUser, shiftCoverageRequests]);
 
   // Filter to only show pending requests that are relevant to current user
   const filteredMessages = React.useMemo(() => {
-    if (!shiftCoverageRequests) return [];
+    if (!shiftCoverageRequests || shiftCoverageRequests.length === 0) return [];
     
     return shiftCoverageRequests
       .filter(msg => {
@@ -95,6 +99,38 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       onRefresh();
     }
   };
+
+  // If only error and no data, show error card
+  if (error && (!shiftCoverageRequests || shiftCoverageRequests.length === 0)) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Shift Coverage Requests</CardTitle>
+            {onRefresh && (
+              <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh requests">
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load shift coverage requests
+              {onRefresh && (
+                <Button size="sm" variant="ghost" onClick={handleRefresh} className="ml-2">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -136,6 +172,13 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
               <RefreshCw className="h-3 w-3 mr-1" />
               Refresh
             </Button>
+            <div className="mt-3">
+              <Link to="/time?tab=shift-coverage">
+                <Button variant="outline" size="sm">
+                  Create Shift Coverage Request
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">

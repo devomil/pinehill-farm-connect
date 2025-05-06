@@ -3,29 +3,34 @@ import { useState, useMemo, useCallback } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 
-export function useShiftCoverageFilters(messages: Communication[], currentUser: User) {
+export function useShiftCoverageFilters(messages: Communication[], currentUser: User | null) {
+  // Always initialize hooks at the top level
   const [latestFilterCall, setLatestFilterCall] = useState(Date.now());
   const [currentFilter, setCurrentFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   
   // Log filter debug info
   console.log(`Filtering shift requests by status: ${currentFilter}`);
   
+  // Safely handle messages and currentUser - never skip a hook call
+  const safeMessages = messages || [];
+  const safeCurrentUser = currentUser || {} as User;
+  
   // Extract all shift coverage requests with useMemo
   const shiftCoverageRequests = useMemo(() => {
-    if (!messages || !currentUser) {
+    if (!safeMessages.length || !safeCurrentUser.id) {
       return [];
     }
     
-    return messages.filter((message) => 
+    return safeMessages.filter((message) => 
       message.type === "shift_coverage" && 
       // For non-admin users, only include messages they're involved in
       (
-        currentUser.role === "admin" || // Admin users see all
-        message.sender_id === currentUser.id || // User sent the request
-        message.recipient_id === currentUser.id // User received the request
+        safeCurrentUser.role === "admin" || // Admin users see all
+        message.sender_id === safeCurrentUser.id || // User sent the request
+        message.recipient_id === safeCurrentUser.id // User received the request
       )
     );
-  }, [messages, currentUser, latestFilterCall]);
+  }, [safeMessages, safeCurrentUser, latestFilterCall]);
   
   // Count requests by status for filtering UI using useMemo
   const counts = useMemo(() => {
@@ -58,14 +63,13 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
   
   // Filter function wrapped in useCallback
   const filterByStatus = useCallback((status: 'all' | 'pending' | 'accepted' | 'declined', requests: Communication[]) => {
-    // Don't set latest filter call here - it causes too many re-renders
     setCurrentFilter(status); // Just update the current filter for logging
     
     if (status === 'all') {
-      return requests;
+      return requests || [];
     }
     
-    return requests.filter(req => {
+    return (requests || []).filter(req => {
       // For pending, include both explicitly pending and any without a status yet
       if (status === 'pending') {
         return (req.shift_coverage_requests && req.shift_coverage_requests.length > 0 && 

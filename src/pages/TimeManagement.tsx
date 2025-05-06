@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,15 +24,19 @@ export default function TimeManagement() {
     }
   }, [currentUser]);
 
+  if (!currentUser) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">You must be logged in to view this page.</div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      {!currentUser ? (
-        <div className="p-6">You must be logged in to view this page.</div>
-      ) : (
-        <TimeManagementProvider currentUser={currentUser}>
-          <TimeManagementContent />
-        </TimeManagementProvider>
-      )}
+      <TimeManagementProvider currentUser={currentUser}>
+        <TimeManagementContent />
+      </TimeManagementProvider>
     </DashboardLayout>
   );
 }
@@ -61,7 +66,7 @@ const TimeManagementContent = () => {
     // Force an initial load but wait a moment to let things settle
     if (!initialLoadDone.current && currentUser) {
       // Clear any existing timeout to prevent multiple refreshes
-      if (refreshTimeoutRef.current) {
+      if (refreshTimeoutRef.current !== null) {
         window.clearTimeout(refreshTimeoutRef.current);
       }
       
@@ -77,7 +82,7 @@ const TimeManagementContent = () => {
     
     // Cleanup function
     return () => {
-      if (refreshTimeoutRef.current) {
+      if (refreshTimeoutRef.current !== null) {
         window.clearTimeout(refreshTimeoutRef.current);
         refreshTimeoutRef.current = null;
       }
