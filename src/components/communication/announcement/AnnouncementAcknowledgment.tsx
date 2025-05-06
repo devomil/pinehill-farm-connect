@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,25 +11,38 @@ interface AnnouncementAcknowledgmentProps {
 
 export const AnnouncementAcknowledgment = ({
   id,
-  isAcknowledged,
+  isAcknowledged = false,
   onAcknowledge,
 }: AnnouncementAcknowledgmentProps) => {
+  // Track local state for immediate UI feedback
+  const [isChecked, setIsChecked] = useState(isAcknowledged);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Don't render if no acknowledgment handler is provided
   if (!onAcknowledge) return null;
 
-  const handleAcknowledge = async () => {
+  const handleAcknowledge = async (checked: boolean) => {
+    // Only proceed if the checkbox is being checked and isn't already acknowledged
+    if (!checked || isAcknowledged) return;
+    
     try {
-      if (onAcknowledge) {
-        console.log("Acknowledging announcement:", id);
-        await onAcknowledge();
-      }
+      setIsSubmitting(true);
+      // Update local UI state for immediate feedback
+      setIsChecked(true);
+      
+      console.log("Acknowledging announcement:", id);
+      await onAcknowledge();
     } catch (error) {
+      // Revert UI state if there was an error
+      setIsChecked(false);
       console.error("Error acknowledging announcement:", error);
       toast({
         title: "Failed to acknowledge",
         description: "There was an issue acknowledging this announcement",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -37,13 +50,14 @@ export const AnnouncementAcknowledgment = ({
     <div className="flex items-center gap-2 mt-4 p-2 bg-muted rounded">
       <Checkbox
         id={`ack-${id}`}
-        checked={isAcknowledged}
+        checked={isChecked || isAcknowledged}
         onCheckedChange={handleAcknowledge}
-        disabled={isAcknowledged}
+        disabled={isAcknowledged || isSubmitting}
+        className="cursor-pointer"
       />
       <label 
         htmlFor={`ack-${id}`} 
-        className={`text-sm ${isAcknowledged ? 'text-muted-foreground' : ''}`}
+        className={`text-sm cursor-pointer select-none ${isAcknowledged ? 'text-muted-foreground' : ''}`}
       >
         I acknowledge that I have read and understood this announcement
         {isAcknowledged && " (Acknowledged)"}

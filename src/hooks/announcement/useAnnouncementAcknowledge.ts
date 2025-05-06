@@ -1,9 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export const useAnnouncementAcknowledge = (currentUserId: string | undefined) => {
   const { toast } = useToast();
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
 
   const acknowledgeAnnouncement = async (announcementId: string) => {
     if (!currentUserId) {
@@ -11,7 +13,13 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
       return false;
     }
 
+    if (isAcknowledging) {
+      console.log("Already processing an acknowledgment, please wait");
+      return false;
+    }
+
     try {
+      setIsAcknowledging(true);
       console.log(`Acknowledging announcement ${announcementId} for user ${currentUserId}`);
       
       // Check if record exists first
@@ -76,8 +84,10 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         variant: "destructive"
       });
       return false;
+    } finally {
+      setIsAcknowledging(false);
     }
   };
 
-  return { acknowledgeAnnouncement };
+  return { acknowledgeAnnouncement, isAcknowledging };
 };

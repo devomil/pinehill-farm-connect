@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
@@ -69,6 +68,8 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
           title: "Announcement acknowledged",
           description: "Thank you for acknowledging this announcement"
         });
+      } else {
+        throw new Error("Failed to acknowledge announcement");
       }
     } catch (error) {
       console.error("Error in handleAcknowledge:", error);
@@ -77,6 +78,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
         description: "There was an issue acknowledging this announcement",
         variant: "destructive"
       });
+      throw error; // Re-throw to allow the component to handle visual feedback
     }
   };
 
