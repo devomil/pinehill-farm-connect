@@ -48,6 +48,17 @@ export function EmployeeList({
     return messages.length > 0 ? messages[0].message : null;
   };
 
+  // Get names of employees who sent unread messages
+  const getUnreadMessageSenders = (): string[] => {
+    const senderIds = [...new Set(unreadMessages.map(msg => msg.sender_id))];
+    return senderIds.map(id => {
+      const employee = employees.find(emp => emp.id === id);
+      return employee?.name || "Unknown";
+    });
+  };
+
+  const unreadMessageSenders = getUnreadMessageSenders();
+
   // Sort employees: those with unread messages first, then alphabetically
   const sortedEmployees = [...filteredEmployees].sort((a, b) => {
     const aUnreadCount = getUnreadCount(a.id);
@@ -97,6 +108,12 @@ export function EmployeeList({
             <MessageSquare className="h-4 w-4 mr-1.5 text-primary" /> 
             <span className="text-primary">New Messages</span> 
             <Badge variant="secondary" className="ml-2">{unreadMessages.length}</Badge>
+            
+            {/* New: Show names of senders with unread messages */}
+            <div className="ml-2 text-xs text-muted-foreground">
+              from {unreadMessageSenders.slice(0, 2).join(", ")}
+              {unreadMessageSenders.length > 2 && ` and ${unreadMessageSenders.length - 2} more`}
+            </div>
           </div>
         </div>
       )}

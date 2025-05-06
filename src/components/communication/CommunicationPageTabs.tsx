@@ -19,8 +19,27 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 }) => {
   // Group unread messages by sender for better visibility
   const uniqueSenders = unreadMessages 
-    ? [...new Set(unreadMessages.map(msg => msg.sender_id))].length
-    : 0;
+    ? [...new Set(unreadMessages.map(msg => msg.sender_id))]
+    : [];
+  
+  // Get the names of up to 2 senders to display
+  const getSenderNamesPreview = (): string => {
+    if (!unreadMessages || unreadMessages.length === 0) return "";
+    
+    // Extract unique sender names (if available in the message objects)
+    const uniqueSenderNames = [...new Set(unreadMessages
+      .map(msg => msg.sender_name || "Unknown")
+      .filter(name => name !== "Unknown")
+    )];
+    
+    if (uniqueSenderNames.length === 0) return "";
+    if (uniqueSenderNames.length === 1) return `from ${uniqueSenderNames[0]}`;
+    if (uniqueSenderNames.length === 2) return `from ${uniqueSenderNames[0]} and ${uniqueSenderNames[1]}`;
+    
+    return `from ${uniqueSenderNames[0]}, ${uniqueSenderNames[1]}, and others`;
+  };
+
+  const senderNamesPreview = getSenderNamesPreview();
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
@@ -32,13 +51,25 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
             <div className="ml-2 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-xs flex items-center">
               <MessageCircle className="h-3 w-3 mr-1" />
               {unreadMessages.length}
-              {uniqueSenders > 1 && (
-                <span className="ml-1 text-xs">from {uniqueSenders} people</span>
+              {uniqueSenders.length > 0 && (
+                <span className="ml-1 text-xs">
+                  {uniqueSenders.length === 1 
+                    ? " from 1 person" 
+                    : ` from ${uniqueSenders.length} people`}
+                </span>
               )}
             </div>
           )}
         </TabsTrigger>
       </TabsList>
+      
+      {/* Show sender names preview if there are unread messages */}
+      {activeTab === "messages" && unreadMessages && unreadMessages.length > 0 && senderNamesPreview && (
+        <div className="mb-4 text-sm text-primary flex items-center">
+          <MessageCircle className="h-4 w-4 mr-2" />
+          <span>New messages {senderNamesPreview}</span>
+        </div>
+      )}
       
       <TabsContent value="announcements">
         {children[0]}
