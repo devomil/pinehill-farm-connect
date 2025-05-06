@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
 import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
 import { ShiftCoverageErrorDebugPanel } from "./ShiftCoverageErrorDebugPanel";
-import { ShiftCoverageMainContent } from "./ShiftCoverageContent";
+import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -156,7 +155,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
         filteredRequests={filteredRequests}
         currentUser={currentUser}
         availableEmployees={availableEmployees}
-        allEmployees={allEmployees}
+        allEmployees={allEmployees || []}
         findEmployee={findEmployee}
         onRespond={onRespond}
         handleManualRefresh={handleManualRefresh}

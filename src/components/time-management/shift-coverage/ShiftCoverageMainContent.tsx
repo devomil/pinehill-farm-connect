@@ -2,11 +2,12 @@
 import React from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
 import { ShiftCoverageHeader } from "./ShiftCoverageHeader";
 import { ShiftRequestsList } from "./ShiftRequestsList";
+import { NewShiftCoverageRequestButton } from "../NewShiftCoverageRequestButton";
 
 interface ShiftCoverageMainContentProps {
   filter: 'all' | 'pending' | 'accepted' | 'declined';
@@ -39,6 +40,7 @@ export const ShiftCoverageMainContent: React.FC<ShiftCoverageMainContentProps> =
   filteredRequests,
   currentUser,
   availableEmployees,
+  allEmployees,
   findEmployee,
   onRespond,
   handleManualRefresh
@@ -61,16 +63,30 @@ export const ShiftCoverageMainContent: React.FC<ShiftCoverageMainContentProps> =
 
   return (
     <>
-      <ShiftCoverageHeader
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Shift Coverage</h1>
+          <p className="text-muted-foreground">Request and manage shift coverage</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={handleManualRefresh} title="Refresh data">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <NewShiftCoverageRequestButton
+            currentUser={currentUser}
+            allEmployees={availableEmployees}
+            onRequestSent={handleManualRefresh}
+          />
+        </div>
+      </div>
+
+      <FilterBar
         filter={filter}
         setFilter={setFilter}
         pendingCount={pendingCount}
         acceptedCount={acceptedCount}
         declinedCount={declinedCount}
         totalCount={shiftCoverageRequests.length}
-        onRefresh={handleManualRefresh}
-        currentUser={currentUser}
-        availableEmployees={availableEmployees}
       />
       
       <ShiftRequestsList
@@ -86,3 +102,6 @@ export const ShiftCoverageMainContent: React.FC<ShiftCoverageMainContentProps> =
     </>
   );
 };
+
+// Import FilterBar at the top of the file
+import { FilterBar } from "./FilterBar";
