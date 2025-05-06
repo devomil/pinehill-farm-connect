@@ -1,7 +1,6 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Users, AlertCircle, RefreshCw, UserCheck, UserX, Clock } from "lucide-react";
+import { Users, AlertCircle, RefreshCw, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -29,7 +28,8 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   onRefresh
 }) => {
   const { employees } = useEmployeeDirectory();
-  const { shiftCoverageRequests } = useShiftCoverageFilters(messages, currentUser);
+  // Always provide a non-null messages array
+  const { shiftCoverageRequests, updateFilter } = useShiftCoverageFilters(messages || [], currentUser);
 
   useEffect(() => {
     console.log(`ShiftCoverageCard: Received ${messages?.length || 0} messages for user ${currentUser?.id}`);
@@ -62,19 +62,23 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   }, [messages, currentUser, shiftCoverageRequests]);
 
   // Filter to only show pending requests that are relevant to current user
-  const filteredMessages = shiftCoverageRequests
-    .filter(msg => {
-      // Must have shift coverage requests
-      if (!msg.shift_coverage_requests || msg.shift_coverage_requests.length === 0) {
-        return false;
-      }
-      
-      // Pending requests only for the card
-      const isPending = msg.shift_coverage_requests[0].status === 'pending';
-      
-      return isPending;
-    })
-    .slice(0, 5); // Limit to 5 most recent
+  const filteredMessages = React.useMemo(() => {
+    if (!shiftCoverageRequests) return [];
+    
+    return shiftCoverageRequests
+      .filter(msg => {
+        // Must have shift coverage requests
+        if (!msg.shift_coverage_requests || msg.shift_coverage_requests.length === 0) {
+          return false;
+        }
+        
+        // Pending requests only for the card
+        const isPending = msg.shift_coverage_requests[0].status === 'pending';
+        
+        return isPending;
+      })
+      .slice(0, 5); // Limit to 5 most recent
+  }, [shiftCoverageRequests]);
 
   // Helper function to find employee name by ID
   const getEmployeeName = (id: string): string => {
@@ -87,6 +91,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   const handleRefresh = () => {
     if (onRefresh) {
       toast.info("Refreshing shift coverage requests...");
+      updateFilter();
       onRefresh();
     }
   };

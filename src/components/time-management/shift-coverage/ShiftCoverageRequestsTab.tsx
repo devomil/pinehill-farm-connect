@@ -38,13 +38,37 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   onRefresh,
   allEmployees: propEmployees
 }) => {
-  // Use the provided employees list if available, otherwise fetch it
+  // Always initialize all hooks at the top level
   const { unfilteredEmployees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
-  // Use either the provided employees or the ones from the directory hook
+  // Use either the provided employees or the ones from the directory hook - always memoize
   const allEmployees = useMemo(() => propEmployees || directoryEmployees, [propEmployees, directoryEmployees]);
+  
+  // Always define the filter hook, but safely handle missing currentUser
+  const filterHookResult = useShiftCoverageFilters(messages || [], currentUser);
+  
+  // Extract values from the hook result
+  const {
+    shiftCoverageRequests,
+    pendingCount,
+    acceptedCount,
+    declinedCount,
+    filterByStatus,
+    updateFilter
+  } = filterHookResult;
+  
+  // Apply status filter with useMemo to prevent recalculation on every render
+  const filteredRequests = useMemo(() => {
+    // Make sure we always return an array even if filterByStatus fails
+    try {
+      return filterByStatus(filter, shiftCoverageRequests || []);
+    } catch (err) {
+      console.error("Error filtering requests:", err);
+      return [];
+    }
+  }, [filter, shiftCoverageRequests, filterByStatus]);
   
   // Show more detailed loading logs - but memoize them to prevent excessive logging
   useEffect(() => {
@@ -56,31 +80,19 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
     console.log("ShiftCoverageRequestsTab - Employee Error:", employeesError ? (typeof employeesError === 'string' ? employeesError : employeesError.message || 'Unknown error') : 'None');
   }, [loading, employeesLoading, allEmployees, messages, error, employeesError]);
   
-  // Using useMemo to prevent recalculation on every render
-  const {
-    shiftCoverageRequests,
-    pendingCount,
-    acceptedCount,
-    declinedCount,
-    filterByStatus
-  } = useShiftCoverageFilters(messages, currentUser);
-  
-  // Apply status filter with useMemo to prevent recalculation on every render
-  const filteredRequests = useMemo(() => {
-    return filterByStatus(filter, shiftCoverageRequests);
-  }, [filter, shiftCoverageRequests, filterByStatus]);
-  
   // Find employee by ID - memoize to prevent recreation on each render
   const findEmployee = useCallback((id: string): User | undefined => {
-    return allEmployees?.find(emp => emp.id === id);
+    if (!allEmployees) return undefined;
+    return allEmployees.find(emp => emp.id === id);
   }, [allEmployees]);
 
   // Handle manual refresh with feedback - memoize to prevent recreation on each render
   const handleManualRefresh = useCallback(() => {
     toast.info("Refreshing shift coverage requests...");
-    refetchEmployees();
-    onRefresh();
-  }, [refetchEmployees, onRefresh]);
+    if (refetchEmployees) refetchEmployees();
+    if (onRefresh) onRefresh();
+    if (updateFilter) updateFilter();
+  }, [refetchEmployees, onRefresh, updateFilter]);
 
   // Format error message safely - memoize to prevent recreation on each render
   const formatErrorMessage = useCallback((err: any): string => {
@@ -130,7 +142,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   
   // Get available employees (excluding current user)
   const availableEmployees = useMemo(() => {
-    return allEmployees?.filter(emp => emp.id !== currentUser.id) || [];
+    return (allEmployees?.filter(emp => emp.id !== currentUser.id) || []);
   }, [allEmployees, currentUser.id]);
   
   return (

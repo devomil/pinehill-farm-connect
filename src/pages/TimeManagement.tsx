@@ -46,7 +46,13 @@ const TimeManagementContent = () => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   useEffect(() => {
-    console.log("TimeManagementContent rendered with user:", currentUser?.id);
+    // Guard against undefined currentUser
+    if (!currentUser) {
+      console.log("TimeManagementContent: currentUser is not available yet");
+      return;
+    }
+    
+    console.log("TimeManagementContent rendered with user:", currentUser.id);
     console.log("Available employees count:", allEmployees?.length || 0);
     
     // Log error states
@@ -57,7 +63,7 @@ const TimeManagementContent = () => {
     if (!initialLoadDone.current && currentUser) {
       // Clear any existing timeout to prevent multiple refreshes
       if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
+        window.clearTimeout(refreshTimeoutRef.current);
       }
       
       // Set new timeout
@@ -73,7 +79,7 @@ const TimeManagementContent = () => {
     // Cleanup function
     return () => {
       if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
+        window.clearTimeout(refreshTimeoutRef.current);
         refreshTimeoutRef.current = null;
       }
     };

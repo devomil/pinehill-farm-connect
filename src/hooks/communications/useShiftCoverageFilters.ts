@@ -5,9 +5,10 @@ import { User } from "@/types";
 
 export function useShiftCoverageFilters(messages: Communication[], currentUser: User) {
   const [latestFilterCall, setLatestFilterCall] = useState(Date.now());
+  const [currentFilter, setCurrentFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
   
   // Log filter debug info
-  console.log(`Filtering shift requests by status: all`);
+  console.log(`Filtering shift requests by status: ${currentFilter}`);
   
   // Extract all shift coverage requests with useMemo
   const shiftCoverageRequests = useMemo(() => {
@@ -53,10 +54,10 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
     };
   }, [shiftCoverageRequests]);
   
-  // Filter functions wrapped in useCallback
+  // Filter function wrapped in useCallback
   const filterByStatus = useCallback((status: 'all' | 'pending' | 'accepted' | 'declined', requests: Communication[]) => {
     // Don't set latest filter call here - it causes too many re-renders
-    // Instead, only update when explicitly filtering from UI
+    setCurrentFilter(status); // Just update the current filter for logging
     
     if (status === 'all') {
       return requests;
@@ -86,6 +87,7 @@ export function useShiftCoverageFilters(messages: Communication[], currentUser: 
     ...counts,
     shiftCoverageRequests,
     filterByStatus,
-    updateFilter
+    updateFilter,
+    currentFilter
   };
 }
