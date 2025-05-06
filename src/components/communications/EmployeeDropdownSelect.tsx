@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
-import { MessageCircle, ChevronDown, Search, Clock } from "lucide-react";
+import { MessageCircle, ChevronDown, Search, Clock, Bell, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, isToday, isSameWeek } from "date-fns";
@@ -45,23 +45,52 @@ export function EmployeeDropdownSelect({
     return unreadMessages.filter((msg) => msg.sender_id === employeeId).length;
   };
 
+  // Check if an employee has unread messages
+  const hasUnreadMessages = (employee: User): boolean => {
+    return getUnreadCount(employee.id) > 0;
+  };
+
+  // Get the most recent unread message preview
+  const getMessagePreview = (employeeId: string): string | null => {
+    const messages = unreadMessages
+      .filter(msg => msg.sender_id === employeeId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    if (messages.length === 0) return null;
+    
+    const message = messages[0].message;
+    return message.length > 30 ? `${message.substring(0, 30)}...` : message;
+  };
+
   // Check if an employee is in recent conversations
   const isRecentConversation = (employee: User): boolean => {
     return recentConversations.some(recent => recent.id === employee.id);
   };
 
-  // Sort employees - put recent conversations first, then others
+  // Sort employees - put employees with unread messages first, then recent conversations, then others
   const sortedEmployees = [...filteredEmployees].sort((a, b) => {
+    const aHasUnread = hasUnreadMessages(a);
+    const bHasUnread = hasUnreadMessages(b);
     const aIsRecent = isRecentConversation(a);
     const bIsRecent = isRecentConversation(b);
     
-    // Sort by recent status first
+    // Sort by unread status first
+    if (aHasUnread && !bHasUnread) return -1;
+    if (!aHasUnread && bHasUnread) return 1;
+    
+    // Then by recent status
     if (aIsRecent && !bIsRecent) return -1;
     if (!aIsRecent && bIsRecent) return 1;
     
     // Then by name
     return (a.name || "").localeCompare(b.name || "");
   });
+
+  // Group employees by unread status for better visualization
+  const employeesWithUnread = sortedEmployees.filter(hasUnreadMessages);
+  const employeesWithoutUnread = sortedEmployees.filter(e => !hasUnreadMessages(e));
+  
+  const totalUnreadCount = unreadMessages.length;
 
   return (
     <div className="space-y-2">
@@ -78,23 +107,81 @@ export function EmployeeDropdownSelect({
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex-shrink-0 justify-between min-w-[180px]">
-              {selectedEmployee ? selectedEmployee.name : "Select Employee"}
-              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+            <Button variant="outline" className="flex-shrink-0 justify-between min-w-[180px] relative">
+              {selectedEmployee ? (
+                <span className="truncate max-w-[140px]">{selectedEmployee.name}</span>
+              ) : (
+                <span>Select Employee</span>
+              )}
+              
+              <div className="flex items-center">
+                {totalUnreadCount > 0 && (
+                  <Badge variant="destructive" className="mr-1.5 flex items-center">
+                    <Mail className="h-3 w-3 mr-1" />
+                    {totalUnreadCount}
+                  </Badge>
+                )}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[280px] max-h-[400px] overflow-auto">
+          <DropdownMenuContent className="w-[320px] max-h-[400px] overflow-auto">
             {sortedEmployees.length > 0 ? (
               <>
+                {/* Unread messages section */}
+                {employeesWithUnread.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-destructive flex items-center">
+                      <Bell className="h-3.5 w-3.5 mr-1" /> 
+                      New Messages ({employeesWithUnread.length})
+                    </div>
+                    
+                    {employeesWithUnread.map((employee) => {
+                      const unreadCount = getUnreadCount(employee.id);
+                      const messagePreview = getMessagePreview(employee.id);
+                      
+                      return (
+                        <DropdownMenuItem 
+                          key={`unread-${employee.id}`}
+                          onClick={() => onSelectEmployee(employee)} 
+                          className="flex flex-col cursor-pointer py-2 border-l-4 border-primary px-2"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex flex-col">
+                              <div className="flex items-center font-medium">
+                                <span>{employee.name || "Unknown"}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{employee.email}</span>
+                            </div>
+                            {unreadCount > 0 && (
+                              <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-1.5 rounded-full text-xs font-medium">
+                                <MessageCircle className="h-3 w-3 mr-1" />
+                                {unreadCount}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {messagePreview && (
+                            <div className="mt-1 text-xs text-muted-foreground bg-muted/40 p-1.5 rounded w-full">
+                              {messagePreview}
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    
+                    <div className="border-t my-1"></div>
+                  </>
+                )}
+                
                 {/* Recent conversations section */}
-                {sortedEmployees.some(e => isRecentConversation(e)) && (
+                {employeesWithoutUnread.some(e => isRecentConversation(e)) && (
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    Active Conversations
+                    <Clock className="h-3.5 w-3.5 inline mr-1" /> Recent Conversations
                   </div>
                 )}
                 
-                {sortedEmployees.map((employee) => {
-                  const unreadCount = getUnreadCount(employee.id);
+                {employeesWithoutUnread.map((employee) => {
                   const isRecent = isRecentConversation(employee);
                   
                   return (
@@ -111,18 +198,12 @@ export function EmployeeDropdownSelect({
                           {isRecent && (
                             <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 text-[10px] h-5">
                               <Clock className="h-3 w-3 mr-1" />
-                              Active
+                              Recent
                             </Badge>
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground">{employee.email}</span>
                       </div>
-                      {unreadCount > 0 && (
-                        <div className="flex items-center bg-primary text-primary-foreground h-6 min-w-6 px-1.5 rounded-full text-xs font-medium">
-                          <MessageCircle className="h-3 w-3 mr-1" />
-                          {unreadCount}
-                        </div>
-                      )}
                     </DropdownMenuItem>
                   );
                 })}

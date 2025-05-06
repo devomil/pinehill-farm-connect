@@ -5,7 +5,7 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Megaphone, MessageSquare } from "lucide-react";
+import { Megaphone, MessageSquare, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -55,21 +55,21 @@ export const CommunicationIndicators: React.FC = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant="ghost" 
+              variant={unreadMessageCount > 0 ? "default" : "ghost"}
               size="icon"
               onClick={() => navigate("/communication?tab=messages")}
               className="relative"
             >
               <MessageSquare className="h-5 w-5" />
               {unreadMessageCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
+                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
                   {unreadMessageCount}
                 </Badge>
               )}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Direct Messages</p>
+            <p>Direct Messages ({unreadMessageCount} unread)</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

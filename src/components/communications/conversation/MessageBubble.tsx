@@ -1,7 +1,8 @@
 
 import React from "react";
-import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { Communication } from "@/types/communications/communicationTypes";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface MessageBubbleProps {
@@ -10,46 +11,69 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isMine }: MessageBubbleProps) {
-  const hasShiftDetails = message.shift_coverage_requests && message.shift_coverage_requests.length > 0;
-  const shiftRequest = hasShiftDetails ? message.shift_coverage_requests[0] : null;
-  
-  // Determine if this is a high priority message
-  const isUrgent = message.type === 'urgent' || message.type === 'shift_coverage';
-  
+  // Format time to show in the message
+  const formatMessageTime = (dateString: string) => {
+    // For recent messages, show relative time
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) {
+      return "Just now";
+    } else if (diffMins < 60) {
+      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+    } else if (diffMins < 24 * 60) {
+      return formatDistanceToNow(date, { addSuffix: true });
+    } else {
+      // For older messages, show the actual time
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + 
+             ` at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  };
+
+  const isUnread = !isMine && !message.read_at;
+  const isUrgent = message.type === "urgent";
+
   return (
     <div
-      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+      className={`flex flex-col ${
+        isMine ? "items-end" : "items-start"
+      }`}
     >
       <div
-        className={`max-w-[80%] ${
+        className={`max-w-[80%] rounded-lg p-3 text-sm ${
           isMine
-            ? isUrgent ? "bg-red-500 text-white" : "bg-primary text-primary-foreground"
-            : isUrgent ? "bg-red-100 border-red-300 border" : "bg-muted"
-        } rounded-lg p-3`}
+            ? "bg-primary text-primary-foreground"
+            : isUnread
+            ? "bg-blue-50 border border-blue-200"
+            : "bg-muted"
+        } ${isUrgent ? "border-l-4 border-red-500" : ""}`}
       >
         {isUrgent && (
-          <div className="mb-2 flex">
-            <Badge variant={isMine ? "outline" : "destructive"} className={isMine ? "bg-white/20" : ""}>
-              {message.type === 'shift_coverage' ? 'SHIFT COVERAGE REQUEST' : 'URGENT'}
+          <div className="flex items-center mb-1">
+            <Badge variant="destructive" className="mb-1">
+              <AlertCircle className="h-3 w-3 mr-1" /> Urgent
             </Badge>
           </div>
         )}
         
-        <p className="whitespace-pre-wrap break-words">{message.message}</p>
+        <div className="whitespace-pre-line">{message.message}</div>
         
-        {hasShiftDetails && shiftRequest && (
-          <div className={`mt-2 p-2 ${isMine ? "bg-red-400/30" : "bg-white/80"} rounded text-sm`}>
-            <div className="font-medium mb-1">Shift Coverage Request:</div>
-            <div><span className="font-medium">Date:</span> {shiftRequest.shift_date}</div>
-            <div><span className="font-medium">Time:</span> {shiftRequest.shift_start} - {shiftRequest.shift_end}</div>
-            <div className="mt-1"><span className="font-medium">Status:</span> {message.status}</div>
-          </div>
-        )}
-        
-        <div className="text-xs mt-1 opacity-70">
-          {format(new Date(message.created_at), "MMM d, h:mm a")}
+        <div className="flex items-center justify-end mt-1 text-xs opacity-70">
+          {formatMessageTime(message.created_at)}
+          {isMine && message.read_at && (
+            <CheckCircle className="h-3 w-3 ml-1 text-green-500" />
+          )}
         </div>
       </div>
+      
+      {isUnread && (
+        <div className="mt-1 text-xs text-blue-600 font-medium flex items-center">
+          <div className="w-2 h-2 bg-blue-600 rounded-full mr-1.5"></div>
+          New Message
+        </div>
+      )}
     </div>
   );
 }

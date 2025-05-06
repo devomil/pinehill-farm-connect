@@ -6,6 +6,8 @@ import { MessageSkeleton } from "./MessageSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
+import { Badge } from "@/components/ui/badge";
+import { MessageSquare } from "lucide-react";
 
 interface MessageListProps {
   messages: Communication[];
@@ -54,6 +56,15 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
     return Array.from(conversations.values());
   }, [messages, currentUser]);
 
+  // Count unread messages
+  const unreadCount = useMemo(() => {
+    if (!currentUser) return 0;
+    return messages.filter(msg => 
+      msg.recipient_id === currentUser.id && 
+      !msg.read_at
+    ).length;
+  }, [messages, currentUser]);
+
   // Loading state
   if (isLoading) {
     return <MessageSkeleton />;
@@ -66,6 +77,16 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
 
   return (
     <div className="space-y-4">
+      {unreadCount > 0 && (
+        <div className="bg-muted/30 p-3 rounded-md flex items-center justify-between">
+          <div className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
+            <span className="text-sm font-medium">You have new messages</span>
+          </div>
+          <Badge variant="default">{unreadCount} unread</Badge>
+        </div>
+      )}
+      
       {groupedMessages.map(message => {
         // Determine if the message is incoming or outgoing
         const isOutgoing = message.sender_id === currentUser?.id;
@@ -79,6 +100,9 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
           return null;
         }
 
+        // Check if this is unread
+        const isUnread = !isOutgoing && !message.read_at;
+
         return (
           <MessageItem
             key={message.id}
@@ -87,6 +111,7 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
             isOutgoing={isOutgoing}
             onRespond={onRespond}
             onViewConversation={() => onViewConversation(otherPerson)}
+            isUnread={isUnread}
           />
         );
       })}
