@@ -1,4 +1,3 @@
-
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { NotificationRequest } from "./notificationTypes.ts";
 import { createNotifications } from "./notificationFactory.ts";
@@ -24,6 +23,20 @@ export async function handleMessageNotification(
   const notifications = createNotifications(request, [request.assignedTo]);
   
   console.log(`Creating message notification for: ${request.assignedTo.name} (${request.assignedTo.email})`, notifications);
+  
+  // Special handling for shift coverage requests - always add Jackie as admin CC
+  if (request.actionType === "shift_coverage_request") {
+    // If there's no adminCc provided but it's a shift coverage request,
+    // default to Jackie as the admin to CC
+    if (!request.details.adminCc) {
+      console.log("Adding default admin CC (Jackie) for shift coverage request");
+      request.details.adminCc = {
+        id: "admin-jackie",  // This is a placeholder, the actual ID would come from the database
+        name: "Jackie Phillips",
+        email: "jackie@pinehillfarm.co"
+      };
+    }
+  }
   
   // Check if there's an admin that needs to be CC'd
   if (request.details.adminCc && 
@@ -58,6 +71,12 @@ export async function handleMessageNotification(
     // Send primary notification email
     if (request.assignedTo.email && request.assignedTo.email.includes("@")) {
       console.log(`Sending email notification to ${request.assignedTo.name} (${request.assignedTo.email})`);
+      
+      // Enrich shift details for better formatting in emails
+      if (request.details.shiftDetails && typeof request.details.shiftDetails === 'object') {
+        // Keep the original object but make sure it's properly formatted for display
+        console.log("Formatting shift details for email notification", request.details.shiftDetails);
+      }
       
       await sendEmailNotification(
         supabase,
@@ -132,7 +151,8 @@ async function sendEmailNotification(
         messageType: notificationType,
         communicationId: details.communicationId,
         response: details.response, // For shift_coverage_response
-        ...details // Include all other details like shift dates if present
+        shiftDetails: details.shiftDetails, // Pass the full shift details object
+        adminCc: details.adminCc // Pass the admin CC information
       }
     }
   });

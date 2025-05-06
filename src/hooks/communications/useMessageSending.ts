@@ -41,8 +41,15 @@ export function useMessageSending(
       recipientId: data.recipientId,
       message: data.message,
       type: data.type,
-      adminCc: data.adminCc, // Pass along admin CC if provided
     };
+    
+    // For shift coverage requests, always set Jackie as the Admin CC
+    if (data.type === 'shift_coverage') {
+      sendParams.adminCc = "jackie@pinehillfarm.co"; // Always CC Jackie for shift coverage
+    } else if (data.adminCc) {
+      // For other message types, use the provided adminCc if available
+      sendParams.adminCc = data.adminCc;
+    }
     
     // Add shift details with appropriate field mapping if available
     if (data.shiftDetails) {

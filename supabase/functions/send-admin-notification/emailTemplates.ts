@@ -76,12 +76,43 @@ export function formatDetailsAsHtml(details: any): string {
     if (key === 'senderEmail' || key === 'messageType') continue;
     
     const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-    detailsHtml += `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${formattedKey}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${value}</td>
-      </tr>
-    `;
+    
+    // Format shift details specially to show the actual date and time
+    if (key === 'shiftDetails' && value && typeof value === 'object') {
+      const shiftDate = value.shift_date || '';
+      const shiftStart = value.shift_start || '';
+      const shiftEnd = value.shift_end || '';
+      
+      const formattedShiftDetails = `${shiftDate} ${shiftStart} - ${shiftEnd}`;
+      
+      detailsHtml += `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Shift Details</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${formattedShiftDetails}</td>
+        </tr>
+      `;
+    } 
+    // Format adminCc specially to show the name and email
+    else if (key === 'adminCc' && value && typeof value === 'object') {
+      const adminName = value.name || 'Admin';
+      const adminEmail = value.email || '';
+      
+      detailsHtml += `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Admin Cc</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${adminName} (${adminEmail})</td>
+        </tr>
+      `;
+    }
+    // Regular formatting for other fields
+    else {
+      detailsHtml += `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${formattedKey}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${value}</td>
+        </tr>
+      `;
+    }
   }
   
   detailsHtml += `
@@ -98,10 +129,36 @@ export function formatDetailsAsHtml(details: any): string {
 export function formatDetailsAsPlainText(details: any): string {
   if (!details) return '';
   
-  return Object.entries(details)
-    .filter(([key]) => key !== 'senderEmail' && key !== 'messageType')
-    .map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
-    .join('\n');
+  let result = '';
+  
+  for (const [key, value] of Object.entries(details)) {
+    // Skip internal fields
+    if (key === 'senderEmail' || key === 'messageType') continue;
+    
+    const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    
+    // Format shift details specially
+    if (key === 'shiftDetails' && value && typeof value === 'object') {
+      const shiftDate = value.shift_date || '';
+      const shiftStart = value.shift_start || '';
+      const shiftEnd = value.shift_end || '';
+      
+      result += `Shift Details: ${shiftDate} ${shiftStart} - ${shiftEnd}\n`;
+    }
+    // Format adminCc specially
+    else if (key === 'adminCc' && value && typeof value === 'object') {
+      const adminName = value.name || 'Admin';
+      const adminEmail = value.email || '';
+      
+      result += `Admin Cc: ${adminName} (${adminEmail})\n`;
+    }
+    // Regular formatting
+    else {
+      result += `${formattedKey}: ${value}\n`;
+    }
+  }
+  
+  return result;
 }
 
 /**

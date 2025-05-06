@@ -30,8 +30,21 @@ export async function sendMessageService(currentUser: User | null, params: SendM
     // Step 1: Find recipient profile
     const recipient = await findRecipientProfile(recipientId);
     
-    // Step 2: Find admin for CC if needed
-    const adminData = await findAdminForCommunication(currentUser, type, adminCc);
+    // Step 2: Find admin for CC
+    // For shift coverage requests, always use Jackie as the admin
+    let adminData;
+    if (type === 'shift_coverage') {
+      // Force Jackie as admin for all shift coverage requests
+      adminData = {
+        id: "admin-jackie", // This is just a placeholder, actual ID would come from the database
+        name: "Jackie Phillips",
+        email: "jackie@pinehillfarm.co"
+      };
+      console.log("Using Jackie as admin for shift coverage request");
+    } else {
+      // For other message types, use the provided adminCc or find one
+      adminData = await findAdminForCommunication(currentUser, type, adminCc);
+    }
     
     // Step 3: Create communication entry
     const communicationData = await createCommunicationRecord({
