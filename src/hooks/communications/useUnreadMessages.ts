@@ -1,6 +1,14 @@
+
 import { useMemo } from "react";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
+
+// Add these properties to extend Communication type for UI purposes
+interface EnhancedCommunication extends Communication {
+  sender_name?: string;
+  sender_display_name?: string;
+  sender_email?: string;
+}
 
 export function useUnreadMessages(messages: Communication[] | null, currentUser: User | null) {
   return useMemo(() => {
@@ -11,7 +19,7 @@ export function useUnreadMessages(messages: Communication[] | null, currentUser:
       message => 
         message.recipient_id === currentUser.id && 
         !message.read_at
-    );
+    ) as EnhancedCommunication[];
     
     // Add sender_name to each message for easier reference in UI
     return unreadMessages.map(message => {

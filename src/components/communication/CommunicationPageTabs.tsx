@@ -4,6 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
 
+// Add interface for enhanced communications with UI properties
+interface EnhancedCommunication extends Communication {
+  sender_name?: string;
+}
+
 interface CommunicationTabsProps {
   activeTab: string;
   unreadMessages: Communication[] | null;
@@ -28,7 +33,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     
     // Extract unique sender names (if available in the message objects)
     const uniqueSenderNames = [...new Set(unreadMessages
-      .map(msg => msg.sender_name || "Unknown")
+      .map(msg => (msg as EnhancedCommunication).sender_name || "Unknown")
       .filter(name => name !== "Unknown")
     )];
     

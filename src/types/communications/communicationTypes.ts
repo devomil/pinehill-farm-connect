@@ -1,4 +1,3 @@
-
 export type MessageType = 'general' | 'shift_coverage' | 'urgent';
 export type MessageStatus = 'pending' | 'accepted' | 'declined';
 
@@ -14,6 +13,11 @@ export interface Communication {
   admin_cc: string | null;
   shift_coverage_requests?: ShiftCoverageRequest[];
   current_user_id?: string;
+  
+  // UI helper properties
+  sender_name?: string;
+  sender_display_name?: string;
+  sender_email?: string;
 }
 
 export interface ShiftCoverageRequest {

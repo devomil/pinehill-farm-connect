@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   DropdownMenu, 
@@ -9,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
-import { MessageCircle, ChevronDown, Search, Clock, Bell, Mail } from "lucide-react";
+import { MessageCircle, ChevronDown, Search, Bell, Clock, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, isToday, isSameWeek } from "date-fns";
