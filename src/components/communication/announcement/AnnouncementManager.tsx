@@ -71,6 +71,8 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       
       // Refresh announcements to update UI after successful acknowledgment
       await fetchAnnouncements();
+      
+      // Return a resolved promise with no value
       return Promise.resolve();
     } catch (error) {
       console.error("Error in handleAcknowledge:", error);

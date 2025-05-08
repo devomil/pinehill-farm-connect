@@ -7,7 +7,7 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
   const { toast } = useToast();
   const [isAcknowledging, setIsAcknowledging] = useState(false);
 
-  const acknowledgeAnnouncement = useCallback(async (announcementId: string) => {
+  const acknowledgeAnnouncement = useCallback(async (announcementId: string): Promise<void> => {
     if (!currentUserId) {
       console.error("No currentUserId provided to acknowledgeAnnouncement");
       return Promise.reject("No currentUserId available");

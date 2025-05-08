@@ -7,7 +7,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
   const { toast } = useToast();
   const [isMarking, setIsMarking] = useState(false);
 
-  const markAsRead = useCallback(async (id: string) => {
+  const markAsRead = useCallback(async (id: string): Promise<boolean> => {
     if (!currentUserId) {
       console.error("No currentUserId provided to markAsRead");
       return false;
