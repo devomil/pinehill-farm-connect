@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Announcement } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,11 +8,19 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
   const [isMarking, setIsMarking] = useState(false);
 
   const markAsRead = async (id: string) => {
-    if (!currentUserId) return false;
-    if (isMarking) return false;
+    if (!currentUserId) {
+      console.error("No currentUserId provided to markAsRead");
+      return false;
+    }
+    
+    if (isMarking) {
+      console.log("Already marking as read, please wait");
+      return false;
+    }
     
     try {
       setIsMarking(true);
+      console.log(`Marking announcement ${id} as read for user ${currentUserId}`);
       
       const { data: existingRead, error: checkError } = await supabase
         .from("announcement_recipients")
@@ -24,13 +31,18 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
         
       if (checkError) {
         console.error("Error checking announcement recipient:", checkError);
-        toast({ title: "Failed to mark as read", description: checkError.message, variant: "destructive" });
+        toast({ 
+          title: "Failed to mark as read", 
+          description: checkError.message, 
+          variant: "destructive" 
+        });
         return false;
       }
       
       if (existingRead) {
         if (existingRead.read_at) {
           // Already marked as read
+          console.log("Announcement already marked as read");
           return true;
         }
         
@@ -41,7 +53,11 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
           
         if (updateError) {
           console.error("Mark as read update error:", updateError);
-          toast({ title: "Failed to mark as read", description: updateError.message, variant: "destructive" });
+          toast({ 
+            title: "Failed to mark as read", 
+            description: updateError.message, 
+            variant: "destructive" 
+          });
           return false;
         }
       } else {
@@ -56,15 +72,24 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
           
         if (insertError) {
           console.error("Mark as read insert error:", insertError);
-          toast({ title: "Failed to mark as read", description: insertError.message, variant: "destructive" });
+          toast({ 
+            title: "Failed to mark as read", 
+            description: insertError.message, 
+            variant: "destructive" 
+          });
           return false;
         }
       }
       
+      console.log("Successfully marked announcement as read");
       return true;
     } catch (err) {
       console.error("Unexpected error in markAsRead:", err);
-      toast({ title: "Failed to mark as read", description: "An unexpected error occurred", variant: "destructive" });
+      toast({ 
+        title: "Failed to mark as read", 
+        description: "An unexpected error occurred", 
+        variant: "destructive" 
+      });
       return false;
     } finally {
       setIsMarking(false);

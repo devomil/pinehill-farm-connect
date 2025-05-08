@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 interface AnnouncementAcknowledgmentProps {
   id: string;
   isAcknowledged?: boolean;
-  onAcknowledge?: () => Promise<void>;
+  onAcknowledge?: (announcementId: string) => Promise<void>;
 }
 
 export const AnnouncementAcknowledgment = ({
@@ -33,7 +33,7 @@ export const AnnouncementAcknowledgment = ({
       setIsChecked(true);
       
       console.log("Acknowledging announcement:", id);
-      await onAcknowledge();
+      await onAcknowledge(id);
       
       toast({
         title: "Announcement acknowledged",

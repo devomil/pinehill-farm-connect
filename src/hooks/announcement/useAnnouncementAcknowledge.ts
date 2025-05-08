@@ -32,6 +32,11 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         
       if (checkError) {
         console.error("Error checking announcement recipient:", checkError);
+        toast({
+          title: "Error acknowledging announcement",
+          description: checkError.message,
+          variant: "destructive"
+        });
         return false;
       }
       

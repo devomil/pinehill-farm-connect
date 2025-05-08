@@ -76,12 +76,12 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     }
   };
 
-  // Create a wrapper function that properly returns a Promise
-  const handleAcknowledgement = async () => {
-    if (onAcknowledge) {
-      return onAcknowledge(announcement.id);
+  // Handle mark as read button click
+  const handleMarkAsRead = () => {
+    if (onMarkAsRead) {
+      console.log("Marking as read:", announcement.id);
+      onMarkAsRead();
     }
-    return Promise.resolve();
   };
 
   return (
@@ -131,7 +131,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <AnnouncementAcknowledgment
             id={announcement.id}
             isAcknowledged={isAcknowledged}
-            onAcknowledge={handleAcknowledgement}
+            onAcknowledge={onAcknowledge}
           />
         )}
 
@@ -145,7 +145,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             )}
           </div>
           {showMarkAsRead && !isRead && onMarkAsRead && (
-            <Button size="sm" variant="secondary" onClick={onMarkAsRead}>
+            <Button size="sm" variant="secondary" onClick={handleMarkAsRead}>
               Mark as Read
             </Button>
           )}
