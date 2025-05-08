@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -32,6 +32,13 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   } = useAnnouncements(currentUser, allEmployees);
 
   const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
+  
+  // Fetch announcements when component mounts or currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchAnnouncements();
+    }
+  }, [currentUser, fetchAnnouncements]);
 
   const handleSaveEdit = async (updatedAnnouncement: Announcement) => {
     console.log("Saving edited announcement:", updatedAnnouncement);
@@ -60,15 +67,11 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
 
     try {
       // Call the acknowledgeAnnouncement function from the hook
-      const success = await acknowledgeAnnouncement(announcementId);
+      await acknowledgeAnnouncement(announcementId);
       
-      if (success) {
-        // Refresh announcements to update UI
-        await fetchAnnouncements();
-        return Promise.resolve();
-      } else {
-        throw new Error("Failed to acknowledge announcement");
-      }
+      // Refresh announcements to update UI after successful acknowledgment
+      await fetchAnnouncements();
+      return Promise.resolve();
     } catch (error) {
       console.error("Error in handleAcknowledge:", error);
       return Promise.reject(error);
@@ -138,9 +141,20 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
 
   const handleMarkAsReadClick = async (id: string) => {
     console.log("Mark as read clicked for:", id);
-    await markAsRead(id);
-    // Refresh announcements to update UI state
-    await fetchAnnouncements();
+    if (currentUser?.id) {
+      const success = await markAsRead(id);
+      if (success) {
+        // Refresh announcements to update UI state
+        await fetchAnnouncements();
+      }
+    } else {
+      console.error("Cannot mark as read: No current user ID");
+      toast({
+        title: "Cannot mark as read",
+        description: "You need to be logged in",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -7,7 +7,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
   const { toast } = useToast();
   const [isMarking, setIsMarking] = useState(false);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     if (!currentUserId) {
       console.error("No currentUserId provided to markAsRead");
       return false;
@@ -108,7 +108,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
     } finally {
       setIsMarking(false);
     }
-  };
+  }, [currentUserId, toast, isMarking]);
 
   return { markAsRead, isMarking };
 };

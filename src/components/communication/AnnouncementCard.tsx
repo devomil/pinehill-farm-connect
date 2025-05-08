@@ -39,7 +39,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
 }) => {
   const { toast } = useToast();
 
-  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string }) => {
+  const handleAttachmentAction = (attachment: { name: string; type: string; url?: string; size?: number }) => {
     if (onAttachmentAction) {
       onAttachmentAction(attachment);
     } else if (attachment.url) {
@@ -145,7 +145,12 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             )}
           </div>
           {showMarkAsRead && !isRead && onMarkAsRead && (
-            <Button size="sm" variant="secondary" onClick={handleMarkAsRead}>
+            <Button 
+              size="sm" 
+              variant="secondary" 
+              onClick={handleMarkAsRead}
+              className="transition-opacity hover:opacity-80"
+            >
               Mark as Read
             </Button>
           )}

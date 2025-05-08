@@ -1,21 +1,21 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export const useAnnouncementAcknowledge = (currentUserId: string | undefined) => {
   const { toast } = useToast();
   const [isAcknowledging, setIsAcknowledging] = useState(false);
 
-  const acknowledgeAnnouncement = async (announcementId: string) => {
+  const acknowledgeAnnouncement = useCallback(async (announcementId: string) => {
     if (!currentUserId) {
       console.error("No currentUserId provided to acknowledgeAnnouncement");
-      return false;
+      return Promise.reject("No currentUserId available");
     }
 
     if (isAcknowledging) {
       console.log("Already processing an acknowledgment, please wait");
-      return false;
+      return Promise.reject("Operation in progress");
     }
 
     try {
@@ -37,16 +37,14 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
           description: checkError.message,
           variant: "destructive"
         });
-        return false;
+        return Promise.reject(checkError);
       }
-      
-      let success = false;
       
       if (existingRecord) {
         // Check if already acknowledged
         if (existingRecord.acknowledged_at) {
           console.log("Announcement already acknowledged");
-          return true; // Already acknowledged, consider it a success
+          return Promise.resolve(); // Already acknowledged, consider it a success
         }
         
         // Update existing record
@@ -66,8 +64,7 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
             description: updateError.message,
             variant: "destructive"
           });
-        } else {
-          success = true;
+          return Promise.reject(updateError);
         }
       } else {
         // Create new record
@@ -88,17 +85,13 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
             description: insertError.message,
             variant: "destructive"
           });
-        } else {
-          success = true;
-          console.log("Successfully created acknowledgment record");
+          return Promise.reject(insertError);
         }
       }
       
-      if (success) {
-        console.log("Successfully acknowledged announcement");
-      }
+      console.log("Successfully acknowledged announcement");
+      return Promise.resolve();
       
-      return success;
     } catch (err) {
       console.error("Unexpected error in acknowledgeAnnouncement:", err);
       toast({
@@ -106,11 +99,11 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         description: "An unexpected error occurred",
         variant: "destructive"
       });
-      return false;
+      return Promise.reject(err);
     } finally {
       setIsAcknowledging(false);
     }
-  };
+  }, [currentUserId, toast, isAcknowledging]);
 
   return { acknowledgeAnnouncement, isAcknowledging };
 };
