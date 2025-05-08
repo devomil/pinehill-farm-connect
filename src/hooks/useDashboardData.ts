@@ -6,6 +6,8 @@ import { useState, useCallback } from "react";
 import { TimeOffRequest } from "@/types/timeManagement";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
+import { Announcement } from "@/types";
+import { transformRawAnnouncements } from "@/utils/announcementUtils";
 
 export function useDashboardData() {
   const { currentUser } = useAuth();
@@ -168,7 +170,7 @@ export function useDashboardData() {
   const shiftCoverageMessages = useProcessMessages(shiftCoverageMessagesRaw, currentUser);
 
   // Fetch recent announcements
-  const { data: announcements, error: announcementsError } = useQuery({
+  const { data: rawAnnouncements, error: announcementsError, refetch: refetchAnnouncements } = useQuery({
     queryKey: ['recentAnnouncements', retryCount],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -183,6 +185,43 @@ export function useDashboardData() {
     staleTime: 30000,
     retry: 3
   });
+  
+  // Transform raw announcements to include readBy field
+  const announcements = rawAnnouncements ? 
+    transformRawAnnouncements(rawAnnouncements, currentUser?.id) :
+    [];
+
+  // Fetch announcement read status for current user
+  const { data: readReceipts } = useQuery({
+    queryKey: ['announcementReadReceipts', currentUser?.id, retryCount],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('announcement_recipients')
+        .select('*')
+        .eq('user_id', currentUser.id);
+        
+      if (error) {
+        console.error("Error fetching announcement receipts:", error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 30000
+  });
+  
+  // Apply read receipts to announcements
+  if (readReceipts && announcements) {
+    announcements.forEach(announcement => {
+      const receipt = readReceipts.find(r => r.announcement_id === announcement.id);
+      if (receipt?.read_at && currentUser?.id && !announcement.readBy.includes(currentUser.id)) {
+        announcement.readBy.push(currentUser.id);
+      }
+    });
+  }
 
   // Fetch assigned trainings
   const { data: assignedTrainings, error: assignedTrainingsError } = useQuery({
@@ -218,7 +257,7 @@ export function useDashboardData() {
   const loading = (!pendingTimeOff && isAdmin) || 
                   (!userTimeOff && !!currentUser?.id) || 
                   (!shiftCoverageMessages && !!currentUser?.id) || 
-                  !announcements;
+                  !rawAnnouncements;
   
   // Consolidate errors
   const error = pendingTimeOffError || 

@@ -33,10 +33,12 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   
   // Count unread announcements - exclude those requiring acknowledgment and those already read
   const unreadAnnouncementCount = announcements
-    ? announcements.filter(a => 
-        !a.readBy?.includes(currentUser?.id || '') && 
-        !a.requires_acknowledgment
-      ).length
+    ? announcements.filter(a => {
+        // Handle raw announcement data vs processed Announcement type
+        const announcementReadBy = Array.isArray(a.readBy) ? a.readBy : [];
+        return !announcementReadBy.includes(currentUser?.id || '') && 
+          !a.requires_acknowledgment;
+      }).length
     : 0;
 
   // Refresh data when navigating to comms page

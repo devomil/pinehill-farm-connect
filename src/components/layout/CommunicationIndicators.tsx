@@ -17,10 +17,12 @@ export const CommunicationIndicators: React.FC = () => {
   
   // Count unread announcements - exclude those requiring acknowledgment
   const unreadAnnouncements = announcements
-    ? announcements.filter(a => 
-        !a.readBy?.includes(currentUser?.id || '') && 
-        !a.requires_acknowledgment
-      ).length
+    ? announcements.filter(a => {
+        // Handle raw announcement data vs processed Announcement type
+        const announcementReadBy = Array.isArray(a.readBy) ? a.readBy : [];
+        return !announcementReadBy.includes(currentUser?.id || '') && 
+          !a.requires_acknowledgment;
+      }).length
     : 0;
   
   // Count of unread direct messages (from useCommunications hook)
