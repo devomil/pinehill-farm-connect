@@ -27,7 +27,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   const { currentUser } = useAuth();
   const { unfilteredEmployees, loading: employeesLoading, error: employeeError, refetch: refetchEmployees } = useEmployeeDirectory();
   // Exclude shift coverage messages from employee communications
-  const { messages, isLoading: messagesLoading, sendMessage, refreshMessages, error: messagesError } = useCommunications(true);
+  const { messages, isLoading: messagesLoading, sendMessage, refreshMessages, error: messagesError, unreadMessages } = useCommunications(true);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
   const { isMobileView } = useResponsiveLayout();
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -110,6 +110,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
         employeesLoading={employeesLoading}
         messagesLoading={messagesLoading}
         currentUser={currentUser}
+        unreadMessages={unreadMessages || []}
       />
     );
   }
@@ -130,6 +131,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
       employeesLoading={employeesLoading}
       messagesLoading={messagesLoading}
       currentUser={currentUser}
+      unreadMessages={unreadMessages || []}
     />
   );
 };

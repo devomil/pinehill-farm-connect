@@ -3,6 +3,8 @@ import React from "react";
 import { User } from "@/types";
 import { MessageConversation } from "./MessageConversation";
 import { Communication } from "@/types/communications/communicationTypes";
+import { useMessageReadStatus } from "@/hooks/communications/useMessageReadStatus";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EmployeeConversationViewProps {
   selectedEmployee: User;
@@ -11,6 +13,7 @@ interface EmployeeConversationViewProps {
   onSendMessage: (message: string) => void;
   onBack?: () => void;
   onRefresh?: () => void;
+  unreadMessages?: Communication[];
 }
 
 export function EmployeeConversationView({
@@ -19,10 +22,13 @@ export function EmployeeConversationView({
   loading,
   onSendMessage,
   onBack,
-  onRefresh
+  onRefresh,
+  unreadMessages = []
 }: EmployeeConversationViewProps) {
-  // Mark messages as read immediately when viewing a conversation
-  // This is just visual feedback; the actual marking happens in the backend
+  const { currentUser } = useAuth();
+  
+  // Use the hook to automatically mark messages as read
+  useMessageReadStatus(selectedEmployee, currentUser, unreadMessages);
 
   return (
     <div className="h-full">
