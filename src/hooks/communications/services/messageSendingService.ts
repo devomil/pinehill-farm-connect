@@ -1,8 +1,3 @@
-
-/**
- * Main service for handling the entire message sending flow
- * This file now serves as a facade that coordinates the various specialized services
- */
 import { User } from "@/types";
 import { SendMessageParams } from "@/types/communications/communicationTypes";
 import { toast } from "sonner";
@@ -12,6 +7,10 @@ import { createCommunicationRecord } from "./communication/communicationCreation
 import { handleShiftCoverageDetails } from "./shift/shiftCoverageService";
 import { sendNotifications } from "./notification/notificationService";
 
+/**
+ * Main service for handling the entire message sending flow
+ * This file now serves as a facade that coordinates the various specialized services
+ */
 export async function sendMessageService(currentUser: User | null, params: SendMessageParams): Promise<any> {
   if (!currentUser?.id) {
     console.error("User not logged in when attempting to send message");
