@@ -171,4 +171,4 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     respondToShiftRequest,
     refreshMessages
   };
-}, []);
+};
