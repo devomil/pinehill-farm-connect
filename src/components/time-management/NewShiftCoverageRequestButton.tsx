@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useCommunications } from "@/hooks/useCommunications";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type NewShiftCoverageRequestButtonProps = {
   currentUser: User;
@@ -43,15 +44,48 @@ export function NewShiftCoverageRequestButton({
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("17:00");
+  const [adminId, setAdminId] = useState<string | null>(null);
+  const [isLoadingAdmin, setIsLoadingAdmin] = useState(false);
   
   const { sendMessage } = useCommunications();
   const [isSending, setIsSending] = useState(false);
   
   // Filter out the current user and any employees that might be inactive
-  // Without relying on a 'disabled' property that doesn't exist in the User type
   const filteredEmployees = allEmployees.filter(
     (employee) => employee.id !== currentUser.id
   );
+
+  // Fetch Jackie's actual UUID when component mounts
+  useEffect(() => {
+    const fetchJackieAdmin = async () => {
+      setIsLoadingAdmin(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', 'jackie@pinehillfarm.co')
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching Jackie's profile:", error);
+          return;
+        }
+        
+        if (data && data.id) {
+          console.log("Found admin (Jackie) with ID:", data.id);
+          setAdminId(data.id);
+        } else {
+          console.warn("Could not find Jackie's profile, admin CC will not be set");
+        }
+      } catch (err) {
+        console.error("Exception fetching admin:", err);
+      } finally {
+        setIsLoadingAdmin(false);
+      }
+    };
+    
+    fetchJackieAdmin();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +127,8 @@ export function NewShiftCoverageRequestButton({
         startTime,
         endTime,
         message: message || "Could you please cover my shift?",
-        currentUserId: currentUser?.id
+        currentUserId: currentUser?.id,
+        adminId: adminId // Using the fetched admin ID
       });
       
       await sendMessage({
@@ -107,8 +142,8 @@ export function NewShiftCoverageRequestButton({
           original_employee_id: currentUser.id,
           covering_employee_id: selectedEmployeeId
         },
-        // Always set Jackie as the admin CC for shift coverage requests
-        adminCc: "jackie@pinehillfarm.co"
+        // Use the actual UUID instead of a string
+        adminCc: adminId
       });
       
       toast.success("Shift coverage request sent successfully");
@@ -246,16 +281,24 @@ export function NewShiftCoverageRequestButton({
                   Admin CC
                 </div>
                 <div className="col-span-3 text-muted-foreground">
-                  Jackie Phillips (jackie@pinehillfarm.co)
+                  {isLoadingAdmin ? (
+                    <span className="flex items-center">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading admin info...
+                    </span>
+                  ) : adminId ? (
+                    "Jackie Phillips (jackie@pinehillfarm.co)"
+                  ) : (
+                    "Admin information not available"
+                  )}
                 </div>
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSending}>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSending || isLoadingAdmin}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSending}>
+              <Button type="submit" disabled={isSending || isLoadingAdmin}>
                 {isSending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

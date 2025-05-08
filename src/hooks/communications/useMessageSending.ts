@@ -34,7 +34,7 @@ export function useMessageSending(
       shift_start: string;
       shift_end: string;
     };
-    adminCc?: string;
+    adminCc?: string | null;
   }) => {
     // Convert SendMessageData to SendMessageParams by adding required fields for shift details
     const sendParams: SendMessageParams = {
@@ -43,9 +43,9 @@ export function useMessageSending(
       type: data.type,
     };
     
-    // For shift coverage requests, always set Jackie as the Admin CC
-    if (data.type === 'shift_coverage') {
-      sendParams.adminCc = "jackie@pinehillfarm.co"; // Always CC Jackie for shift coverage
+    // For shift coverage requests, only include adminCc if it's a valid value
+    if (data.type === 'shift_coverage' && data.adminCc) {
+      sendParams.adminCc = data.adminCc; // Will only be set if it's a valid UUID
     } else if (data.adminCc) {
       // For other message types, use the provided adminCc if available
       sendParams.adminCc = data.adminCc;

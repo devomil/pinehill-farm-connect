@@ -23,6 +23,17 @@ export async function createCommunicationRecord(params: {
     console.error("Missing recipient ID in createCommunicationRecord");
     throw new Error("Missing recipient ID");
   }
+
+  // Validate admin ID if present
+  if (params.adminId !== null && typeof params.adminId === 'string') {
+    // Quick check for a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(params.adminId)) {
+      console.error("Invalid admin ID format (not a UUID):", params.adminId);
+      // Set to null instead of failing to maintain core functionality
+      params.adminId = null;
+    }
+  }
   
   try {
     const communicationData = await createCommunicationEntry(params);
