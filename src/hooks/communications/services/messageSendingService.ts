@@ -27,6 +27,12 @@ export async function sendMessageService(currentUser: User | null, params: SendM
     throw new Error("Missing recipient ID. Please select a valid recipient.");
   }
   
+  // Verify current user has a valid ID
+  if (!currentUser.id) {
+    console.error("Current user has no ID");
+    throw new Error("Invalid user profile. Please try logging out and back in.");
+  }
+  
   try {
     // Step 1: Find recipient profile
     const recipient = await findRecipientProfile(recipientId);
@@ -51,6 +57,8 @@ export async function sendMessageService(currentUser: User | null, params: SendM
     }
     
     // Step 3: Create communication entry
+    console.log("Creating communication with sender ID:", currentUser.id);
+    
     const communicationData = await createCommunicationRecord({
       senderId: currentUser.id,
       recipientId,
@@ -60,7 +68,7 @@ export async function sendMessageService(currentUser: User | null, params: SendM
     });
     
     if (!communicationData || !communicationData.id) {
-      throw new Error("Failed to create communication record");
+      throw new Error("Failed to create communication record - no data returned");
     }
     
     // Step 4: Handle shift coverage request if applicable
@@ -93,6 +101,8 @@ export async function sendMessageService(currentUser: User | null, params: SendM
     return communicationData;
   } catch (error: any) {
     console.error("Error in send message function:", error);
-    throw error;
+    // Enhance error information for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to send message: ${errorMessage}`);
   }
 }

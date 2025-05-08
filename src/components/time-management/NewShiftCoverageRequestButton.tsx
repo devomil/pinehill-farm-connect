@@ -77,6 +77,11 @@ export function NewShiftCoverageRequestButton({
       return;
     }
     
+    if (!currentUser || !currentUser.id) {
+      toast.error("User profile error. Please try logging out and back in.");
+      return;
+    }
+    
     setIsSending(true);
     
     try {
@@ -87,7 +92,8 @@ export function NewShiftCoverageRequestButton({
         date: formattedDate,
         startTime,
         endTime,
-        message: message || "Could you please cover my shift?"
+        message: message || "Could you please cover my shift?",
+        currentUserId: currentUser?.id
       });
       
       await sendMessage({
@@ -97,7 +103,9 @@ export function NewShiftCoverageRequestButton({
         shiftDetails: {
           shift_date: formattedDate,
           shift_start: startTime,
-          shift_end: endTime
+          shift_end: endTime,
+          original_employee_id: currentUser.id,
+          covering_employee_id: selectedEmployeeId
         },
         // Always set Jackie as the admin CC for shift coverage requests
         adminCc: "jackie@pinehillfarm.co"
