@@ -1,17 +1,18 @@
-import React, { useState, useCallback, useMemo } from "react";
+
+import React from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
-import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { toast } from "sonner";
+import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
+import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
 import { ShiftRequestsLoadingState } from "./ShiftRequestsLoadingState";
 import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
-import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { ShiftCoverageErrorDebugPanel } from "./ShiftCoverageErrorDebugPanel";
-import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
+import { toast } from "sonner";
 
 interface ShiftCoverageRequestsTabProps {
   messages: Communication[];
@@ -39,14 +40,14 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
 }) => {
   // Always initialize all hooks at the top level
   const { unfilteredEmployees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
-  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [filter, setFilter] = React.useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
+  const [showDebugInfo, setShowDebugInfo] = React.useState(false);
   
   // Use either the provided employees or the ones from the directory hook - memoize once
-  const allEmployees = useMemo(() => propEmployees || directoryEmployees || [], [propEmployees, directoryEmployees]);
+  const allEmployees = React.useMemo(() => propEmployees || directoryEmployees || [], [propEmployees, directoryEmployees]);
   
   // Ensure we always pass valid arrays to hooks, never undefined
-  const safeMessages = useMemo(() => messages || [], [messages]);
+  const safeMessages = React.useMemo(() => messages || [], [messages]);
   
   // Always define the filter hook with safe values
   const {
@@ -59,7 +60,7 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   } = useShiftCoverageFilters(safeMessages, currentUser);
   
   // Apply status filter with useMemo to prevent recalculation on every render
-  const filteredRequests = useMemo(() => {
+  const filteredRequests = React.useMemo(() => {
     try {
       return filterByStatus(filter, shiftCoverageRequests || []);
     } catch (err) {
@@ -69,20 +70,20 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
   }, [filter, shiftCoverageRequests, filterByStatus]);
   
   // Format error message safely - memoize to prevent recreation on each render
-  const formatErrorMessage = useCallback((err: any): string => {
+  const formatErrorMessage = React.useCallback((err: any): string => {
     if (typeof err === 'string') return err;
     if (err?.message) return err.message;
     return "Unknown error";
   }, []);
 
   // Find employee by ID - memoize to prevent recreation on each render
-  const findEmployee = useCallback((id: string): User | undefined => {
+  const findEmployee = React.useCallback((id: string): User | undefined => {
     if (!allEmployees) return undefined;
     return allEmployees.find(emp => emp.id === id);
   }, [allEmployees]);
 
   // Handle manual refresh with feedback - memoize to prevent recreation on each render
-  const handleManualRefresh = useCallback(() => {
+  const handleManualRefresh = React.useCallback(() => {
     toast.info("Refreshing shift coverage requests...");
     if (refetchEmployees) refetchEmployees();
     if (onRefresh) onRefresh();
