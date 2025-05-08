@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
+import { useRefreshMessages } from "./useRefreshMessages";
 
 /**
  * Hook to manage marking messages as read when viewing a conversation
@@ -12,6 +13,8 @@ export function useMessageReadStatus(
   currentUser: User | null,
   unreadMessages: Communication[]
 ) {
+  const refreshMessages = useRefreshMessages();
+
   useEffect(() => {
     const markMessagesAsRead = async () => {
       if (!selectedEmployee || !currentUser || unreadMessages.length === 0) return;
@@ -33,9 +36,12 @@ export function useMessageReadStatus(
       
       if (error) {
         console.error("Error marking messages as read:", error);
+      } else {
+        // Refresh messages to update unread counts throughout the app
+        refreshMessages();
       }
     };
     
     markMessagesAsRead();
-  }, [selectedEmployee, currentUser, unreadMessages]);
+  }, [selectedEmployee, currentUser, unreadMessages, refreshMessages]);
 }

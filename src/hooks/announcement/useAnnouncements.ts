@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { mapAnnouncementData, updateAnnouncementReadStatus } from "./utils/announcementUtils";
 import { useAnnouncementReadStatus } from "./useAnnouncementReadStatus";
 import { useAnnouncementActions } from "./useAnnouncementActions";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export const useAnnouncements = (currentUser: User | null, allEmployees: User[]) => {
   const { toast } = useToast();
@@ -13,6 +14,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const [loading, setLoading] = useState(true);
   const { markAsRead: markAsReadInDb } = useAnnouncementReadStatus(currentUser?.id);
   const { handleEdit: editAnnouncement, handleDelete: deleteAnnouncement } = useAnnouncementActions();
+  const { refetchData: refreshDashboardData } = useDashboardData();
 
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,9 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       
       console.log("Mapped announcements:", mappedAnnouncements);
       setAnnouncements(mappedAnnouncements);
+      
+      // Refresh dashboard data to update unread counts
+      refreshDashboardData();
     } catch (err) {
       console.error("Unexpected error in fetchAnnouncements:", err);
       toast({ title: "Failed to load announcements", description: "An unexpected error occurred", variant: "destructive" });
@@ -55,7 +60,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     } finally {
       setLoading(false);
     }
-  }, [currentUser, allEmployees, toast]);
+  }, [currentUser, allEmployees, toast, refreshDashboardData]);
 
   // Add effect to fetch announcements when component mounts
   useEffect(() => {
@@ -81,6 +86,9 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
         })
       );
       
+      // Refresh dashboard data to update unread counts
+      refreshDashboardData();
+      
       return Promise.resolve();
     } catch (error) {
       console.error("Error marking announcement as read:", error);
@@ -90,12 +98,22 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
 
   const handleEdit = async (announcement: Announcement): Promise<boolean> => {
     // Forward the Promise<boolean> result
-    return await editAnnouncement(announcement);
+    const result = await editAnnouncement(announcement);
+    if (result) {
+      await fetchAnnouncements();
+      refreshDashboardData();
+    }
+    return result;
   };
 
   const handleDelete = async (id: string): Promise<boolean> => {
     // Forward the Promise<boolean> result
-    return await deleteAnnouncement(id);
+    const result = await deleteAnnouncement(id);
+    if (result) {
+      await fetchAnnouncements();
+      refreshDashboardData();
+    }
+    return result;
   };
 
   return {

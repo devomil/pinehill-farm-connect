@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -25,16 +25,28 @@ interface SidebarNavProps {
 export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
-  const { unreadMessages } = useCommunications();
-  const { announcements } = useDashboardData();
+  const { unreadMessages, refreshMessages } = useCommunications();
+  const { announcements, refetchData } = useDashboardData();
   
   // Count unread messages
   const unreadMessageCount = unreadMessages?.length || 0;
   
-  // Count unread announcements - simplified check
-  const unreadAnnouncementCount = announcements?.filter(a => 
-    !a.requires_acknowledgment
-  ).length || 0;
+  // Count unread announcements - exclude those requiring acknowledgment and those already read
+  const unreadAnnouncementCount = announcements
+    ? announcements.filter(a => 
+        !a.readBy?.includes(currentUser?.id || '') && 
+        !a.requires_acknowledgment
+      ).length
+    : 0;
+
+  // Refresh data when navigating to comms page
+  useEffect(() => {
+    if (pathname === '/communication' || pathname.includes('/communication?tab=')) {
+      console.log('On communications page, refreshing data');
+      refreshMessages();
+      refetchData();
+    }
+  }, [pathname, refreshMessages, refetchData]);
 
   // Group for main navigation
   const mainNavItems = [
@@ -148,7 +160,9 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
                 variant={item.badge !== null ? "default" : "ghost"}
                 className={cn(
                   "justify-start font-normal",
-                  (pathname === item.to || pathname === "/communications") && "bg-accent"
+                  (pathname === item.to || pathname === "/communications" || 
+                   (pathname.includes('/communication') && item.to.includes(pathname.includes('?tab=messages') ? 'messages' : 'communication'))) 
+                  && "bg-accent"
                 )}
                 asChild
               >

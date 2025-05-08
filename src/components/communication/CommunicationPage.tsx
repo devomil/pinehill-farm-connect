@@ -13,11 +13,13 @@ import { CommunicationHeader } from "./CommunicationHeader";
 import { CommunicationErrorDisplay } from "./CommunicationErrorDisplay";
 import { CommunicationDebugPanel } from "./CommunicationDebugPanel";
 import { CommunicationTabs } from "./CommunicationPageTabs";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 const CommunicationPage = () => {
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeeError } = useEmployeeDirectory();
   const { unreadMessages, refreshMessages, error: messagesError } = useCommunications(true);
+  const { refetchData: refreshDashboardData } = useDashboardData();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -48,16 +50,18 @@ const CommunicationPage = () => {
       refetchEmployees();
     }
     
-    // Refresh messages when the page loads - only if on messages tab
-    if (activeTab === "messages") {
-      refreshMessages();
-    }
-  }, [currentUser, allEmployees, activeTab, refreshMessages, refetchEmployees, employeeError, messagesError, employeesLoading]);
+    // Refresh all data when the page loads
+    refreshMessages();
+    refreshDashboardData();
+    
+  }, [currentUser, allEmployees, refreshMessages, refetchEmployees, refreshDashboardData, employeeError, messagesError, employeesLoading]);
 
   const isAdmin = currentUser?.role === "admin" || currentUser?.id === "00000000-0000-0000-0000-000000000001";
 
   const handleAnnouncementCreate = () => {
     console.log("Announcement created, refreshing...");
+    refreshMessages();
+    refreshDashboardData();
   };
   
   const handleTabChange = (value: string) => {
@@ -74,10 +78,9 @@ const CommunicationPage = () => {
       search: newSearchParams.toString()
     }, { replace: true });
     
-    // Only refresh messages when switching to messages tab
-    if (value === "messages") {
-      refreshMessages();
-    }
+    // Refresh data when switching tabs
+    refreshMessages();
+    refreshDashboardData();
   };
   
   // Handle manual refresh of all data
@@ -85,6 +88,7 @@ const CommunicationPage = () => {
     toast.info("Refreshing all communication data");
     refetchEmployees();
     refreshMessages();
+    refreshDashboardData();
     setRetryCount(prev => prev + 1);
   };
   

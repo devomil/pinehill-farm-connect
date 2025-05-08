@@ -1,7 +1,7 @@
 
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useCallback } from "react";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 export const useAnnouncementAcknowledge = (currentUserId: string | undefined) => {
@@ -97,6 +97,9 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         description: "Thank you for acknowledging this announcement"
       });
       
+      // Refresh data to update notification counts
+      refreshMessages();
+      
       return Promise.resolve();
       
     } catch (err) {
@@ -110,7 +113,7 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
     } finally {
       setIsAcknowledging(false);
     }
-  }, [currentUserId, toast, isAcknowledging]);
+  }, [currentUserId, toast, isAcknowledging, refreshMessages]);
 
   return { acknowledgeAnnouncement, isAcknowledging };
 };

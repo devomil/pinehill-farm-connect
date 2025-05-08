@@ -12,14 +12,16 @@ import { useAuth } from "@/contexts/AuthContext";
 export const CommunicationIndicators: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { announcements } = useDashboardData();
-  const { unreadMessages } = useCommunications();
+  const { announcements, refetchData } = useDashboardData();
+  const { unreadMessages, refreshMessages } = useCommunications();
   
-  // Count unread announcements - check if the announcement is unread
-  const unreadAnnouncements = announcements?.filter(a => {
-    // This is a simplified check. Adjust based on how you track read status
-    return !a.requires_acknowledgment;  // Just an example, replace with actual logic
-  }).length || 0;
+  // Count unread announcements - exclude those requiring acknowledgment
+  const unreadAnnouncements = announcements
+    ? announcements.filter(a => 
+        !a.readBy?.includes(currentUser?.id || '') && 
+        !a.requires_acknowledgment
+      ).length
+    : 0;
   
   // Count of unread direct messages (from useCommunications hook)
   const unreadMessageCount = unreadMessages?.length || 0;
