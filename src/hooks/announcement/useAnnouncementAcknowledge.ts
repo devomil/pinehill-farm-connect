@@ -2,10 +2,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useCallback } from "react";
+import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 export const useAnnouncementAcknowledge = (currentUserId: string | undefined) => {
   const { toast } = useToast();
   const [isAcknowledging, setIsAcknowledging] = useState(false);
+  const refreshMessages = useRefreshMessages();
 
   const acknowledgeAnnouncement = useCallback(async (announcementId: string): Promise<void> => {
     if (!currentUserId) {
@@ -94,6 +96,7 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         title: "Announcement acknowledged",
         description: "Thank you for acknowledging this announcement"
       });
+      
       return Promise.resolve();
       
     } catch (err) {

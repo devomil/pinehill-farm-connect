@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +39,8 @@ export const AnnouncementAcknowledgment = ({
       console.log("Acknowledging announcement:", id);
       await onAcknowledge(id);
       
-      // Toast is now handled in the useAnnouncementAcknowledge hook
+      // Keep the checked state - don't revert it after the operation completes
+      // The database update should trigger a fetch that will update isAcknowledged prop
     } catch (error) {
       // Revert UI state if there was an error
       setIsChecked(false);
