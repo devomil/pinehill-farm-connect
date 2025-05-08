@@ -7,15 +7,15 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
   const { toast } = useToast();
   const [isMarking, setIsMarking] = useState(false);
 
-  const markAsRead = useCallback(async (id: string): Promise<boolean> => {
+  const markAsRead = useCallback(async (id: string): Promise<void> => {
     if (!currentUserId) {
       console.error("No currentUserId provided to markAsRead");
-      return false;
+      return Promise.reject("No currentUserId available");
     }
     
     if (isMarking) {
       console.log("Already marking as read, please wait");
-      return false;
+      return Promise.reject("Operation in progress");
     }
     
     try {
@@ -37,18 +37,16 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
           description: checkError.message, 
           variant: "destructive" 
         });
-        return false;
+        return Promise.reject(checkError);
       }
       
-      let success = false;
+      // Check if already read
+      if (existingRead?.read_at) {
+        console.log("Announcement already marked as read");
+        return Promise.resolve();
+      }
       
       if (existingRead) {
-        // Record exists, check if already read
-        if (existingRead.read_at) {
-          console.log("Announcement already marked as read");
-          return true; // Already marked as read, consider it a success
-        }
-        
         // Update existing record
         const { error: updateError } = await supabase
           .from("announcement_recipients")
@@ -62,8 +60,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
             description: updateError.message, 
             variant: "destructive" 
           });
-        } else {
-          success = true;
+          return Promise.reject(updateError);
         }
       } else {
         // Create new read receipt
@@ -82,21 +79,17 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
             description: insertError.message, 
             variant: "destructive" 
           });
-        } else {
-          success = true;
-          console.log("Successfully created read receipt");
+          return Promise.reject(insertError);
         }
       }
       
-      if (success) {
-        toast({
-          title: "Marked as read",
-          description: "Announcement has been marked as read"
-        });
-        console.log("Successfully marked announcement as read");
-      }
+      toast({
+        title: "Marked as read",
+        description: "Announcement has been marked as read"
+      });
+      console.log("Successfully marked announcement as read");
       
-      return success;
+      return Promise.resolve();
     } catch (err) {
       console.error("Unexpected error in markAsRead:", err);
       toast({ 
@@ -104,7 +97,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
         description: "An unexpected error occurred", 
         variant: "destructive" 
       });
-      return false;
+      return Promise.reject(err);
     } finally {
       setIsMarking(false);
     }

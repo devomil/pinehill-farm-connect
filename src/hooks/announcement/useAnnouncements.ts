@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const { markAsRead: markAsReadInDb } = useAnnouncementReadStatus(currentUser?.id);
   const { handleEdit: editAnnouncement, handleDelete: deleteAnnouncement } = useAnnouncementActions();
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
     try {
       const { data: annData, error } = await supabase
@@ -55,18 +55,20 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, allEmployees, toast]);
 
   // Add effect to fetch announcements when component mounts
   useEffect(() => {
     fetchAnnouncements();
-  }, [currentUser?.id]); // Re-fetch when user changes
+  }, [currentUser?.id, fetchAnnouncements]); // Re-fetch when user changes
 
-  const markAsRead = async (id: string) => {
-    if (!currentUser) return;
+  const markAsRead = async (id: string): Promise<void> => {
+    if (!currentUser) return Promise.reject("No current user");
     
-    const success = await markAsReadInDb(id);
-    if (success) {
+    try {
+      await markAsReadInDb(id);
+      
+      // Update local state optimistically
       setAnnouncements(prevAnnouncements =>
         prevAnnouncements.map(announcement => {
           if (announcement.id === id && !announcement.readBy.includes(currentUser.id)) {
@@ -78,6 +80,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
           return announcement;
         })
       );
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error marking announcement as read:", error);
+      return Promise.reject(error);
     }
   };
 

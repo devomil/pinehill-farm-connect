@@ -144,11 +144,9 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   const handleMarkAsReadClick = async (id: string) => {
     console.log("Mark as read clicked for:", id);
     if (currentUser?.id) {
-      const success = await markAsRead(id);
-      if (success) {
-        // Refresh announcements to update UI state
-        await fetchAnnouncements();
-      }
+      await markAsRead(id);
+      // We no longer check for truthiness here, just await completion
+      await fetchAnnouncements();
     } else {
       console.error("Cannot mark as read: No current user ID");
       toast({
