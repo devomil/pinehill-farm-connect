@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,11 @@ export const AnnouncementAcknowledgment = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Update local state when prop changes
+  useEffect(() => {
+    setIsChecked(isAcknowledged);
+  }, [isAcknowledged]);
+  
   // Don't render if no acknowledgment handler is provided
   if (!onAcknowledge) return null;
 

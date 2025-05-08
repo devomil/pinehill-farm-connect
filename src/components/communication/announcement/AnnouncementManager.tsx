@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
 import { CommunicationTabs } from "@/components/communication/CommunicationTabs";
@@ -51,8 +51,8 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   };
 
   // Handle acknowledgment by ID
-  const handleAcknowledge = async (announcementId: string) => {
-    console.log("Acknowledging announcement:", announcementId);
+  const handleAcknowledge = useCallback(async (announcementId: string) => {
+    console.log("Handling announcement acknowledgment:", announcementId);
     if (!currentUser?.id) {
       console.error("No current user ID available");
       return Promise.reject("No current user ID available");
@@ -73,7 +73,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       console.error("Error in handleAcknowledge:", error);
       return Promise.reject(error);
     }
-  };
+  }, [currentUser?.id, acknowledgeAnnouncement, fetchAnnouncements]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -136,13 +136,20 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     }
   };
 
+  const handleMarkAsReadClick = async (id: string) => {
+    console.log("Mark as read clicked for:", id);
+    await markAsRead(id);
+    // Refresh announcements to update UI state
+    await fetchAnnouncements();
+  };
+
   return (
     <>
       <CommunicationTabs
         announcements={announcements}
         loading={loading}
         isRead={isRead}
-        markAsRead={markAsRead}
+        markAsRead={handleMarkAsReadClick}
         getPriorityBadge={getPriorityBadge}
         currentUserId={currentUser?.id}
         onEdit={isAdmin ? (announcement) => setEditingAnnouncement(announcement) : undefined}

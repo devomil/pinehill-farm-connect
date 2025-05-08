@@ -40,9 +40,15 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
         return false;
       }
       
-      let error;
+      let success = false;
       
       if (existingRecord) {
+        // Check if already acknowledged
+        if (existingRecord.acknowledged_at) {
+          console.log("Announcement already acknowledged");
+          return true; // Already acknowledged, consider it a success
+        }
+        
         // Update existing record
         console.log("Updating existing acknowledgment record");
         const { error: updateError } = await supabase
@@ -53,7 +59,16 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
           })
           .eq("id", existingRecord.id);
           
-        error = updateError;
+        if (updateError) {
+          console.error("Acknowledgment update error:", updateError);
+          toast({
+            title: "Failed to acknowledge announcement",
+            description: updateError.message,
+            variant: "destructive"
+          });
+        } else {
+          success = true;
+        }
       } else {
         // Create new record
         console.log("Creating new acknowledgment record");
@@ -66,20 +81,24 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
             read_at: new Date().toISOString()
           });
           
-        error = insertError;
-      }
-        
-      if (error) {
-        console.error("Acknowledgment error:", error);
-        toast({
-          title: "Failed to acknowledge announcement",
-          description: error.message,
-          variant: "destructive"
-        });
-        return false;
+        if (insertError) {
+          console.error("Acknowledgment insert error:", insertError);
+          toast({
+            title: "Failed to acknowledge announcement",
+            description: insertError.message,
+            variant: "destructive"
+          });
+        } else {
+          success = true;
+          console.log("Successfully created acknowledgment record");
+        }
       }
       
-      return true;
+      if (success) {
+        console.log("Successfully acknowledged announcement");
+      }
+      
+      return success;
     } catch (err) {
       console.error("Unexpected error in acknowledgeAnnouncement:", err);
       toast({

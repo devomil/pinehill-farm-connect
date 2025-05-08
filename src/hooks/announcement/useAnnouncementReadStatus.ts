@@ -22,6 +22,7 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
       setIsMarking(true);
       console.log(`Marking announcement ${id} as read for user ${currentUserId}`);
       
+      // First check if a record exists
       const { data: existingRead, error: checkError } = await supabase
         .from("announcement_recipients")
         .select("*")
@@ -39,13 +40,16 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
         return false;
       }
       
+      let success = false;
+      
       if (existingRead) {
+        // Record exists, check if already read
         if (existingRead.read_at) {
-          // Already marked as read
           console.log("Announcement already marked as read");
-          return true;
+          return true; // Already marked as read, consider it a success
         }
         
+        // Update existing record
         const { error: updateError } = await supabase
           .from("announcement_recipients")
           .update({ read_at: new Date().toISOString() })
@@ -58,7 +62,8 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
             description: updateError.message, 
             variant: "destructive" 
           });
-          return false;
+        } else {
+          success = true;
         }
       } else {
         // Create new read receipt
@@ -77,12 +82,21 @@ export const useAnnouncementReadStatus = (currentUserId: string | undefined) => 
             description: insertError.message, 
             variant: "destructive" 
           });
-          return false;
+        } else {
+          success = true;
+          console.log("Successfully created read receipt");
         }
       }
       
-      console.log("Successfully marked announcement as read");
-      return true;
+      if (success) {
+        toast({
+          title: "Marked as read",
+          description: "Announcement has been marked as read"
+        });
+        console.log("Successfully marked announcement as read");
+      }
+      
+      return success;
     } catch (err) {
       console.error("Unexpected error in markAsRead:", err);
       toast({ 
