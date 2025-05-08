@@ -90,6 +90,10 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
       }
       
       console.log("Successfully acknowledged announcement");
+      toast({
+        title: "Announcement acknowledged",
+        description: "Thank you for acknowledging this announcement"
+      });
       return Promise.resolve();
       
     } catch (err) {

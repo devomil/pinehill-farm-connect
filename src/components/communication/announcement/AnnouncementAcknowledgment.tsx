@@ -40,19 +40,12 @@ export const AnnouncementAcknowledgment = ({
       console.log("Acknowledging announcement:", id);
       await onAcknowledge(id);
       
-      toast({
-        title: "Announcement acknowledged",
-        description: "Thank you for acknowledging this announcement"
-      });
+      // Toast is now handled in the useAnnouncementAcknowledge hook
     } catch (error) {
       // Revert UI state if there was an error
       setIsChecked(false);
       console.error("Error acknowledging announcement:", error);
-      toast({
-        title: "Failed to acknowledge",
-        description: "There was an issue acknowledging this announcement",
-        variant: "destructive"
-      });
+      // Error toast is now handled in the useAnnouncementAcknowledge hook
     } finally {
       setIsSubmitting(false);
     }

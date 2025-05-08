@@ -58,7 +58,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   };
 
   // Handle acknowledgment by ID
-  const handleAcknowledge = useCallback(async (announcementId: string) => {
+  const handleAcknowledge = useCallback(async (announcementId: string): Promise<void> => {
     console.log("Handling announcement acknowledgment:", announcementId);
     if (!currentUser?.id) {
       console.error("No current user ID available");
