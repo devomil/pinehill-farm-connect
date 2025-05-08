@@ -46,8 +46,7 @@ export const useAnnouncementAcknowledge = (currentUserId: string | undefined) =>
             acknowledged_at: new Date().toISOString(),
             read_at: existingRecord.read_at || new Date().toISOString() // Also mark as read if not already
           })
-          .eq("announcement_id", announcementId)
-          .eq("user_id", currentUserId);
+          .eq("id", existingRecord.id);
           
         error = updateError;
       } else {

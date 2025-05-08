@@ -65,21 +65,12 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       if (success) {
         // Refresh announcements to update UI
         await fetchAnnouncements();
-        toast({
-          title: "Announcement acknowledged",
-          description: "Thank you for acknowledging this announcement"
-        });
         return Promise.resolve();
       } else {
         throw new Error("Failed to acknowledge announcement");
       }
     } catch (error) {
       console.error("Error in handleAcknowledge:", error);
-      toast({
-        title: "Failed to acknowledge",
-        description: "There was an issue acknowledging this announcement",
-        variant: "destructive"
-      });
       return Promise.reject(error);
     }
   };
