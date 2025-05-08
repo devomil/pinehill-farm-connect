@@ -13,6 +13,7 @@ interface EmployeeCommunicationsHeaderProps {
   handleNewMessageSend?: (data: any) => void;
   allEmployees?: User[];
   onRefresh?: () => void;
+  title?: string;
 }
 
 export function EmployeeCommunicationsHeader({
@@ -21,6 +22,7 @@ export function EmployeeCommunicationsHeader({
   handleNewMessageSend = () => {},
   allEmployees = [],
   onRefresh,
+  title = "Employee Communications"
 }: EmployeeCommunicationsHeaderProps) {
   // If no setDialogOpen is provided, create a dummy one
   const handleDialogOpen = setDialogOpen || (() => {});
@@ -28,7 +30,7 @@ export function EmployeeCommunicationsHeader({
   return (
     <div className="flex flex-col space-y-3 mb-4">
       <div className="flex justify-between items-center">
-        <Heading title="Employee Communications" />
+        <Heading title={title} />
         
         <div className="flex items-center space-x-2">
           {onRefresh && (

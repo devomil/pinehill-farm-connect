@@ -4,9 +4,7 @@ import { User } from "@/types";
 import { EmployeeDropdownSelect } from "./EmployeeDropdownSelect";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { Communication } from "@/types/communications/communicationTypes";
-import { Button } from "@/components/ui/button";
 import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
-import { RefreshCw } from "lucide-react";
 import { EmployeeCommunicationDebug } from "./EmployeeCommunicationDebug";
 
 interface EmployeeCommunicationDesktopProps {
@@ -83,15 +81,10 @@ export function EmployeeCommunicationDesktop({
 
   return (
     <div className="space-y-4">
-      <EmployeeCommunicationsHeader onRefresh={handleRefresh} />
-      
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Direct Messages</h2>
-        <Button onClick={handleRefresh} size="sm" variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
+      <EmployeeCommunicationsHeader 
+        onRefresh={handleRefresh}
+        title="Direct Messages"
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1">

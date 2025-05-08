@@ -4,7 +4,7 @@ import { User } from "@/types";
 import { EmployeeDropdownSelect } from "./EmployeeDropdownSelect";
 import { EmployeeConversationView } from "./EmployeeConversationView";
 import { Communication } from "@/types/communications/communicationTypes";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
 import { EmployeeCommunicationDebug } from "./EmployeeCommunicationDebug";
@@ -88,8 +88,6 @@ export function EmployeeCommunicationMobile({
 
   return (
     <div className="space-y-4">
-      <EmployeeCommunicationsHeader onRefresh={handleRefresh} />
-      
       {selectedEmployee ? (
         <>
           <div className="flex justify-between items-center">
@@ -97,10 +95,10 @@ export function EmployeeCommunicationMobile({
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Employees
             </Button>
-            <Button onClick={handleRefresh} size="sm" variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <EmployeeCommunicationsHeader
+              onRefresh={handleRefresh}
+              title=""
+            />
           </div>
           <EmployeeConversationView
             selectedEmployee={selectedEmployee}
@@ -114,13 +112,10 @@ export function EmployeeCommunicationMobile({
         </>
       ) : (
         <>
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Direct Messages</h2>
-            <Button onClick={handleRefresh} size="sm" variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
+          <EmployeeCommunicationsHeader
+            onRefresh={handleRefresh}
+            title="Direct Messages"
+          />
           <EmployeeDropdownSelect
             employees={unfilteredEmployees}
             onSelectEmployee={handleSelectEmployee}
