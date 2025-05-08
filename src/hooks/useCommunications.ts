@@ -1,3 +1,4 @@
+
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -43,18 +44,36 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   
   const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
 
-  const sendMessage = (params: any) => {
+  const sendMessage = useCallback((params: any) => {
     console.log("Sending message with params:", JSON.stringify(params, null, 2));
     
-    // Special handling for shift coverage requests
+    // Enhanced validation for shift coverage requests
     if (params.type === 'shift_coverage') {
-      if (!params.shiftDetails || 
-          !params.shiftDetails.shift_date || 
-          !params.shiftDetails.shift_start || 
-          !params.shiftDetails.shift_end) {
-        console.error("Missing required shift coverage details");
-        toast.error("Missing required shift details");
-        return Promise.reject(new Error("Incomplete shift details"));
+      // Validate shift details
+      if (!params.shiftDetails) {
+        console.error("Missing shiftDetails object for shift coverage request");
+        toast.error("Missing shift details");
+        return Promise.reject(new Error("Missing shift details"));
+      }
+      
+      const { shiftDetails } = params;
+      
+      if (!shiftDetails.shift_date) {
+        console.error("Missing shift date");
+        toast.error("Please select a date for the shift");
+        return Promise.reject(new Error("Missing shift date"));
+      }
+      
+      if (!shiftDetails.shift_start) {
+        console.error("Missing shift start time");
+        toast.error("Please enter a start time for the shift");
+        return Promise.reject(new Error("Missing shift start time"));
+      }
+      
+      if (!shiftDetails.shift_end) {
+        console.error("Missing shift end time");
+        toast.error("Please enter an end time for the shift");
+        return Promise.reject(new Error("Missing shift end time"));
       }
       
       // Validate recipient
@@ -65,9 +84,12 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       }
     }
     
+    toast.loading("Sending message...");
+    
     return sendMessageMutation.mutateAsync(params)
       .then(data => {
         console.log("Message sent successfully:", data);
+        toast.dismiss();
         toast.success("Message sent successfully");
         
         // Wait a moment before refreshing to allow database operations to complete
@@ -76,17 +98,21 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       })
       .catch(error => {
         console.error("Error sending message:", error);
+        toast.dismiss();
         toast.error(`Failed to send message: ${error.message || "Unknown error"}`);
         throw error;
       });
-  };
+  }, [sendMessageMutation, refreshMessages]);
   
-  const respondToShiftRequest = (params: any) => {
+  const respondToShiftRequest = useCallback((params: any) => {
     console.log("Responding to shift request:", params);
+    
+    toast.loading(`${params.accept ? 'Accepting' : 'Declining'} shift request...`);
     
     return respondToShiftRequestMutation.mutateAsync(params)
       .then(data => {
         console.log("Successfully responded to shift request:", data);
+        toast.dismiss();
         toast.success(`You have ${params.accept ? 'accepted' : 'declined'} the shift coverage request`);
         
         // Refresh after a short delay
@@ -95,10 +121,11 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       })
       .catch(error => {
         console.error("Error responding to shift request:", error);
+        toast.dismiss();
         toast.error(`Failed to respond to request: ${error.message || "Unknown error"}`);
         throw error;
       });
-  };
+  }, [respondToShiftRequestMutation, refreshMessages]);
 
   // Use a less aggressive fetch strategy
   useEffect(() => {
@@ -144,4 +171,4 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     respondToShiftRequest,
     refreshMessages
   };
-};
+}, []);

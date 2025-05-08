@@ -60,14 +60,16 @@ export function useShiftNotifications() {
       if (result.success) {
         console.log("Notification sent successfully:", result);
         toast.success(`Test notification sent successfully to ${admin.name} (${adminEmail})`);
-        return;
+        return true;
       } else {
         console.error("Error sending notification:", result.error);
         toast.error(`Failed to send notification: ${result.error}`);
+        return false;
       }
     } catch (error) {
       console.error('Error in sendNotificationToAdmin:', error);
       toast.error(`Failed to send notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
     }
   };
 

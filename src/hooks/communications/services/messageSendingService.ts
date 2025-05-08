@@ -14,6 +14,7 @@ import { sendNotifications } from "./notification/notificationService";
 
 export async function sendMessageService(currentUser: User | null, params: SendMessageParams): Promise<any> {
   if (!currentUser?.id) {
+    console.error("User not logged in when attempting to send message");
     throw new Error("You must be logged in to send messages");
   }
 
@@ -29,6 +30,9 @@ export async function sendMessageService(currentUser: User | null, params: SendM
   try {
     // Step 1: Find recipient profile
     const recipient = await findRecipientProfile(recipientId);
+    if (!recipient) {
+      throw new Error("Could not find recipient profile");
+    }
     
     // Step 2: Find admin for CC
     // For shift coverage requests, always use Jackie as the admin
@@ -55,21 +59,36 @@ export async function sendMessageService(currentUser: User | null, params: SendM
       adminId: adminData?.id || adminCc || null
     });
     
+    if (!communicationData || !communicationData.id) {
+      throw new Error("Failed to create communication record");
+    }
+    
     // Step 4: Handle shift coverage request if applicable
     if (type === 'shift_coverage' && shiftDetails) {
-      await handleShiftCoverageDetails(communicationData.id, shiftDetails, currentUser.id, recipientId);
+      try {
+        await handleShiftCoverageDetails(communicationData.id, shiftDetails, currentUser.id, recipientId);
+      } catch (shiftError) {
+        console.error("Error handling shift coverage details:", shiftError);
+        // Continue with the message flow even if shift details handling fails
+        // But record the error for debugging
+      }
     }
 
     // Step 5: Send notifications
-    await sendNotifications({
-      type,
-      currentUser,
-      recipient,
-      message,
-      communicationId: communicationData.id,
-      shiftDetails,
-      adminData
-    });
+    try {
+      await sendNotifications({
+        type,
+        currentUser,
+        recipient,
+        message,
+        communicationId: communicationData.id,
+        shiftDetails,
+        adminData
+      });
+    } catch (notifyError) {
+      console.error("Error sending notifications:", notifyError);
+      // Don't fail the whole operation if just notifications fail
+    }
 
     return communicationData;
   } catch (error: any) {

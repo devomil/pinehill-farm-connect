@@ -4,20 +4,21 @@ import { validateEmployeeExists } from "../recipient/recipientLookupService";
 
 /**
  * Service for handling shift coverage requests
- * Completely rewritten for reliability
+ * Completely rewritten for reliability and better error handling
  */
 export async function handleShiftCoverageDetails(
   communicationId: string,
   shiftDetails: any,
   currentUserId: string,
   recipientId: string
-) {
+): Promise<any> {
   console.log(`Creating shift coverage request for communication ${communicationId}`);
   
   // Validate shift details
   if (!validateShiftDetails(shiftDetails)) {
-    console.error("Invalid shift details:", shiftDetails);
-    throw new Error("Missing required shift details");
+    const errorMessage = "Missing required shift details";
+    console.error(errorMessage, shiftDetails);
+    throw new Error(errorMessage);
   }
   
   try {
@@ -29,19 +30,22 @@ export async function handleShiftCoverageDetails(
     console.log("Covering employee ID:", coveringEmployeeId);
     
     // Check if the request already exists
-    const { data: existingRequest } = await supabase
+    const { data: existingRequest, error: checkError } = await supabase
       .from('shift_coverage_requests')
       .select('*')
       .eq('communication_id', communicationId)
       .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking for existing request:", checkError);
+    }
       
     if (existingRequest) {
       console.log("Shift coverage request already exists:", existingRequest);
       return existingRequest;
     }
     
-    // Bypass employee validation if we're having persistent issues
-    let bypassValidation = false;
+    let validationSuccessful = true;
     
     // Try to validate both employees (with fallback)
     try {
@@ -52,16 +56,16 @@ export async function handleShiftCoverageDetails(
       
       if (!originalUserExists) {
         console.warn("Original employee validation failed, but proceeding anyway");
-        // We'll continue anyway since this is the current user
+        validationSuccessful = false;
       }
       
       if (!coveringUserExists) {
-        console.warn("Covering employee validation failed, trying direct insert instead");
-        bypassValidation = true;
+        console.warn("Covering employee validation failed");
+        validationSuccessful = false;
       }
     } catch (validationError) {
       console.error("Error during employee validation:", validationError);
-      bypassValidation = true;
+      validationSuccessful = false;
     }
     
     // Create shift coverage request
@@ -69,71 +73,73 @@ export async function handleShiftCoverageDetails(
       communication_id: communicationId,
       original_employee_id: originalEmployeeId,
       covering_employee_id: coveringEmployeeId,
-      shift_date: shiftDetails.shift_date,
-      shift_start: shiftDetails.shift_start,
-      shift_end: shiftDetails.shift_end,
+      shift_date: shiftDetails.shift_date || new Date().toISOString().split('T')[0],
+      shift_start: shiftDetails.shift_start || '09:00',
+      shift_end: shiftDetails.shift_end || '17:00',
       status: 'pending'
     };
     
     console.log("Inserting shift coverage with data:", JSON.stringify(shiftCoverageData, null, 2));
     
-    // Use direct insert with error handling
-    const { data, error } = await supabase
-      .from('shift_coverage_requests')
-      .insert(shiftCoverageData)
-      .select();
+    // First attempt - standard insert with explicit fields
+    let result;
     
-    if (error) {
-      console.error("Database error creating shift coverage request:", error);
+    try {
+      const { data, error } = await supabase
+        .from('shift_coverage_requests')
+        .insert(shiftCoverageData)
+        .select();
       
-      if (bypassValidation) {
-        // Try a simplified insert as a last resort
-        const { data: fallbackData, error: fallbackError } = await supabase
+      if (error) {
+        console.error("First attempt error creating shift coverage request:", error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.error("No data returned after first insert attempt");
+        throw new Error("Failed to create shift coverage request - no data returned");
+      }
+      
+      console.log("Successfully created shift coverage request on first try:", data[0]);
+      result = data[0];
+    } catch (firstError) {
+      console.error("First attempt failed, trying alternative approach:", firstError);
+      
+      // Second attempt - simplified insert
+      try {
+        // Try a simplified insert as a fallback
+        const { data, error } = await supabase
           .from('shift_coverage_requests')
           .insert({
             communication_id: communicationId,
             original_employee_id: originalEmployeeId,
             covering_employee_id: coveringEmployeeId,
-            shift_date: shiftDetails.shift_date,
-            shift_start: shiftDetails.shift_start,
-            shift_end: shiftDetails.shift_end,
+            shift_date: shiftDetails.shift_date || new Date().toISOString().split('T')[0],
+            shift_start: shiftDetails.shift_start || '09:00',
+            shift_end: shiftDetails.shift_end || '17:00',
             status: 'pending'
           })
           .select();
           
-        if (fallbackError) {
-          console.error("Fallback insert also failed:", fallbackError);
-          throw new Error(`Database error: ${fallbackError.message}`);
+        if (error) {
+          console.error("Second attempt also failed:", error);
+          throw error;
         }
         
-        if (fallbackData && fallbackData.length > 0) {
-          console.log("Fallback insert succeeded:", fallbackData[0]);
-          return fallbackData[0];
+        if (!data || data.length === 0) {
+          console.error("No data returned after second insert attempt");
+          throw new Error("Failed to create shift coverage request - no data returned on second attempt");
         }
+        
+        console.log("Successfully created shift coverage request on second try:", data[0]);
+        result = data[0];
+      } catch (secondError) {
+        console.error("Both insert attempts failed:", secondError);
+        throw new Error(`Failed to create shift coverage request after multiple attempts: ${secondError.message}`);
       }
-      
-      throw new Error(`Database error: ${error.message}`);
     }
     
-    if (!data || data.length === 0) {
-      console.error("No data returned after insert");
-      throw new Error("Failed to create shift coverage request - no data returned");
-    }
-    
-    console.log("Successfully created shift coverage request:", data[0]);
-    
-    // Verify the request was created (but don't fail if verification fails)
-    try {
-      const verificationResult = await verifyShiftCoverageRequest(communicationId);
-      
-      if (!verificationResult.verified) {
-        console.warn("Could not verify shift request was saved, but insert succeeded");
-      }
-    } catch (verifyError) {
-      console.error("Error during verification:", verifyError);
-    }
-    
-    return data[0];
+    return result;
   } catch (error: any) {
     console.error("Error creating shift coverage request:", error);
     throw new Error(`Failed to create shift coverage request: ${error.message}`);
@@ -145,20 +151,34 @@ export async function handleShiftCoverageDetails(
  */
 function validateShiftDetails(shiftDetails: any): boolean {
   if (!shiftDetails) {
+    console.error("Shift details object is missing");
     return false;
   }
   
-  // Check for all required fields
-  return Boolean(
-    shiftDetails.shift_date && 
-    shiftDetails.shift_start && 
-    shiftDetails.shift_end
-  );
+  // Log what we received for debugging
+  console.log("Validating shift details:", JSON.stringify(shiftDetails, null, 2));
+  
+  // Check for required fields with detailed logging
+  const hasDate = Boolean(shiftDetails.shift_date);
+  const hasStart = Boolean(shiftDetails.shift_start);
+  const hasEnd = Boolean(shiftDetails.shift_end);
+  
+  if (!hasDate || !hasStart || !hasEnd) {
+    console.error("Shift details validation failed:", {
+      hasDate,
+      hasStart,
+      hasEnd,
+      details: shiftDetails
+    });
+    return false;
+  }
+  
+  console.log("Shift details validation passed");
+  return true;
 }
 
 /**
  * Verifies a shift coverage request exists in the database
- * Enhanced with better logging and partial matches
  */
 export async function verifyShiftCoverageRequest(communicationId: string) {
   console.log("Verifying shift coverage request for communication:", communicationId);

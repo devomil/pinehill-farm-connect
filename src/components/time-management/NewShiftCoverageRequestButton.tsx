@@ -13,7 +13,7 @@ import { User } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, CalendarPlus } from "lucide-react";
+import { CalendarIcon, CalendarPlus, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import {
@@ -56,6 +56,7 @@ export function NewShiftCoverageRequestButton({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Enhanced validation with custom error messages
     if (!selectedEmployeeId) {
       toast.error("Please select an employee to cover your shift");
       return;
@@ -66,8 +67,13 @@ export function NewShiftCoverageRequestButton({
       return;
     }
     
-    if (!startTime || !endTime) {
-      toast.error("Please specify shift start and end times");
+    if (!startTime) {
+      toast.error("Please specify shift start time");
+      return;
+    }
+    
+    if (!endTime) {
+      toast.error("Please specify shift end time");
       return;
     }
     
@@ -75,6 +81,14 @@ export function NewShiftCoverageRequestButton({
     
     try {
       const formattedDate = format(date, "yyyy-MM-dd");
+      
+      console.log("Sending shift coverage request with data:", {
+        recipientId: selectedEmployeeId,
+        date: formattedDate,
+        startTime,
+        endTime,
+        message: message || "Could you please cover my shift?"
+      });
       
       await sendMessage({
         recipientId: selectedEmployeeId,
@@ -89,7 +103,7 @@ export function NewShiftCoverageRequestButton({
         adminCc: "jackie@pinehillfarm.co"
       });
       
-      toast.success("Shift coverage request sent");
+      toast.success("Shift coverage request sent successfully");
       setOpen(false);
       
       // Reset form
@@ -105,7 +119,7 @@ export function NewShiftCoverageRequestButton({
       }
     } catch (error) {
       console.error("Error sending shift coverage request:", error);
-      toast.error("Failed to send shift coverage request");
+      toast.error(`Failed to send shift coverage request: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSending(false);
     }
@@ -142,7 +156,7 @@ export function NewShiftCoverageRequestButton({
                   <SelectContent>
                     {filteredEmployees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name}
+                        {employee.name || employee.email}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -230,11 +244,16 @@ export function NewShiftCoverageRequestButton({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSending}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSending}>
-                {isSending ? "Sending..." : "Send Request"}
+                {isSending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : "Send Request"}
               </Button>
             </DialogFooter>
           </form>
