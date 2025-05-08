@@ -8,20 +8,23 @@ import { User } from "@/types";
 import { Heading } from "@/components/ui/heading";
 
 interface EmployeeCommunicationsHeaderProps {
-  setDialogOpen: (open: boolean) => void;
-  dialogOpen: boolean;
-  handleNewMessageSend: (data: any) => void;
-  allEmployees: User[];
-  onRefresh?: () => void; // Add refresh function
+  setDialogOpen?: (open: boolean) => void;
+  dialogOpen?: boolean;
+  handleNewMessageSend?: (data: any) => void;
+  allEmployees?: User[];
+  onRefresh?: () => void;
 }
 
 export function EmployeeCommunicationsHeader({
   setDialogOpen,
-  dialogOpen,
-  handleNewMessageSend,
-  allEmployees,
+  dialogOpen = false,
+  handleNewMessageSend = () => {},
+  allEmployees = [],
   onRefresh,
 }: EmployeeCommunicationsHeaderProps) {
+  // If no setDialogOpen is provided, create a dummy one
+  const handleDialogOpen = setDialogOpen || (() => {});
+  
   return (
     <div className="flex flex-col space-y-3 mb-4">
       <div className="flex justify-between items-center">
@@ -40,17 +43,19 @@ export function EmployeeCommunicationsHeader({
             </Button>
           )}
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Send className="h-4 w-4 mr-2" /> New Message
-            </Button>
-            <NewMessageDialog
-              employees={allEmployees}
-              onSend={handleNewMessageSend}
-              onClose={() => setDialogOpen(false)}
-              onRefresh={onRefresh}
-            />
-          </Dialog>
+          {setDialogOpen && (
+            <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
+              <Button onClick={() => handleDialogOpen(true)}>
+                <Send className="h-4 w-4 mr-2" /> New Message
+              </Button>
+              <NewMessageDialog
+                employees={allEmployees}
+                onSend={handleNewMessageSend}
+                onClose={() => handleDialogOpen(false)}
+                onRefresh={onRefresh}
+              />
+            </Dialog>
+          )}
         </div>
       </div>
     </div>

@@ -3,18 +3,26 @@ import React from "react";
 import { Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { User } from "@/types";
 
 interface EmployeeCommunicationDebugProps {
-  showDebugInfo: boolean;
-  setShowDebugInfo: (show: boolean) => void;
-  employeesLoading: boolean;
-  messagesLoading: boolean;
+  showDebugInfo?: boolean;
+  setShowDebugInfo?: (show: boolean) => void;
+  employeesLoading?: boolean;
+  messagesLoading?: boolean;
   unfilteredEmployees?: any[];
   processedMessages?: any[];
   currentUser?: any;
   employeeError?: any;
   messagesError?: any;
-  retryCount: number;
+  retryCount?: number;
+  // Add the missing props that are being passed
+  employeesCount?: number;
+  messagesCount?: number;
+  selectedEmployee?: User | null;
+  filteredCount?: number;
+  loading?: boolean;
+  error?: any;
 }
 
 export function EmployeeCommunicationDebug({
@@ -27,7 +35,14 @@ export function EmployeeCommunicationDebug({
   currentUser,
   employeeError,
   messagesError,
-  retryCount
+  retryCount = 0,
+  // Include the new props with defaults
+  employeesCount = 0,
+  messagesCount = 0,
+  selectedEmployee = null,
+  filteredCount = 0,
+  loading = false,
+  error = null
 }: EmployeeCommunicationDebugProps) {
   if (!showDebugInfo) {
     return (
@@ -35,7 +50,7 @@ export function EmployeeCommunicationDebug({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setShowDebugInfo(true)}
+          onClick={() => setShowDebugInfo && setShowDebugInfo(true)}
         >
           <Bug className="h-4 w-4 mr-1" /> Show Debug
         </Button>
@@ -49,7 +64,7 @@ export function EmployeeCommunicationDebug({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setShowDebugInfo(false)}
+          onClick={() => setShowDebugInfo && setShowDebugInfo(false)}
         >
           <Bug className="h-4 w-4 mr-1" /> Hide Debug
         </Button>
@@ -61,16 +76,16 @@ export function EmployeeCommunicationDebug({
           <AccordionContent className="text-xs bg-muted p-2 rounded overflow-auto max-h-64">
             <p><strong>Employee loading:</strong> {employeesLoading ? 'true' : 'false'}</p>
             <p><strong>Message loading:</strong> {messagesLoading ? 'true' : 'false'}</p>
-            <p><strong>Employee count:</strong> {unfilteredEmployees?.length || 0}</p>
-            <p><strong>Processed messages:</strong> {processedMessages?.length || 0}</p>
+            <p><strong>Employee count:</strong> {employeesCount || unfilteredEmployees?.length || 0}</p>
+            <p><strong>Processed messages:</strong> {messagesCount || processedMessages?.length || 0}</p>
             <p><strong>Current user:</strong> {currentUser?.email} (ID: {currentUser?.id})</p>
             <p><strong>Retry count:</strong> {retryCount}</p>
             
-            {employeeError && (
+            {(error || employeeError) && (
               <>
                 <p className="mt-2 font-semibold text-red-500">Employee Error:</p>
                 <pre className="whitespace-pre-wrap text-red-500">
-                  {typeof employeeError === 'object' ? JSON.stringify(employeeError, null, 2) : String(employeeError)}
+                  {typeof (error || employeeError) === 'object' ? JSON.stringify(error || employeeError, null, 2) : String(error || employeeError)}
                 </pre>
               </>
             )}

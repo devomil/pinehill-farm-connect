@@ -83,7 +83,7 @@ export function EmployeeCommunicationDesktop({
 
   return (
     <div className="space-y-4">
-      <EmployeeCommunicationsHeader />
+      <EmployeeCommunicationsHeader onRefresh={handleRefresh} />
       
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Direct Messages</h2>
@@ -128,6 +128,8 @@ export function EmployeeCommunicationDesktop({
       
       {showDebugInfo && (
         <EmployeeCommunicationDebug
+          showDebugInfo={showDebugInfo}
+          setShowDebugInfo={setShowDebugInfo}
           employeesCount={unfilteredEmployees.length}
           messagesCount={processedMessages.length}
           selectedEmployee={selectedEmployee}

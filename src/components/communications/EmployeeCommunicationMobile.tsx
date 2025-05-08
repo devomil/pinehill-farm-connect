@@ -88,7 +88,7 @@ export function EmployeeCommunicationMobile({
 
   return (
     <div className="space-y-4">
-      <EmployeeCommunicationsHeader />
+      <EmployeeCommunicationsHeader onRefresh={handleRefresh} />
       
       {selectedEmployee ? (
         <>
@@ -135,6 +135,8 @@ export function EmployeeCommunicationMobile({
       
       {showDebugInfo && (
         <EmployeeCommunicationDebug
+          showDebugInfo={showDebugInfo}
+          setShowDebugInfo={setShowDebugInfo}
           employeesCount={unfilteredEmployees.length}
           messagesCount={processedMessages.length}
           selectedEmployee={selectedEmployee}
