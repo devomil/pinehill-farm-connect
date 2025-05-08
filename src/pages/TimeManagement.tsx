@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,6 +7,7 @@ import { TimeManagementHeader } from "@/components/time-management/TimeManagemen
 import { TimeManagementTabs } from "@/components/time-management/TimeManagementTabs";
 import { TimeManagementProvider, useTimeManagement } from "@/contexts/timeManagement";
 import { toast } from "sonner";
+import { User } from "@/types";
 
 export default function TimeManagement() {
   const { currentUser } = useAuth();
@@ -34,15 +36,18 @@ export default function TimeManagement() {
   return (
     <DashboardLayout>
       <TimeManagementProvider currentUser={currentUser}>
-        <TimeManagementContent />
+        <TimeManagementInnerContent currentUser={currentUser} />
       </TimeManagementProvider>
     </DashboardLayout>
   );
 }
 
-// Keep TimeManagementContent as a separate component that uses the context
-const TimeManagementContent = () => {
-  const { currentUser } = useAuth();
+// Separate inner content component that uses the context after it's provided
+interface TimeManagementInnerContentProps {
+  currentUser: User;
+}
+
+const TimeManagementInnerContent: React.FC<TimeManagementInnerContentProps> = ({ currentUser }) => {
   const { error, messagesError, handleRetry, forceRefreshData, allEmployees } = useTimeManagement();
   const initialLoadDone = useRef(false);
   const refreshTimeoutRef = useRef<number | null>(null);
