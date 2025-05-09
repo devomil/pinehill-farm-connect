@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CommunicationTabs } from "./CommunicationTabs";
+import { CommunicationTabs } from "./CommunicationPageTabs";
 import { AnnouncementManager } from "./announcement/AnnouncementManager";
 import { EmployeeCommunications } from "../communications/EmployeeCommunications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,9 @@ const CommunicationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // State for debug panel
+  const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false);
+  
   // Check URL for active tab
   const isMessagesTab = location.search.includes('tab=messages');
   const [activeTab, setActiveTab] = useState<string>(isMessagesTab ? "messages" : "announcements");
@@ -21,6 +24,9 @@ const CommunicationPage: React.FC = () => {
   // Get unread messages for the badge counter
   const { unreadMessages, refreshMessages } = useCommunications();
   const { unfilteredEmployees } = useEmployeeDirectory();
+  
+  // Determine if the current user is an admin
+  const isAdmin = currentUser?.role === 'admin';
 
   // Handle tab changes and update the URL
   const handleTabChange = (value: string) => {
@@ -48,22 +54,46 @@ const CommunicationPage: React.FC = () => {
     refreshMessages();
   }, [refreshMessages]);
   
+  // Handle announcement creation
+  const handleAnnouncementCreate = () => {
+    console.log("Announcement created, refreshing data");
+    // Add any specific logic here if needed
+  };
+  
+  // Handle manual refresh of data
+  const handleManualRefresh = () => {
+    console.log("Manual refresh requested");
+    refreshMessages();
+  };
+  
   return (
     <div className="container mx-auto py-6 max-w-6xl">
-      <CommunicationHeader />
+      <CommunicationHeader 
+        isAdmin={isAdmin}
+        allEmployees={unfilteredEmployees || []}
+        onAnnouncementCreate={handleAnnouncementCreate}
+        onManualRefresh={handleManualRefresh}
+        showDebugInfo={showDebugInfo}
+        setShowDebugInfo={setShowDebugInfo}
+      />
       
       <CommunicationTabs 
         activeTab={activeTab} 
         onTabChange={handleTabChange} 
         unreadMessages={unreadMessages}
-      >
+      />
+      
+      {activeTab === "announcements" && (
         <AnnouncementManager 
-          currentUser={currentUser} 
-          employees={unfilteredEmployees || []} 
+          currentUser={currentUser}
+          allEmployees={unfilteredEmployees || []}
+          isAdmin={isAdmin}
         />
-        
+      )}
+      
+      {activeTab === "messages" && (
         <EmployeeCommunications />
-      </CommunicationTabs>
+      )}
     </div>
   );
 };

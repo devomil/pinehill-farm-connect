@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
 
@@ -13,14 +13,12 @@ interface CommunicationTabsProps {
   activeTab: string;
   unreadMessages: Communication[] | null;
   onTabChange: (value: string) => void;
-  children: [React.ReactNode, React.ReactNode]; // Expects exactly two children: AnnouncementManager and EmployeeCommunications
 }
 
 export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   activeTab,
   unreadMessages,
-  onTabChange,
-  children
+  onTabChange
 }) => {
   // Group unread messages by sender for better visibility
   const uniqueSenders = unreadMessages 
@@ -47,7 +45,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   const senderNamesPreview = getSenderNamesPreview();
 
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full mb-6">
       <TabsList className="mb-4">
         <TabsTrigger value="announcements">Company Announcements</TabsTrigger>
         <TabsTrigger value="messages" className="relative">
@@ -75,14 +73,6 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           <span>New messages {senderNamesPreview}</span>
         </div>
       )}
-      
-      <TabsContent value="announcements">
-        {children[0]}
-      </TabsContent>
-      
-      <TabsContent value="messages">
-        {children[1]}
-      </TabsContent>
     </Tabs>
   );
 };
