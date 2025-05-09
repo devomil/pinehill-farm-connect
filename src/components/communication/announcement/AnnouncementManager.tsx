@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnnouncementAcknowledge } from "@/hooks/announcement/useAnnouncementAcknowledge";
+import { useAnnouncementReadStatus } from "@/hooks/announcement/useAnnouncementReadStatus";
 
 interface AnnouncementManagerProps {
   currentUser: User | null;
@@ -32,6 +32,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   } = useAnnouncements(currentUser, allEmployees);
 
   const { acknowledgeAnnouncement } = useAnnouncementAcknowledge(currentUser?.id);
+  const { markAsRead: markAnnouncementAsRead } = useAnnouncementReadStatus(currentUser?.id);
   
   // Fetch announcements when component mounts or currentUser changes
   useEffect(() => {
@@ -79,6 +80,29 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       return Promise.reject(error);
     }
   }, [currentUser?.id, acknowledgeAnnouncement, fetchAnnouncements]);
+
+  // Handle mark as read for announcements
+  const handleMarkAsRead = useCallback(async (id: string): Promise<void> => {
+    console.log("Mark as read clicked for:", id);
+    if (!currentUser?.id) {
+      console.error("Cannot mark as read: No current user ID");
+      toast({
+        title: "Cannot mark as read",
+        description: "You need to be logged in",
+        variant: "destructive"
+      });
+      return Promise.reject("No current user ID available");
+    }
+    
+    try {
+      await markAnnouncementAsRead(id);
+      await fetchAnnouncements();
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error marking announcement as read:", error);
+      return Promise.reject(error);
+    }
+  }, [currentUser?.id, markAnnouncementAsRead, fetchAnnouncements, toast]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -141,29 +165,13 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     }
   };
 
-  const handleMarkAsReadClick = async (id: string) => {
-    console.log("Mark as read clicked for:", id);
-    if (currentUser?.id) {
-      await markAsRead(id);
-      // We no longer check for truthiness here, just await completion
-      await fetchAnnouncements();
-    } else {
-      console.error("Cannot mark as read: No current user ID");
-      toast({
-        title: "Cannot mark as read",
-        description: "You need to be logged in",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <>
       <CommunicationTabs
         announcements={announcements}
         loading={loading}
         isRead={isRead}
-        markAsRead={handleMarkAsReadClick}
+        markAsRead={handleMarkAsRead}
         getPriorityBadge={getPriorityBadge}
         currentUserId={currentUser?.id}
         onEdit={isAdmin ? (announcement) => setEditingAnnouncement(announcement) : undefined}

@@ -131,7 +131,9 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <AnnouncementAcknowledgment
             id={announcement.id}
             isAcknowledged={isAcknowledged}
+            isRead={isRead}
             onAcknowledge={onAcknowledge}
+            onMarkAsRead={onMarkAsRead ? () => onMarkAsRead() : undefined}
           />
         )}
 
@@ -144,7 +146,8 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
               </Badge>
             )}
           </div>
-          {showMarkAsRead && !isRead && onMarkAsRead && (
+          {/* Remove the standalone Mark as Read button since we've added it to the acknowledgment component */}
+          {showMarkAsRead && !isRead && onMarkAsRead && !announcement.requires_acknowledgment && (
             <Button 
               size="sm" 
               variant="secondary" 
