@@ -49,11 +49,19 @@ export const AnnouncementAcknowledgment = ({
       
       // Keep the checked state - don't revert it after the operation completes
       // The database update should trigger a fetch that will update isAcknowledged prop
+      toast({
+        title: "Announcement acknowledged",
+        description: "Thank you for acknowledging this announcement"
+      });
     } catch (error) {
       // Revert UI state if there was an error
       setIsChecked(false);
       console.error("Error acknowledging announcement:", error);
-      // Error toast is now handled in the useAnnouncementAcknowledge hook
+      toast({
+        title: "Failed to acknowledge announcement",
+        description: "An error occurred while saving your acknowledgment",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -72,6 +80,11 @@ export const AnnouncementAcknowledgment = ({
       });
     } catch (error) {
       console.error("Error marking announcement as read:", error);
+      toast({
+        title: "Failed to mark as read",
+        description: "An error occurred",
+        variant: "destructive"
+      });
     } finally {
       setIsMarkingRead(false);
     }

@@ -79,7 +79,7 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
               isAcknowledged={isAcknowledged}
               onMarkAsRead={handleMarkAsRead}
               onAcknowledge={announcement.requires_acknowledgment && onAcknowledge ? 
-                onAcknowledge : 
+                () => onAcknowledge(announcement.id) : 
                 undefined
               }
               showMarkAsRead={true}
