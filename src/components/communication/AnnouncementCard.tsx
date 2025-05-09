@@ -14,7 +14,7 @@ interface AnnouncementCardProps {
   announcement: Announcement;
   isRead: boolean;
   isAcknowledged?: boolean;
-  onMarkAsRead?: () => void;
+  onMarkAsRead?: () => Promise<void>;
   onAcknowledge?: (announcementId: string) => Promise<void>;
   showMarkAsRead?: boolean;
   getPriorityBadge: (priority: string) => JSX.Element;
@@ -77,11 +77,21 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   };
 
   // Handle mark as read button click
-  const handleMarkAsRead = () => {
+  const handleMarkAsRead = async (): Promise<void> => {
     if (onMarkAsRead) {
       console.log("Marking as read:", announcement.id);
-      onMarkAsRead();
+      return onMarkAsRead();
     }
+    return Promise.resolve();
+  };
+
+  // Function to adapt onMarkAsRead for AnnouncementAcknowledgment component
+  const handleMarkAsReadWithId = async (announcementId: string): Promise<void> => {
+    console.log("Marking as read with ID:", announcementId);
+    if (onMarkAsRead) {
+      return onMarkAsRead();
+    }
+    return Promise.resolve();
   };
 
   return (
@@ -133,7 +143,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
             isAcknowledged={isAcknowledged}
             isRead={isRead}
             onAcknowledge={onAcknowledge}
-            onMarkAsRead={onMarkAsRead ? () => onMarkAsRead() : undefined}
+            onMarkAsRead={handleMarkAsReadWithId}
           />
         )}
 
@@ -146,12 +156,12 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
               </Badge>
             )}
           </div>
-          {/* Remove the standalone Mark as Read button since we've added it to the acknowledgment component */}
+          {/* Standalone Mark as Read button when acknowledgment is not required */}
           {showMarkAsRead && !isRead && onMarkAsRead && !announcement.requires_acknowledgment && (
             <Button 
               size="sm" 
               variant="secondary" 
-              onClick={handleMarkAsRead}
+              onClick={() => handleMarkAsRead()} 
               className="transition-opacity hover:opacity-80"
             >
               Mark as Read

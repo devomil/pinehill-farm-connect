@@ -10,7 +10,7 @@ interface AnnouncementListProps {
   announcements: Announcement[];
   loading: boolean;
   isRead: (announcement: Announcement) => boolean;
-  markAsRead: (id: string) => void;
+  markAsRead: (id: string) => Promise<void>;
   getPriorityBadge: (priority: string) => JSX.Element;
   currentPage: number;
   totalPages: number;
@@ -66,13 +66,18 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
           const acknowledgementsArray = announcement.acknowledgements || [];
           const isAcknowledged = acknowledgementsArray.includes(currentUserId);
           
+          // Create a Promise-returning wrapper for markAsRead
+          const handleMarkAsRead = async (): Promise<void> => {
+            return markAsRead(announcement.id);
+          };
+          
           return (
             <AnnouncementCard
               key={announcement.id}
               announcement={announcement}
               isRead={isRead(announcement)}
               isAcknowledged={isAcknowledged}
-              onMarkAsRead={() => markAsRead(announcement.id)}
+              onMarkAsRead={handleMarkAsRead}
               onAcknowledge={announcement.requires_acknowledgment && onAcknowledge ? 
                 onAcknowledge : 
                 undefined
