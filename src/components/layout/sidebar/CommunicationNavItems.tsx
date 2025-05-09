@@ -1,0 +1,88 @@
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Megaphone, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useCommunications } from "@/hooks/useCommunications";
+import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
+
+interface NavItemProps {
+  collapsed: boolean;
+}
+
+export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
+  const { pathname } = useLocation();
+  const { currentUser } = useAuth();
+  const { unreadMessages } = useCommunications();
+  const { announcements } = useDashboardData();
+  
+  // Count unread messages
+  const unreadMessageCount = unreadMessages?.length || 0;
+  
+  // Count unread announcements - exclude those requiring acknowledgment and those already read
+  const unreadAnnouncementCount = announcements
+    ? announcements.filter(a => {
+        return !isAnnouncementReadByUser(a, currentUser?.id) && 
+          !a.requires_acknowledgment;
+      }).length
+    : 0;
+    
+  const communicationItems = [
+    {
+      to: "/communication",
+      icon: <Megaphone className="h-5 w-5 mr-3" />,
+      label: "Announcements",
+      showIf: true,
+      badge: unreadAnnouncementCount > 0 ? (
+        <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
+      ) : null,
+    },
+    {
+      to: "/communication?tab=messages",
+      icon: <MessageSquare className="h-5 w-5 mr-3" />,
+      label: "Messages",
+      showIf: true,
+      badge: unreadMessageCount > 0 ? (
+        <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
+      ) : null,
+    }
+  ];
+
+  return (
+    <div className="flex flex-col gap-1">
+      {communicationItems.map(item => 
+        item.showIf && (
+          <Button
+            key={item.to}
+            variant={item.badge !== null ? "default" : "ghost"}
+            className={cn(
+              "justify-start font-normal",
+              (pathname === item.to || pathname === "/communications" || 
+               (pathname.includes('/communication') && item.to.includes(pathname.includes('?tab=messages') ? 'messages' : 'communication'))) 
+              && "bg-accent"
+            )}
+            asChild
+          >
+            <Link to={item.to} className="flex w-full items-center">
+              {item.icon}
+              <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+              {!collapsed && item.badge}
+              {collapsed && item.badge && (
+                <Badge 
+                  variant={item.to.includes("messages") ? "destructive" : "default"} 
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+                >
+                  {item.to.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+        )
+      )}
+    </div>
+  );
+};
