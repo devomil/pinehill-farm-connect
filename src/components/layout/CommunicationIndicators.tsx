@@ -28,7 +28,10 @@ export const CommunicationIndicators: React.FC = () => {
     : 0;
   
   // Count of unread direct messages (from useCommunications hook)
-  const unreadMessageCount = unreadMessages?.length || 0;
+  // Ensure unreadMessages exist and have a valid length
+  const unreadMessageCount = unreadMessages?.filter(
+    msg => msg.type !== 'system_notification' && msg.type !== 'announcement'
+  ).length || 0;
 
   // Admin users need more frequent refreshes to keep badges accurate
   const isAdmin = currentUser?.role === 'admin';

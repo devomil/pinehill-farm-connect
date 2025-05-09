@@ -67,8 +67,10 @@ export function MessageList({
     return Array.from(conversations.values());
   }, [messages, currentUser]);
 
-  // Count unread messages
-  const unreadCount = unreadMessages?.length || 0;
+  // Count unread messages (filter out system notifications and announcements)
+  const unreadCount = unreadMessages?.filter(
+    msg => msg.type !== 'system_notification' && msg.type !== 'announcement'
+  ).length || 0;
   
   // Auto-refresh messages when component mounts to ensure accurate counts
   useEffect(() => {

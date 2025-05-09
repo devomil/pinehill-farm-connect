@@ -19,7 +19,10 @@ export function useUnreadMessages(messages: Communication[] | null, currentUser:
     const unreadMessages = messages.filter(
       message => 
         message.recipient_id === currentUser.id && 
-        message.read_at === null // Explicitly check for null rather than falsy value
+        message.read_at === null &&
+        // Ensure message type is not null/undefined before checking
+        message.type !== 'system_notification' && 
+        message.type !== 'announcement'
     ) as EnhancedCommunication[];
     
     // Add sender_name to each message for easier reference in UI

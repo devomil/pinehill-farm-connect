@@ -20,17 +20,24 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   unreadMessages,
   onTabChange
 }) => {
+  // Filter out system notifications from unread messages
+  const filteredUnreadMessages = unreadMessages 
+    ? unreadMessages.filter(msg => 
+        msg.type !== 'system_notification' && 
+        msg.type !== 'announcement')
+    : [];
+    
   // Group unread messages by sender for better visibility
-  const uniqueSenders = unreadMessages 
-    ? [...new Set(unreadMessages.map(msg => msg.sender_id))]
+  const uniqueSenders = filteredUnreadMessages.length > 0
+    ? [...new Set(filteredUnreadMessages.map(msg => msg.sender_id))]
     : [];
   
   // Get the names of up to 2 senders to display
   const getSenderNamesPreview = (): string => {
-    if (!unreadMessages || unreadMessages.length === 0) return "";
+    if (!filteredUnreadMessages || filteredUnreadMessages.length === 0) return "";
     
     // Extract unique sender names (if available in the message objects)
-    const uniqueSenderNames = [...new Set(unreadMessages
+    const uniqueSenderNames = [...new Set(filteredUnreadMessages
       .map(msg => (msg as EnhancedCommunication).sender_name || "Unknown")
       .filter(name => name !== "Unknown")
     )];
@@ -50,10 +57,10 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
         <TabsTrigger value="announcements">Company Announcements</TabsTrigger>
         <TabsTrigger value="messages" className="relative">
           Direct Messages
-          {unreadMessages && unreadMessages.length > 0 && (
+          {filteredUnreadMessages.length > 0 && (
             <div className="ml-2 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-xs flex items-center">
               <MessageCircle className="h-3 w-3 mr-1" />
-              {unreadMessages.length}
+              {filteredUnreadMessages.length}
               {uniqueSenders.length > 0 && (
                 <span className="ml-1 text-xs">
                   {uniqueSenders.length === 1 
@@ -67,7 +74,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
       </TabsList>
       
       {/* Show sender names preview if there are unread messages */}
-      {activeTab === "messages" && unreadMessages && unreadMessages.length > 0 && senderNamesPreview && (
+      {activeTab === "messages" && filteredUnreadMessages.length > 0 && senderNamesPreview && (
         <div className="mb-4 text-sm text-primary flex items-center">
           <MessageCircle className="h-4 w-4 mr-2" />
           <span>New messages {senderNamesPreview}</span>

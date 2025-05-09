@@ -22,8 +22,12 @@ export function useMessageReadStatus(
       if (!selectedEmployee || !currentUser || unreadMessages.length === 0) return;
 
       // Find unread messages from the selected employee
+      // Only mark direct messages as read, not system notifications or announcements
       const toMarkAsRead = unreadMessages.filter(
-        msg => msg.sender_id === selectedEmployee.id && msg.recipient_id === currentUser.id
+        msg => msg.sender_id === selectedEmployee.id && 
+              msg.recipient_id === currentUser.id &&
+              msg.type !== 'system_notification' &&
+              msg.type !== 'announcement'
       );
       
       if (toMarkAsRead.length === 0) return;
@@ -44,6 +48,11 @@ export function useMessageReadStatus(
         console.log("Messages marked as read, refreshing message counts");
         // Force immediate refresh to update all badge counters across the app
         refreshMessages();
+        
+        // For admin users, do an additional refresh after a brief delay to ensure counts are updated
+        if (currentUser.role === 'admin') {
+          setTimeout(() => refreshMessages(), 1000);
+        }
       }
     };
     
