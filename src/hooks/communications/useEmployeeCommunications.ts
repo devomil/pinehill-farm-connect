@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -15,6 +15,7 @@ import { Communication, MessageType } from "@/types/communications/communication
 interface UseEmployeeCommunicationsProps {
   selectedEmployee?: User | null;
   setSelectedEmployee?: (employee: User | null) => void;
+  initialSearchQuery?: string;
 }
 
 export interface SendMessageData {
@@ -30,7 +31,8 @@ export interface SendMessageData {
 
 export function useEmployeeCommunications({
   selectedEmployee: propSelectedEmployee,
-  setSelectedEmployee: propSetSelectedEmployee
+  setSelectedEmployee: propSetSelectedEmployee,
+  initialSearchQuery = ""
 }: UseEmployeeCommunicationsProps = {}) {
   const { currentUser } = useAuth();
   const { unfilteredEmployees: allEmployees, loading: employeesLoading, refetch: refetchEmployees } = useEmployeeDirectory();
@@ -38,7 +40,12 @@ export function useEmployeeCommunications({
   const { messages: rawMessages, isLoading, sendMessage, respondToShiftRequest, unreadMessages: rawUnreadMessages, refreshMessages } = useCommunications();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(propSelectedEmployee || null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  
+  // Debug effect for search changes
+  useEffect(() => {
+    console.log("useEmployeeCommunications - searchQuery changed:", searchQuery);
+  }, [searchQuery]);
   
   // Use our extracted hooks
   const { isMobileView } = useResponsiveLayout();
@@ -48,6 +55,17 @@ export function useEmployeeCommunications({
   
   // Process unread messages to ensure proper typing
   const typedUnreadMessages: Communication[] = useProcessMessages(rawUnreadMessages, currentUser);
+  
+  // Filter employees based on search query
+  const filteredEmployees = useMemo(() => {
+    if (!searchQuery.trim() || !allEmployees) return allEmployees || [];
+    
+    return allEmployees.filter(
+      (employee) =>
+        (employee.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        (employee.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+    );
+  }, [allEmployees, searchQuery]);
   
   // Get recent conversations
   const recentConversations = useRecentCommunications(
@@ -112,13 +130,20 @@ export function useEmployeeCommunications({
     refreshMessages();
   }, [refetchEmployees, refreshMessages]);
 
+  // Handle search query changes
+  const handleSearchQueryChange = useCallback((query: string) => {
+    console.log("Setting search query to:", query);
+    setSearchQuery(query);
+  }, []);
+
   return {
     currentUser,
     allEmployees,
+    filteredEmployees,
     isLoading: isLoading || employeesLoading,
     selectedEmployee,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSearchQueryChange,
     dialogOpen,
     setDialogOpen,
     handleSelectEmployee,

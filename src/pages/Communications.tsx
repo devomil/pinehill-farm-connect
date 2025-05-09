@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useEmployeeAssignments } from "@/hooks/useEmployeeAssignments";
@@ -19,6 +19,7 @@ export default function Communications() {
   // Exclude shift coverage messages from the communications page
   const { messages, isLoading: messagesLoading, respondToShiftRequest, sendMessage, unreadMessages, refreshMessages, error: messagesError } = useCommunications(true);
   const { retryCount, handleRetry, isConnectionError, formatErrorMessage } = useErrorHandling();
+  const [searchQuery, setSearchQuery] = useState("");
   
   const loading = employeesLoading || assignmentsLoading || messagesLoading;
   const error = employeeError || messagesError;
@@ -28,6 +29,11 @@ export default function Communications() {
   
   // Check if messages tab is active
   const isMessagesTabActive = location.search.includes('tab=messages');
+
+  // Debug log for search functionality
+  useEffect(() => {
+    console.log("Current search query:", searchQuery);
+  }, [searchQuery]);
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
@@ -82,6 +88,12 @@ export default function Communications() {
     refreshMessages();
   };
 
+  // Handle search query changes
+  const handleSearchQueryChange = (query: string) => {
+    console.log("Setting search query to:", query);
+    setSearchQuery(query);
+  };
+
   return (
     <CommunicationsLayout
       error={error}
@@ -100,6 +112,8 @@ export default function Communications() {
           onRespond={respondToShiftRequest}
           onSendMessage={sendMessage}
           onRefresh={handleManualRefresh}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchQueryChange}
         />
       )}
     </CommunicationsLayout>

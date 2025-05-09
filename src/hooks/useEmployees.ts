@@ -147,6 +147,9 @@ export function useEmployees() {
           invalidEmails.map(e => `${e.name} (${e.email})`));
       }
 
+      // Sort employees by name for easier searching
+      formattedEmployees.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      
       setEmployees(formattedEmployees);
     } catch (err) {
       console.error("Error processing profile data:", err);
@@ -158,12 +161,26 @@ export function useEmployees() {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (employee.department && employee.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (employee.position && employee.position.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Improved case-insensitive filtering function to handle various search cases
+  const filteredEmployees = employees.filter((employee) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase().trim();
+    
+    return (
+      (employee.name?.toLowerCase() || "").includes(query) ||
+      (employee.email?.toLowerCase() || "").includes(query) ||
+      (employee.department?.toLowerCase() || "").includes(query) ||
+      (employee.position?.toLowerCase() || "").includes(query)
+    );
+  });
+
+  // Debug search results
+  useEffect(() => {
+    if (searchQuery) {
+      console.log(`Employee search for "${searchQuery}" returned ${filteredEmployees.length} results from ${employees.length} total`);
+    }
+  }, [searchQuery, filteredEmployees.length, employees.length]);
 
   return {
     searchQuery,

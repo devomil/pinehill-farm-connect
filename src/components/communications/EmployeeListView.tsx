@@ -18,6 +18,8 @@ interface EmployeeListViewProps {
   messages?: Communication[];
   unreadMessages?: Communication[];
   error?: any;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
 }
 
 export function EmployeeListView({
@@ -28,9 +30,10 @@ export function EmployeeListView({
   onRefresh,
   messages = [],
   unreadMessages = [],
-  error
+  error,
+  searchQuery = "",
+  setSearchQuery = () => {}
 }: EmployeeListViewProps) {
-  const [searchQuery, setSearchQuery] = React.useState("");
   const [showDebugInfo, setShowDebugInfo] = React.useState(false);
 
   // Handle error display with debugging info
@@ -106,6 +109,7 @@ export function EmployeeListView({
               <p><strong>Messages count:</strong> {messages?.length || 0}</p>
               <p><strong>Unread messages count:</strong> {unreadMessages?.length || 0}</p>
               <p><strong>Has selected employee:</strong> {selectedEmployee ? "true" : "false"}</p>
+              <p><strong>Current search query:</strong> "{searchQuery}"</p>
               
               <p className="mt-2 font-semibold">Employee preview:</p>
               <pre className="whitespace-pre-wrap">

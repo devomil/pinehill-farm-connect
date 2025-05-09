@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
@@ -32,12 +33,19 @@ export function EmployeeDropdownSelect({
   unreadMessages = [],
   recentConversations = [],
 }: EmployeeDropdownSelectProps) {
-  // Filter employees based on search query
+  // Filter employees based on search query - ensuring case-insensitive search on both name and email
   const filteredEmployees = employees.filter(
     (employee) =>
-      employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      (employee.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (employee.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
+
+  // Debug effect for searchQuery changes
+  useEffect(() => {
+    console.log("Search query changed:", searchQuery);
+    console.log("Filtered employees count:", filteredEmployees.length);
+    console.log("Total employees count:", employees.length);
+  }, [searchQuery, filteredEmployees.length, employees.length]);
 
   // Count unread messages per employee
   const getUnreadCount = (employeeId: string): number => {

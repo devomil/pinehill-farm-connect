@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
@@ -28,11 +28,19 @@ export function EmployeeList({
   unreadMessages = [],
   onRefresh,
 }: EmployeeListProps) {
+  // Filter employees with improved case-insensitive search on both name and email
   const filteredEmployees = employees.filter(
     (employee) =>
       (employee.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
       (employee.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
+  
+  // Debug effect for search functionality
+  useEffect(() => {
+    console.log("EmployeeList search query:", searchQuery);
+    console.log("EmployeeList filtered count:", filteredEmployees.length);
+    console.log("EmployeeList total count:", employees.length);
+  }, [searchQuery, filteredEmployees.length, employees.length]);
 
   // Count unread messages per employee
   const getUnreadCount = (employeeId: string): number => {
@@ -87,6 +95,7 @@ export function EmployeeList({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
+            aria-label="Search employees by name or email"
           />
         </div>
         {onRefresh && (
@@ -109,7 +118,7 @@ export function EmployeeList({
             <span className="text-primary">New Messages</span> 
             <Badge variant="secondary" className="ml-2">{unreadMessages.length}</Badge>
             
-            {/* New: Show names of senders with unread messages */}
+            {/* Show names of senders with unread messages */}
             <div className="ml-2 text-xs text-muted-foreground">
               from {unreadMessageSenders.slice(0, 2).join(", ")}
               {unreadMessageSenders.length > 2 && ` and ${unreadMessageSenders.length - 2} more`}
@@ -214,7 +223,7 @@ export function EmployeeList({
       ) : (
         <div className="flex flex-col items-center justify-center py-8 text-center flex-1 text-muted-foreground">
           <UserIcon className="h-10 w-10 mb-3 opacity-20" />
-          <p>No employees found</p>
+          <p>No employees found matching "{searchQuery}"</p>
           <p className="text-sm">Try adjusting your search or</p>
           {onRefresh && (
             <Button 
