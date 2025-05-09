@@ -1,6 +1,7 @@
+
 import React, { useState, useCallback } from "react";
 import { EmployeeListView } from "./EmployeeListView";
-import { ConversationView } from "./ConversationView";
+import { EmployeeConversationView } from "./EmployeeConversationView";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
 
@@ -41,6 +42,15 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
     }
   };
 
+  // Filter messages for selected employee
+  const employeeMessages = selectedEmployee
+    ? messages.filter(
+        (msg) => 
+          msg.sender?.id === selectedEmployee.id || 
+          msg.recipient?.id === selectedEmployee.id
+      )
+    : [];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Employee list view */}
@@ -59,14 +69,26 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
 
       {/* Conversation view */}
       <div className="md:col-span-2">
-        <ConversationView
-          messages={messages}
-          loading={loading}
-          selectedEmployee={selectedEmployee}
-          onRespond={onRespond}
-          onSendMessage={onSendMessage}
-          currentUser={null} // TODO: Remove this prop
-        />
+        {selectedEmployee ? (
+          <EmployeeConversationView
+            selectedEmployee={selectedEmployee}
+            messages={employeeMessages}
+            loading={loading}
+            onSendMessage={(message) => onSendMessage({
+              recipientId: selectedEmployee.id,
+              message,
+              type: 'general'
+            })}
+            onRefresh={onRefresh}
+            unreadMessages={unreadMessages}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full p-6 bg-slate-50 rounded-lg">
+            <p className="text-slate-500 text-center">
+              Select an employee to view or start a conversation.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
