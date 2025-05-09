@@ -88,4 +88,4 @@ export const CommunicationIndicators: React.FC = () => {
       </TooltipProvider>
     </div>
   );
-};
+}

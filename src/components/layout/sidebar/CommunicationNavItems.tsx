@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
+import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -17,8 +18,16 @@ interface NavItemProps {
 export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
-  const { unreadMessages } = useCommunications();
-  const { announcements } = useDashboardData();
+  const { unreadMessages, refreshMessages } = useCommunications();
+  const { announcements, refetchData } = useDashboardData();
+  
+  // Add effect to refresh unread messages when navigating to communications
+  useEffect(() => {
+    if (pathname.includes('/communication')) {
+      refreshMessages();
+      refetchData();
+    }
+  }, [pathname, refreshMessages, refetchData]);
   
   // Count unread messages
   const unreadMessageCount = unreadMessages?.length || 0;

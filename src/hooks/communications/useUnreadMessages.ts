@@ -15,6 +15,7 @@ export function useUnreadMessages(messages: Communication[] | null, currentUser:
     if (!messages || !currentUser) return [];
     
     // Filter messages to find unread ones directed to the current user
+    // Ensure messages with read_at timestamp are excluded
     const unreadMessages = messages.filter(
       message => 
         message.recipient_id === currentUser.id && 

@@ -38,7 +38,7 @@ export function EmployeeConversationView({
       console.log("EmployeeConversationView - employee selected with unread messages, refreshing");
       refresh();
     }
-  }, [selectedEmployee?.id, refresh]);
+  }, [selectedEmployee?.id, refresh, unreadMessages.length]);
 
   return (
     <div className="h-full">
