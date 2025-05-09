@@ -32,6 +32,7 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
     }
   };
 
+  // A message is considered unread if it's incoming and doesn't have a read_at timestamp
   const isUnread = !isMine && !message.read_at;
   const isUrgent = message.type === "urgent";
 
@@ -68,6 +69,7 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
         </div>
       </div>
       
+      {/* Only show the "New Message" indicator if the message is truly unread */}
       {isUnread && (
         <div className="mt-1 text-xs text-blue-600 font-medium flex items-center">
           <div className="w-2 h-2 bg-blue-600 rounded-full mr-1.5"></div>

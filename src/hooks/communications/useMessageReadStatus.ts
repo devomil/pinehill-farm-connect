@@ -17,6 +17,7 @@ export function useMessageReadStatus(
   const refreshMessages = useRefreshMessages();
 
   useEffect(() => {
+    // Function to mark messages as read
     const markMessagesAsRead = async () => {
       if (!selectedEmployee || !currentUser || unreadMessages.length === 0) return;
 
@@ -27,7 +28,7 @@ export function useMessageReadStatus(
       
       if (toMarkAsRead.length === 0) return;
       
-      console.log(`Marking ${toMarkAsRead.length} messages as read`);
+      console.log(`Marking ${toMarkAsRead.length} messages as read from ${selectedEmployee.name}`);
       
       const messageIds = toMarkAsRead.map(msg => msg.id);
       const { error } = await supabase
@@ -41,10 +42,12 @@ export function useMessageReadStatus(
       } else {
         // Refresh messages to update unread counts throughout the app
         console.log("Messages marked as read, refreshing message counts");
-        setTimeout(() => refreshMessages(), 100); // Small delay to ensure DB operation completes
+        // Immediate refresh to update UI state
+        refreshMessages();
       }
     };
     
+    // Call the function when the selected employee changes or when unread messages change
     markMessagesAsRead();
-  }, [selectedEmployee, currentUser, unreadMessages, refreshMessages]);
+  }, [selectedEmployee?.id, currentUser?.id, unreadMessages, refreshMessages]);
 }
