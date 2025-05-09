@@ -46,8 +46,8 @@ export const ConversationTabs: React.FC<ConversationTabsProps> = ({
   const employeeMessages = selectedEmployee
     ? messages.filter(
         (msg) => 
-          msg.sender?.id === selectedEmployee.id || 
-          msg.recipient?.id === selectedEmployee.id
+          msg.sender_id === selectedEmployee.id || 
+          msg.recipient_id === selectedEmployee.id
       )
     : [];
 
