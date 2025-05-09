@@ -10,7 +10,7 @@ interface CommunicationTabsProps {
   announcements: Announcement[];
   loading: boolean;
   isRead: (a: Announcement) => boolean;
-  markAsRead: (id: string) => void;
+  markAsRead: (id: string) => Promise<void>;
   getPriorityBadge: (priority: string) => JSX.Element;
   currentUserId?: string;
   onEdit?: (announcement: Announcement) => void;

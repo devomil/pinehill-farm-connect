@@ -9,7 +9,7 @@ interface TabContentProps {
   announcements: Announcement[];
   loading: boolean;
   isRead: (a: Announcement) => boolean;
-  markAsRead: (id: string) => void;
+  markAsRead: (id: string) => Promise<void>;
   getPriorityBadge: (priority: string) => JSX.Element;
   currentPage: number;
   totalPages: number;
