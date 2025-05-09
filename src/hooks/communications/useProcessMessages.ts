@@ -22,7 +22,7 @@ export function useProcessMessages(
     // Transform raw messages into properly typed Communication objects
     const processed = messages.map(msg => {
       // Ensure message type is valid or default to 'general'
-      const validTypes: MessageType[] = ['general', 'shift_coverage', 'urgent'];
+      const validTypes: MessageType[] = ['general', 'shift_coverage', 'urgent', 'system_notification', 'announcement'];
       const messageType: MessageType = validTypes.includes(msg.type as MessageType) 
         ? msg.type as MessageType 
         : 'general';

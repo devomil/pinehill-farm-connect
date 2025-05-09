@@ -1,7 +1,7 @@
 
 import { User } from "@/types";
 
-export type MessageType = 'general' | 'shift_coverage' | 'urgent';
+export type MessageType = 'general' | 'shift_coverage' | 'urgent' | 'system_notification' | 'announcement';
 export type MessageStatus = 'pending' | 'accepted' | 'declined';
 
 export interface ShiftDetails {
