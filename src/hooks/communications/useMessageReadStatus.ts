@@ -40,9 +40,9 @@ export function useMessageReadStatus(
         console.error("Error marking messages as read:", error);
         toast.error("Failed to mark messages as read");
       } else {
-        // Refresh messages to update unread counts throughout the app
+        // Immediately refresh messages to update unread counts throughout the app
         console.log("Messages marked as read, refreshing message counts");
-        // Immediate refresh to update UI state
+        // Force immediate refresh to update all badge counters across the app
         refreshMessages();
       }
     };

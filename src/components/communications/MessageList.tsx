@@ -21,11 +21,20 @@ interface MessageListProps {
   }) => void;
   employees: User[];
   onViewConversation: (employee: User) => void;
+  unreadMessages?: Communication[];
 }
 
-export function MessageList({ messages, isLoading, onRespond, employees, onViewConversation }: MessageListProps) {
+export function MessageList({ 
+  messages, 
+  isLoading, 
+  onRespond, 
+  employees, 
+  onViewConversation,
+  unreadMessages = []
+}: MessageListProps) {
   const { currentUser } = useAuth();
   const refreshMessages = useRefreshMessages();
+  const isAdmin = currentUser?.role === 'admin';
 
   // Group messages by conversation
   const groupedMessages = useMemo(() => {
@@ -59,24 +68,20 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
   }, [messages, currentUser]);
 
   // Count unread messages
-  const unreadCount = useMemo(() => {
-    if (!currentUser) return 0;
-    return messages.filter(msg => 
-      msg.recipient_id === currentUser.id && 
-      !msg.read_at
-    ).length;
-  }, [messages, currentUser]);
+  const unreadCount = unreadMessages?.length || 0;
   
   // Auto-refresh messages when component mounts to ensure accurate counts
   useEffect(() => {
     refreshMessages();
-    // Set up periodic refreshes
+    
+    // More frequent refresh for admin users
     const refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing message list");
       refreshMessages();
-    }, 30000); // Every 30 seconds
+    }, isAdmin ? 20000 : 30000); // Every 20 seconds for admins, 30 for others
     
     return () => clearInterval(refreshInterval);
-  }, [refreshMessages]);
+  }, [refreshMessages, isAdmin]);
 
   // Loading state
   if (isLoading) {

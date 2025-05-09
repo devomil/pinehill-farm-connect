@@ -25,8 +25,11 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const refreshMessages = useCallback(() => {
     const now = Date.now();
     
-    // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime.current < 3000) { // Further reduced from 5000 to 3000ms
+    // Prevent multiple refreshes within a short time period, but make exception for admin users
+    const isAdmin = currentUser?.role === 'admin';
+    const minRefreshInterval = isAdmin ? 1500 : 3000; // 1.5s for admins, 3s for others
+    
+    if (refreshInProgress.current || (!isAdmin && now - lastRefreshTime.current < minRefreshInterval)) {
       console.log("Communications refresh skipped - too soon or already in progress");
       return Promise.resolve();
     }
@@ -38,9 +41,9 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     return refetch().finally(() => {
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, 1000); // Reduced from 3000 to 1000ms
+      }, isAdmin ? 500 : 1000); // Shorter cooldown for admins
     });
-  }, [refetch]);
+  }, [refetch, currentUser]);
   
   // Process unread messages and handle admin view special cases
   const rawMessages = messages as Communication[] | null;
@@ -54,6 +57,11 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     if (isOnMessagesTab && unreadMessages.length > 0 && currentUser) {
       console.log("On messages tab with unread messages, refreshing data");
       refreshMessages();
+      
+      // For admin users, do an additional refresh after a delay
+      if (currentUser.role === 'admin') {
+        setTimeout(() => refreshMessages(), 2000);
+      }
     }
   }, [isOnMessagesTab, unreadMessages.length, currentUser, refreshMessages]);
 
@@ -154,7 +162,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       const now = Date.now();
       
       // Admin users need more frequent refreshes to keep badge counts accurate
-      const refreshThreshold = isAdmin ? 30000 : 45000; // 30s for admins, 45s for others
+      const refreshThreshold = isAdmin ? 20000 : 45000; // 20s for admins, 45s for others
       
       if (now - lastRefreshTime.current > refreshThreshold && !refreshInProgress.current) {
         console.log(`Periodic refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
@@ -166,7 +174,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         });
         lastRefreshTime.current = now;
       }
-    }, 30000); // Reduced from 60000 to 30000ms for all users
+    }, isAdmin ? 20000 : 30000); // Reduced to 20s for admins, 30s for others
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);

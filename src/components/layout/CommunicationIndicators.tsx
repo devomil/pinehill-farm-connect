@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
 import { useLocation } from "react-router-dom";
+import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 export const CommunicationIndicators: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +17,7 @@ export const CommunicationIndicators: React.FC = () => {
   const { announcements, refetchData } = useDashboardData();
   const { unreadMessages, refreshMessages } = useCommunications();
   const location = useLocation();
+  const manualRefresh = useRefreshMessages();
   
   // Count unread announcements - exclude those requiring acknowledgment
   const unreadAnnouncements = announcements
@@ -29,13 +30,35 @@ export const CommunicationIndicators: React.FC = () => {
   // Count of unread direct messages (from useCommunications hook)
   const unreadMessageCount = unreadMessages?.length || 0;
 
-  // Refresh data when on communications page to ensure badges are updated
+  // Admin users need more frequent refreshes to keep badges accurate
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Refresh data when on dashboard to ensure badges are updated
   useEffect(() => {
-    if (location.pathname === '/communication') {
+    // Initial refresh when component mounts
+    refreshMessages();
+    refetchData();
+    
+    // Set up automatic refresh interval - more frequent for admins
+    const refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing communications indicators");
       refreshMessages();
       refetchData();
+    }, isAdmin ? 20000 : 30000); // 20s for admins, 30s for regular users
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [refreshMessages, refetchData, isAdmin]);
+
+  // Additional effect to refresh when returning to dashboard
+  useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      console.log("Returned to dashboard, refreshing message indicators");
+      manualRefresh();
+      refetchData();
     }
-  }, [location.pathname, refreshMessages, refetchData]);
+  }, [location.pathname, manualRefresh, refetchData]);
 
   return (
     <div className="flex flex-col space-y-2 mb-4">
@@ -69,7 +92,11 @@ export const CommunicationIndicators: React.FC = () => {
             <Button 
               variant={unreadMessageCount > 0 ? "default" : "ghost"}
               size="sm"
-              onClick={() => navigate("/communication?tab=messages")}
+              onClick={() => {
+                navigate("/communication?tab=messages");
+                // Force immediate refresh when clicking on messages
+                setTimeout(() => manualRefresh(), 200);
+              }}
               className="relative w-full justify-start"
             >
               <MessageSquare className="h-5 w-5 mr-3" />
@@ -82,7 +109,7 @@ export const CommunicationIndicators: React.FC = () => {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p>Direct Messages ({unreadMessageCount} unread)</p>
+            <p>Direct Messages {unreadMessageCount > 0 ? `(${unreadMessageCount} unread)` : ''}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

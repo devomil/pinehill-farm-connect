@@ -16,7 +16,7 @@ interface NavItemProps {
 }
 
 export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { currentUser } = useAuth();
   const { unreadMessages, refreshMessages } = useCommunications();
   const { announcements, refetchData } = useDashboardData();
@@ -24,10 +24,17 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   // Add effect to refresh unread messages when navigating to communications
   useEffect(() => {
     if (pathname.includes('/communication')) {
+      console.log("On communication page, refreshing message data");
       refreshMessages();
       refetchData();
+      
+      // Additional refresh for messages tab to ensure badge counts are accurate
+      if (search.includes('tab=messages')) {
+        // Secondary refresh after a slight delay to catch any updates
+        setTimeout(() => refreshMessages(), 1000);
+      }
     }
-  }, [pathname, refreshMessages, refetchData]);
+  }, [pathname, search, refreshMessages, refetchData]);
   
   // Count unread messages
   const unreadMessageCount = unreadMessages?.length || 0;
