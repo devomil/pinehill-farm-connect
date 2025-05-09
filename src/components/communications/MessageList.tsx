@@ -1,5 +1,5 @@
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { MessageItem } from "./MessageItem";
 import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
@@ -8,6 +8,7 @@ import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare } from "lucide-react";
+import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 interface MessageListProps {
   messages: Communication[];
@@ -24,6 +25,7 @@ interface MessageListProps {
 
 export function MessageList({ messages, isLoading, onRespond, employees, onViewConversation }: MessageListProps) {
   const { currentUser } = useAuth();
+  const refreshMessages = useRefreshMessages();
 
   // Group messages by conversation
   const groupedMessages = useMemo(() => {
@@ -64,6 +66,17 @@ export function MessageList({ messages, isLoading, onRespond, employees, onViewC
       !msg.read_at
     ).length;
   }, [messages, currentUser]);
+  
+  // Auto-refresh messages when component mounts to ensure accurate counts
+  useEffect(() => {
+    refreshMessages();
+    // Set up periodic refreshes
+    const refreshInterval = setInterval(() => {
+      refreshMessages();
+    }, 30000); // Every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, [refreshMessages]);
 
   // Loading state
   if (isLoading) {

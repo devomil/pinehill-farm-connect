@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
@@ -17,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
 
 interface SidebarNavProps {
   collapsed: boolean;
@@ -34,9 +34,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   // Count unread announcements - exclude those requiring acknowledgment and those already read
   const unreadAnnouncementCount = announcements
     ? announcements.filter(a => {
-        // Handle raw announcement data vs processed Announcement type
-        const announcementReadBy = Array.isArray(a.readBy) ? a.readBy : [];
-        return !announcementReadBy.includes(currentUser?.id || '') && 
+        return !isAnnouncementReadByUser(a, currentUser?.id) && 
           !a.requires_acknowledgment;
       }).length
     : 0;

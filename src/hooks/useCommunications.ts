@@ -1,4 +1,3 @@
-
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -14,6 +13,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const { currentUser } = useAuth();
   const location = useLocation();
   const isTimeManagementPage = location.pathname === '/time';
+  const isCommunicationsPage = location.pathname === '/communication';
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshInProgress = useRef<boolean>(false);
   
@@ -26,7 +26,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     const now = Date.now();
     
     // Prevent multiple refreshes within a short time period
-    if (refreshInProgress.current || now - lastRefreshTime.current < 5000) { // Reduced from 10000 to 5000ms
+    if (refreshInProgress.current || now - lastRefreshTime.current < 3000) { // Further reduced from 5000 to 3000ms
       console.log("Communications refresh skipped - too soon or already in progress");
       return Promise.resolve();
     }
@@ -38,11 +38,24 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     return refetch().finally(() => {
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, 3000);
+      }, 1000); // Reduced from 3000 to 1000ms
     });
   }, [refetch]);
   
-  const unreadMessages = useUnreadMessages(messages as Communication[] | null, currentUser);
+  // Process unread messages and handle admin view special cases
+  const rawMessages = messages as Communication[] | null;
+  const unreadMessages = useUnreadMessages(rawMessages, currentUser);
+
+  // Check if we're on the communications page with messages tab active
+  const isOnMessagesTab = isCommunicationsPage && location.search.includes('tab=messages');
+
+  // Effect to clear unread status when viewing messages tab
+  useEffect(() => {
+    if (isOnMessagesTab && unreadMessages.length > 0 && currentUser) {
+      console.log("On messages tab with unread messages, refreshing data");
+      refreshMessages();
+    }
+  }, [isOnMessagesTab, unreadMessages.length, currentUser, refreshMessages]);
 
   const sendMessage = useCallback((params: any) => {
     console.log("Sending message with params:", JSON.stringify(params, null, 2));
@@ -93,7 +106,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         toast.success("Message sent successfully");
         
         // Wait a moment before refreshing to allow database operations to complete
-        setTimeout(() => refreshMessages(), 1000); // Reduced from 2000 to 1000ms
+        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
         return data;
       })
       .catch(error => {
@@ -116,7 +129,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         toast.success(`You have ${params.accept ? 'accepted' : 'declined'} the shift coverage request`);
         
         // Refresh after a short delay
-        setTimeout(() => refreshMessages(), 1000); // Reduced from 2000 to 1000ms
+        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
         return data;
       })
       .catch(error => {
@@ -127,7 +140,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       });
   }, [respondToShiftRequestMutation, refreshMessages]);
 
-  // Use a less aggressive fetch strategy
+  // Use a more aggressive fetch strategy for admins
   useEffect(() => {
     if (!currentUser?.id) return;
     
@@ -135,32 +148,30 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     console.log(`Initial communications fetch for ${currentUser?.email}`);
     refetch();
     
-    // Only set up periodic refresh for time management page or if including shift coverage
-    const shouldUsePeriodicRefresh = isTimeManagementPage || !excludeShiftCoverage;
-    
-    let refreshInterval: number | undefined;
-    
-    if (shouldUsePeriodicRefresh) {
-      refreshInterval = window.setInterval(() => {
-        const now = Date.now();
-        
-        if (now - lastRefreshTime.current > 45000 && !refreshInProgress.current) { // Reduced from 60000 to 45000ms
-          console.log("Periodic refresh of communications data");
-          refreshInProgress.current = true;
-          refetch().finally(() => {
-            setTimeout(() => {
-              refreshInProgress.current = false;
-            }, 3000);
-          });
-          lastRefreshTime.current = now;
-        }
-      }, 60000); // Reduced from 90000 to 60000ms
-    }
+    // More aggressive refresh strategy for admin users
+    const isAdmin = currentUser.role === 'admin';
+    const refreshInterval = window.setInterval(() => {
+      const now = Date.now();
+      
+      // Admin users need more frequent refreshes to keep badge counts accurate
+      const refreshThreshold = isAdmin ? 30000 : 45000; // 30s for admins, 45s for others
+      
+      if (now - lastRefreshTime.current > refreshThreshold && !refreshInProgress.current) {
+        console.log(`Periodic refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
+        refreshInProgress.current = true;
+        refetch().finally(() => {
+          setTimeout(() => {
+            refreshInProgress.current = false;
+          }, 1000);
+        });
+        lastRefreshTime.current = now;
+      }
+    }, 30000); // Reduced from 60000 to 30000ms for all users
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [refetch, currentUser?.id, currentUser?.email, isTimeManagementPage, excludeShiftCoverage]);
+  }, [refetch, currentUser?.id, currentUser?.email, currentUser?.role]);
 
   return {
     messages: messages || [],

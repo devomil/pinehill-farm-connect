@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useRefreshMessages } from "./useRefreshMessages";
+import { toast } from "sonner";
 
 /**
  * Hook to manage marking messages as read when viewing a conversation
@@ -36,9 +37,11 @@ export function useMessageReadStatus(
       
       if (error) {
         console.error("Error marking messages as read:", error);
+        toast.error("Failed to mark messages as read");
       } else {
         // Refresh messages to update unread counts throughout the app
-        refreshMessages();
+        console.log("Messages marked as read, refreshing message counts");
+        setTimeout(() => refreshMessages(), 100); // Small delay to ensure DB operation completes
       }
     };
     

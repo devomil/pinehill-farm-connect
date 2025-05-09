@@ -9,9 +9,11 @@ import { ConversationTabs } from "@/components/communications/ConversationTabs";
 import { useErrorHandling } from "@/hooks/communications/useErrorHandling";
 import { toast } from "sonner";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
+import { useLocation } from "react-router-dom";
 
 export default function Communications() {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees, unfilteredEmployees: allEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
   // Exclude shift coverage messages from the communications page
@@ -23,6 +25,9 @@ export default function Communications() {
 
   // Use our common processing hook to ensure proper types
   const processedMessages = useProcessMessages(messages, currentUser);
+  
+  // Check if messages tab is active
+  const isMessagesTabActive = location.search.includes('tab=messages');
 
   useEffect(() => {
     console.log("Communications page loaded with user:", currentUser?.email);
@@ -31,17 +36,25 @@ export default function Communications() {
     refetchEmployees();
     refreshMessages();
     
-    // Set up refresh interval for regular updates - less frequent
+    // Set up refresh interval for regular updates
     const refreshInterval = setInterval(() => {
       console.log("Auto-refreshing communications data");
       refetchEmployees();
       refreshMessages();
-    }, 60000); // Refresh every minute (increased from 30s)
+    }, 30000); // Refresh every 30 seconds (decreased from 60s)
     
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
   }, [currentUser, refetchEmployees, refreshMessages]);
+  
+  // Special effect for messages tab to ensure we refresh data when viewing messages
+  useEffect(() => {
+    if (isMessagesTabActive && unreadMessages && unreadMessages.length > 0) {
+      console.log("Messages tab is active with unread messages, refreshing data");
+      refreshMessages();
+    }
+  }, [isMessagesTabActive, unreadMessages, refreshMessages]);
 
   // Only attempt auto-retry when connection errors occur and limit to 3 attempts
   useEffect(() => {

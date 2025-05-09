@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
@@ -8,25 +8,34 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Megaphone, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
+import { useLocation } from "react-router-dom";
 
 export const CommunicationIndicators: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { announcements, refetchData } = useDashboardData();
   const { unreadMessages, refreshMessages } = useCommunications();
+  const location = useLocation();
   
   // Count unread announcements - exclude those requiring acknowledgment
   const unreadAnnouncements = announcements
     ? announcements.filter(a => {
-        // Handle raw announcement data vs processed Announcement type
-        const announcementReadBy = Array.isArray(a.readBy) ? a.readBy : [];
-        return !announcementReadBy.includes(currentUser?.id || '') && 
+        return !isAnnouncementReadByUser(a, currentUser?.id) && 
           !a.requires_acknowledgment;
       }).length
     : 0;
   
   // Count of unread direct messages (from useCommunications hook)
   const unreadMessageCount = unreadMessages?.length || 0;
+
+  // Refresh data when on communications page to ensure badges are updated
+  useEffect(() => {
+    if (location.pathname === '/communication') {
+      refreshMessages();
+      refetchData();
+    }
+  }, [location.pathname, refreshMessages, refetchData]);
 
   return (
     <div className="flex flex-col space-y-2 mb-4">
