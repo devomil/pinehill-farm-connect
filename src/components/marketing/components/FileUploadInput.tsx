@@ -40,11 +40,11 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
     <div>
       <label className="block text-sm font-medium mb-1">File</label>
       <div className="text-sm text-muted-foreground mb-2">
-        Max file size: 200MB
+        Max file size: 195MB (to ensure successful upload)
       </div>
       {file && (
         <div className="text-sm mb-2 p-2 bg-muted rounded-md">
-          Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+          Selected: {file.name} ({formatFileSize(file.size)})
         </div>
       )}
       <Input

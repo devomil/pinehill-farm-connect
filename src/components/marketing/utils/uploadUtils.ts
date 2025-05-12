@@ -2,7 +2,8 @@
 import { toast } from "sonner";
 
 // Constants for file uploads
-export const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB for all content types
+// Ensuring we're slightly under Supabase's actual limit to provide buffer
+export const MAX_FILE_SIZE = 195 * 1024 * 1024; // 195MB to provide some buffer for API overhead
 
 export const ACCEPTED_TYPES = {
   image: "image/*",
@@ -23,7 +24,7 @@ export const formatFileSize = (bytes: number): string => {
 export const validateFileSize = (file: File, maxSize: number): { isValid: boolean; errorMessage?: string } => {
   if (file.size > maxSize) {
     const sizeMB = Math.round(maxSize / (1024 * 1024));
-    const errorMessage = `File size exceeds the ${sizeMB}MB limit`;
+    const errorMessage = `File size (${formatFileSize(file.size)}) exceeds the ${sizeMB}MB limit`;
     return { isValid: false, errorMessage };
   }
   return { isValid: true };
