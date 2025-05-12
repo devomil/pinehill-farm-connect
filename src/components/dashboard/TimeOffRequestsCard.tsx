@@ -29,6 +29,9 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
     }
   };
   
+  // Safe guard against undefined requests
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  
   return (
     <Card>
       <CardHeader>
@@ -62,7 +65,7 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
             <div className="animate-pulse h-6 bg-muted rounded w-3/4"></div>
             <div className="animate-pulse h-6 bg-muted rounded w-2/3"></div>
           </div>
-        ) : Array.isArray(requests) && requests.length === 0 ? (
+        ) : safeRequests.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             <p>No pending time off requests</p>
             {onRefresh && (
@@ -74,7 +77,7 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
           </div>
         ) : (
           <ul className="space-y-2">
-            {Array.isArray(requests) && requests.map((timeOff) => (
+            {safeRequests.map((timeOff) => (
               <li key={timeOff.id} className="flex justify-between items-center">
                 <span className="flex flex-col">
                   {showEmployeeName && timeOff.profiles && (

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -13,7 +13,7 @@ import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { addMonths, subMonths } from "date-fns";
 import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 import { toast } from "sonner";
@@ -35,13 +35,15 @@ export default function Dashboard() {
   const [date, setDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"month" | "team">("month");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [retryCount, setRetryCount] = useState(0);
 
   // Add auto-refresh logic for dashboard data
   useEffect(() => {
     console.log("Setting up dashboard auto-refresh");
     
     // Initial fetch with slight delay to let the page render first
-    setTimeout(() => {
+    const initialFetchTimer = setTimeout(() => {
+      console.log("Initial dashboard data fetch");
       refetchData();
     }, 500);
     
@@ -51,8 +53,25 @@ export default function Dashboard() {
       refetchData();
     }, 30000);
     
-    return () => clearInterval(intervalId);
+    return () => {
+      clearTimeout(initialFetchTimer);
+      clearInterval(intervalId);
+    };
   }, [refetchData]);
+  
+  // Add effect to retry fetching if there was an error
+  useEffect(() => {
+    if (dashboardDataError && currentUser && !dashboardDataLoading && retryCount < 3) {
+      console.log("Detected error in dashboard data, will retry in 3 seconds", dashboardDataError);
+      const timer = setTimeout(() => {
+        console.log("Retrying dashboard data fetch after error");
+        setRetryCount(prev => prev + 1);
+        refetchData();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [dashboardDataError, currentUser, dashboardDataLoading, refetchData, retryCount]);
   
   // Debug log for shift coverage messages
   useEffect(() => {
@@ -85,6 +104,7 @@ export default function Dashboard() {
   const handleRefreshData = useCallback(() => {
     toast.info("Refreshing dashboard data...");
     console.log("Manual dashboard refresh triggered");
+    setRetryCount(prev => prev + 1);
     refetchData();
   }, [refetchData]);
 
@@ -122,9 +142,9 @@ export default function Dashboard() {
               <TrainingCard trainings={assignedTrainings} />
             )}
 
-            {isAdmin && pendingTimeOff && (
+            {isAdmin && (
               <TimeOffRequestsCard 
-                requests={pendingTimeOff} 
+                requests={pendingTimeOff || []} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}

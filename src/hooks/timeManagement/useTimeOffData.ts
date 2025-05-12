@@ -17,6 +17,7 @@ export function useTimeOffData(
   const [error, setError] = useState<Error | null>(null);
   const [initialFetchDone, setInitialFetchDone] = useState(false);
   const lastToastTimeRef = useRef(0);
+  const fetchAttempts = useRef(0);
 
   // Local throttled toast function
   const showThrottledToast = useCallback(
@@ -57,12 +58,21 @@ export function useTimeOffData(
 
   // Main data fetch function
   const fetchRequests = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setLoading(false);
+      setError(null);
+      setTimeOffRequests([]);
+      return;
+    }
     
     // Don't show loading state for subsequent refreshes if we already have data
     if (!initialFetchDone) {
       setLoading(true);
     }
+    
+    // Track fetch attempts
+    fetchAttempts.current += 1;
+    console.log(`Attempting to fetch time off requests (attempt #${fetchAttempts.current})`);
     
     setError(null);
     
@@ -71,7 +81,7 @@ export function useTimeOffData(
       
       let query;
       
-      // For admins, we need to fetch all requests but without trying to join with profiles
+      // For admins, we need to fetch all requests 
       if (currentUser.role === 'admin') {
         console.log("Admin user, fetching all time off requests");
         query = supabase
@@ -131,12 +141,13 @@ export function useTimeOffData(
       }
       
       setInitialFetchDone(true);
+      fetchAttempts.current = 0; // Reset attempts counter on success
     } catch (err: any) {
       console.error("Failed to fetch time-off requests:", err);
       setError(err);
       
       // Only show error for manual retries, not initial load failures
-      if (retryCount > 0) {
+      if (retryCount > 0 || fetchAttempts.current > 1) {
         showThrottledToast("Failed to fetch time-off requests. Please try again.", 'error');
       }
     } finally {
@@ -151,6 +162,14 @@ export function useTimeOffData(
       fetchRequests();
     }
   }, [currentUser, fetchRequests, initialFetchDone]);
+
+  // Retry on retryCount change
+  useEffect(() => {
+    if (currentUser && retryCount > 0) {
+      console.log(`Retry fetch of time off requests triggered (retry #${retryCount})`);
+      fetchRequests();
+    }
+  }, [retryCount, currentUser, fetchRequests]);
 
   // Derived state
   const pendingRequests = timeOffRequests.filter(
