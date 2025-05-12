@@ -43,9 +43,15 @@ export function useTimeOffDashboard(
         userId: r.user_id
       })) as unknown as TimeOffRequest[] : [];
     },
-    enabled: !!currentUser?.id && isAdmin,
+    enabled: Boolean(currentUser?.id) && isAdmin,
     staleTime: 30000, // Add stale time to reduce unnecessary refetches
-    retry: 3
+    retry: 3,
+    // Add safety to prevent the error
+    meta: {
+      onError: (error: any) => {
+        console.error("Error in pendingTimeOff query:", error);
+      }
+    }
   });
 
   // Fetch user's own time off requests
@@ -76,17 +82,24 @@ export function useTimeOffDashboard(
         userId: r.user_id
       })) as unknown as TimeOffRequest[] : [];
     },
-    enabled: !!currentUser?.id,
+    enabled: Boolean(currentUser?.id),
     staleTime: 30000,
-    retry: 3
+    retry: 3,
+    // Add safety to prevent the error
+    meta: {
+      onError: (error: any) => {
+        console.error("Error in userTimeOff query:", error);
+      }
+    }
   });
 
   const error = pendingTimeOffError || userTimeOffError;
-  const loading = (!pendingTimeOff && isAdmin) || (!userTimeOff && !!currentUser?.id);
+  const loading = (!pendingTimeOff && isAdmin && Boolean(currentUser?.id)) || 
+                  (!userTimeOff && Boolean(currentUser?.id));
 
   return {
-    pendingTimeOff,
-    userTimeOff,
+    pendingTimeOff: pendingTimeOff || [],
+    userTimeOff: userTimeOff || [],
     error,
     loading,
     refetchPendingTimeOff,

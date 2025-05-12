@@ -34,15 +34,37 @@ export function useDashboardRefetch(
     isRefetching.current = true;
     lastRefetchTime.current = now;
     
-    // Force refetches for improved reliability
-    if (currentUserId) {
+    // Only proceed if we have a valid user ID
+    if (!currentUserId) {
+      console.log("No user ID available, skipping refetch");
+      isRefetching.current = false;
+      return;
+    }
+    
+    // Use a try-catch for additional safety
+    try {
+      // Force refetches with safety checks
       setTimeout(() => {
         try {
-          refetchFunctions.refetchPendingTimeOff();
-          refetchFunctions.refetchUserTimeOff();
-          refetchFunctions.refetchShiftCoverage();
-          refetchFunctions.refetchAnnouncements();
-          refetchFunctions.refetchTrainings();
+          if (typeof refetchFunctions.refetchPendingTimeOff === 'function') {
+            refetchFunctions.refetchPendingTimeOff();
+          }
+          
+          if (typeof refetchFunctions.refetchUserTimeOff === 'function') {
+            refetchFunctions.refetchUserTimeOff();
+          }
+          
+          if (typeof refetchFunctions.refetchShiftCoverage === 'function') {
+            refetchFunctions.refetchShiftCoverage();
+          }
+          
+          if (typeof refetchFunctions.refetchAnnouncements === 'function') {
+            refetchFunctions.refetchAnnouncements();
+          }
+          
+          if (typeof refetchFunctions.refetchTrainings === 'function') {
+            refetchFunctions.refetchTrainings();
+          }
         } catch (err) {
           console.error("Error during refetch:", err);
         } finally {
@@ -52,13 +74,11 @@ export function useDashboardRefetch(
           }, 3000);
         }
       }, 100);
-    } else {
+    } catch (err) {
+      console.error("Error initiating refetch:", err);
       isRefetching.current = false;
     }
-  }, [
-    currentUserId,
-    refetchFunctions
-  ]);
+  }, [currentUserId, refetchFunctions]);
 
   return {
     refetchData
