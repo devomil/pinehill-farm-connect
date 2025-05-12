@@ -8,6 +8,14 @@ interface AnnouncementStatsChartProps {
 }
 
 export const AnnouncementStatsChart = ({ data }: AnnouncementStatsChartProps) => {
+  // Transform data for the chart if needed
+  const chartData = data.map(item => ({
+    title: item.title,
+    read_count: item.read_count,
+    acknowledged_count: item.acknowledged_count,
+    total_users: item.total_users
+  }));
+
   return (
     <ChartContainer
       config={{
@@ -18,7 +26,7 @@ export const AnnouncementStatsChart = ({ data }: AnnouncementStatsChartProps) =>
       className="h-[250px]"
     >
       <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
           <XAxis 
             dataKey="title" 
             angle={-45}

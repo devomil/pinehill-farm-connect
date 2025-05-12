@@ -16,6 +16,7 @@ interface CalendarContentProps {
   onViewModeChange: (value: "month" | "team") => void;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
+  clickable?: boolean;
 }
 
 export function CalendarContent({
@@ -27,9 +28,10 @@ export function CalendarContent({
   onViewModeChange,
   onPreviousMonth,
   onNextMonth,
+  clickable = false,
 }: CalendarContentProps) {
   return (
-    <Card>
+    <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Schedule</CardTitle>
