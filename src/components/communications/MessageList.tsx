@@ -68,8 +68,11 @@ export function MessageList({
   }, [messages, currentUser]);
 
   // Count unread direct messages - explicitly only count direct message types
+  // and ensure they are actually unread and directed to the current user
   const unreadCount = unreadMessages?.filter(
-    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
+    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
+           msg.recipient_id === currentUser?.id &&
+           msg.read_at === null
   ).length || 0;
   
   // Auto-refresh messages when component mounts to ensure accurate counts

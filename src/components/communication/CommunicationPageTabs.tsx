@@ -21,11 +21,13 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onTabChange
 }) => {
   // Filter direct messages only (explicitly include only direct message types)
+  // and ensure only truly unread messages are counted
   const filteredUnreadMessages = unreadMessages 
     ? unreadMessages.filter(msg => 
-        msg.type === 'general' || 
+        (msg.type === 'general' || 
         msg.type === 'shift_coverage' || 
-        msg.type === 'urgent')
+        msg.type === 'urgent') &&
+        msg.read_at === null)
     : [];
     
   // Group unread messages by sender for better visibility

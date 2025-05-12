@@ -1,3 +1,4 @@
+
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -52,6 +53,46 @@ export const useCommunications = (excludeShiftCoverage = false) => {
 
   // Check if we're on the communications page with messages tab active
   const isOnMessagesTab = isCommunicationsPage && location.search.includes('tab=messages');
+
+  // Effect to mark all messages as read when an admin views the messages tab
+  useEffect(() => {
+    if (isOnMessagesTab && currentUser && currentUser.role === 'admin') {
+      // For admin users, auto-mark all messages as read when viewing the messages tab
+      const markAllMessagesAsRead = async () => {
+        const trueUnreadMessages = unreadMessages.filter(msg => 
+          (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') && 
+          msg.read_at === null && 
+          msg.recipient_id === currentUser.id
+        );
+        
+        if (trueUnreadMessages.length > 0) {
+          console.log(`Admin user on messages tab, auto-marking ${trueUnreadMessages.length} messages as read`);
+          
+          const messageIds = trueUnreadMessages.map(msg => msg.id);
+          
+          try {
+            const { error } = await supabase
+              .from('employee_communications')
+              .update({ read_at: new Date().toISOString() })
+              .in('id', messageIds);
+              
+            if (!error) {
+              console.log("Admin: Successfully marked all messages as read");
+              // Force refresh to update all UI indicators
+              setTimeout(() => refreshMessages(), 500);
+              setTimeout(() => refreshMessages(), 1500);
+            } else {
+              console.error("Admin: Error auto-marking messages as read:", error);
+            }
+          } catch (err) {
+            console.error("Error in auto-mark messages as read:", err);
+          }
+        }
+      };
+      
+      markAllMessagesAsRead();
+    }
+  }, [isOnMessagesTab, unreadMessages, currentUser, refreshMessages]);
 
   // Effect to clear unread status when viewing messages tab
   useEffect(() => {

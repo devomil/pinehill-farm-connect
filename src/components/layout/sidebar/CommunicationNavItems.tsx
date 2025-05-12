@@ -38,7 +38,9 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   
   // Count unread messages - explicitly only count direct message types
   const unreadMessageCount = unreadMessages?.filter(
-    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
+    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') && 
+           msg.recipient_id === currentUser?.id &&
+           msg.read_at === null
   ).length || 0;
   
   // Count unread announcements - exclude those requiring acknowledgment and those already read

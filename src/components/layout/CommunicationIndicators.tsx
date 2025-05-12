@@ -28,9 +28,11 @@ export const CommunicationIndicators: React.FC = () => {
       }).length
     : 0;
   
-  // Count of unread direct messages - explicitly only count direct message types
+  // Count of unread direct messages - explicitly only count unread direct message types sent to current user
   const unreadMessageCount = unreadMessages?.filter(
-    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
+    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
+           msg.recipient_id === currentUser?.id &&
+           msg.read_at === null
   ).length || 0;
 
   // Admin users need more frequent refreshes to keep badges accurate
