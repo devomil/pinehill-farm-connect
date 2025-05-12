@@ -5,12 +5,15 @@ import { Calendar } from "lucide-react";
 
 interface AdminTimeOffCardProps {
   count: number;
+  clickable?: boolean;
 }
 
-export const AdminTimeOffCard: React.FC<AdminTimeOffCardProps> = ({ count }) => {
+export const AdminTimeOffCard: React.FC<AdminTimeOffCardProps> = ({ count, clickable = false }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="bg-amber-50">
+      <Card 
+        className={`bg-amber-50 ${clickable ? "cursor-pointer hover:bg-amber-100 transition-colors" : ""}`}
+      >
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>

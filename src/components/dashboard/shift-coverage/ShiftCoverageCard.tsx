@@ -11,6 +11,7 @@ import { ShiftCoverageLoading } from "./ShiftCoverageLoading";
 import { ShiftCoverageError } from "./ShiftCoverageError";
 import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
+import { useNavigate } from "react-router-dom";
 
 interface ShiftCoverageCardProps {
   messages: Communication[];
@@ -18,6 +19,7 @@ interface ShiftCoverageCardProps {
   loading?: boolean;
   error?: Error | null;
   onRefresh?: () => void;
+  clickable?: boolean;
 }
 
 export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
@@ -25,11 +27,13 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   currentUser,
   loading,
   error,
-  onRefresh
+  onRefresh,
+  clickable = false
 }) => {
   // Store refresh state to prevent multiple rapid refreshes
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const lastRefreshTime = React.useRef<number>(0);
+  const navigate = useNavigate();
   
   // Ensure we have safe values for messages
   const safeMessages = React.useMemo(() => messages || [], [messages]);
@@ -47,7 +51,12 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
     }
   }, [safeMessages.length, currentUser?.id, shiftCoverageRequests?.length, error]);
 
-  const handleRefresh = () => {
+  const handleRefresh = (e: React.MouseEvent) => {
+    // Stop propagation to prevent card click from triggering
+    if (e) {
+      e.stopPropagation();
+    }
+    
     const now = Date.now();
     // Prevent refreshing more than once every 3 seconds
     if (isRefreshing || now - lastRefreshTime.current < 3000) {
@@ -71,9 +80,18 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       }, 3000);
     }
   };
+  
+  const handleCardClick = () => {
+    if (clickable) {
+      navigate("/time?tab=shift-coverage");
+    }
+  };
 
   return (
-    <Card>
+    <Card 
+      className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}
+      onClick={clickable ? handleCardClick : undefined}
+    >
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Shift Coverage Requests</CardTitle>
@@ -94,17 +112,17 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
       </CardHeader>
       <CardContent>
         {error ? (
-          <ShiftCoverageError onRefresh={handleRefresh} inline />
+          <ShiftCoverageError onRefresh={(e) => handleRefresh(e)} inline />
         ) : loading ? (
           <ShiftCoverageLoading />
         ) : shiftCoverageRequests && shiftCoverageRequests.length > 0 ? (
           <ShiftCoverageList 
             shiftCoverageRequests={shiftCoverageRequests}
             currentUser={currentUser}
-            onRefresh={handleRefresh}
+            onRefresh={(e) => handleRefresh(e)}
           />
         ) : (
-          <ShiftCoverageEmpty onRefresh={handleRefresh} />
+          <ShiftCoverageEmpty onRefresh={(e) => handleRefresh(e)} />
         )}
       </CardContent>
     </Card>

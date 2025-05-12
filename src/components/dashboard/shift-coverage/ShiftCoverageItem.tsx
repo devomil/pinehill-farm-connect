@@ -30,6 +30,11 @@ export const ShiftCoverageItem: React.FC<ShiftCoverageItemProps> = ({
     return employee?.name || 'Unknown Employee';
   };
   
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+  
   return (
     <div className="flex justify-between items-center py-2 border-b last:border-0">
       <div>
@@ -50,7 +55,7 @@ export const ShiftCoverageItem: React.FC<ShiftCoverageItemProps> = ({
           <Clock className="h-3 w-3 mr-1" />
           Pending
         </Badge>
-        <Link to="/time?tab=shift-coverage">
+        <Link to="/time?tab=shift-coverage" onClick={handleButtonClick}>
           <Button size="sm" variant="ghost">View</Button>
         </Link>
       </div>

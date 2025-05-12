@@ -13,6 +13,7 @@ interface TimeOffRequestsCardProps {
   error?: Error | null;
   onRefresh?: () => void;
   showEmployeeName?: boolean;
+  clickable?: boolean;
 }
 
 export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ 
@@ -20,13 +21,19 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
   loading,
   error,
   onRefresh,
-  showEmployeeName = false
+  showEmployeeName = false,
+  clickable = false
 }) => {
   // Store refresh state to prevent multiple rapid refreshes
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const lastRefreshTime = React.useRef<number>(0);
   
-  const handleRefresh = () => {
+  const handleRefresh = (e: React.MouseEvent) => {
+    // Stop event propagation to prevent card click handler from firing
+    if (e) {
+      e.stopPropagation();
+    }
+    
     const now = Date.now();
     // Prevent refreshing more than once every 3 seconds
     if (isRefreshing || now - lastRefreshTime.current < 3000) {
@@ -57,7 +64,7 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
   );
   
   return (
-    <Card>
+    <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Time Off Requests</CardTitle>

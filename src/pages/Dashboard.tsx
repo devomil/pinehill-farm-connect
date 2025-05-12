@@ -16,6 +16,7 @@ import { useState } from "react";
 import { addMonths, subMonths } from "date-fns";
 import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [date, setDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"month" | "team">("month");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const navigate = useNavigate();
 
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
@@ -42,6 +44,27 @@ export default function Dashboard() {
 
   const goToNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
+  // Navigation handlers for dashboard widgets
+  const handleTimeOffClick = () => {
+    navigate("/time?tab=time-off");
+  };
+
+  const handleTrainingClick = () => {
+    navigate("/training");
+  };
+
+  const handleAnnouncementsClick = () => {
+    navigate("/communication?tab=announcements");
+  };
+
+  const handleCalendarClick = () => {
+    navigate("/calendar");
+  };
+
+  const handleAdminTimeOffClick = () => {
+    navigate("/time?tab=time-off-approvals");
   };
 
   return (
@@ -52,13 +75,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Priority alert for admins - full width */}
           {isAdmin && pendingTimeOff && (
-            <div className="col-span-full">
-              <AdminTimeOffCard count={pendingTimeOff.length || 0} />
+            <div className="col-span-full" onClick={handleAdminTimeOffClick}>
+              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} />
             </div>
           )}
 
           {/* Left column - Calendar */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3" onClick={handleCalendarClick}>
             <CalendarContent
               date={date}
               currentMonth={currentMonth}
@@ -68,6 +91,7 @@ export default function Dashboard() {
               onViewModeChange={setViewMode}
               onPreviousMonth={goToPreviousMonth}
               onNextMonth={goToNextMonth}
+              clickable={true}
             />
           </div>
           
@@ -78,32 +102,34 @@ export default function Dashboard() {
           
           {/* Full width trainings section if applicable */}
           {assignedTrainings && assignedTrainings.length > 0 && (
-            <div className="col-span-full">
-              <TrainingCard trainings={assignedTrainings} />
+            <div className="col-span-full" onClick={handleTrainingClick}>
+              <TrainingCard trainings={assignedTrainings} clickable={true} />
             </div>
           )}
 
           {/* Admin time off requests */}
           {isAdmin && (
-            <div className="md:col-span-2">
+            <div className="md:col-span-2" onClick={handleTimeOffClick}>
               <TimeOffRequestsCard 
                 requests={pendingTimeOff || []} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
                 showEmployeeName={true}
+                clickable={true}
               />
             </div>
           )}
 
           {/* User time off requests */}
           {!isAdmin && (
-            <div className="md:col-span-2">
+            <div className="md:col-span-2" onClick={handleTimeOffClick}>
               <TimeOffRequestsCard 
                 requests={userTimeOff || []} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
+                clickable={true}
               />
             </div>
           )}
@@ -117,6 +143,7 @@ export default function Dashboard() {
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
+                clickable={true}
               />
             </div>
           )}
@@ -124,12 +151,12 @@ export default function Dashboard() {
           {/* Announcements section */}
           {announcements && announcements.length > 0 && (
             <>
-              <div className="md:col-span-2">
-                <AnnouncementsCard announcements={announcements} />
+              <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
+                <AnnouncementsCard announcements={announcements} clickable={true} />
               </div>
               {isAdmin && (
-                <div className="md:col-span-2">
-                  <AnnouncementStats />
+                <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
+                  <AnnouncementStats clickable={true} />
                 </div>
               )}
             </>

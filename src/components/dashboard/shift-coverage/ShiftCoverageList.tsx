@@ -10,7 +10,7 @@ import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 interface ShiftCoverageListProps {
   shiftCoverageRequests: Communication[];
   currentUser: User;
-  onRefresh: () => void;
+  onRefresh: (e: React.MouseEvent) => void;
 }
 
 export const ShiftCoverageList: React.FC<ShiftCoverageListProps> = ({
@@ -43,6 +43,11 @@ export const ShiftCoverageList: React.FC<ShiftCoverageListProps> = ({
     return <ShiftCoverageEmpty onRefresh={onRefresh} />;
   }
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+
   return (
     <div className="space-y-2">
       {filteredMessages.map((message) => (
@@ -55,7 +60,7 @@ export const ShiftCoverageList: React.FC<ShiftCoverageListProps> = ({
       
       {hasRequests && (
         <div className="pt-2 text-center">
-          <Link to="/time?tab=shift-coverage">
+          <Link to="/time?tab=shift-coverage" onClick={handleButtonClick}>
             <Button variant="link" size="sm">
               View All Requests
             </Button>

@@ -5,11 +5,12 @@ import { AlertTriangle } from "lucide-react";
 
 interface TrainingCardProps {
   trainings: any[];
+  clickable?: boolean;
 }
 
-export const TrainingCard: React.FC<TrainingCardProps> = ({ trainings }) => {
+export const TrainingCard: React.FC<TrainingCardProps> = ({ trainings, clickable = false }) => {
   return (
-    <Card>
+    <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Assigned Training</CardTitle>

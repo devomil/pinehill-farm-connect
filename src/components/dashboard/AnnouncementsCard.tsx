@@ -8,12 +8,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementsCardProps {
   announcements: any[];
+  clickable?: boolean;
 }
 
-export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements }) => {
+export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements, clickable = false }) => {
   const { toast } = useToast();
 
-  const handleAttachmentAction = async (attachment: any) => {
+  const handleAttachmentAction = async (attachment: any, event: React.MouseEvent) => {
+    // Stop event propagation to prevent card click handler from firing
+    event.stopPropagation();
+    
     try {
       console.log("Dashboard - handling attachment action:", attachment);
       
@@ -72,7 +76,7 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
   };
 
   return (
-    <Card>
+    <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Recent Announcements</CardTitle>
@@ -105,10 +109,10 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
               </div>
               
               {announcement.attachments && announcement.attachments.length > 0 && (
-                <div className="mt-2">
+                <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                   <AnnouncementAttachmentsList 
                     attachments={announcement.attachments}
-                    onAttachmentAction={handleAttachmentAction}
+                    onAttachmentAction={(attachment) => (e) => handleAttachmentAction(attachment, e)}
                     compact={true}
                   />
                 </div>
