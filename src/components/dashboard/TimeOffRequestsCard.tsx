@@ -5,6 +5,7 @@ import { Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TimeOffRequest } from "@/types/timeManagement";
+import { toast } from "sonner";
 
 interface TimeOffRequestsCardProps {
   requests: TimeOffRequest[];
@@ -21,13 +22,20 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
   onRefresh,
   showEmployeeName = false
 }) => {
+  const handleRefresh = () => {
+    if (onRefresh) {
+      toast.info("Refreshing time off requests...");
+      onRefresh();
+    }
+  };
+  
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Time Off Requests</CardTitle>
           {onRefresh && (
-            <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh requests">
+            <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh requests">
               <RefreshCw className="h-4 w-4 text-muted-foreground" />
             </Button>
           )}
@@ -42,7 +50,7 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
             <AlertDescription className="flex justify-between w-full items-center">
               <span>Failed to load time off requests</span>
               {onRefresh && (
-                <Button size="sm" variant="ghost" onClick={onRefresh}>
+                <Button size="sm" variant="ghost" onClick={handleRefresh}>
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Retry
                 </Button>
@@ -54,13 +62,19 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
             <div className="animate-pulse h-6 bg-muted rounded w-3/4"></div>
             <div className="animate-pulse h-6 bg-muted rounded w-2/3"></div>
           </div>
-        ) : requests.length === 0 ? (
+        ) : Array.isArray(requests) && requests.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
-            No pending time off requests
+            <p>No pending time off requests</p>
+            {onRefresh && (
+              <Button variant="ghost" size="sm" onClick={handleRefresh} className="mt-2">
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Refresh
+              </Button>
+            )}
           </div>
         ) : (
           <ul className="space-y-2">
-            {requests.map((timeOff) => (
+            {Array.isArray(requests) && requests.map((timeOff) => (
               <li key={timeOff.id} className="flex justify-between items-center">
                 <span className="flex flex-col">
                   {showEmployeeName && timeOff.profiles && (

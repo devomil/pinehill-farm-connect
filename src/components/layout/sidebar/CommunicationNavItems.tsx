@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
-import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
 interface NavItemProps {
   collapsed: boolean;

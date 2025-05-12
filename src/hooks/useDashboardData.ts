@@ -2,23 +2,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TimeOffRequest } from "@/types/timeManagement";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
-import { Announcement } from "@/types";
 import { transformRawAnnouncements } from "@/utils/announcementUtils";
 
 export function useDashboardData() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const [retryCount, setRetryCount] = useState(0);
+  
+  // Log when the hook is initialized or retries
+  useEffect(() => {
+    console.log(`useDashboardData: Initialized with retryCount=${retryCount}, user=${currentUser?.id}, isAdmin=${isAdmin}`);
+  }, [retryCount, currentUser, isAdmin]);
 
   // Fetch pending time off requests (for admin)
   const { data: pendingTimeOff, error: pendingTimeOffError, refetch: refetchPendingTimeOff } = useQuery({
     queryKey: ['pendingTimeOff', retryCount],
     queryFn: async () => {
       if (!isAdmin) return [];
+      
+      console.log("Fetching pending time off requests for admin");
       
       // Join with profiles to get employee names
       const { data, error } = await supabase
@@ -29,7 +35,12 @@ export function useDashboardData() {
         `)
         .eq('status', 'pending');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching pending time off:", error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} pending time off requests`);
       
       // Transform the data to match our TimeOffRequest type with both snake_case and camelCase
       return data ? data.map((r: any) => ({
@@ -39,7 +50,7 @@ export function useDashboardData() {
         userId: r.user_id
       })) as unknown as TimeOffRequest[] : [];
     },
-    enabled: isAdmin,
+    enabled: !!currentUser?.id && isAdmin,
     staleTime: 30000, // Add stale time to reduce unnecessary refetches
     retry: 3
   });
@@ -48,12 +59,21 @@ export function useDashboardData() {
   const { data: userTimeOff, error: userTimeOffError, refetch: refetchUserTimeOff } = useQuery({
     queryKey: ['userTimeOff', currentUser?.id, retryCount],
     queryFn: async () => {
+      if (!currentUser?.id) return [];
+      
+      console.log(`Fetching time off requests for user ${currentUser.id}`);
+      
       const { data, error } = await supabase
         .from('time_off_requests')
         .select('*')
-        .eq('user_id', currentUser?.id);
+        .eq('user_id', currentUser.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user time off:", error);
+        throw error;
+      }
+      
+      console.log(`Retrieved ${data?.length || 0} time off requests for user`);
       
       // Transform the data to match our TimeOffRequest type
       return data ? data.map((r: any) => ({
@@ -72,6 +92,8 @@ export function useDashboardData() {
   const { data: shiftCoverageMessagesRaw, error: shiftCoverageError, refetch: refetchShiftCoverage } = useQuery({
     queryKey: ['shiftCoverage', currentUser?.id, retryCount],
     queryFn: async () => {
+      if (!currentUser?.id) return [];
+      
       console.log(`Fetching shift coverage data for ${currentUser?.name} (${currentUser?.id}), role: ${currentUser?.role}`);
       
       try {
@@ -91,7 +113,7 @@ export function useDashboardData() {
             .from('employee_communications')
             .select('*')
             .eq('type', 'shift_coverage')
-            .or(`sender_id.eq.${currentUser?.id},recipient_id.eq.${currentUser?.id}`);
+            .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`);
         }
         
         const { data: messages, error: messagesError } = await messageQuery;
@@ -134,6 +156,7 @@ export function useDashboardData() {
           const messagesWithRequests = messages.map(msg => {
             const shiftRequests = requestsByCommId[msg.id] || [];
             
+            // Add debug info for each message
             if (shiftRequests.length > 0) {
               console.log(`Message ${msg.id} has ${shiftRequests.length} shift requests`);
               const sampleRequest = shiftRequests[0];
@@ -224,7 +247,7 @@ export function useDashboardData() {
   }
 
   // Fetch assigned trainings
-  const { data: assignedTrainings, error: assignedTrainingsError } = useQuery({
+  const { data: assignedTrainings, error: assignedTrainingsError, refetch: refetchTrainings } = useQuery({
     queryKey: ['assignedTrainings', currentUser?.id, retryCount],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -251,7 +274,25 @@ export function useDashboardData() {
   const refetchData = useCallback(() => {
     console.log("Manually refreshing dashboard data");
     setRetryCount(prev => prev + 1);
-  }, []);
+    
+    // Force refetches for improved reliability
+    if (currentUser?.id) {
+      setTimeout(() => {
+        refetchPendingTimeOff();
+        refetchUserTimeOff();
+        refetchShiftCoverage();
+        refetchAnnouncements();
+        refetchTrainings();
+      }, 100);
+    }
+  }, [
+    currentUser?.id, 
+    refetchPendingTimeOff, 
+    refetchUserTimeOff, 
+    refetchShiftCoverage, 
+    refetchAnnouncements,
+    refetchTrainings
+  ]);
 
   // Determine if any data is still loading
   const loading = (!pendingTimeOff && isAdmin) || 

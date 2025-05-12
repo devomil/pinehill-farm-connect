@@ -40,8 +40,10 @@ export default function Dashboard() {
   useEffect(() => {
     console.log("Setting up dashboard auto-refresh");
     
-    // Initial fetch
-    refetchData();
+    // Initial fetch with slight delay to let the page render first
+    setTimeout(() => {
+      refetchData();
+    }, 500);
     
     // Auto refresh every 30 seconds
     const intervalId = setInterval(() => {
@@ -130,9 +132,9 @@ export default function Dashboard() {
               />
             )}
 
-            {userTimeOff && !isAdmin && (
+            {!isAdmin && (
               <TimeOffRequestsCard 
-                requests={userTimeOff} 
+                requests={userTimeOff || []} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}

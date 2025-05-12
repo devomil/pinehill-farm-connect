@@ -1,8 +1,9 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { User } from '@/types';
 import { useTimeOffData } from './useTimeOffData';
 import { useTimeOffRealtime } from './useTimeOffRealtime';
+import { toast } from 'sonner';
 
 /**
  * Main hook that combines data fetching and realtime subscriptions
@@ -19,9 +20,26 @@ export function useTimeOffRequests(currentUser: User | null, retryCount: number)
     initialFetchDone
   } = useTimeOffData(currentUser, retryCount);
   
+  // Log when the hook is called
+  useEffect(() => {
+    console.log(`useTimeOffRequests: Initialized with user=${currentUser?.id}, retryCount=${retryCount}`);
+    console.log(`useTimeOffRequests: Loading=${loading}, Error=${error ? 'Yes' : 'No'}, Initial fetch done=${initialFetchDone}`);
+    console.log(`useTimeOffRequests: Found ${timeOffRequests?.length || 0} total requests, ${pendingRequests?.length || 0} pending, ${userRequests?.length || 0} for current user`);
+  }, [currentUser, retryCount, loading, error, initialFetchDone, timeOffRequests, pendingRequests, userRequests]);
+  
+  // Force initial fetch if not done yet
+  useEffect(() => {
+    if (currentUser && !initialFetchDone && !loading) {
+      console.log("Forcing initial time off requests fetch");
+      fetchRequests();
+    }
+  }, [currentUser, initialFetchDone, loading, fetchRequests]);
+  
   // Memoize the refresh callback to prevent unnecessary resubscriptions
   const refreshCallback = useCallback(() => {
+    console.log("Real-time update triggered refresh of time off requests");
     fetchRequests();
+    toast.info("Time off requests updated");
   }, [fetchRequests]);
   
   // Set up realtime updates
