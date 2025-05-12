@@ -21,12 +21,8 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Maximum file sizes in bytes
-  const MAX_FILE_SIZES = {
-    video: 50 * 1024 * 1024,  // Reduced from 100MB to 50MB
-    audio: 20 * 1024 * 1024,  // Reduced from 50MB to 20MB
-    image: 5 * 1024 * 1024    // Reduced from 10MB to 5MB
-  };
+  // Maximum file sizes in bytes (increased to 200MB for all types)
+  const MAX_FILE_SIZE = 200 * 1024 * 1024;  // 200MB for all content types
 
   const ACCEPTED_TYPES = {
     image: "image/*",
@@ -39,11 +35,10 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
     
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      const maxSize = MAX_FILE_SIZES[contentType];
-
-      if (selectedFile.size > maxSize) {
-        const sizeMB = Math.round(maxSize / (1024 * 1024));
-        const errorMessage = `File size exceeds the ${sizeMB}MB limit for ${contentType} files`;
+      
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        const sizeMB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
+        const errorMessage = `File size exceeds the ${sizeMB}MB limit`;
         setError(errorMessage);
         toast.error(errorMessage);
         return;
@@ -75,8 +70,8 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
       console.log(`Uploading to storage path: ${filePath}`);
 
       // Check again file size before attempting upload
-      if (file.size > MAX_FILE_SIZES[contentType]) {
-        throw new Error(`File size exceeds the ${MAX_FILE_SIZES[contentType] / (1024 * 1024)}MB limit`);
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File size exceeds the ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
       }
 
       // Upload file to storage bucket with controlled chunk size
@@ -190,7 +185,7 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
       <div>
         <label className="block text-sm font-medium mb-1">File</label>
         <div className="text-sm text-muted-foreground mb-2">
-          Max file size: {contentType === 'video' ? '50MB' : contentType === 'audio' ? '20MB' : '5MB'}
+          Max file size: 200MB
         </div>
         {file && (
           <div className="text-sm mb-2 p-2 bg-muted rounded-md">
