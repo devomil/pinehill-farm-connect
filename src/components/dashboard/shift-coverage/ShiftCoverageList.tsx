@@ -2,8 +2,6 @@
 import React, { useMemo } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { ShiftCoverageItem } from "./ShiftCoverageItem";
 import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 
@@ -43,11 +41,6 @@ export const ShiftCoverageList: React.FC<ShiftCoverageListProps> = ({
     return <ShiftCoverageEmpty onRefresh={onRefresh} />;
   }
 
-  const handleButtonClick = (e: React.MouseEvent) => {
-    // Stop propagation to prevent parent click handlers from firing
-    e.stopPropagation();
-  };
-
   return (
     <div className="space-y-2">
       {filteredMessages.map((message) => (
@@ -57,16 +50,6 @@ export const ShiftCoverageList: React.FC<ShiftCoverageListProps> = ({
           currentUser={currentUser}
         />
       ))}
-      
-      {hasRequests && (
-        <div className="pt-2 text-center">
-          <Link to="/time?tab=shift-coverage" onClick={handleButtonClick}>
-            <Button variant="link" size="sm">
-              View All Requests
-            </Button>
-          </Link>
-        </div>
-      )}
     </div>
   );
 };

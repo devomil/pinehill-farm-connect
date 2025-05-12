@@ -50,14 +50,11 @@ export const ShiftCoverageItem: React.FC<ShiftCoverageItemProps> = ({
           Sent on {format(new Date(message.created_at), "MMM d")}
         </p>
       </div>
-      <div className="flex flex-col items-end">
-        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 mb-2">
+      <div>
+        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
           <Clock className="h-3 w-3 mr-1" />
           Pending
         </Badge>
-        <Link to="/time?tab=shift-coverage" onClick={handleButtonClick}>
-          <Button size="sm" variant="ghost">View</Button>
-        </Link>
       </div>
     </div>
   );
