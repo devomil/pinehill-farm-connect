@@ -19,13 +19,10 @@ export function useTimeOffDashboard(
       
       console.log("Fetching pending time off requests for admin");
       
-      // Join with profiles to get employee names
+      // Modified query to avoid the join that was causing errors
       const { data, error } = await supabase
         .from('time_off_requests')
-        .select(`
-          *,
-          profiles:user_id (name, email)
-        `)
+        .select('*')
         .eq('status', 'pending');
       
       if (error) {
@@ -34,6 +31,39 @@ export function useTimeOffDashboard(
       }
       
       console.log(`Retrieved ${data?.length || 0} pending time off requests`);
+      
+      // If we have data, fetch the profiles separately for each user_id
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(req => req.user_id))];
+        
+        // Fetch profiles for these users
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', userIds);
+          
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+          // Continue with the data we have
+        }
+        
+        // Create a map of user_id to profile data
+        const profileMap = {};
+        if (profiles) {
+          profiles.forEach(profile => {
+            profileMap[profile.id] = profile;
+          });
+        }
+        
+        // Attach profile data to each request
+        return data.map(r => ({
+          ...r,
+          startDate: new Date(r.start_date),
+          endDate: new Date(r.end_date),
+          userId: r.user_id,
+          profiles: profileMap[r.user_id] || null
+        })) as unknown as TimeOffRequest[];
+      }
       
       // Transform the data to match our TimeOffRequest type with both snake_case and camelCase
       return data ? data.map((r: any) => ({
