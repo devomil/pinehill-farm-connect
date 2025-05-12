@@ -6,6 +6,8 @@ import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarViewSelector } from "./CalendarViewSelector";
 import { User } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface CalendarContentProps {
   date: Date;
@@ -17,6 +19,7 @@ interface CalendarContentProps {
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
 export function CalendarContent({
@@ -29,7 +32,13 @@ export function CalendarContent({
   onPreviousMonth,
   onNextMonth,
   clickable = false,
+  viewAllUrl,
 }: CalendarContentProps) {
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+
   return (
     <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -66,6 +75,16 @@ export function CalendarContent({
             <TeamCalendar currentUser={currentUser} />
           </TabsContent>
         </Tabs>
+        
+        {viewAllUrl && (
+          <div className="text-center mt-4">
+            <Link to={viewAllUrl} onClick={handleButtonClick}>
+              <Button variant="link" size="sm">
+                View Full Calendar
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -12,6 +12,7 @@ import { ShiftCoverageError } from "./ShiftCoverageError";
 import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface ShiftCoverageCardProps {
   messages: Communication[];
@@ -20,6 +21,7 @@ interface ShiftCoverageCardProps {
   error?: Error | null;
   onRefresh?: () => void;
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
 export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
@@ -28,7 +30,8 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   loading,
   error,
   onRefresh,
-  clickable = false
+  clickable = false,
+  viewAllUrl
 }) => {
   // Store refresh state to prevent multiple rapid refreshes
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -87,6 +90,11 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
     }
   };
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent card click from triggering
+    e.stopPropagation();
+  };
+
   return (
     <Card 
       className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}
@@ -123,6 +131,16 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
           />
         ) : (
           <ShiftCoverageEmpty onRefresh={(e) => handleRefresh(e)} />
+        )}
+        
+        {viewAllUrl && (
+          <div className="text-center mt-4">
+            <Link to={viewAllUrl} onClick={handleButtonClick}>
+              <Button variant="link" size="sm">
+                View All Requests
+              </Button>
+            </Link>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TimeOffRequest } from "@/types/timeManagement";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 interface TimeOffRequestsCardProps {
   requests: TimeOffRequest[];
@@ -14,6 +15,7 @@ interface TimeOffRequestsCardProps {
   onRefresh?: () => void;
   showEmployeeName?: boolean;
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
 export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({ 
@@ -22,7 +24,8 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
   error,
   onRefresh,
   showEmployeeName = false,
-  clickable = false
+  clickable = false,
+  viewAllUrl
 }) => {
   // Store refresh state to prevent multiple rapid refreshes
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -55,6 +58,11 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
         setIsRefreshing(false);
       }, 3000);
     }
+  };
+  
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
   };
   
   // Safe guard against undefined requests
@@ -144,6 +152,16 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
               </li>
             ))}
           </ul>
+        )}
+        
+        {viewAllUrl && (
+          <div className="text-center mt-4">
+            <Link to={viewAllUrl} onClick={handleButtonClick}>
+              <Button variant="link" size="sm">
+                View All Requests
+              </Button>
+            </Link>
+          </div>
         )}
       </CardContent>
     </Card>
