@@ -22,15 +22,39 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
   onRefresh,
   showEmployeeName = false
 }) => {
+  // Store refresh state to prevent multiple rapid refreshes
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const lastRefreshTime = React.useRef<number>(0);
+  
   const handleRefresh = () => {
+    const now = Date.now();
+    // Prevent refreshing more than once every 3 seconds
+    if (isRefreshing || now - lastRefreshTime.current < 3000) {
+      return;
+    }
+    
     if (onRefresh) {
+      setIsRefreshing(true);
       toast.info("Refreshing time off requests...");
+      
+      // Track the refresh time
+      lastRefreshTime.current = now;
+      
+      // Call the onRefresh callback
       onRefresh();
+      
+      // Reset refreshing state after a delay
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 3000);
     }
   };
   
   // Safe guard against undefined requests
-  const safeRequests = Array.isArray(requests) ? requests : [];
+  const safeRequests = React.useMemo(() => 
+    Array.isArray(requests) ? requests : [],
+    [requests]
+  );
   
   return (
     <Card>
@@ -38,8 +62,14 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle>Time Off Requests</CardTitle>
           {onRefresh && (
-            <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh requests">
-              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRefresh} 
+              title="Refresh requests"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           )}
           {!onRefresh && <Clock className="h-5 w-5 text-muted-foreground" />}
@@ -53,7 +83,12 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
             <AlertDescription className="flex justify-between w-full items-center">
               <span>Failed to load time off requests</span>
               {onRefresh && (
-                <Button size="sm" variant="ghost" onClick={handleRefresh}>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                >
                   <RefreshCw className="h-3 w-3 mr-1" />
                   Retry
                 </Button>
@@ -69,7 +104,13 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
           <div className="text-center py-4 text-muted-foreground">
             <p>No pending time off requests</p>
             {onRefresh && (
-              <Button variant="ghost" size="sm" onClick={handleRefresh} className="mt-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRefresh} 
+                className="mt-2"
+                disabled={isRefreshing}
+              >
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Refresh
               </Button>

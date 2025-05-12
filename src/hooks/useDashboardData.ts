@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTimeOffDashboard } from "./dashboard/useTimeOffDashboard";
 import { useShiftCoverageDashboard } from "./dashboard/useShiftCoverageDashboard";
@@ -15,6 +15,8 @@ export function useDashboardData() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const [retryCount, setRetryCount] = useState(0);
+  const refreshInProgress = useRef(false);
+  const lastRefreshTime = useRef(0);
   
   // Log when the hook is initialized or retries
   useEffect(() => {
@@ -42,7 +44,7 @@ export function useDashboardData() {
     currentUser?.id
   );
 
-  // Add effect to retry fetching if there was an error
+  // Add effect to retry fetching if there was an error, with a longer delay
   useEffect(() => {
     const errors = [
       timeOff.error, 
@@ -52,12 +54,12 @@ export function useDashboardData() {
     ].filter(Boolean);
     
     if (errors.length > 0 && currentUser && retryCount < 3) {
-      console.log("Detected error in dashboard data, will retry in 3 seconds", errors[0]);
+      console.log("Detected error in dashboard data, will retry in 5 seconds", errors[0]);
       const timer = setTimeout(() => {
         console.log("Retrying dashboard data fetch after error");
         setRetryCount(prev => prev + 1);
         refetchData();
-      }, 3000);
+      }, 5000);
       
       return () => clearTimeout(timer);
     }
@@ -71,7 +73,7 @@ export function useDashboardData() {
     retryCount
   ]);
 
-  // Add auto-refresh logic for dashboard data
+  // Add auto-refresh logic for dashboard data with much less frequent updates
   useEffect(() => {
     console.log("Setting up dashboard auto-refresh");
     
@@ -79,13 +81,34 @@ export function useDashboardData() {
     const initialFetchTimer = setTimeout(() => {
       console.log("Initial dashboard data fetch");
       refetchData();
-    }, 500);
+    }, 1000);
     
-    // Auto refresh every 30 seconds
+    // Auto refresh every 2 minutes (drastically reduced from 30 seconds)
     const intervalId = setInterval(() => {
+      // Skip if a refresh is already in progress
+      if (refreshInProgress.current) {
+        console.log("Skipping scheduled refresh - another refresh is in progress");
+        return;
+      }
+      
+      // Skip if less than 60 seconds since last refresh
+      const now = Date.now();
+      if (now - lastRefreshTime.current < 60000) {
+        console.log("Skipping scheduled refresh - too soon since last refresh");
+        return;
+      }
+      
       console.log("Auto-refreshing dashboard data");
+      refreshInProgress.current = true;
+      lastRefreshTime.current = now;
+      
       refetchData();
-    }, 30000);
+      
+      // Reset the refresh flag after a delay
+      setTimeout(() => {
+        refreshInProgress.current = false;
+      }, 5000);
+    }, 120000); // Changed from 30000 (30s) to 120000 (2min)
     
     return () => {
       clearTimeout(initialFetchTimer);
@@ -105,12 +128,34 @@ export function useDashboardData() {
                 trainings.assignedTrainingsError || 
                 null;
 
-  // Create a refresh handler that updates the retry count
+  // Create a refresh handler that updates the retry count, with throttling
   const handleRefreshData = useCallback(() => {
+    // Skip if a refresh is already in progress
+    if (refreshInProgress.current) {
+      console.log("Refresh already in progress, skipping");
+      return;
+    }
+    
+    // Skip if less than 3 seconds since last refresh
+    const now = Date.now();
+    if (now - lastRefreshTime.current < 3000) {
+      console.log("Too soon since last refresh, skipping");
+      return;
+    }
+    
     toast.info("Refreshing dashboard data...");
     console.log("Manual dashboard refresh triggered");
+    
+    refreshInProgress.current = true;
+    lastRefreshTime.current = now;
+    
     setRetryCount(prev => prev + 1);
     refetchData();
+    
+    // Reset the refresh flag after a delay
+    setTimeout(() => {
+      refreshInProgress.current = false;
+    }, 5000);
   }, [refetchData]);
   
   return {
