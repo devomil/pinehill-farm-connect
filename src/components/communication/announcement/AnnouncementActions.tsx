@@ -1,92 +1,36 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, MoreVertical } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
-import { Announcement } from "@/types";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import React, { useState, useCallback } from "react";
+import { Announcement, User } from "@/types";
+import { EditAnnouncementDialog } from "@/components/communication/announcement/EditAnnouncementDialog";
 
 interface AnnouncementActionsProps {
-  announcement: Announcement;
-  onEdit: (announcement: Announcement) => void;
-  onDelete: (id: string) => void;
+  editingAnnouncement: Announcement | null;
+  setEditingAnnouncement: React.Dispatch<React.SetStateAction<Announcement | null>>;
+  handleSaveEdit: (announcement: Announcement) => Promise<void>;
+  loading: boolean;
+  allEmployees: User[];
 }
 
-export const AnnouncementActions = ({
-  announcement,
-  onEdit,
-  onDelete
-}: AnnouncementActionsProps) => {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("Edit clicked for announcement:", announcement.id);
-    onEdit(announcement);
-  };
+export const AnnouncementActionsManager: React.FC<AnnouncementActionsProps> = ({
+  editingAnnouncement,
+  setEditingAnnouncement,
+  handleSaveEdit,
+  loading,
+  allEmployees
+}) => {
+  const handleCloseEditDialog = useCallback(() => {
+    setEditingAnnouncement(null);
+  }, [setEditingAnnouncement]);
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowDeleteDialog(true);
-  };
+  if (!editingAnnouncement) return null;
 
-  const handleConfirmDelete = () => {
-    console.log("Deleting announcement:", announcement.id);
-    onDelete(announcement.id);
-    setShowDeleteDialog(false);
-  };
-  
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleEdit}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={handleDeleteClick}
-          className="text-red-600"
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the announcement and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </DropdownMenu>
+    <EditAnnouncementDialog
+      announcement={editingAnnouncement}
+      allEmployees={allEmployees}
+      onClose={handleCloseEditDialog}
+      onSave={handleSaveEdit}
+      loading={loading}
+    />
   );
 };

@@ -29,13 +29,12 @@ export function useMessageSendOperations() {
 
     try {
       const { error } = await supabase
-        .from('messages')
+        .from('employee_communications')
         .insert({
-          content: params.message,
+          message: params.message,
           sender_id: params.senderId,
           recipient_id: params.recipientId,
           type: params.type,
-          shift_details: params.shiftDetails,
           created_at: new Date().toISOString(),
         });
 
@@ -67,7 +66,7 @@ export function useMessageSendOperations() {
 
     try {
       const messages = recipients.map(recipient => ({
-        content: messageContent,
+        message: messageContent,
         sender_id: senderId,
         recipient_id: recipient.id,
         type,
@@ -75,7 +74,7 @@ export function useMessageSendOperations() {
       }));
 
       const { error } = await supabase
-        .from('messages')
+        .from('employee_communications')
         .insert(messages);
 
       if (error) {

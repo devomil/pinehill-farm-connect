@@ -16,7 +16,7 @@ export function useMessageReadingManager() {
     try {
       console.log("Marking message as read:", messageId);
       const { error } = await supabase
-        .from("messages")
+        .from("employee_communications")
         .update({ read_at: new Date().toISOString() })
         .eq("id", messageId);
 

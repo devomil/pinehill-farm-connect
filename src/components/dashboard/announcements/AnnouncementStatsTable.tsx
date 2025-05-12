@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,115 +9,95 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from "date-fns";
 import { AnnouncementData } from "@/types/announcements";
+import { formatDistanceToNow } from "date-fns";
+import { Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface AnnouncementStatsTableProps {
-  announcements: AnnouncementData[];
-  onViewDetails: (announcementId: string) => void;
+  data: AnnouncementData[];
+  onViewDetails: (id: string) => void;
 }
 
-export const AnnouncementStatsTable: React.FC<AnnouncementStatsTableProps> = ({
-  announcements,
-  onViewDetails,
+export const AnnouncementStatsTable: React.FC<AnnouncementStatsTableProps> = ({ 
+  data, 
+  onViewDetails 
 }) => {
-  const [sortField, setSortField] = useState<string>("created_at");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Filter and sort the data
+  const filteredData = data
+    .filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("desc");
-    }
+  const handleViewDetails = (id: string) => {
+    onViewDetails(id);
   };
 
-  const sortedAnnouncements = [...announcements].sort((a, b) => {
-    let valA, valB;
-
-    switch (sortField) {
-      case "title":
-        valA = a.title;
-        valB = b.title;
-        break;
-      case "read_count":
-        valA = a.read_count;
-        valB = b.read_count;
-        break;
-      default:
-        // Default to sorting by created_at
-        valA = new Date(a.created_at || "").getTime();
-        valB = new Date(b.created_at || "").getTime();
-    }
-
-    if (valA === valB) return 0;
-    const result = valA > valB ? 1 : -1;
-    return sortDirection === "asc" ? result : -result;
-  });
-
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead 
-              className="cursor-pointer" 
-              onClick={() => handleSort("title")}
-            >
-              Title {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
-            </TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead 
-              className="cursor-pointer" 
-              onClick={() => handleSort("read_count")}
-            >
-              Read {sortField === "read_count" && (sortDirection === "asc" ? "↑" : "↓")}
-            </TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedAnnouncements.map((announcement) => (
-            <TableRow key={announcement.title}>
-              <TableCell className="font-medium">{announcement.title}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={
-                    announcement.requires_acknowledgment 
-                      ? "outline" 
-                      : "default"
-                  }
-                >
-                  {announcement.requires_acknowledgment ? "Ack Required" : "Standard"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground text-sm">
-                {announcement.created_at &&
-                  formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true })}
-              </TableCell>
-              <TableCell>
-                {announcement.read_count}/{announcement.total_users} 
-                <span className="text-muted-foreground ml-1">
-                  ({Math.round((announcement.read_count / announcement.total_users) * 100)}%)
-                </span>
-              </TableCell>
-              <TableCell>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => onViewDetails(announcement.title)}
-                >
-                  Details
-                </Button>
-              </TableCell>
+    <div className="space-y-4">
+      <Input
+        placeholder="Search announcements..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="max-w-sm"
+      />
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead className="w-[100px]">Created</TableHead>
+              <TableHead className="text-right w-[80px]">Read</TableHead>
+              {data.some(item => item.requires_acknowledgment) && (
+                <TableHead className="text-right w-[120px]">Acknowledged</TableHead>
+              )}
+              <TableHead className="w-[100px]"></TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredData.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.title}</TableCell>
+                <TableCell>
+                  {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                </TableCell>
+                <TableCell className="text-right">
+                  {item.read_count}/{item.total_users}
+                </TableCell>
+                {data.some(a => a.requires_acknowledgment) && (
+                  <TableCell className="text-right">
+                    {item.requires_acknowledgment 
+                      ? `${item.acknowledged_count || 0}/${item.total_users}` 
+                      : "N/A"}
+                  </TableCell>
+                )}
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewDetails(item.id)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" /> Details
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredData.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={data.some(item => item.requires_acknowledgment) ? 5 : 4} className="h-24 text-center">
+                  No announcements found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

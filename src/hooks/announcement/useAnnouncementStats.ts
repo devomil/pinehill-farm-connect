@@ -1,98 +1,112 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { AnnouncementData } from "@/types/announcements";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { AnnouncementData } from '@/types/announcements';
 
 export const useAnnouncementStats = () => {
-  const fetchAnnouncementStats = async (): Promise<AnnouncementData[]> => {
-    // First, get all announcements
-    const { data: announcements, error: announcementsError } = await supabase
-      .from("announcements")
-      .select(`
-        id,
-        title,
-        created_at,
-        priority,
-        requires_acknowledgment
-      `)
-      .order("created_at", { ascending: false });
-
-    if (announcementsError) {
-      console.error("Error fetching announcements:", announcementsError);
-      throw announcementsError;
-    }
-
-    // Create a map to store stats for each announcement
-    const statsMap: Record<string, AnnouncementData> = {};
-
-    // Initialize the map with announcements
-    for (const announcement of announcements) {
-      statsMap[announcement.id] = {
-        id: announcement.id,
-        title: announcement.title,
-        created_at: announcement.created_at,
-        total_users: 0,
-        read_count: 0,
-        acknowledged_count: announcement.requires_acknowledgment ? 0 : null,
-        requires_acknowledgment: announcement.requires_acknowledgment,
-        users: []
-      };
-    }
-
-    // Get all announcement recipients with their read status
-    const { data: recipients, error: recipientsError } = await supabase
-      .from("announcement_recipients")
-      .select(`
-        announcement_id,
-        user_id,
-        read_at,
-        acknowledged_at,
-        profiles:user_id (
-          id,
-          full_name,
-          avatar_url
-        )
-      `);
-
-    if (recipientsError) {
-      console.error("Error fetching announcement recipients:", recipientsError);
-      throw recipientsError;
-    }
-
-    // Process all recipients
-    for (const recipient of recipients) {
-      const announcementId = recipient.announcement_id;
-      
-      if (!statsMap[announcementId]) continue;
-      
-      statsMap[announcementId].total_users++;
-      
-      if (recipient.read_at) {
-        statsMap[announcementId].read_count++;
-      }
-      
-      if (recipient.acknowledged_at && statsMap[announcementId].acknowledged_count !== null) {
-        statsMap[announcementId].acknowledged_count! += 1;
-      }
-      
-      // Add user to the users array
-      statsMap[announcementId].users.push({
-        id: recipient.profiles?.id || recipient.user_id,
-        name: recipient.profiles?.full_name || "Unknown User",
-        avatar_url: recipient.profiles?.avatar_url,
-        read: !!recipient.read_at,
-        acknowledged: !!recipient.acknowledged_at,
-        read_at: recipient.read_at,
-        acknowledged_at: recipient.acknowledged_at
-      });
-    }
-
-    return Object.values(statsMap);
-  };
-
   return useQuery({
-    queryKey: ["announcementStats"],
-    queryFn: fetchAnnouncementStats,
-    staleTime: 60000, // 1 minute
+    queryKey: ['announcementStats'],
+    queryFn: async (): Promise<AnnouncementData[]> => {
+      // First get all announcements
+      const { data: announcements, error: announcementsError } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (announcementsError) throw new Error(`Failed to fetch announcements: ${announcementsError.message}`);
+      
+      // Early return if no announcements
+      if (!announcements || announcements.length === 0) return [];
+
+      // For each announcement, get read receipts
+      const statsPromises = announcements.map(async (announcement): Promise<AnnouncementData> => {
+        // Get total user count
+        const { count: totalUsers, error: countError } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true });
+
+        if (countError) throw new Error(`Failed to count users: ${countError.message}`);
+
+        // Get read receipts
+        const { data: readReceipts, error: readError } = await supabase
+          .from('announcement_recipients')
+          .select('user_id, read_at, acknowledged_at')
+          .eq('announcement_id', announcement.id);
+
+        if (readError) throw new Error(`Failed to fetch read receipts: ${readError.message}`);
+        
+        // Count reads and acknowledgements
+        const readCount = readReceipts?.filter(r => r.read_at !== null).length || 0;
+        const acknowledgedCount = announcement.requires_acknowledgment 
+          ? readReceipts?.filter(r => r.acknowledged_at !== null).length || 0
+          : null;
+        
+        // Get detailed user data
+        const { data: userDetails, error: userError } = await supabase
+          .from('announcement_recipients')
+          .select(`
+            user_id,
+            read_at,
+            acknowledged_at,
+            users:user_id (
+              id,
+              name: full_name,
+              avatar_url
+            )
+          `)
+          .eq('announcement_id', announcement.id);
+
+        if (userError) {
+          console.error("Error fetching user details:", userError);
+          // Provide fallback user data
+          const users = readReceipts?.map(r => ({
+            id: r.user_id,
+            name: "Unknown User",
+            read: r.read_at !== null,
+            acknowledged: r.acknowledged_at !== null,
+            read_at: r.read_at,
+            acknowledged_at: r.acknowledged_at
+          })) || [];
+
+          return {
+            id: announcement.id,
+            title: announcement.title,
+            total_users: totalUsers || 0,
+            read_count: readCount,
+            acknowledged_count: acknowledgedCount,
+            requires_acknowledgment: announcement.requires_acknowledgment,
+            created_at: announcement.created_at,
+            users
+          };
+        }
+
+        // Map user details to the expected format
+        const users = userDetails?.map(detail => {
+          const user = detail.users as any;
+          return {
+            id: user?.id || detail.user_id,
+            name: user?.name || "Unknown User",
+            avatar_url: user?.avatar_url,
+            read: detail.read_at !== null,
+            acknowledged: detail.acknowledged_at !== null,
+            read_at: detail.read_at,
+            acknowledged_at: detail.acknowledged_at
+          };
+        }) || [];
+
+        return {
+          id: announcement.id,
+          title: announcement.title,
+          total_users: totalUsers || 0,
+          read_count: readCount,
+          acknowledged_count: acknowledgedCount,
+          requires_acknowledgment: announcement.requires_acknowledgment,
+          created_at: announcement.created_at,
+          users
+        };
+      });
+      
+      return Promise.all(statsPromises);
+    }
   });
 };

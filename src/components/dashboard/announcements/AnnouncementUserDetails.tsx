@@ -1,19 +1,20 @@
 
+import React from "react";
 import { AnnouncementData } from "@/types/announcements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserList } from "./UserList";
 
 interface AnnouncementUserDetailsProps {
-  announcement: AnnouncementData;
+  users: AnnouncementData["users"];
 }
 
-export const AnnouncementUserDetails = ({ announcement }: AnnouncementUserDetailsProps) => {
-  const readUsers = announcement.users.filter(user => user.read);
-  const acknowledgedUsers = announcement.users.filter(user => user.acknowledged);
-  const unreadUsers = announcement.users.filter(user => !user.read);
-  const unacknowledgedUsers = announcement.requires_acknowledgment 
-    ? announcement.users.filter(user => !user.acknowledged) 
-    : [];
+export const AnnouncementUserDetails: React.FC<AnnouncementUserDetailsProps> = ({ users }) => {
+  const readUsers = users.filter(user => user.read);
+  const acknowledgedUsers = users.filter(user => user.acknowledged);
+  const unreadUsers = users.filter(user => !user.read);
+  const unacknowledgedUsers = users.filter(user => !user.acknowledged);
+  
+  const requiresAcknowledgment = acknowledgedUsers.length > 0 || unacknowledgedUsers.length > 0;
 
   return (
     <div className="p-4">
@@ -21,7 +22,7 @@ export const AnnouncementUserDetails = ({ announcement }: AnnouncementUserDetail
         <TabsList>
           <TabsTrigger value="read">Read ({readUsers.length})</TabsTrigger>
           <TabsTrigger value="unread">Not Read ({unreadUsers.length})</TabsTrigger>
-          {announcement.requires_acknowledgment && (
+          {requiresAcknowledgment && (
             <>
               <TabsTrigger value="acknowledged">Acknowledged ({acknowledgedUsers.length})</TabsTrigger>
               <TabsTrigger value="unacknowledged">Not Acknowledged ({unacknowledgedUsers.length})</TabsTrigger>
@@ -42,7 +43,7 @@ export const AnnouncementUserDetails = ({ announcement }: AnnouncementUserDetail
             <p className="text-sm text-muted-foreground">All users have read this announcement.</p>
           )}
         </TabsContent>
-        {announcement.requires_acknowledgment && (
+        {requiresAcknowledgment && (
           <>
             <TabsContent value="acknowledged" className="mt-4">
               {acknowledgedUsers.length > 0 ? (

@@ -80,12 +80,9 @@ export const AnnouncementStats: React.FC = () => {
         {!selectedAnnouncement ? (
           <>
             <div className="h-[350px] mb-8">
-              <AnnouncementStatsChart announcements={stats || []} />
+              {stats && <AnnouncementStatsChart data={stats} />}
             </div>
-            <AnnouncementStatsTable 
-              announcements={stats || []} 
-              onViewDetails={handleViewDetails} 
-            />
+            {stats && <AnnouncementStatsTable data={stats} onViewDetails={handleViewDetails} />}
           </>
         ) : (
           <AnnouncementUserDetails users={selectedAnnouncement.users} />
