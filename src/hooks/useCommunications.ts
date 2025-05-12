@@ -1,3 +1,4 @@
+
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -26,8 +27,8 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   
   // Get modular functionality hooks
   const { refreshMessages, lastRefreshTime, refreshInProgress } = useMessageRefreshManager(currentUser, refetch);
-  const { markAllMessagesAsRead } = useMessageReadingManager(currentUser);
-  const { sendMessage, respondToShiftRequest } = useMessageSendOperations(
+  const { markMessageAsRead, isMarking } = useMessageReadingManager(currentUser);
+  const { sendMessage, sendBulkMessages, respondToShiftRequest } = useMessageSendOperations(
     sendMessageMutation,
     respondToShiftRequestMutation,
     refreshMessages
@@ -42,9 +43,26 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const isCommunicationsPage = location.pathname === '/communication';
   const isOnMessagesTab = isCommunicationsPage && location.search.includes('tab=messages');
   
+  // Function to mark all messages as read
+  const markAllMessagesAsRead = useCallback(async (messagesToMark: Communication[]) => {
+    if (!messagesToMark || messagesToMark.length === 0) return;
+    
+    console.log(`Marking ${messagesToMark.length} messages as read`);
+    
+    // Mark each message as read one by one
+    for (const message of messagesToMark) {
+      if (message.id && !message.read_at) {
+        await markMessageAsRead(message.id);
+      }
+    }
+    
+    // Force a data refresh after marking all messages
+    refreshMessages();
+  }, [markMessageAsRead, refreshMessages]);
+  
   // Effect to mark all messages as read when an admin views the messages tab
   useEffect(() => {
-    if (isOnMessagesTab && currentUser && currentUser.role === 'admin') {
+    if (isOnMessagesTab && currentUser && currentUser.role === 'admin' && unreadMessages.length > 0) {
       markAllMessagesAsRead(unreadMessages);
       
       // Force refresh to update all UI indicators
@@ -105,7 +123,9 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     isLoading,
     error,
     sendMessage,
+    sendBulkMessages,
     respondToShiftRequest,
-    refreshMessages
+    refreshMessages,
+    markAllMessagesAsRead
   };
 };

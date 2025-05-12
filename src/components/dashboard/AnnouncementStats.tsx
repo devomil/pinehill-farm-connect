@@ -10,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { AnnouncementData } from "@/types/announcements";
 
-export const AnnouncementStats: React.FC = () => {
+interface AnnouncementStatsProps {
+  clickable?: boolean;
+  viewAllUrl?: string;
+}
+
+export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable, viewAllUrl }) => {
   const { data: stats, isLoading, isError, error, refetch } = useAnnouncementStats();
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
@@ -48,7 +53,7 @@ export const AnnouncementStats: React.FC = () => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className={`w-full ${clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}>
       <CardHeader className="flex flex-row items-center justify-between">
         {!selectedAnnouncement ? (
           <>

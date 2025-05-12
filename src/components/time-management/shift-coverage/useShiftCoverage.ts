@@ -1,160 +1,97 @@
-
-import { useState, useEffect } from "react";
-import { User } from "@/types";
+import { useState, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useCommunications } from "@/hooks/useCommunications";
-import { format } from "date-fns";
-import { toast } from "sonner";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
-export function useShiftCoverage(
-  currentUser: User,
-  allEmployees: User[] | undefined,
-  onRequestSent: () => void,
-  onDialogClose: (open: boolean) => void
-) {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [startTime, setStartTime] = useState<string>("09:00");
-  const [endTime, setEndTime] = useState<string>("17:00");
-  const [adminId, setAdminId] = useState<string | null>(null);
-  const [isLoadingAdmin, setIsLoadingAdmin] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  
-  const { sendMessage } = useCommunications();
-  
-  // Filter out the current user and any employees that might be inactive
-  const filteredEmployees = allEmployees 
-    ? allEmployees.filter(employee => employee.id !== currentUser.id)
-    : [];
+// Define the schema for the shift coverage request form
+const shiftCoverageRequestSchema = z.object({
+  covering_employee_id: z.string().min(1, { message: "Covering employee is required" }),
+  shift_date: z.string().min(1, { message: "Shift date is required" }),
+  shift_start: z.string().min(1, { message: "Shift start is required" }),
+  shift_end: z.string().min(1, { message: "Shift end is required" }),
+});
 
-  // Fetch Jackie's actual UUID when component mounts
-  useEffect(() => {
-    const fetchJackieAdmin = async () => {
-      setIsLoadingAdmin(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', 'jackie@pinehillfarm.co')
-          .maybeSingle();
-        
-        if (error) {
-          console.error("Error fetching Jackie's profile:", error);
-          return;
-        }
-        
-        if (data && data.id) {
-          console.log("Found admin (Jackie) with ID:", data.id);
-          setAdminId(data.id);
-        } else {
-          console.warn("Could not find Jackie's profile, admin CC will not be set");
-        }
-      } catch (err) {
-        console.error("Exception fetching admin:", err);
-      } finally {
-        setIsLoadingAdmin(false);
-      }
-    };
-    
-    fetchJackieAdmin();
-  }, []);
+// Define the type for the form data based on the schema
+export type ShiftCoverageRequestForm = z.infer<typeof shiftCoverageRequestSchema>;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Enhanced validation with custom error messages
-    if (!selectedEmployeeId) {
-      toast.error("Please select an employee to cover your shift");
+export const useShiftCoverage = () => {
+  const { toast } = useToast();
+  const { currentUser } = useAuth();
+  const userId = currentUser?.id;
+  const { data: employees } = useEmployeeDirectory();
+  const [isSubmitting, setSubmitting] = useState(false);
+  const [submitError, setError] = useState<string | null>(null);
+
+  // Initialize the form with react-hook-form
+  const form = useForm<ShiftCoverageRequestForm>({
+    resolver: zodResolver(shiftCoverageRequestSchema),
+    defaultValues: {
+      covering_employee_id: "",
+      shift_date: "",
+      shift_start: "",
+      shift_end: "",
+    },
+  });
+
+  // Function to handle form submission
+  const handleSubmit = async (data: ShiftCoverageRequestForm) => {
+    if (!data.covering_employee_id) {
+      setError('covering_employee_id', {
+        message: 'Please select an employee to cover the shift',
+      });
       return;
     }
-    
-    if (!date) {
-      toast.error("Please select a date for your shift");
-      return;
-    }
-    
-    if (!startTime) {
-      toast.error("Please specify shift start time");
-      return;
-    }
-    
-    if (!endTime) {
-      toast.error("Please specify shift end time");
-      return;
-    }
-    
-    if (!currentUser || !currentUser.id) {
-      toast.error("User profile error. Please try logging out and back in.");
-      return;
-    }
-    
-    setIsSending(true);
-    
+
+    setSubmitting(true);
+    setError(null);
+
     try {
-      const formattedDate = format(date, "yyyy-MM-dd");
-      
-      console.log("Sending shift coverage request with data:", {
-        recipientId: selectedEmployeeId,
-        date: formattedDate,
-        startTime,
-        endTime,
-        message: message || "Could you please cover my shift?",
-        currentUserId: currentUser?.id,
-        adminId: adminId
+      // Create the shift coverage request with proper field names
+      const response = await supabase.from('shift_coverage_requests').insert({
+        original_employee_id: userId,
+        covering_employee_id: data.covering_employee_id,
+        shift_date: data.shift_date,
+        shift_start: data.shift_start,
+        shift_end: data.shift_end,
       });
-      
-      await sendMessage({
-        recipientId: selectedEmployeeId,
-        message: message || "Could you please cover my shift?",
-        type: "shift_coverage",
-        shiftDetails: {
-          shift_date: formattedDate,
-          shift_start: startTime,
-          shift_end: endTime,
-          original_employee_id: currentUser.id,
-          covering_employee_id: selectedEmployeeId
-        },
-        adminCc: adminId
-      });
-      
-      toast.success("Shift coverage request sent successfully");
-      onDialogClose(false);
-      
-      // Reset form
-      setSelectedEmployeeId("");
-      setMessage("");
-      setDate(new Date());
-      setStartTime("09:00");
-      setEndTime("17:00");
-      
-      // Notify parent that a request was sent to refresh data
-      if (onRequestSent) {
-        onRequestSent();
+
+      if (response.error) {
+        console.error("Supabase error:", response.error);
+        toast({
+          title: "Failed to submit request",
+          description: "There was an error submitting the shift coverage request. Please try again.",
+          variant: "destructive",
+        });
+        setError("general", { message: "Failed to submit request" });
+      } else {
+        toast({
+          title: "Request submitted",
+          description: "Your shift coverage request has been submitted successfully.",
+        });
+        form.reset(); // Reset the form on success
       }
     } catch (error) {
-      console.error("Error sending shift coverage request:", error);
-      toast.error(`Failed to send shift coverage request: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Submission error:", error);
+      toast({
+        title: "Submission failed",
+        description: "There was a problem submitting your request. Please check your connection and try again.",
+        variant: "destructive",
+      });
+      setError("general", { message: "Submission failed" });
     } finally {
-      setIsSending(false);
+      setSubmitting(false);
     }
   };
-  
+
   return {
-    selectedEmployeeId,
-    setSelectedEmployeeId,
-    message,
-    setMessage,
-    date,
-    setDate,
-    startTime,
-    setStartTime,
-    endTime,
-    setEndTime,
-    adminId,
-    isLoadingAdmin,
-    isSending,
-    filteredEmployees,
-    handleSubmit
+    form,
+    onSubmit: handleSubmit,
+    isSubmitting,
+    submitError,
+    employees,
   };
-}
+};

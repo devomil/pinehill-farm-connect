@@ -3,63 +3,80 @@ import React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AnnouncementStatsChart } from "@/components/dashboard/announcements/AnnouncementStatsChart";
+import { Button } from "@/components/ui/button";
+import { AnnouncementData } from "@/types/announcements";
 import { AnnouncementStatsTable } from "@/components/dashboard/announcements/AnnouncementStatsTable";
-import { AnnouncementStatsLoading } from "@/components/dashboard/announcements/AnnouncementStatsLoading";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BarChart } from "lucide-react";
+import { AnnouncementStatsChart } from "@/components/dashboard/announcements/AnnouncementStatsChart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RefreshCw } from "lucide-react";
 
 interface AnnouncementStatsDialogProps {
   open: boolean;
   onClose: () => void;
+  stats: AnnouncementData[] | null;
+  isLoading: boolean;
+  onRefresh: () => void;
+  error: Error | null;
 }
 
 export const AnnouncementStatsDialog: React.FC<AnnouncementStatsDialogProps> = ({
   open,
   onClose,
+  stats,
+  isLoading,
+  onRefresh,
+  error,
 }) => {
-  const { data: stats, isLoading, error } = useAnnouncementStats();
+  // Dummy handler for view details since we're not implementing this in the dialog
+  const handleViewDetails = (announcementId: string) => {
+    console.log("View details for announcement:", announcementId);
+    // In a dialog, we might want to show a nested dialog or change the content
+  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BarChart className="h-5 w-5" />
-            Announcement Statistics
+          <DialogTitle className="flex items-center justify-between">
+            <span>Announcement Statistics</span>
+            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </DialogTitle>
+          <DialogDescription>
+            Overview of read rates and engagement with announcements
+          </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <AnnouncementStatsLoading />
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Failed to load announcement statistics</AlertDescription>
-          </Alert>
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <h3 className="text-red-800 font-medium">Failed to load statistics</h3>
+            <p className="text-red-700 text-sm mt-1">{error.message}</p>
+          </div>
+        ) : isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-[250px] w-full" />
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-40 w-full" />
+          </div>
         ) : stats && stats.length > 0 ? (
-          <Tabs defaultValue="chart">
-            <TabsList className="mb-4">
-              <TabsTrigger value="chart">Chart View</TabsTrigger>
-              <TabsTrigger value="table">Detailed View</TabsTrigger>
-            </TabsList>
-            <TabsContent value="chart">
+          <>
+            <div className="h-[300px] mb-8">
               <AnnouncementStatsChart data={stats} />
-            </TabsContent>
-            <TabsContent value="table">
-              <AnnouncementStatsTable data={stats} />
-            </TabsContent>
-          </Tabs>
+            </div>
+            <AnnouncementStatsTable 
+              data={stats} 
+              onViewDetails={handleViewDetails}
+            />
+          </>
         ) : (
-          <div className="text-center p-6">
-            <p className="text-muted-foreground">
-              No announcement statistics available
-            </p>
+          <div className="text-center p-8 text-muted-foreground">
+            No announcement statistics available.
           </div>
         )}
       </DialogContent>

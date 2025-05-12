@@ -1,5 +1,29 @@
-
 import { User } from "@/types";
+
+export interface SendMessageParams {
+  recipientId: string;
+  message: string;
+  senderId: string;
+  type: "general" | "shift_coverage" | "urgent" | "system_notification";
+  shiftDetails?: {
+    shift_date: string;
+    shift_start: string;
+    shift_end: string;
+  };
+}
+
+export interface MessageResponse {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+// Other message-related types that might be needed
+export interface ShiftCoverageResponseParams {
+  messageId: string;
+  response: "accepted" | "declined";
+  responderId: string;
+}
 
 export interface MessageData {
   id: string;
