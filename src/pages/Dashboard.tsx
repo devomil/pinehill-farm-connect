@@ -1,3 +1,4 @@
+
 import React, { useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +9,6 @@ import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard"
 import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage";
 import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
 import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
-import { SocialMediaFeeds } from "@/components/dashboard/SocialMediaFeeds";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
@@ -66,9 +66,8 @@ export default function Dashboard() {
               onNextMonth={goToNextMonth}
             />
           </div>
-          <div className="space-y-4">
+          <div>
             <MarketingContent />
-            <SocialMediaFeeds />
           </div>
         </div>
 
