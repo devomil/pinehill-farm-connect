@@ -7,6 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface UploadMarketingContentProps {
   onUploadComplete: () => void;
@@ -18,12 +19,13 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
   const [contentType, setContentType] = useState<"image" | "video" | "audio">("image");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Maximum file sizes in bytes (100MB for videos, 50MB for audio, 10MB for images)
+  // Maximum file sizes in bytes
   const MAX_FILE_SIZES = {
-    video: 100 * 1024 * 1024,
-    audio: 50 * 1024 * 1024,
-    image: 10 * 1024 * 1024
+    video: 50 * 1024 * 1024,  // Reduced from 100MB to 50MB
+    audio: 20 * 1024 * 1024,  // Reduced from 50MB to 20MB
+    image: 5 * 1024 * 1024    // Reduced from 10MB to 5MB
   };
 
   const ACCEPTED_TYPES = {
@@ -33,16 +35,21 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       const maxSize = MAX_FILE_SIZES[contentType];
 
       if (selectedFile.size > maxSize) {
         const sizeMB = Math.round(maxSize / (1024 * 1024));
-        toast.error(`File size exceeds the ${sizeMB}MB limit for ${contentType} files`);
+        const errorMessage = `File size exceeds the ${sizeMB}MB limit for ${contentType} files`;
+        setError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
+      console.log(`File selected: ${selectedFile.name}, size: ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`);
       setFile(selectedFile);
     }
   };
@@ -54,14 +61,25 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
       return;
     }
 
-    try {
-      setUploading(true);
+    setUploading(true);
+    setError(null);
 
-      // Upload file to storage bucket
+    try {
+      console.log(`Starting upload for ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+
+      // Generate a unique filename to prevent collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log(`Uploading to storage path: ${filePath}`);
+
+      // Check again file size before attempting upload
+      if (file.size > MAX_FILE_SIZES[contentType]) {
+        throw new Error(`File size exceeds the ${MAX_FILE_SIZES[contentType] / (1024 * 1024)}MB limit`);
+      }
+
+      // Upload file to storage bucket with controlled chunk size
       const { error: uploadError, data } = await supabase.storage
         .from('marketing_content')
         .upload(filePath, file, {
@@ -69,12 +87,19 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error details:", uploadError);
+        throw uploadError;
+      }
 
+      console.log("File uploaded successfully, getting public URL");
+      
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('marketing_content')
         .getPublicUrl(filePath);
+
+      console.log("Public URL obtained:", publicUrl);
 
       // Insert record in marketing_content table
       const { error: dbError } = await supabase
@@ -90,16 +115,27 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
           is_active: true
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw dbError;
+      }
 
+      console.log("Database record created successfully");
       toast.success("Content uploaded successfully");
       setTitle("");
       setDescription("");
       setFile(null);
       onUploadComplete();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Error uploading content");
+      const errorMessage = error.message || "Unknown error during upload";
+      setError(`Error: ${errorMessage}`);
+      
+      if (error.message?.includes("Payload too large")) {
+        toast.error("File is too large for upload. Please select a smaller file.");
+      } else {
+        toast.error("Error uploading content. Please try again with a smaller file.");
+      }
     } finally {
       setUploading(false);
     }
@@ -107,9 +143,20 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
 
   return (
     <form onSubmit={handleUpload} className="space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Upload Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <div>
         <label className="block text-sm font-medium mb-1">Content Type</label>
-        <Select value={contentType} onValueChange={(value: "image" | "video" | "audio") => setContentType(value)}>
+        <Select value={contentType} onValueChange={(value: "image" | "video" | "audio") => {
+          setContentType(value);
+          setFile(null); // Reset file when changing content type
+          setError(null);
+        }}>
           <SelectTrigger>
             <SelectValue placeholder="Select content type" />
           </SelectTrigger>
@@ -143,8 +190,13 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
       <div>
         <label className="block text-sm font-medium mb-1">File</label>
         <div className="text-sm text-muted-foreground mb-2">
-          Max file size: {contentType === 'video' ? '100MB' : contentType === 'audio' ? '50MB' : '10MB'}
+          Max file size: {contentType === 'video' ? '50MB' : contentType === 'audio' ? '20MB' : '5MB'}
         </div>
+        {file && (
+          <div className="text-sm mb-2 p-2 bg-muted rounded-md">
+            Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+          </div>
+        )}
         <Input
           required
           type="file"
@@ -153,7 +205,7 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
         />
       </div>
 
-      <Button type="submit" disabled={uploading}>
+      <Button type="submit" disabled={uploading || !file}>
         {uploading ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
