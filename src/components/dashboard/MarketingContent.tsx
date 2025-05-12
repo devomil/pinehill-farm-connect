@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Image as ImageIcon, Link as LinkIcon, Video } from "lucide-react";
+import { getContentTypeIcon } from "@/components/marketing/components/ContentRenderer";
 
 interface MarketingContentProps {
   viewAllUrl?: string;
@@ -38,19 +38,6 @@ export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, 
     },
     staleTime: 60000
   });
-
-  const getContentTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video':
-        return <Video className="h-3 w-3" />;
-      case 'image':
-        return <ImageIcon className="h-3 w-3" />;
-      case 'link':
-        return <LinkIcon className="h-3 w-3" />;
-      default:
-        return <ImageIcon className="h-3 w-3" />;
-    }
-  };
 
   const renderContent = (item: any) => {
     switch (item.content_type) {
