@@ -6,13 +6,21 @@ import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats"
 import { AnnouncementStatsChart } from "./announcements/AnnouncementStatsChart";
 import { AnnouncementStatsLoading } from "./announcements/AnnouncementStatsLoading";
 import { UserList } from "./announcements/UserList";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface AnnouncementStatsProps {
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
-export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable = false }) => {
+export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable = false, viewAllUrl }) => {
   const { data: stats, isLoading, error } = useAnnouncementStats(); // Changed to use data, isLoading from React Query
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
 
   return (
     <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
@@ -38,6 +46,16 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable 
                 <UserList 
                   users={stats[0].users.filter(u => !u.read).slice(0, 3)} 
                 />
+              </div>
+            )}
+            
+            {viewAllUrl && (
+              <div className="text-center mt-4">
+                <Link to={viewAllUrl} onClick={handleButtonClick}>
+                  <Button variant="link" size="sm">
+                    View All Stats
+                  </Button>
+                </Link>
               </div>
             )}
           </>

@@ -5,13 +5,16 @@ import { MessageSquare } from "lucide-react";
 import { AnnouncementAttachmentsList } from "@/components/communication/announcement/AnnouncementAttachmentsList";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface AnnouncementsCardProps {
   announcements: any[];
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
-export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements, clickable = false }) => {
+export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements, clickable = false, viewAllUrl }) => {
   const { toast } = useToast();
 
   const handleAttachmentAction = async (attachment: any, event: React.MouseEvent) => {
@@ -75,6 +78,11 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
     }
   };
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+
   return (
     <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader>
@@ -120,6 +128,16 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
             </li>
           ))}
         </ul>
+        
+        {viewAllUrl && (
+          <div className="text-center mt-4">
+            <Link to={viewAllUrl} onClick={handleButtonClick}>
+              <Button variant="link" size="sm">
+                View All Announcements
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

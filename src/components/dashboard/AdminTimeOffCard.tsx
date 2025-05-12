@@ -2,13 +2,21 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface AdminTimeOffCardProps {
   count: number;
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
-export const AdminTimeOffCard: React.FC<AdminTimeOffCardProps> = ({ count, clickable = false }) => {
+export const AdminTimeOffCard: React.FC<AdminTimeOffCardProps> = ({ count, clickable = false, viewAllUrl }) => {
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card 
@@ -24,6 +32,16 @@ export const AdminTimeOffCard: React.FC<AdminTimeOffCardProps> = ({ count, click
               <Calendar className="h-6 w-6 text-amber-700" />
             </div>
           </div>
+          
+          {viewAllUrl && (
+            <div className="text-center mt-4">
+              <Link to={viewAllUrl} onClick={handleButtonClick}>
+                <Button variant="link" size="sm" className="text-amber-700">
+                  View All Requests
+                </Button>
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -67,6 +67,10 @@ export default function Dashboard() {
     navigate("/time?tab=time-off-approvals");
   };
 
+  const handleMarketingClick = () => {
+    navigate("/marketing");
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-4">
@@ -76,7 +80,7 @@ export default function Dashboard() {
           {/* Priority alert for admins - full width */}
           {isAdmin && pendingTimeOff && (
             <div className="col-span-full" onClick={handleAdminTimeOffClick}>
-              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} />
+              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=time-off-approvals" />
             </div>
           )}
 
@@ -92,18 +96,19 @@ export default function Dashboard() {
               onPreviousMonth={goToPreviousMonth}
               onNextMonth={goToNextMonth}
               clickable={true}
+              viewAllUrl="/calendar"
             />
           </div>
           
           {/* Right column - Marketing content */}
           <div className="md:col-span-1">
-            <MarketingContent />
+            <MarketingContent viewAllUrl="/marketing" onViewAllClick={handleMarketingClick} />
           </div>
           
           {/* Full width trainings section if applicable */}
           {assignedTrainings && assignedTrainings.length > 0 && (
             <div className="col-span-full" onClick={handleTrainingClick}>
-              <TrainingCard trainings={assignedTrainings} clickable={true} />
+              <TrainingCard trainings={assignedTrainings} clickable={true} viewAllUrl="/training" />
             </div>
           )}
 
@@ -117,6 +122,7 @@ export default function Dashboard() {
                 onRefresh={handleRefreshData}
                 showEmployeeName={true}
                 clickable={true}
+                viewAllUrl="/time?tab=time-off-approvals"
               />
             </div>
           )}
@@ -130,6 +136,7 @@ export default function Dashboard() {
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
                 clickable={true}
+                viewAllUrl="/time?tab=time-off"
               />
             </div>
           )}
@@ -144,6 +151,7 @@ export default function Dashboard() {
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
                 clickable={true}
+                viewAllUrl="/time?tab=shift-coverage"
               />
             </div>
           )}
@@ -152,11 +160,11 @@ export default function Dashboard() {
           {announcements && announcements.length > 0 && (
             <>
               <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
-                <AnnouncementsCard announcements={announcements} clickable={true} />
+                <AnnouncementsCard announcements={announcements} clickable={true} viewAllUrl="/communication?tab=announcements" />
               </div>
               {isAdmin && (
                 <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
-                  <AnnouncementStats clickable={true} />
+                  <AnnouncementStats clickable={true} viewAllUrl="/communication?tab=announcements" />
                 </div>
               )}
             </>

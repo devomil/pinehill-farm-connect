@@ -2,13 +2,21 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface TrainingCardProps {
   trainings: any[];
   clickable?: boolean;
+  viewAllUrl?: string;
 }
 
-export const TrainingCard: React.FC<TrainingCardProps> = ({ trainings, clickable = false }) => {
+export const TrainingCard: React.FC<TrainingCardProps> = ({ trainings, clickable = false, viewAllUrl }) => {
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Stop propagation to prevent parent click handlers from firing
+    e.stopPropagation();
+  };
+
   return (
     <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
       <CardHeader>
@@ -31,6 +39,16 @@ export const TrainingCard: React.FC<TrainingCardProps> = ({ trainings, clickable
             </li>
           ))}
         </ul>
+        
+        {viewAllUrl && (
+          <div className="text-center mt-4">
+            <Link to={viewAllUrl} onClick={handleButtonClick}>
+              <Button variant="link" size="sm">
+                View All Trainings
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
