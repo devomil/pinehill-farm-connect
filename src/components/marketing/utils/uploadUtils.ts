@@ -2,8 +2,8 @@
 import { toast } from "sonner";
 
 // Constants for file uploads
-// Ensuring we're slightly under Supabase's actual limit to provide buffer
-export const MAX_FILE_SIZE = 195 * 1024 * 1024; // 195MB to provide some buffer for API overhead
+// Reducing the maximum size to better match Supabase's limits
+export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB as Supabase may have stricter limits
 
 export const ACCEPTED_TYPES = {
   image: "image/*",

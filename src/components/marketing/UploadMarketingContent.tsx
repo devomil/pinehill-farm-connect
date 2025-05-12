@@ -34,7 +34,7 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
     setError(null);
 
     try {
-      // Check again file size before attempting upload
+      // Check file size before attempting upload
       if (file.size > MAX_FILE_SIZE) {
         throw new Error(`File size exceeds the ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
       }
@@ -56,12 +56,12 @@ export const UploadMarketingContent: React.FC<UploadMarketingContentProps> = ({ 
       const errorMessage = error.message || "Unknown error during upload";
       setError(`Error: ${errorMessage}`);
       
-      if (error.message?.includes("Payload too large")) {
-        toast.error("File is too large for upload. Please select a smaller file.");
-      } else if (error.message?.includes("exceeded the maximum allowed size")) {
-        toast.error("File size exceeds the server limit. Please select a smaller file.");
+      if (error.message?.includes("Payload too large") || 
+          error.message?.includes("exceeded the maximum allowed size") ||
+          error.message?.includes("exceeds the")) {
+        toast.error("File is too large for Supabase storage. Please select a file under 100MB.");
       } else {
-        toast.error("Error uploading content. Please try again with a smaller file.");
+        toast.error("Error uploading content. Please try again.");
       }
     } finally {
       setUploading(false);

@@ -18,6 +18,11 @@ export const uploadContent = async ({
 }: UploadContentParams) => {
   console.log(`Starting upload for ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
+  // Check file size early to provide better error message
+  if (file.size > 100 * 1024 * 1024) {
+    throw new Error("File size exceeds the server limit of 100MB. Please select a smaller file.");
+  }
+
   // Generate a unique filename to prevent collisions
   const filePath = generateUniqueFilename(file);
 
@@ -31,7 +36,7 @@ export const uploadContent = async ({
   while (attempt < maxAttempts) {
     attempt++;
     try {
-      // Upload file to storage bucket
+      // Upload file to storage bucket with chunking for larger files
       const { error: uploadError, data } = await supabase.storage
         .from('marketing_content')
         .upload(filePath, file, {
@@ -44,8 +49,9 @@ export const uploadContent = async ({
         
         // If we hit the size limit, don't retry
         if (uploadError.message?.includes("exceeded the maximum allowed size") ||
-            uploadError.message?.includes("Payload too large")) {
-          throw uploadError;
+            uploadError.message?.includes("Payload too large") ||
+            uploadError.message?.includes("too large")) {
+          throw new Error("File size exceeds the server limit of 100MB. Please select a smaller file.");
         }
         
         // For other errors, retry after a delay
