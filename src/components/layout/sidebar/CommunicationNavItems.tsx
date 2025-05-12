@@ -36,9 +36,9 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
     }
   }, [pathname, search, refreshMessages, refetchData]);
   
-  // Count unread messages - filter out system notifications and announcements
+  // Count unread messages - explicitly only count direct message types
   const unreadMessageCount = unreadMessages?.filter(
-    msg => msg.type !== 'system_notification' && msg.type !== 'announcement'
+    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
   ).length || 0;
   
   // Count unread announcements - exclude those requiring acknowledgment and those already read

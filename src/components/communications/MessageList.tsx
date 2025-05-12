@@ -67,9 +67,9 @@ export function MessageList({
     return Array.from(conversations.values());
   }, [messages, currentUser]);
 
-  // Count unread messages (filter out system notifications and announcements)
+  // Count unread direct messages - explicitly only count direct message types
   const unreadCount = unreadMessages?.filter(
-    msg => msg.type !== 'system_notification' && msg.type !== 'announcement'
+    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
   ).length || 0;
   
   // Auto-refresh messages when component mounts to ensure accurate counts

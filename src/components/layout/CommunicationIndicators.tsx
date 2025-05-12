@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -27,10 +28,9 @@ export const CommunicationIndicators: React.FC = () => {
       }).length
     : 0;
   
-  // Count of unread direct messages (from useCommunications hook)
-  // Ensure unreadMessages exist and have a valid length
+  // Count of unread direct messages - explicitly only count direct message types
   const unreadMessageCount = unreadMessages?.filter(
-    msg => msg.type !== 'system_notification' && msg.type !== 'announcement'
+    msg => msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent'
   ).length || 0;
 
   // Admin users need more frequent refreshes to keep badges accurate

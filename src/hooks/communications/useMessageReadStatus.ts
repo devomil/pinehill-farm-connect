@@ -22,12 +22,11 @@ export function useMessageReadStatus(
       if (!selectedEmployee || !currentUser || unreadMessages.length === 0) return;
 
       // Find unread messages from the selected employee
-      // Only mark direct messages as read, not system notifications or announcements
+      // Only mark direct messages as read, explicitly check for direct message types
       const toMarkAsRead = unreadMessages.filter(
         msg => msg.sender_id === selectedEmployee.id && 
               msg.recipient_id === currentUser.id &&
-              msg.type !== 'system_notification' &&
-              msg.type !== 'announcement'
+              (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent')
       );
       
       if (toMarkAsRead.length === 0) return;

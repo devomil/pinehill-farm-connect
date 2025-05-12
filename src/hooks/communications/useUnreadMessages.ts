@@ -20,10 +20,11 @@ export function useUnreadMessages(messages: Communication[] | null, currentUser:
       message => 
         message.recipient_id === currentUser.id && 
         message.read_at === null &&
-        // Ensure message type is not null/undefined before checking
-        message.type !== 'system_notification' && 
-        message.type !== 'announcement'
+        // Explicitly check for direct message types (NOT system or announcement)
+        (message.type === 'general' || message.type === 'shift_coverage' || message.type === 'urgent')
     ) as EnhancedCommunication[];
+    
+    console.log(`Found ${unreadMessages.length} unread direct messages for ${currentUser.email}`);
     
     // Add sender_name to each message for easier reference in UI
     return unreadMessages.map(message => {

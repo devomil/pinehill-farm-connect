@@ -20,11 +20,12 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   unreadMessages,
   onTabChange
 }) => {
-  // Filter out system notifications from unread messages
+  // Filter direct messages only (explicitly include only direct message types)
   const filteredUnreadMessages = unreadMessages 
     ? unreadMessages.filter(msg => 
-        msg.type !== 'system_notification' && 
-        msg.type !== 'announcement')
+        msg.type === 'general' || 
+        msg.type === 'shift_coverage' || 
+        msg.type === 'urgent')
     : [];
     
   // Group unread messages by sender for better visibility
