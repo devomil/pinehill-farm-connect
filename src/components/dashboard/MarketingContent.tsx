@@ -35,7 +35,7 @@ export const MarketingContent: React.FC = () => {
     
     setIsRefreshing(true);
     await refetch();
-    setTimeout(() => setIsRefreshing(false), 1000); // Ensure button stays disabled briefly
+    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   const handleUploadComplete = () => {
@@ -61,7 +61,7 @@ export const MarketingContent: React.FC = () => {
         );
       case 'audio':
         return (
-          <div className="p-3 bg-muted rounded-lg">
+          <div className="p-2 bg-muted rounded-lg">
             <audio
               controls
               className="w-full"
@@ -93,26 +93,27 @@ export const MarketingContent: React.FC = () => {
   };
 
   return (
-    <Card className="col-span-full lg:col-span-2">
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle>Latest Marketing Content</CardTitle>
-          <div className="flex gap-2">
+          <CardTitle className="text-base">Latest Marketing</CardTitle>
+          <div className="flex gap-1">
             <Button 
               variant="outline" 
               size="icon" 
+              className="h-7 w-7"
               onClick={handleRefresh} 
               disabled={isRefreshing || isLoading}
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
             
             {currentUser?.role === "admin" && (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Content
+                  <Button size="sm" className="h-7 px-2">
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
@@ -126,57 +127,57 @@ export const MarketingContent: React.FC = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-auto h-[400px] custom-scrollbar">
         {isLoading ? (
           <div className="space-y-4">
             {Array(3).fill(0).map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-3 w-full" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Failed to load content. Please try refreshing.</p>
-            <Button variant="outline" onClick={handleRefresh} className="mt-2">
-              <RefreshCw className="h-4 w-4 mr-2" />
+          <div className="text-center py-4 text-muted-foreground">
+            <p className="text-sm">Failed to load content.</p>
+            <Button variant="outline" onClick={handleRefresh} className="mt-2 text-xs h-8">
+              <RefreshCw className="h-3 w-3 mr-1" />
               Retry
             </Button>
           </div>
         ) : marketingContent?.length ? (
           <div className="space-y-4">
             {marketingContent.map((content) => (
-              <div key={content.id} className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div key={content.id} className="space-y-1 border-b pb-4 mb-4 last:border-0">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   {content.content_type === 'video' ? (
-                    <Video className="h-4 w-4" />
+                    <Video className="h-3 w-3" />
                   ) : content.content_type === 'audio' ? (
-                    <Music className="h-4 w-4" />
+                    <Music className="h-3 w-3" />
                   ) : (
-                    <Image className="h-4 w-4" />
+                    <Image className="h-3 w-3" />
                   )}
                   <span className="font-medium">{content.title}</span>
                 </div>
                 {renderContent(content)}
                 {content.description && (
-                  <p className="text-sm text-muted-foreground">{content.description}</p>
+                  <p className="text-xs text-muted-foreground">{content.description}</p>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No marketing content available.</p>
+          <div className="text-center py-4 text-muted-foreground">
+            <p className="text-sm">No marketing content.</p>
             {currentUser?.role === "admin" && (
               <Button 
                 variant="outline" 
-                className="mt-2"
+                className="mt-2 text-xs h-8"
                 onClick={() => setIsDialogOpen(true)}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Content
+                <Plus className="h-3 w-3 mr-1" />
+                Add First Content
               </Button>
             )}
           </div>
@@ -184,4 +185,4 @@ export const MarketingContent: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
+}

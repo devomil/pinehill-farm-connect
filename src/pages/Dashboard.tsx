@@ -49,12 +49,16 @@ export default function Dashboard() {
       <div className="space-y-4">
         <DashboardHeader userName={currentUser?.name || ''} />
 
-        {isAdmin && pendingTimeOff && (
-          <AdminTimeOffCard count={pendingTimeOff.length || 0} />
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Priority alert for admins - full width */}
+          {isAdmin && pendingTimeOff && (
+            <div className="col-span-full">
+              <AdminTimeOffCard count={pendingTimeOff.length || 0} />
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
+          {/* Left column - Calendar */}
+          <div className="md:col-span-3">
             <CalendarContent
               date={date}
               currentMonth={currentMonth}
@@ -66,18 +70,22 @@ export default function Dashboard() {
               onNextMonth={goToNextMonth}
             />
           </div>
-          <div>
+          
+          {/* Right column - Marketing content */}
+          <div className="md:col-span-1">
             <MarketingContent />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-4">
-            {assignedTrainings && assignedTrainings.length > 0 && (
+          
+          {/* Full width trainings section if applicable */}
+          {assignedTrainings && assignedTrainings.length > 0 && (
+            <div className="col-span-full">
               <TrainingCard trainings={assignedTrainings} />
-            )}
+            </div>
+          )}
 
-            {isAdmin && (
+          {/* Admin time off requests */}
+          {isAdmin && (
+            <div className="md:col-span-2">
               <TimeOffRequestsCard 
                 requests={pendingTimeOff || []} 
                 loading={dashboardDataLoading}
@@ -85,19 +93,24 @@ export default function Dashboard() {
                 onRefresh={handleRefreshData}
                 showEmployeeName={true}
               />
-            )}
+            </div>
+          )}
 
-            {!isAdmin && (
+          {/* User time off requests */}
+          {!isAdmin && (
+            <div className="md:col-span-2">
               <TimeOffRequestsCard 
                 requests={userTimeOff || []} 
                 loading={dashboardDataLoading}
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
               />
-            )}
+            </div>
+          )}
 
-            {/* Show Shift Coverage Card for both admins and employees */}
-            {currentUser && (
+          {/* Shift Coverage Card */}
+          {currentUser && (
+            <div className="md:col-span-2">
               <ShiftCoverageCard 
                 messages={shiftCoverageMessages || []} 
                 currentUser={currentUser}
@@ -105,15 +118,22 @@ export default function Dashboard() {
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
               />
-            )}
+            </div>
+          )}
 
-            {announcements && announcements.length > 0 && (
-              <>
+          {/* Announcements section */}
+          {announcements && announcements.length > 0 && (
+            <>
+              <div className="md:col-span-2">
                 <AnnouncementsCard announcements={announcements} />
-                {isAdmin && <AnnouncementStats />}
-              </>
-            )}
-          </div>
+              </div>
+              {isAdmin && (
+                <div className="md:col-span-2">
+                  <AnnouncementStats />
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {assignedTrainings && assignedTrainings.length > 0 && (
