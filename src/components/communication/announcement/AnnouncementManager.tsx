@@ -37,6 +37,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   
   // Fetch announcements when component mounts or currentUser changes
   useEffect(() => {
+    console.log("AnnouncementManager mounted with user:", currentUser?.email);
     if (currentUser) {
       fetchAnnouncements();
     }

@@ -32,6 +32,8 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onAttachmentAction,
   onAcknowledge
 }) => {
+  console.log("CommunicationTabs rendered with", announcements.length, "announcements");
+  
   const {
     activeTab,
     setActiveTab,

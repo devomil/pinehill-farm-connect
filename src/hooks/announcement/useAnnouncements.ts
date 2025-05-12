@@ -19,6 +19,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
     try {
+      console.log("Fetching announcements...");
       const { data: annData, error } = await supabase
         .from("announcements")
         .select("*")
@@ -64,7 +65,16 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
 
   // Add effect to fetch announcements when component mounts
   useEffect(() => {
+    console.log("useAnnouncements hook mounted, fetching data...");
     fetchAnnouncements();
+    
+    // Set up a polling interval to periodically refresh announcements
+    const interval = setInterval(() => {
+      console.log("Refreshing announcements data...");
+      fetchAnnouncements();
+    }, 60000); // Refresh every minute
+    
+    return () => clearInterval(interval);
   }, [currentUser?.id, fetchAnnouncements]); // Re-fetch when user changes
 
   const markAsRead = async (id: string): Promise<void> => {

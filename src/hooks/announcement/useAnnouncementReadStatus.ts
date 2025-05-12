@@ -1,107 +1,88 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export const useAnnouncementReadStatus = (currentUserId: string | undefined) => {
+export const useAnnouncementReadStatus = (userId: string | undefined) => {
   const { toast } = useToast();
-  const [isMarking, setIsMarking] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-  const markAsRead = useCallback(async (id: string): Promise<void> => {
-    if (!currentUserId) {
-      console.error("No currentUserId provided to markAsRead");
-      return Promise.reject("No currentUserId available");
+  const markAsRead = async (announcementId: string) => {
+    if (!userId) {
+      console.error("Cannot mark as read: No user ID provided");
+      return;
     }
-    
-    if (isMarking) {
-      console.log("Already marking as read, please wait");
-      return Promise.reject("Operation in progress");
-    }
-    
+
+    setProcessing(true);
     try {
-      setIsMarking(true);
-      console.log(`Marking announcement ${id} as read for user ${currentUserId}`);
+      console.log(`Marking announcement ${announcementId} as read for user ${userId}`);
       
-      // First check if a record exists
-      const { data: existingRead, error: checkError } = await supabase
+      // First check if a recipient record exists
+      const { data: existingRecipient, error: checkError } = await supabase
         .from("announcement_recipients")
         .select("*")
-        .eq("announcement_id", id)
-        .eq("user_id", currentUserId)
+        .eq("user_id", userId)
+        .eq("announcement_id", announcementId)
         .maybeSingle();
-        
+      
       if (checkError) {
-        console.error("Error checking announcement recipient:", checkError);
-        toast({ 
-          title: "Failed to mark as read", 
-          description: checkError.message, 
-          variant: "destructive" 
-        });
-        return Promise.reject(checkError);
+        console.error("Error checking recipient record:", checkError);
+        throw checkError;
       }
       
-      // Check if already read
-      if (existingRead?.read_at) {
-        console.log("Announcement already marked as read");
-        return Promise.resolve();
-      }
-      
-      if (existingRead) {
+      let error;
+      if (existingRecipient) {
         // Update existing record
+        console.log("Updating existing recipient record");
         const { error: updateError } = await supabase
           .from("announcement_recipients")
           .update({ read_at: new Date().toISOString() })
-          .eq("id", existingRead.id);
-          
-        if (updateError) {
-          console.error("Mark as read update error:", updateError);
-          toast({ 
-            title: "Failed to mark as read", 
-            description: updateError.message, 
-            variant: "destructive" 
-          });
-          return Promise.reject(updateError);
-        }
+          .eq("user_id", userId)
+          .eq("announcement_id", announcementId);
+        
+        error = updateError;
       } else {
-        // Create new read receipt
+        // Insert new record
+        console.log("Creating new recipient record");
         const { error: insertError } = await supabase
           .from("announcement_recipients")
-          .insert({
-            announcement_id: id,
-            user_id: currentUserId,
-            read_at: new Date().toISOString()
-          });
-          
-        if (insertError) {
-          console.error("Mark as read insert error:", insertError);
-          toast({ 
-            title: "Failed to mark as read", 
-            description: insertError.message, 
-            variant: "destructive" 
-          });
-          return Promise.reject(insertError);
-        }
+          .insert([
+            {
+              user_id: userId,
+              announcement_id: announcementId,
+              read_at: new Date().toISOString()
+            }
+          ]);
+        
+        error = insertError;
       }
       
-      toast({
-        title: "Marked as read",
-        description: "Announcement has been marked as read"
-      });
-      console.log("Successfully marked announcement as read");
+      if (error) {
+        console.error("Error marking announcement as read:", error);
+        toast({
+          title: "Error",
+          description: "Failed to mark announcement as read",
+          variant: "destructive"
+        });
+        throw error;
+      }
       
-      return Promise.resolve();
-    } catch (err) {
-      console.error("Unexpected error in markAsRead:", err);
-      toast({ 
-        title: "Failed to mark as read", 
-        description: "An unexpected error occurred", 
-        variant: "destructive" 
+      console.log("Successfully marked announcement as read");
+    } catch (error) {
+      console.error("Unexpected error in markAsRead:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
       });
-      return Promise.reject(err);
+      throw error;
     } finally {
-      setIsMarking(false);
+      setProcessing(false);
     }
-  }, [currentUserId, toast, isMarking]);
+  };
 
-  return { markAsRead, isMarking };
+  return {
+    markAsRead,
+    processing
+  };
 };

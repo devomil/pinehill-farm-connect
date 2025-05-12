@@ -39,6 +39,8 @@ export const AnnouncementList: React.FC<AnnouncementListProps> = ({
   onAttachmentAction,
   onAcknowledge
 }) => {
+  console.log("AnnouncementList rendered with", announcements.length, "announcements, loading:", loading);
+  
   if (loading) {
     return (
       <div className="space-y-4">

@@ -17,13 +17,14 @@ interface ContentItem {
 interface ContentCardProps {
   content: ContentItem;
   onClick?: (content: ContentItem) => void;
+  className?: string;
 }
 
-export const ContentCard: React.FC<ContentCardProps> = ({ content, onClick }) => {
+export const ContentCard: React.FC<ContentCardProps> = ({ content, onClick, className }) => {
   return (
     <Card 
       key={content.id} 
-      className="overflow-hidden"
+      className={`overflow-hidden ${className || ""}`}
       onClick={() => onClick?.(content)}
     >
       <CardHeader className="p-3 pb-0">

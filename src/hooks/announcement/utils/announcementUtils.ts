@@ -36,6 +36,8 @@ export const updateAnnouncementReadStatus = (
     return announcements;
   }
   
+  console.log("Updating read status with records:", reads, "for user:", currentUserId);
+  
   return announcements.map(a => {
     // Find recipients record for this announcement
     const recipientRecord = reads.find((rec: any) => rec.announcement_id === a.id);
@@ -59,4 +61,24 @@ export const updateAnnouncementReadStatus = (
       currentUserId // Add currentUserId to each announcement for easy access
     };
   });
+};
+
+// Safe helper to get readBy array
+export const getAnnouncementReadBy = (announcement: any): string[] => {
+  // If it already has a readBy array, return it
+  if (Array.isArray(announcement.readBy)) {
+    return announcement.readBy;
+  }
+  
+  // For raw announcements from database, check if we have read receipts
+  // and return an empty array as default
+  return [];
+};
+
+// Safe helper to check if an announcement is read by a specific user
+export const isAnnouncementReadByUser = (announcement: any, userId: string | undefined): boolean => {
+  if (!userId) return false;
+  
+  const readBy = getAnnouncementReadBy(announcement);
+  return readBy.includes(userId);
 };
