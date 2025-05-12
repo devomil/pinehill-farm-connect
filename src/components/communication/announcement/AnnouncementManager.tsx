@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnnouncementAcknowledge } from "@/hooks/announcement/useAnnouncementAcknowledge";
 import { useAnnouncementReadStatus } from "@/hooks/announcement/useAnnouncementReadStatus";
+import { CommunicationErrorDisplay } from "@/components/communication/CommunicationErrorDisplay";
 
 interface AnnouncementManagerProps {
   currentUser: User | null;
@@ -26,6 +27,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   const {
     announcements,
     loading,
+    error,
     fetchAnnouncements,
     markAsRead,
     handleEdit,
@@ -166,6 +168,15 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       });
     }
   };
+
+  if (error) {
+    return (
+      <CommunicationErrorDisplay 
+        error={error} 
+        onRefresh={fetchAnnouncements} 
+      />
+    );
+  }
 
   return (
     <>

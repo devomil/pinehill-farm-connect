@@ -10,7 +10,12 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
   const markAsRead = async (announcementId: string) => {
     if (!userId) {
       console.error("Cannot mark as read: No user ID provided");
-      return;
+      toast({
+        title: "Error",
+        description: "Cannot mark as read: User not authenticated",
+        variant: "destructive"
+      });
+      return Promise.reject("No user ID provided");
     }
 
     setProcessing(true);
@@ -32,15 +37,19 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       
       let error;
       if (existingRecipient) {
-        // Update existing record
-        console.log("Updating existing recipient record");
-        const { error: updateError } = await supabase
-          .from("announcement_recipients")
-          .update({ read_at: new Date().toISOString() })
-          .eq("user_id", userId)
-          .eq("announcement_id", announcementId);
-        
-        error = updateError;
+        // Update existing record if read_at is null
+        if (!existingRecipient.read_at) {
+          console.log("Updating existing recipient record");
+          const { error: updateError } = await supabase
+            .from("announcement_recipients")
+            .update({ read_at: new Date().toISOString() })
+            .eq("user_id", userId)
+            .eq("announcement_id", announcementId);
+          
+          error = updateError;
+        } else {
+          console.log("Announcement already marked as read, skipping update");
+        }
       } else {
         // Insert new record
         console.log("Creating new recipient record");
@@ -64,10 +73,11 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
           description: "Failed to mark announcement as read",
           variant: "destructive"
         });
-        throw error;
+        return Promise.reject(error);
       }
       
       console.log("Successfully marked announcement as read");
+      return Promise.resolve();
     } catch (error) {
       console.error("Unexpected error in markAsRead:", error);
       toast({
@@ -75,7 +85,7 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
         description: "An unexpected error occurred",
         variant: "destructive"
       });
-      throw error;
+      return Promise.reject(error);
     } finally {
       setProcessing(false);
     }

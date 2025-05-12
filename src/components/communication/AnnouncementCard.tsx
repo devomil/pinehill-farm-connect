@@ -128,7 +128,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="pb-4">
-        <p className="text-sm mb-4">{announcement.content}</p>
+        <p className="text-sm mb-4 whitespace-pre-wrap">{announcement.content}</p>
         
         {announcement.attachments && announcement.attachments.length > 0 && (
           <AnnouncementAttachmentsList

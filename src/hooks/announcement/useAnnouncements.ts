@@ -12,12 +12,16 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const { toast } = useToast();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  
   const { markAsRead: markAsReadInDb } = useAnnouncementReadStatus(currentUser?.id);
   const { handleEdit: editAnnouncement, handleDelete: deleteAnnouncement } = useAnnouncementActions();
   const { refetchData: refreshDashboardData } = useDashboardData();
 
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       console.log("Fetching announcements...");
       const { data: annData, error } = await supabase
@@ -28,6 +32,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       if (error) {
         console.error("Announcement fetch error:", error);
         toast({ title: "Failed to load announcements", description: error.message, variant: "destructive" });
+        setError(error);
         setAnnouncements([]);
         setLoading(false);
         return;
@@ -57,6 +62,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     } catch (err) {
       console.error("Unexpected error in fetchAnnouncements:", err);
       toast({ title: "Failed to load announcements", description: "An unexpected error occurred", variant: "destructive" });
+      setError(err instanceof Error ? err : new Error('Unknown error'));
       setAnnouncements([]);
     } finally {
       setLoading(false);
@@ -126,12 +132,21 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     return result;
   };
 
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    fetchAnnouncements();
+    return retryCount + 1;
+  };
+
   return {
     announcements,
     loading,
+    error,
     fetchAnnouncements,
     markAsRead,
     handleEdit,
-    handleDelete
+    handleDelete,
+    retryCount,
+    handleRetry
   };
 };

@@ -1,119 +1,98 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 
-export const useAnnouncementAcknowledge = (currentUserId: string | undefined) => {
+export const useAnnouncementAcknowledge = (userId: string | undefined) => {
   const { toast } = useToast();
-  const [isAcknowledging, setIsAcknowledging] = useState(false);
-  const refreshMessages = useRefreshMessages();
+  const [processing, setProcessing] = useState(false);
 
-  const acknowledgeAnnouncement = useCallback(async (announcementId: string): Promise<void> => {
-    if (!currentUserId) {
-      console.error("No currentUserId provided to acknowledgeAnnouncement");
-      return Promise.reject("No currentUserId available");
+  const acknowledgeAnnouncement = async (announcementId: string) => {
+    if (!userId) {
+      console.error("Cannot acknowledge: No user ID provided");
+      return Promise.reject("No user ID provided");
     }
 
-    if (isAcknowledging) {
-      console.log("Already processing an acknowledgment, please wait");
-      return Promise.reject("Operation in progress");
-    }
-
+    setProcessing(true);
     try {
-      setIsAcknowledging(true);
-      console.log(`Acknowledging announcement ${announcementId} for user ${currentUserId}`);
+      console.log(`Acknowledging announcement ${announcementId} for user ${userId}`);
       
-      // Check if record exists first
-      const { data: existingRecord, error: checkError } = await supabase
+      // First check if a recipient record exists
+      const { data: existingRecipient, error: checkError } = await supabase
         .from("announcement_recipients")
         .select("*")
+        .eq("user_id", userId)
         .eq("announcement_id", announcementId)
-        .eq("user_id", currentUserId)
         .maybeSingle();
-        
+      
       if (checkError) {
-        console.error("Error checking announcement recipient:", checkError);
-        toast({
-          title: "Error acknowledging announcement",
-          description: checkError.message,
-          variant: "destructive"
-        });
-        return Promise.reject(checkError);
+        console.error("Error checking recipient record:", checkError);
+        throw checkError;
       }
       
-      if (existingRecord) {
-        // Check if already acknowledged
-        if (existingRecord.acknowledged_at) {
-          console.log("Announcement already acknowledged");
-          return Promise.resolve(); // Already acknowledged, consider it a success
-        }
-        
+      let error;
+      if (existingRecipient) {
         // Update existing record
-        console.log("Updating existing acknowledgment record");
+        console.log("Updating existing recipient record with acknowledgment");
         const { error: updateError } = await supabase
           .from("announcement_recipients")
           .update({ 
             acknowledged_at: new Date().toISOString(),
-            read_at: existingRecord.read_at || new Date().toISOString() // Also mark as read if not already
+            read_at: existingRecipient.read_at || new Date().toISOString() // Also mark as read if not already
           })
-          .eq("id", existingRecord.id);
-          
-        if (updateError) {
-          console.error("Acknowledgment update error:", updateError);
-          toast({
-            title: "Failed to acknowledge announcement",
-            description: updateError.message,
-            variant: "destructive"
-          });
-          return Promise.reject(updateError);
-        }
+          .eq("user_id", userId)
+          .eq("announcement_id", announcementId);
+        
+        error = updateError;
       } else {
-        // Create new record
-        console.log("Creating new acknowledgment record");
+        // Insert new record
+        console.log("Creating new recipient record with acknowledgment");
         const { error: insertError } = await supabase
           .from("announcement_recipients")
-          .insert({
-            announcement_id: announcementId,
-            user_id: currentUserId,
-            acknowledged_at: new Date().toISOString(),
-            read_at: new Date().toISOString()
-          });
-          
-        if (insertError) {
-          console.error("Acknowledgment insert error:", insertError);
-          toast({
-            title: "Failed to acknowledge announcement",
-            description: insertError.message,
-            variant: "destructive"
-          });
-          return Promise.reject(insertError);
-        }
+          .insert([
+            {
+              user_id: userId,
+              announcement_id: announcementId,
+              acknowledged_at: new Date().toISOString(),
+              read_at: new Date().toISOString() // Also mark as read
+            }
+          ]);
+        
+        error = insertError;
       }
       
-      console.log("Successfully acknowledged announcement");
+      if (error) {
+        console.error("Error acknowledging announcement:", error);
+        toast({
+          title: "Error",
+          description: "Failed to acknowledge announcement",
+          variant: "destructive"
+        });
+        throw error;
+      }
+      
       toast({
-        title: "Announcement acknowledged",
-        description: "Thank you for acknowledging this announcement"
+        title: "Success",
+        description: "Announcement acknowledged successfully",
       });
       
-      // Refresh data to update notification counts
-      refreshMessages();
-      
+      console.log("Successfully acknowledged announcement");
       return Promise.resolve();
-      
-    } catch (err) {
-      console.error("Unexpected error in acknowledgeAnnouncement:", err);
+    } catch (error) {
+      console.error("Unexpected error in acknowledgeAnnouncement:", error);
       toast({
-        title: "Failed to acknowledge announcement",
+        title: "Error",
         description: "An unexpected error occurred",
         variant: "destructive"
       });
-      return Promise.reject(err);
+      return Promise.reject(error);
     } finally {
-      setIsAcknowledging(false);
+      setProcessing(false);
     }
-  }, [currentUserId, toast, isAcknowledging, refreshMessages]);
+  };
 
-  return { acknowledgeAnnouncement, isAcknowledging };
+  return {
+    acknowledgeAnnouncement,
+    processing
+  };
 };
