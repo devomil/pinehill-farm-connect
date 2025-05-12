@@ -58,9 +58,17 @@ export default function Communications() {
   useEffect(() => {
     if (isMessagesTabActive && unreadMessages && unreadMessages.length > 0) {
       console.log("Messages tab is active with unread messages, refreshing data");
-      refreshMessages();
+      
+      // For admin users, refresh several times to ensure all badge counts are updated
+      if (currentUser?.role === 'admin') {
+        refreshMessages();
+        setTimeout(() => refreshMessages(), 1000);
+        setTimeout(() => refreshMessages(), 3000);
+      } else {
+        refreshMessages();
+      }
     }
-  }, [isMessagesTabActive, unreadMessages, refreshMessages]);
+  }, [isMessagesTabActive, unreadMessages, refreshMessages, currentUser]);
 
   // Only attempt auto-retry when connection errors occur and limit to 3 attempts
   useEffect(() => {
@@ -86,6 +94,11 @@ export default function Communications() {
     toast.info("Refreshing employee and message data...");
     refetchEmployees();
     refreshMessages();
+    
+    // For admin users, do multiple refreshes with slight delays
+    if (currentUser?.role === 'admin') {
+      setTimeout(() => refreshMessages(), 1000);
+    }
   };
 
   // Handle search query changes

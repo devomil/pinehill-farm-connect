@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CommunicationTabs } from "./CommunicationPageTabs";
 import { AnnouncementManager } from "./announcement/AnnouncementManager";
@@ -35,6 +35,12 @@ const CommunicationPage: React.FC = () => {
       navigate('/communication?tab=messages');
       // Force refresh messages when switching to messages tab
       refreshMessages();
+      
+      // For admin users, do multiple refreshes with delays to ensure counts are updated
+      if (isAdmin) {
+        setTimeout(() => refreshMessages(), 700);
+        setTimeout(() => refreshMessages(), 2000);
+      }
     } else {
       navigate('/communication');
     }
@@ -51,8 +57,31 @@ const CommunicationPage: React.FC = () => {
 
   // Make sure we refresh unread messages when the component mounts
   useEffect(() => {
+    console.log("CommunicationPage mounted, refreshing messages");
     refreshMessages();
+    
+    // Refresh again after a brief delay to catch any updates
+    const timer = setTimeout(() => refreshMessages(), 1000);
+    
+    return () => clearTimeout(timer);
   }, [refreshMessages]);
+  
+  // Special effect for when viewing the messages tab to reset badge counters
+  useEffect(() => {
+    if (activeTab === "messages" && isAdmin) {
+      console.log("Admin user viewing messages tab, aggressively refreshing counters");
+      refreshMessages();
+      
+      // Multiple refreshes with delays for admin users to ensure counts are updated
+      const timerOne = setTimeout(() => refreshMessages(), 800);
+      const timerTwo = setTimeout(() => refreshMessages(), 2000);
+      
+      return () => {
+        clearTimeout(timerOne);
+        clearTimeout(timerTwo);
+      };
+    }
+  }, [activeTab, isAdmin, refreshMessages]);
   
   // Handle announcement creation
   const handleAnnouncementCreate = () => {
@@ -61,10 +90,15 @@ const CommunicationPage: React.FC = () => {
   };
   
   // Handle manual refresh of data
-  const handleManualRefresh = () => {
+  const handleManualRefresh = useCallback(() => {
     console.log("Manual refresh requested");
     refreshMessages();
-  };
+    
+    // For admin users, do multiple refreshes with delays
+    if (isAdmin) {
+      setTimeout(() => refreshMessages(), 1000);
+    }
+  }, [refreshMessages, isAdmin]);
   
   return (
     <div className="container mx-auto py-6 max-w-6xl">

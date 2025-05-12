@@ -8,6 +8,7 @@ import { Communication } from "@/types/communications/communicationTypes";
 import { useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useCommunications = (excludeShiftCoverage = false) => {
   const { currentUser } = useAuth();

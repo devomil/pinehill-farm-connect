@@ -48,9 +48,10 @@ export function useMessageReadStatus(
         // Force immediate refresh to update all badge counters across the app
         refreshMessages();
         
-        // For admin users, do an additional refresh after a brief delay to ensure counts are updated
+        // For admin users, do additional refreshes to ensure counts are updated
         if (currentUser.role === 'admin') {
-          setTimeout(() => refreshMessages(), 1000);
+          setTimeout(() => refreshMessages(), 500);
+          setTimeout(() => refreshMessages(), 1500);
         }
       }
     };
