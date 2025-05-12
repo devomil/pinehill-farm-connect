@@ -76,10 +76,8 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
       </div>
 
       <AdminAnnouncementDialog
-        open={showDialog}
-        onClose={handleDialogClose}
-        onSave={onAnnouncementCreate}
         allEmployees={allEmployees}
+        onCreate={onAnnouncementCreate}
       />
 
       {isAdmin && (
