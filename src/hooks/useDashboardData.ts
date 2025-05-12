@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTimeOffDashboard } from "./dashboard/useTimeOffDashboard";
 import { useShiftCoverageDashboard } from "./dashboard/useShiftCoverageDashboard";
 import { useAnnouncementsDashboard } from "./dashboard/useAnnouncementsDashboard";
 import { useTrainingsDashboard } from "./dashboard/useTrainingsDashboard";
 import { useDashboardRefetch } from "./dashboard/useDashboardRefetch";
+import { toast } from "sonner";
 
 /**
  * Main hook for fetching all dashboard data
@@ -36,7 +37,7 @@ export function useDashboardData() {
   };
 
   // Use the refetch hook
-  const { refetchData, handleRefreshData } = useDashboardRefetch(
+  const { refetchData } = useDashboardRefetch(
     refetchFunctions,
     currentUser?.id
   );
@@ -104,6 +105,14 @@ export function useDashboardData() {
                 trainings.assignedTrainingsError || 
                 null;
 
+  // Create a refresh handler that updates the retry count
+  const handleRefreshData = useCallback(() => {
+    toast.info("Refreshing dashboard data...");
+    console.log("Manual dashboard refresh triggered");
+    setRetryCount(prev => prev + 1);
+    refetchData();
+  }, [refetchData]);
+  
   return {
     pendingTimeOff: timeOff.pendingTimeOff,
     userTimeOff: timeOff.userTimeOff,
@@ -114,6 +123,7 @@ export function useDashboardData() {
     refetchData,
     loading,
     error,
+    handleRefreshData,
     setRetryCount
   };
 }

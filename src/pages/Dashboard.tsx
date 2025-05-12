@@ -1,5 +1,5 @@
 
-import React, { useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -29,69 +29,13 @@ export default function Dashboard() {
     isAdmin,
     refetchData,
     loading: dashboardDataLoading,
-    error: dashboardDataError 
+    error: dashboardDataError,
+    handleRefreshData
   } = useDashboardData();
 
   const [date, setDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"month" | "team">("month");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [retryCount, setRetryCount] = useState(0);
-
-  // Add auto-refresh logic for dashboard data
-  useEffect(() => {
-    console.log("Setting up dashboard auto-refresh");
-    
-    // Initial fetch with slight delay to let the page render first
-    const initialFetchTimer = setTimeout(() => {
-      console.log("Initial dashboard data fetch");
-      refetchData();
-    }, 500);
-    
-    // Auto refresh every 30 seconds
-    const intervalId = setInterval(() => {
-      console.log("Auto-refreshing dashboard data");
-      refetchData();
-    }, 30000);
-    
-    return () => {
-      clearTimeout(initialFetchTimer);
-      clearInterval(intervalId);
-    };
-  }, [refetchData]);
-  
-  // Add effect to retry fetching if there was an error
-  useEffect(() => {
-    if (dashboardDataError && currentUser && !dashboardDataLoading && retryCount < 3) {
-      console.log("Detected error in dashboard data, will retry in 3 seconds", dashboardDataError);
-      const timer = setTimeout(() => {
-        console.log("Retrying dashboard data fetch after error");
-        setRetryCount(prev => prev + 1);
-        refetchData();
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [dashboardDataError, currentUser, dashboardDataLoading, refetchData, retryCount]);
-  
-  // Debug log for shift coverage messages
-  useEffect(() => {
-    console.log("Dashboard shift coverage messages:", {
-      count: shiftCoverageMessages?.length || 0,
-      currentUserId: currentUser?.id,
-      userRole: currentUser?.role
-    });
-    
-    if (shiftCoverageMessages && shiftCoverageMessages.length > 0) {
-      console.log("Sample shift message:", {
-        id: shiftCoverageMessages[0].id,
-        type: shiftCoverageMessages[0].type,
-        sender: shiftCoverageMessages[0].sender_id,
-        recipient: shiftCoverageMessages[0].recipient_id,
-        hasRequests: shiftCoverageMessages[0].shift_coverage_requests?.length > 0,
-        status: shiftCoverageMessages[0].shift_coverage_requests?.[0]?.status
-      });
-    }
-  }, [shiftCoverageMessages, currentUser]);
 
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
@@ -100,13 +44,6 @@ export default function Dashboard() {
   const goToNextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
-
-  const handleRefreshData = useCallback(() => {
-    toast.info("Refreshing dashboard data...");
-    console.log("Manual dashboard refresh triggered");
-    setRetryCount(prev => prev + 1);
-    refetchData();
-  }, [refetchData]);
 
   return (
     <DashboardLayout>

@@ -34,14 +34,7 @@ export function useDashboardRefetch(
     refetchFunctions
   ]);
 
-  const handleRefreshData = useCallback(() => {
-    toast.info("Refreshing dashboard data...");
-    console.log("Manual dashboard refresh triggered");
-    refetchData();
-  }, [refetchData]);
-
   return {
-    refetchData,
-    handleRefreshData
+    refetchData
   };
 }
