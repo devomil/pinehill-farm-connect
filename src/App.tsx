@@ -9,6 +9,7 @@ import Employees from "./pages/Employees";
 import TimeManagement from "./pages/TimeManagement";
 import Calendar from "./pages/Calendar";
 import Communication from "./pages/Communication";
+import Marketing from "./pages/Marketing";
 import Reports from "./pages/Reports";
 import Training from "./pages/Training";
 import AdminTraining from "./pages/AdminTraining";

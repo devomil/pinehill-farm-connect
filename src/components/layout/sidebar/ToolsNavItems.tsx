@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { BarChart3, BookOpen, BookOpenCheck } from "lucide-react";
+import { BarChart3, BookOpen, BookOpenCheck, Image } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItemProps {
@@ -19,6 +19,13 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       to: "/reports",
       icon: <BarChart3 className="h-5 w-5 mr-3" />,
       label: "Reports",
+      showIf: true,
+      badge: null,
+    },
+    {
+      to: "/marketing",
+      icon: <Image className="h-5 w-5 mr-3" />,
+      label: "Marketing",
       showIf: true,
       badge: null,
     },
