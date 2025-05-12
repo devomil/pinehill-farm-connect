@@ -16,11 +16,12 @@ export const uploadContent = async ({
   description,
   contentType
 }: UploadContentParams) => {
-  console.log(`Starting upload for ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  console.log(`Starting upload for ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB, raw bytes: ${file.size}`);
 
-  // Check file size early to provide better error message
-  if (file.size > 100 * 1024 * 1024) {
-    throw new Error("File size exceeds the server limit of 100MB. Please select a smaller file.");
+  // Check file size early with a more conservative limit
+  const safeLimit = 99 * 1024 * 1024; // 99MB to be safe
+  if (file.size > safeLimit) {
+    throw new Error(`File size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds the safe limit of 99MB. Please select a smaller file.`);
   }
 
   // Generate a unique filename to prevent collisions
@@ -51,7 +52,7 @@ export const uploadContent = async ({
         if (uploadError.message?.includes("exceeded the maximum allowed size") ||
             uploadError.message?.includes("Payload too large") ||
             uploadError.message?.includes("too large")) {
-          throw new Error("File size exceeds the server limit of 100MB. Please select a smaller file.");
+          throw new Error(`File size appears to exceed Supabase's limits. Please use a file smaller than 99MB. Error: ${uploadError.message}`);
         }
         
         // For other errors, retry after a delay

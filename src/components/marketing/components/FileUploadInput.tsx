@@ -23,6 +23,9 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
+      // Log the file size to help with debugging
+      console.log(`Selected file size: ${formatFileSize(selectedFile.size)}, raw size: ${selectedFile.size} bytes`);
+      
       const { isValid, errorMessage } = validateFileSize(selectedFile, MAX_FILE_SIZE);
       
       if (!isValid && errorMessage) {
@@ -40,7 +43,7 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
     <div>
       <label className="block text-sm font-medium mb-1">File</label>
       <div className="text-sm text-muted-foreground mb-2">
-        Max file size: 100MB (Supabase storage limit)
+        Max file size: 99MB (Supabase storage limit is 100MB)
       </div>
       {file && (
         <div className="text-sm mb-2 p-2 bg-muted rounded-md">
