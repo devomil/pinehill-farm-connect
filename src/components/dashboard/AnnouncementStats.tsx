@@ -1,66 +1,101 @@
 
-import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { BarChart3 } from "lucide-react"; // Changed from Chart to BarChart3
-import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnnouncementStatsChart } from "./announcements/AnnouncementStatsChart";
+import { AnnouncementStatsTable } from "./announcements/AnnouncementStatsTable";
+import { AnnouncementUserDetails } from "./announcements/AnnouncementUserDetails";
 import { AnnouncementStatsLoading } from "./announcements/AnnouncementStatsLoading";
-import { UserList } from "./announcements/UserList";
+import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
+import { AnnouncementData } from "@/types/announcements";
 
-interface AnnouncementStatsProps {
-  clickable?: boolean;
-  viewAllUrl?: string;
-}
+export const AnnouncementStats: React.FC = () => {
+  const { data: stats, isLoading, isError, error, refetch } = useAnnouncementStats();
+  const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
-export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable = false, viewAllUrl }) => {
-  const { data: stats, isLoading, error } = useAnnouncementStats(); // Changed to use data, isLoading from React Query
+  // Find the selected announcement
+  const selectedAnnouncement = stats?.find(
+    announcement => announcement.id === selectedAnnouncementId
+  ) || null;
 
-  const handleButtonClick = (e: React.MouseEvent) => {
-    // Stop propagation to prevent parent click handlers from firing
-    e.stopPropagation();
+  const handleRefresh = () => {
+    refetch();
   };
 
+  const handleViewDetails = (announcementId: string) => {
+    setSelectedAnnouncementId(announcementId);
+  };
+
+  const handleBackToList = () => {
+    setSelectedAnnouncementId(null);
+  };
+
+  if (isLoading) {
+    return <AnnouncementStatsLoading />;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-md p-4 border border-red-200 bg-red-50">
+        <h3 className="font-semibold mb-2">Failed to load announcement statistics</h3>
+        <p className="text-sm text-red-700 mb-3">{error instanceof Error ? error.message : 'Unknown error'}</p>
+        <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" /> Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Card className={clickable ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Announcement Stats</CardTitle>
-          <BarChart3 className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <CardDescription>Read and acknowledgement stats</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading || !stats ? (
-          <AnnouncementStatsLoading />
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        {!selectedAnnouncement ? (
+          <>
+            <div>
+              <CardTitle>Announcement Performance</CardTitle>
+              <CardDescription>
+                Overview of read rates and engagement with announcements
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+          </>
         ) : (
           <>
-            <AnnouncementStatsChart
-              data={stats} // Pass the entire data object
-            />
-            
-            {stats.length > 0 && stats[0].users.filter(u => !u.read).length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Employees who haven't read</h4>
-                <UserList 
-                  users={stats[0].users.filter(u => !u.read).slice(0, 3)} 
-                />
-              </div>
-            )}
-            
-            {viewAllUrl && (
-              <div className="text-center mt-4">
-                <Link to={viewAllUrl} onClick={handleButtonClick}>
-                  <Button variant="link" size="sm">
-                    View All Stats
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <div>
+              <CardTitle>{selectedAnnouncement.title}</CardTitle>
+              <CardDescription>
+                {selectedAnnouncement.read_count} of {selectedAnnouncement.total_users} employees have read this announcement
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleBackToList}>
+              Back to All Announcements
+            </Button>
           </>
         )}
+      </CardHeader>
+      <CardContent>
+        {!selectedAnnouncement ? (
+          <>
+            <div className="h-[350px] mb-8">
+              <AnnouncementStatsChart announcements={stats || []} />
+            </div>
+            <AnnouncementStatsTable 
+              announcements={stats || []} 
+              onViewDetails={handleViewDetails} 
+            />
+          </>
+        ) : (
+          <AnnouncementUserDetails users={selectedAnnouncement.users} />
+        )}
       </CardContent>
+      {!selectedAnnouncement && (
+        <CardFooter className="text-sm text-muted-foreground">
+          Click on "Details" to view which employees have read each announcement
+        </CardFooter>
+      )}
     </Card>
   );
 };

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,58 +9,109 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { AnnouncementData } from "@/types/announcements";
 
 interface AnnouncementStatsTableProps {
-  data: any[];
+  announcements: AnnouncementData[];
+  onViewDetails: (announcementId: string) => void;
 }
 
-export const AnnouncementStatsTable: React.FC<AnnouncementStatsTableProps> = ({ data }) => {
-  // Sort data by created_at date (newest first)
-  const sortedData = [...data].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+export const AnnouncementStatsTable: React.FC<AnnouncementStatsTableProps> = ({
+  announcements,
+  onViewDetails,
+}) => {
+  const [sortField, setSortField] = useState<string>("created_at");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return <Badge variant="destructive">Urgent</Badge>;
-      case 'important':
-        return <Badge variant="default">Important</Badge>;
-      default:
-        return <Badge variant="outline">FYI</Badge>;
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
     }
   };
+
+  const sortedAnnouncements = [...announcements].sort((a, b) => {
+    let valA, valB;
+
+    switch (sortField) {
+      case "title":
+        valA = a.title;
+        valB = b.title;
+        break;
+      case "read_count":
+        valA = a.read_count;
+        valB = b.read_count;
+        break;
+      default:
+        // Default to sorting by created_at
+        valA = new Date(a.created_at || "").getTime();
+        valB = new Date(b.created_at || "").getTime();
+    }
+
+    if (valA === valB) return 0;
+    const result = valA > valB ? 1 : -1;
+    return sortDirection === "asc" ? result : -result;
+  });
 
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead 
+              className="cursor-pointer" 
+              onClick={() => handleSort("title")}
+            >
+              Title {sortField === "title" && (sortDirection === "asc" ? "↑" : "↓")}
+            </TableHead>
             <TableHead>Priority</TableHead>
-            <TableHead className="text-right">Read</TableHead>
-            <TableHead className="text-right">Recipients</TableHead>
-            <TableHead className="text-right">Read %</TableHead>
+            <TableHead>Time</TableHead>
+            <TableHead 
+              className="cursor-pointer" 
+              onClick={() => handleSort("read_count")}
+            >
+              Read {sortField === "read_count" && (sortDirection === "asc" ? "↑" : "↓")}
+            </TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedData.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium">{item.title}</TableCell>
+          {sortedAnnouncements.map((announcement) => (
+            <TableRow key={announcement.title}>
+              <TableCell className="font-medium">{announcement.title}</TableCell>
               <TableCell>
-                {new Date(item.created_at).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                {getPriorityBadge(item.priority)}
-              </TableCell>
-              <TableCell className="text-right">{item.readCount}</TableCell>
-              <TableCell className="text-right">{item.totalRecipients}</TableCell>
-              <TableCell className="text-right">
-                <Badge variant={item.readPercentage > 80 ? "success" : 
-                  item.readPercentage > 50 ? "default" : "outline"}>
-                  {item.readPercentage}%
+                <Badge 
+                  variant={
+                    announcement.requires_acknowledgment 
+                      ? "outline" 
+                      : "default"
+                  }
+                >
+                  {announcement.requires_acknowledgment ? "Ack Required" : "Standard"}
                 </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground text-sm">
+                {announcement.created_at &&
+                  formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true })}
+              </TableCell>
+              <TableCell>
+                {announcement.read_count}/{announcement.total_users} 
+                <span className="text-muted-foreground ml-1">
+                  ({Math.round((announcement.read_count / announcement.total_users) * 100)}%)
+                </span>
+              </TableCell>
+              <TableCell>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => onViewDetails(announcement.title)}
+                >
+                  Details
+                </Button>
               </TableCell>
             </TableRow>
           ))}

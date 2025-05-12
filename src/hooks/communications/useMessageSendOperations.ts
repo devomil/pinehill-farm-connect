@@ -1,64 +1,97 @@
 
 import { useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@/types";
 import { toast } from "sonner";
 import { useMessageValidation } from "./useMessageValidation";
 
-export function useMessageSendOperations(
-  sendMessageMutation: any, 
-  respondToShiftRequestMutation: any,
-  refreshMessages: () => Promise<any>
-) {
+export function useMessageSendOperations() {
   const { validateShiftCoverageMessage } = useMessageValidation();
   
-  const sendMessage = useCallback((params: any) => {
-    console.log("Sending message with params:", JSON.stringify(params, null, 2));
-    
-    if (params.type === 'shift_coverage' && !validateShiftCoverageMessage(params)) {
-      return Promise.reject(new Error("Invalid message parameters"));
+  const sendMessage = useCallback(async (params: {
+    recipientId: string,
+    message: string,
+    senderId: string,
+    type: 'general' | 'shift_coverage' | 'urgent' | 'system_notification',
+    shiftDetails?: {
+      shift_date: string,
+      shift_start: string,
+      shift_end: string
     }
+  }) => {
+    console.log("Sending message with params:", params);
     
-    toast.loading("Sending message...");
-    
-    return sendMessageMutation.mutateAsync(params)
-      .then(data => {
-        console.log("Message sent successfully:", data);
-        toast.dismiss();
-        toast.success("Message sent successfully");
-        
-        // Wait a moment before refreshing to allow database operations to complete
-        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
-        return data;
-      })
-      .catch(error => {
-        console.error("Error sending message:", error);
-        toast.dismiss();
-        toast.error(`Failed to send message: ${error.message || "Unknown error"}`);
-        throw error;
-      });
-  }, [sendMessageMutation, refreshMessages, validateShiftCoverageMessage]);
-  
-  const respondToShiftRequest = useCallback((params: any) => {
-    console.log("Responding to shift request:", params);
-    
-    toast.loading(`${params.accept ? 'Accepting' : 'Declining'} shift request...`);
-    
-    return respondToShiftRequestMutation.mutateAsync(params)
-      .then(data => {
-        console.log("Successfully responded to shift request:", data);
-        toast.dismiss();
-        toast.success(`You have ${params.accept ? 'accepted' : 'declined'} the shift coverage request`);
-        
-        // Refresh after a short delay
-        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
-        return data;
-      })
-      .catch(error => {
-        console.error("Error responding to shift request:", error);
-        toast.dismiss();
-        toast.error(`Failed to respond to request: ${error.message || "Unknown error"}`);
-        throw error;
-      });
-  }, [respondToShiftRequestMutation, refreshMessages]);
+    // Validate shift coverage messages
+    if (params.type === 'shift_coverage') {
+      const isValid = validateShiftCoverageMessage(params);
+      if (!isValid) return false;
+    }
 
-  return { sendMessage, respondToShiftRequest };
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          content: params.message,
+          sender_id: params.senderId,
+          recipient_id: params.recipientId,
+          type: params.type,
+          shift_details: params.shiftDetails,
+          created_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        console.error("Error sending message:", error);
+        toast.error("Failed to send message");
+        return false;
+      }
+
+      toast.success("Message sent successfully");
+      return true;
+    } catch (err) {
+      console.error("Unexpected error sending message:", err);
+      toast.error("An unexpected error occurred");
+      return false;
+    }
+  }, [validateShiftCoverageMessage]);
+
+  const sendBulkMessages = useCallback(async (
+    recipients: User[],
+    messageContent: string,
+    senderId: string,
+    type: 'general' | 'system_notification' = 'general'
+  ) => {
+    if (!recipients.length) {
+      toast.error("No recipients selected");
+      return false;
+    }
+
+    try {
+      const messages = recipients.map(recipient => ({
+        content: messageContent,
+        sender_id: senderId,
+        recipient_id: recipient.id,
+        type,
+        created_at: new Date().toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from('messages')
+        .insert(messages);
+
+      if (error) {
+        console.error("Error sending bulk messages:", error);
+        toast.error("Failed to send messages");
+        return false;
+      }
+
+      toast.success(`Messages sent to ${recipients.length} recipients`);
+      return true;
+    } catch (err) {
+      console.error("Unexpected error sending bulk messages:", err);
+      toast.error("An unexpected error occurred");
+      return false;
+    }
+  }, []);
+
+  return { sendMessage, sendBulkMessages };
 }
