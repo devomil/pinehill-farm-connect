@@ -43,7 +43,7 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
     <div>
       <label className="block text-sm font-medium mb-1">File</label>
       <div className="text-sm text-muted-foreground mb-2">
-        Max file size: 99MB (Supabase storage limit is 100MB)
+        Max file size: 90MB (Supabase storage limit is 100MB)
       </div>
       {file && (
         <div className="text-sm mb-2 p-2 bg-muted rounded-md">
