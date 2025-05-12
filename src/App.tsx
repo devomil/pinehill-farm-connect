@@ -50,6 +50,10 @@ function App() {
       element: <Communication />,
     },
     {
+      path: "/marketing",
+      element: <Marketing />,
+    },
+    {
       path: "/reports",
       element: <Reports />,
     },

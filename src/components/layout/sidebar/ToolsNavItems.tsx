@@ -54,7 +54,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
             variant="ghost"
             className={cn(
               "justify-start font-normal",
-              pathname.includes(item.to) && item.to !== "/training" ? "bg-accent" :
+              pathname === item.to ? "bg-accent" :
               (pathname.includes("/training") && pathname !== "/admin-training" && item.to === "/training") ? "bg-accent" : ""
             )}
             asChild
