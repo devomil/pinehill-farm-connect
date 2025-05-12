@@ -1,21 +1,31 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const AnnouncementStatsLoading = () => (
-  <Card className="mt-4">
-    <CardHeader>
-      <CardTitle>Recent Announcements Statistics</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="h-[250px] mb-4">
-        <Skeleton className="w-full h-full" />
+export const AnnouncementStatsLoading: React.FC = () => {
+  return (
+    <div className="space-y-4">
+      <div className="h-[350px] w-full">
+        <Skeleton className="h-full w-full" />
       </div>
+      
       <div className="space-y-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="w-full h-12" />
+        <div className="flex items-center">
+          <Skeleton className="h-4 w-[100px] mr-2" />
+          <Skeleton className="h-4 w-[100px] mr-2" />
+          <Skeleton className="h-4 w-[100px]" />
+        </div>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex justify-between items-center">
+            <Skeleton className="h-4 w-[200px]" />
+            <div className="flex items-center">
+              <Skeleton className="h-4 w-[50px] mr-2" />
+              <Skeleton className="h-4 w-[50px] mr-2" />
+              <Skeleton className="h-4 w-[50px]" />
+            </div>
+          </div>
         ))}
       </div>
-    </CardContent>
-  </Card>
-);
+    </div>
+  );
+};

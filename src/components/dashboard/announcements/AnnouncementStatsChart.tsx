@@ -1,62 +1,59 @@
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ChartContainer } from "@/components/ui/chart";
-import { AnnouncementData } from "@/types/announcements";
+import React from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface AnnouncementStatsChartProps {
-  data: AnnouncementData[];
+  data: any[];
 }
 
-export const AnnouncementStatsChart = ({ data }: AnnouncementStatsChartProps) => {
-  // Transform data for the chart if needed
+export const AnnouncementStatsChart: React.FC<AnnouncementStatsChartProps> = ({ data }) => {
+  // Process data for the chart
   const chartData = data.map(item => ({
-    title: item.title,
-    read_count: item.read_count,
-    acknowledged_count: item.acknowledged_count,
-    total_users: item.total_users
+    name: item.title.length > 20 ? `${item.title.substring(0, 20)}...` : item.title,
+    "Read %": item.readPercentage,
+    totalRecipients: item.totalRecipients,
+    priority: item.priority
   }));
 
   return (
-    <ChartContainer
-      config={{
-        read: { label: "Read", theme: { light: "#0ea5e9", dark: "#38bdf8" } },
-        acknowledged: { label: "Acknowledged", theme: { light: "#22c55e", dark: "#4ade80" } },
-        total: { label: "Total Users", theme: { light: "#94a3b8", dark: "#64748b" } }
-      }}
-      className="h-[250px]"
-    >
-      <ResponsiveContainer>
-        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+    <div className="w-full h-[400px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
-            dataKey="title" 
-            angle={-45}
-            textAnchor="end"
-            height={70}
-            interval={0}
-            tick={{ fontSize: 12 }}
+            dataKey="name" 
+            angle={-45} 
+            textAnchor="end" 
+            height={70} 
           />
-          <YAxis />
-          <Tooltip />
-          <Bar 
-            dataKey="read_count" 
-            name="Read" 
-            fill="var(--color-read)"
-            radius={[4, 4, 0, 0]} 
+          <YAxis 
+            label={{ value: 'Read Percentage', angle: -90, position: 'insideLeft' }} 
+            domain={[0, 100]} 
           />
-          <Bar 
-            dataKey="acknowledged_count" 
-            name="Acknowledged" 
-            fill="var(--color-acknowledged)"
-            radius={[4, 4, 0, 0]} 
+          <Tooltip 
+            formatter={(value, name) => [
+              name === "Read %" ? `${value}%` : value, 
+              name === "Read %" ? "Read Percentage" : name
+            ]} 
+            labelFormatter={(label) => {
+              const announcement = data.find(item => 
+                item.title.startsWith(label.replace('...', ''))
+              );
+              return announcement ? announcement.title : label;
+            }}
           />
+          <Legend />
           <Bar 
-            dataKey="total_users" 
-            name="Total Users" 
-            fill="var(--color-total)"
-            radius={[4, 4, 0, 0]} 
+            dataKey="Read %" 
+            fill="#8884d8" 
+            name="Read Percentage" 
+            radius={[4, 4, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>
-    </ChartContainer>
+    </div>
   );
 };

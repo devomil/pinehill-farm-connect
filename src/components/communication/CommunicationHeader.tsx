@@ -31,12 +31,12 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
     setShowDialog(true);
   };
 
-  const handleDialogClose = () => {
-    setShowDialog(false);
-  };
-
   const handleViewStats = () => {
     setShowStatsDialog(true);
+  };
+
+  const handleStatsDialogClose = () => {
+    setShowStatsDialog(false);
   };
 
   return (
@@ -78,12 +78,14 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
       <AdminAnnouncementDialog
         allEmployees={allEmployees}
         onCreate={onAnnouncementCreate}
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
       />
 
       {isAdmin && (
         <AnnouncementStatsDialog 
           open={showStatsDialog} 
-          onClose={() => setShowStatsDialog(false)} 
+          onClose={handleStatsDialogClose} 
         />
       )}
     </>

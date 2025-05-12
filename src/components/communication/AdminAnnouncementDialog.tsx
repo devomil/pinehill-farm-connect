@@ -1,50 +1,59 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { User } from "@/types";
-import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
+import { NewAnnouncementForm } from "@/components/communication/announcement/NewAnnouncementForm";
 
-interface AdminAnnouncementDialogProps {
+export interface AdminAnnouncementDialogProps {
   allEmployees: User[];
   onCreate: () => void;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = ({
   allEmployees,
   onCreate,
+  open,
+  onClose
 }) => {
-  const [open, setOpen] = useState(false);
-
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // If external state is provided, use it; otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
+    if (onClose && !newOpen) {
+      onClose();
+    } else {
+      setInternalOpen(newOpen);
+    }
   };
 
-  const handleCreateSuccess = () => {
-    setOpen(false);
+  const handleCreate = () => {
     onCreate();
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Announcement
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Announcement</DialogTitle>
-          <DialogDescription>
-            Announcements appear in Communication Center for all recipients. Attachments are optional.
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" /> New Announcement
+          </DialogTitle>
         </DialogHeader>
-        <AdminAnnouncementForm
-          allEmployees={allEmployees}
-          onCreate={handleCreateSuccess}
-          closeDialog={() => setOpen(false)}
+        <NewAnnouncementForm 
+          allEmployees={allEmployees} 
+          onSubmitSuccess={handleCreate} 
         />
       </DialogContent>
     </Dialog>

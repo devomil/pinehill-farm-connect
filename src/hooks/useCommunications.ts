@@ -1,4 +1,3 @@
-
 import { useGetCommunications } from "./communications/useGetCommunications";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSendMessage } from "./communications/useSendMessage";
@@ -10,89 +9,49 @@ import { useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useMessageReadingManager } from "./communications/useMessageReadingManager";
+import { useMessageRefreshManager } from "./communications/useMessageRefreshManager";
+import { useMessageSendOperations } from "./communications/useMessageSendOperations";
 
 export const useCommunications = (excludeShiftCoverage = false) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  const isTimeManagementPage = location.pathname === '/time';
-  const isCommunicationsPage = location.pathname === '/communication';
-  const lastRefreshTime = useRef<number>(Date.now());
-  const refreshInProgress = useRef<boolean>(false);
   
-  // Pass the excludeShiftCoverage parameter to the hook
+  // Get communications data
   const { data: messages, isLoading, error, refetch } = useGetCommunications(currentUser, excludeShiftCoverage);
+  
+  // Get mutation hooks
   const sendMessageMutation = useSendMessage(currentUser);
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
   
-  const refreshMessages = useCallback(() => {
-    const now = Date.now();
-    
-    // Prevent multiple refreshes within a short time period, but make exception for admin users
-    const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 1500 : 3000; // 1.5s for admins, 3s for others
-    
-    if (refreshInProgress.current || (!isAdmin && now - lastRefreshTime.current < minRefreshInterval)) {
-      console.log("Communications refresh skipped - too soon or already in progress");
-      return Promise.resolve();
-    }
-    
-    console.log("Manually refreshing communications data");
-    refreshInProgress.current = true;
-    lastRefreshTime.current = now;
-    
-    return refetch().finally(() => {
-      setTimeout(() => {
-        refreshInProgress.current = false;
-      }, isAdmin ? 500 : 1000); // Shorter cooldown for admins
-    });
-  }, [refetch, currentUser]);
+  // Get modular functionality hooks
+  const { refreshMessages, lastRefreshTime, refreshInProgress } = useMessageRefreshManager(currentUser, refetch);
+  const { markAllMessagesAsRead } = useMessageReadingManager(currentUser);
+  const { sendMessage, respondToShiftRequest } = useMessageSendOperations(
+    sendMessageMutation,
+    respondToShiftRequestMutation,
+    refreshMessages
+  );
   
-  // Process unread messages and handle admin view special cases
+  // Process message data
   const rawMessages = messages as Communication[] | null;
   const unreadMessages = useUnreadMessages(rawMessages, currentUser);
-
-  // Check if we're on the communications page with messages tab active
+  
+  // Navigation state
+  const isTimeManagementPage = location.pathname === '/time';
+  const isCommunicationsPage = location.pathname === '/communication';
   const isOnMessagesTab = isCommunicationsPage && location.search.includes('tab=messages');
-
+  
   // Effect to mark all messages as read when an admin views the messages tab
   useEffect(() => {
     if (isOnMessagesTab && currentUser && currentUser.role === 'admin') {
-      // For admin users, auto-mark all messages as read when viewing the messages tab
-      const markAllMessagesAsRead = async () => {
-        const trueUnreadMessages = unreadMessages.filter(msg => 
-          (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') && 
-          msg.read_at === null && 
-          msg.recipient_id === currentUser.id
-        );
-        
-        if (trueUnreadMessages.length > 0) {
-          console.log(`Admin user on messages tab, auto-marking ${trueUnreadMessages.length} messages as read`);
-          
-          const messageIds = trueUnreadMessages.map(msg => msg.id);
-          
-          try {
-            const { error } = await supabase
-              .from('employee_communications')
-              .update({ read_at: new Date().toISOString() })
-              .in('id', messageIds);
-              
-            if (!error) {
-              console.log("Admin: Successfully marked all messages as read");
-              // Force refresh to update all UI indicators
-              setTimeout(() => refreshMessages(), 500);
-              setTimeout(() => refreshMessages(), 1500);
-            } else {
-              console.error("Admin: Error auto-marking messages as read:", error);
-            }
-          } catch (err) {
-            console.error("Error in auto-mark messages as read:", err);
-          }
-        }
-      };
+      markAllMessagesAsRead(unreadMessages);
       
-      markAllMessagesAsRead();
+      // Force refresh to update all UI indicators
+      setTimeout(() => refreshMessages(), 500);
+      setTimeout(() => refreshMessages(), 1500);
     }
-  }, [isOnMessagesTab, unreadMessages, currentUser, refreshMessages]);
+  }, [isOnMessagesTab, unreadMessages, currentUser, refreshMessages, markAllMessagesAsRead]);
 
   // Effect to clear unread status when viewing messages tab
   useEffect(() => {
@@ -106,89 +65,6 @@ export const useCommunications = (excludeShiftCoverage = false) => {
       }
     }
   }, [isOnMessagesTab, unreadMessages.length, currentUser, refreshMessages]);
-
-  const sendMessage = useCallback((params: any) => {
-    console.log("Sending message with params:", JSON.stringify(params, null, 2));
-    
-    // Enhanced validation for shift coverage requests
-    if (params.type === 'shift_coverage') {
-      // Validate shift details
-      if (!params.shiftDetails) {
-        console.error("Missing shiftDetails object for shift coverage request");
-        toast.error("Missing shift details");
-        return Promise.reject(new Error("Missing shift details"));
-      }
-      
-      const { shiftDetails } = params;
-      
-      if (!shiftDetails.shift_date) {
-        console.error("Missing shift date");
-        toast.error("Please select a date for the shift");
-        return Promise.reject(new Error("Missing shift date"));
-      }
-      
-      if (!shiftDetails.shift_start) {
-        console.error("Missing shift start time");
-        toast.error("Please enter a start time for the shift");
-        return Promise.reject(new Error("Missing shift start time"));
-      }
-      
-      if (!shiftDetails.shift_end) {
-        console.error("Missing shift end time");
-        toast.error("Please enter an end time for the shift");
-        return Promise.reject(new Error("Missing shift end time"));
-      }
-      
-      // Validate recipient
-      if (!params.recipientId) {
-        console.error("Missing recipient ID for shift coverage request");
-        toast.error("Please select an employee to cover your shift");
-        return Promise.reject(new Error("Missing recipient"));
-      }
-    }
-    
-    toast.loading("Sending message...");
-    
-    return sendMessageMutation.mutateAsync(params)
-      .then(data => {
-        console.log("Message sent successfully:", data);
-        toast.dismiss();
-        toast.success("Message sent successfully");
-        
-        // Wait a moment before refreshing to allow database operations to complete
-        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
-        return data;
-      })
-      .catch(error => {
-        console.error("Error sending message:", error);
-        toast.dismiss();
-        toast.error(`Failed to send message: ${error.message || "Unknown error"}`);
-        throw error;
-      });
-  }, [sendMessageMutation, refreshMessages]);
-  
-  const respondToShiftRequest = useCallback((params: any) => {
-    console.log("Responding to shift request:", params);
-    
-    toast.loading(`${params.accept ? 'Accepting' : 'Declining'} shift request...`);
-    
-    return respondToShiftRequestMutation.mutateAsync(params)
-      .then(data => {
-        console.log("Successfully responded to shift request:", data);
-        toast.dismiss();
-        toast.success(`You have ${params.accept ? 'accepted' : 'declined'} the shift coverage request`);
-        
-        // Refresh after a short delay
-        setTimeout(() => refreshMessages(), 500); // Reduced from 1000 to 500ms
-        return data;
-      })
-      .catch(error => {
-        console.error("Error responding to shift request:", error);
-        toast.dismiss();
-        toast.error(`Failed to respond to request: ${error.message || "Unknown error"}`);
-        throw error;
-      });
-  }, [respondToShiftRequestMutation, refreshMessages]);
 
   // Use a more aggressive fetch strategy for admins
   useEffect(() => {
@@ -221,7 +97,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [refetch, currentUser?.id, currentUser?.email, currentUser?.role]);
+  }, [refetch, currentUser?.id, currentUser?.email, currentUser?.role, lastRefreshTime, refreshInProgress]);
 
   return {
     messages: messages || [],
