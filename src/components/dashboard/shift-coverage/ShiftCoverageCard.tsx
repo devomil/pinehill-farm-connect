@@ -1,15 +1,15 @@
 
-import React, { useEffect, useMemo } from "react";
+import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Users, AlertCircle, RefreshCw } from "lucide-react";
+import { Users, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { toast } from "sonner";
 import { ShiftCoverageList } from "./ShiftCoverageList";
-import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 import { ShiftCoverageLoading } from "./ShiftCoverageLoading";
 import { ShiftCoverageError } from "./ShiftCoverageError";
+import { ShiftCoverageEmpty } from "./ShiftCoverageEmpty";
 import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
 
 interface ShiftCoverageCardProps {
@@ -28,13 +28,13 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
   onRefresh
 }) => {
   // Ensure we have safe values for messages
-  const safeMessages = useMemo(() => messages || [], [messages]);
+  const safeMessages = React.useMemo(() => messages || [], [messages]);
   
   // Use the filter hook with safe values
   const { shiftCoverageRequests, updateFilter } = useShiftCoverageFilters(safeMessages, currentUser);
 
   // Debug logs for better troubleshooting
-  useEffect(() => {
+  React.useEffect(() => {
     console.log(`ShiftCoverageCard: Received ${safeMessages.length || 0} messages for user ${currentUser?.id}`);
     console.log(`ShiftCoverageCard: After filtering, found ${shiftCoverageRequests?.length || 0} shift coverage requests`);
     
