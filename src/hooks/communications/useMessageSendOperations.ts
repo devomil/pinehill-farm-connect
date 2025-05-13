@@ -1,90 +1,62 @@
 
-import { UseMutationResult } from "@tanstack/react-query";
-import { SendMessageParams } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
+import { SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
+import { UseMutationResult } from "@tanstack/react-query";
 
-/**
- * This hook standardizes the operations for sending messages and responding to shift requests
- * while handling compatibility between different parameter formats
- */
-export const useMessageSendOperations = (
-  sendMessageMutation: UseMutationResult<any, Error, SendMessageParams>,
-  respondToShiftRequestMutation: UseMutationResult<any, Error, any>,
+interface SendMessageMutationResult extends UseMutationResult<any, Error, SendMessageParams> {}
+interface RespondToShiftRequestMutationResult extends UseMutationResult<any, Error, RespondToShiftRequestParams> {}
+
+export function useMessageSendOperations(
+  sendMessageMutation: SendMessageMutationResult,
+  respondToShiftRequestMutation: RespondToShiftRequestMutationResult,
   refreshMessages: () => Promise<any>
-) => {
-  
-  /**
-   * Sends a message with properly standardized parameters
-   */
-  const sendMessage = async (params: SendMessageParams): Promise<{success: boolean, error?: string}> => {
+) {
+  const sendMessage = async (params: SendMessageParams): Promise<any> => {
     try {
       const result = await sendMessageMutation.mutateAsync(params);
       await refreshMessages();
-      return { success: true };
+      return result;
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error sending message' 
-      };
+      console.error("Error sending message:", error);
+      throw error;
     }
   };
-  
-  /**
-   * Sends multiple messages to different recipients
-   */
-  const sendBulkMessages = async (
-    recipients: User[],
-    messageContent: string,
-    type: string,
-    shiftDetails?: any
-  ): Promise<{success: boolean, error?: string}> => {
-    try {
-      // Send each message one by one
-      for (const recipient of recipients) {
-        await sendMessageMutation.mutateAsync({
+
+  const sendBulkMessages = async (recipients: User[], message: string, type: string = 'general'): Promise<any[]> => {
+    const results = [];
+
+    for (const recipient of recipients) {
+      try {
+        const result = await sendMessageMutation.mutateAsync({
           recipientId: recipient.id,
-          message: messageContent,
+          message,
           type: type as any,
-          shiftDetails
         });
+        results.push(result);
+      } catch (error) {
+        console.error(`Error sending message to ${recipient.id}:`, error);
+        results.push({ error });
       }
-      
-      await refreshMessages();
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error sending bulk messages' 
-      };
     }
+
+    await refreshMessages();
+    return results;
   };
-  
-  /**
-   * Responds to a shift coverage request, adapting the parameter format
-   */
-  const respondToShiftRequest = async (
-    data: {
-      communicationId: string;
-      shiftRequestId: string;
-      accept: boolean;
-      senderId: string;
-    }
-  ): Promise<{success: boolean, error?: string}> => {
+
+  const respondToShiftRequest = async (params: RespondToShiftRequestParams): Promise<any> => {
     try {
-      await respondToShiftRequestMutation.mutateAsync(data);
+      const result = await respondToShiftRequestMutation.mutateAsync(params);
       await refreshMessages();
-      return { success: true };
+      return result;
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error responding to shift request' 
-      };
+      console.error("Error responding to shift request:", error);
+      throw error;
     }
   };
-  
+
   return {
     sendMessage,
     sendBulkMessages,
-    respondToShiftRequest
+    respondToShiftRequest,
   };
-};
+}

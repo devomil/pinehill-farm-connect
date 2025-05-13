@@ -1,24 +1,38 @@
 
-import { useState } from "react";
-import { AnnouncementData } from "@/types/announcements";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useAnnouncementStats = () => {
-  const [error, setError] = useState<Error | null>(null);
+export interface AnnouncementStat {
+  id: string;
+  title: string;
+  createdAt: string;
+  totalRecipients: number;
+  readCount: number;
+  acknowledgedCount: number;
+  readPercentage: number;
+  priority: string;
+  requires_acknowledgment: boolean;
+  userDetails?: Array<{
+    userId: string;
+    name: string;
+    email: string;
+    read: boolean;
+    acknowledged: boolean;
+  }>;
+}
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["announcement-stats"],
+export function useAnnouncementStats() {
+  return useQuery({
+    queryKey: ["announcement_stats"],
     queryFn: async () => {
       try {
-        // Get all announcements with read status counts
-        const { data, error: fetchError } = await supabase
-          .from('announcements')
+        const { data, error } = await supabase
+          .from("announcements")
           .select(`
-            id, 
+            id,
             title,
             created_at,
-            author_id,
+            priority,
             requires_acknowledgment,
             announcement_recipients(
               read_at,
@@ -27,52 +41,66 @@ export const useAnnouncementStats = () => {
             )
           `);
           
-        if (fetchError) {
-          throw new Error(`Failed to fetch announcement stats: ${fetchError.message}`);
-        }
+        if (error) throw error;
         
-        // Transform the data to match expected format
-        const transformedData = (data || []).map(announcement => {
+        if (!data) return [];
+        
+        // Get user details for easier display
+        const userIds = new Set<string>();
+        data.forEach(ann => {
+          if (ann.announcement_recipients) {
+            ann.announcement_recipients.forEach((rec: any) => {
+              if (rec.user_id) userIds.add(rec.user_id);
+            });
+          }
+        });
+        
+        const { data: users } = await supabase
+          .from("profiles")
+          .select("id, name, email")
+          .in("id", Array.from(userIds));
+        
+        const usersMap = new Map();
+        users?.forEach(user => {
+          usersMap.set(user.id, user);
+        });
+        
+        const stats: AnnouncementStat[] = data.map(announcement => {
           const recipients = announcement.announcement_recipients || [];
-          const totalRecipients = recipients.length;
-          const readCount = recipients.filter(r => r.read_at).length;
-          const acknowledgedCount = recipients.filter(r => r.acknowledged_at).length;
+          const readCount = recipients.filter((r: any) => r.read_at).length;
+          const acknowledgedCount = recipients.filter((r: any) => r.acknowledged_at).length;
+          const totalRecipients = recipients.length || 0;
+          
+          const userDetails = recipients.map((r: any) => {
+            const user = usersMap.get(r.user_id);
+            return {
+              userId: r.user_id,
+              name: user?.name || "Unknown",
+              email: user?.email || "Unknown",
+              read: !!r.read_at,
+              acknowledged: !!r.acknowledged_at
+            };
+          });
           
           return {
             id: announcement.id,
             title: announcement.title,
-            created_at: announcement.created_at,
-            author_id: announcement.author_id,
+            createdAt: announcement.created_at,
+            priority: announcement.priority,
             requires_acknowledgment: announcement.requires_acknowledgment,
-            total_users: totalRecipients,
-            read_count: readCount,
-            acknowledged_count: acknowledgedCount,
-            read_percentage: totalRecipients > 0 ? Math.round((readCount / totalRecipients) * 100) : 0,
-            acknowledged_percentage: totalRecipients > 0 ? Math.round((acknowledgedCount / totalRecipients) * 100) : 0,
-            users: recipients.map(recipient => ({
-              id: recipient.user_id || 'unknown',
-              name: 'User', // Would need a join to get the name
-              read: !!recipient.read_at,
-              acknowledged: !!recipient.acknowledged_at,
-              read_at: recipient.read_at,
-              acknowledged_at: recipient.acknowledged_at
-            }))
-          } as AnnouncementData;
+            totalRecipients,
+            readCount,
+            acknowledgedCount,
+            readPercentage: totalRecipients > 0 ? Math.round((readCount / totalRecipients) * 100) : 0,
+            userDetails
+          };
         });
         
-        return transformedData;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
-        return [];
+        return stats;
+      } catch (error) {
+        console.error("Error fetching announcement stats:", error);
+        throw error;
       }
     }
   });
-
-  return {
-    stats: data || [],
-    isLoading,
-    error,
-    refetch
-  };
-};
+}

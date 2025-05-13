@@ -1,53 +1,55 @@
 
-import { useState } from "react";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
-import { Communication } from "@/types/communications/communicationTypes";
 import { toast } from "sonner";
 
-interface MessageReadingResult {
-  markMessageAsRead: (messageId: string) => Promise<boolean>;
-  isMarking: boolean;
-}
-
-export const useMessageReadingManager = (currentUser: User | null): MessageReadingResult => {
-  const [isMarking, setIsMarking] = useState(false);
-  
-  /**
-   * Mark a single message as read
-   */
-  const markMessageAsRead = async (messageId: string): Promise<boolean> => {
-    if (!currentUser?.id) {
-      console.error("Cannot mark as read: No current user ID");
+export function useMessageReadingManager(currentUser: User | null) {
+  const isMarking = useCallback(async (messageId: string): Promise<boolean> => {
+    if (!currentUser?.id) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('employee_communications')
+        .select('read_at')
+        .eq('id', messageId)
+        .single();
+        
+      return data?.read_at !== null;
+    } catch (error) {
+      console.error("Error checking message read status:", error);
       return false;
+    }
+  }, [currentUser?.id]);
+  
+  const markMessageAsRead = useCallback(async (messageId: string): Promise<void> => {
+    if (!currentUser?.id) {
+      console.error("No current user ID available");
+      return Promise.reject("No current user ID available");
     }
     
     try {
-      setIsMarking(true);
+      console.log(`Marking message ${messageId} as read by ${currentUser.id}`);
       
-      // Update the read_at timestamp for this message
       const { error } = await supabase
         .from('employee_communications')
         .update({ read_at: new Date().toISOString() })
         .eq('id', messageId)
         .eq('recipient_id', currentUser.id);
-      
+        
       if (error) {
         console.error("Error marking message as read:", error);
-        return false;
+        toast.error("Failed to mark message as read");
+        return Promise.reject(error);
       }
       
-      return true;
+      return Promise.resolve();
     } catch (error) {
-      console.error("Exception marking message as read:", error);
-      return false;
-    } finally {
-      setIsMarking(false);
+      console.error("Error marking message as read:", error);
+      toast.error("Failed to mark message as read");
+      return Promise.reject(error);
     }
-  };
+  }, [currentUser?.id]);
   
-  return {
-    markMessageAsRead,
-    isMarking
-  };
-};
+  return { markMessageAsRead, isMarking };
+}
