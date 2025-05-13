@@ -24,14 +24,20 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   useEffect(() => {
     if (pathname === '/communication') {
       console.log("On communication page, refreshing message data");
-      refreshMessages();
-      refetchData();
+      // Use a slight delay to prevent double refresh
+      const timer = setTimeout(() => {
+        refreshMessages();
+        refetchData();
+      }, 100);
       
       // Additional refresh for messages tab to ensure badge counts are accurate
       if (search.includes('tab=messages')) {
         // Secondary refresh after a slight delay to catch any updates
-        setTimeout(() => refreshMessages(), 1000);
+        const messagesTimer = setTimeout(() => refreshMessages(), 800);
+        return () => clearTimeout(messagesTimer);
       }
+      
+      return () => clearTimeout(timer);
     }
   }, [pathname, search, refreshMessages, refetchData]);
   

@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { QueryObserverResult } from "@tanstack/react-query";
@@ -30,13 +29,15 @@ export function useTabNavigation({
     setActiveTab(value);
     navigationComplete.current = false;
     
+    // Keep user on the communication page when changing tabs
     const newPath = value === "messages" 
       ? '/communication?tab=messages' 
       : '/communication';
       
     // Update URL without full page reload
     if (location.pathname + location.search !== newPath) {
-      navigate(newPath, { replace: true });
+      // Use replace: false to create a proper history entry
+      navigate(newPath, { replace: false });
       
       // Only refresh if it's been more than 5 seconds since last refresh
       const now = Date.now();
