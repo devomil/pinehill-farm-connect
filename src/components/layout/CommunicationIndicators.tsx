@@ -65,16 +65,23 @@ export const CommunicationIndicators: React.FC = () => {
     }
   }, [location.pathname, manualRefresh, refetchData]);
 
-  // Handle navigation to communication pages
+  // Handle navigation to communication pages with debug logging
   const handleAnnouncementsClick = () => {
-    navigate("/communication");
+    console.log("Navigating to announcements tab");
+    navigate("/communication", { replace: false });
   };
   
   const handleMessagesClick = () => {
+    console.log("Navigating to messages tab");
     // Use explicit path with search parameter to ensure proper navigation
+    // CRITICAL: Use replace: false to create a proper history entry
     navigate("/communication?tab=messages", { replace: false });
-    // Force immediate refresh when clicking on messages
-    setTimeout(() => manualRefresh(), 200);
+    
+    // Force immediate refresh when clicking on messages, but with a delay
+    setTimeout(() => {
+      console.log("Post-navigation refresh for messages tab");
+      manualRefresh();
+    }, 300);
   };
 
   return (

@@ -17,11 +17,14 @@ export function useCommunicationPageData() {
   // Get location to parse URL parameters
   const location = useLocation();
   
-  // Parse URL parameters for active tab
+  // Track initial render to prevent premature tab changes
+  const initialRender = useRef<boolean>(true);
+  
+  // Parse URL parameters for active tab on initial load
   const urlParams = new URLSearchParams(location.search);
   const tabParam = urlParams.get('tab');
-  const isMessagesTab = tabParam === 'messages';
-  const [activeTab, setActiveTab] = useState<string>(isMessagesTab ? "messages" : "announcements");
+  const initialTab = tabParam === 'messages' ? "messages" : "announcements";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   
   // Get unread messages for the badge counter
   const { unreadMessages, refreshMessages } = useCommunications();
@@ -37,11 +40,36 @@ export function useCommunicationPageData() {
   const refreshTimeoutRef = useRef<number | null>(null);
   const isPageMounted = useRef<boolean>(false);
   const isRefreshing = useRef<boolean>(false);
-  const navigationComplete = useRef<boolean>(false);
+  const navigationComplete = useRef<boolean>(true); // Start as true
+
+  // Sync the component with the URL on initial render and subsequent changes
+  useEffect(() => {
+    // Log current location for debugging
+    console.log("useCommunicationPageData - location change:", location.pathname, location.search);
+    
+    // Skip if navigation is in progress
+    if (!navigationComplete.current) {
+      console.log("Navigation in progress, skipping URL sync");
+      return;
+    }
+    
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    const newTab = tabParam === 'messages' ? "messages" : "announcements";
+    
+    // Only update state if necessary
+    if (newTab !== activeTab) {
+      console.log(`Syncing tab from URL: ${newTab} (current: ${activeTab})`);
+      setActiveTab(newTab);
+    }
+  }, [location, activeTab]);
 
   // Initial data load - only once when component is mounted
   useEffect(() => {
+    console.log("CommunicationPage mounting effect");
     isPageMounted.current = true;
+    initialRender.current = false;
     
     if (!initialDataLoaded.current && currentUser) {
       console.log("CommunicationPage mounted, initial data load");

@@ -40,26 +40,10 @@ const CommunicationPage: React.FC = () => {
   // Log component renders
   console.log("CommunicationPage rendering with activeTab:", activeTab, "URL:", location.pathname + location.search);
 
-  // Handle URL changes - update active tab based on URL
+  // Enable this for debugging tab navigation issues
   useEffect(() => {
-    // Skip processing if navigation is in progress to prevent loops
-    if (!navigationComplete.current) {
-      return;
-    }
-    
-    // Update tab when URL changes, ensuring proper synchronization
-    const urlParams = new URLSearchParams(location.search);
-    const tabParam = urlParams.get('tab');
-    
-    if (tabParam === 'messages' && activeTab !== "messages") {
-      console.log("URL indicates messages tab, updating active tab");
-      setActiveTab("messages");
-    } else if (!tabParam && activeTab !== "announcements") {
-      console.log("URL indicates announcements tab, updating active tab");
-      setActiveTab("announcements");
-    }
-    
-  }, [location.search, activeTab, setActiveTab, navigationComplete]);
+    console.log("CommunicationPage effect - activeTab changed to:", activeTab);
+  }, [activeTab]);
   
   return (
     <div className="container mx-auto py-6 max-w-6xl">

@@ -28,18 +28,11 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       const timer = setTimeout(() => {
         refreshMessages();
         refetchData();
-      }, 100);
-      
-      // Additional refresh for messages tab to ensure badge counts are accurate
-      if (search.includes('tab=messages')) {
-        // Secondary refresh after a slight delay to catch any updates
-        const messagesTimer = setTimeout(() => refreshMessages(), 800);
-        return () => clearTimeout(messagesTimer);
-      }
+      }, 200);
       
       return () => clearTimeout(timer);
     }
-  }, [pathname, search, refreshMessages, refetchData]);
+  }, [pathname, refreshMessages, refetchData]);
   
   // Count unread messages - explicitly only count direct message types
   const unreadMessageCount = unreadMessages?.filter(

@@ -27,7 +27,11 @@ export function useTabNavigation({
   // Handle tab changes and update the URL
   const handleTabChange = useCallback((value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
+    
+    // Set active tab first
     setActiveTab(value);
+    
+    // Mark navigation as in progress
     navigationComplete.current = false;
     
     // Keep user on the communication page when changing tabs
@@ -35,10 +39,15 @@ export function useTabNavigation({
       ? '/communication?tab=messages' 
       : '/communication';
       
-    // Update URL without full page reload
+    // Log the current path and the new path for debugging
+    console.log(`Current path: ${location.pathname + location.search}, New path: ${newPath}`);
+    
+    // Update URL without full page reload - only if needed
     if (location.pathname + location.search !== newPath) {
-      // Use replace: false to create a proper history entry
-      // This is critical to prevent redirecting away from the page
+      console.log("Navigating to:", newPath);
+      
+      // CRITICAL: Use replace: false to create a proper history entry
+      // This prevents redirecting away from the page
       navigate(newPath, { replace: false });
       
       // Only refresh if it's been more than 5 seconds since last refresh
@@ -46,18 +55,34 @@ export function useTabNavigation({
       if (now - lastRefreshTime.current > 5000 && !isRefreshing.current) {
         console.log("Refreshing messages on tab change");
         isRefreshing.current = true;
-        refreshMessages().finally(() => {
-          isRefreshing.current = false;
-          lastRefreshTime.current = Date.now();
-          // Ensure navigation is marked as complete only after refresh finishes
-          setTimeout(() => {
-            navigationComplete.current = true;
-          }, 100);
-        });
+        
+        // Run refresh as a separate process to not block navigation
+        setTimeout(() => {
+          refreshMessages()
+            .finally(() => {
+              if (navigationComplete) {
+                isRefreshing.current = false;
+                lastRefreshTime.current = Date.now();
+                
+                // Ensure navigation is marked as complete only after refresh finishes
+                setTimeout(() => {
+                  navigationComplete.current = true;
+                  console.log("Navigation complete set to true after refresh");
+                }, 150);
+              }
+            });
+        }, 100);
       } else {
         // Mark navigation as complete immediately if not refreshing
-        navigationComplete.current = true;
+        setTimeout(() => {
+          navigationComplete.current = true;
+          console.log("Navigation complete set to true immediately");
+        }, 100);
       }
+    } else {
+      // If we're already on the correct path, just mark navigation as complete
+      navigationComplete.current = true;
+      console.log("Already on correct path, navigation complete set to true");
     }
   }, [navigate, refreshMessages, activeTab, location.pathname, location.search, setActiveTab, navigationComplete, isRefreshing, lastRefreshTime]);
 
