@@ -6,7 +6,7 @@ export * from './useRespondToShiftRequest';
 export * from './useUnreadMessages';
 export * from './useRefreshMessages';
 export * from './useMessageReadingManager';
-export { useMessageRefreshManager } from './useMessageRefreshManager';
+// We're not exporting useMessageRefreshManager directly, since it's already exported via useRefreshMessages
 export * from './useMessageValidation';
 export * from './useMessageSendOperations';
 export * from './utils/notificationUtils';

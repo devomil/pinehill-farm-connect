@@ -2,4 +2,6 @@
 export * from './useCommunicationPageData';
 export * from './useTabNavigation';
 export * from './useRefreshMessages';
-export * from './useMessageRefreshManager';
+// Removed the duplicate export since useMessageRefreshManager is already exported from useRefreshMessages.ts
+// export * from './useMessageRefreshManager';
+
