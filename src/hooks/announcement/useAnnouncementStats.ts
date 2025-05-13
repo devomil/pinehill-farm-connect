@@ -101,11 +101,15 @@ export function useAnnouncementStats() {
         console.error("Error fetching announcement stats:", error);
         throw error;
       }
-    }
+    },
+    // Add proper caching and stale time configuration to prevent too frequent refetches
+    staleTime: 60000, // 1 minute
+    refetchInterval: false, // Disable automatic refetching
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
   });
 
   return {
-    stats: query.data,
+    stats: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch

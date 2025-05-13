@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnnouncementStatsChart } from "./announcements/AnnouncementStatsChart";
 import { AnnouncementStatsTable } from "./announcements/AnnouncementStatsTable";
@@ -19,25 +19,28 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
   const { stats, isLoading, error, refetch } = useAnnouncementStats();
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
-  // Convert stats to expected format
-  const statsData = stats ? convertAnnouncementStatToData(stats) : [];
+  // Memoize the conversion to prevent unnecessary recalculation
+  const statsData = useMemo(() => 
+    stats ? convertAnnouncementStatToData(stats) : []
+  , [stats]);
 
-  // Find the selected announcement
-  const selectedAnnouncement = statsData?.find(
-    announcement => announcement.id === selectedAnnouncementId
-  ) || null;
+  // Memoize finding selected announcement to prevent recalculation
+  const selectedAnnouncement = useMemo(() => 
+    statsData?.find(announcement => announcement.id === selectedAnnouncementId) || null
+  , [statsData, selectedAnnouncementId]);
 
-  const handleRefresh = () => {
+  // Use callbacks for event handlers to prevent creating new function references
+  const handleRefresh = useCallback(() => {
     refetch();
-  };
+  }, [refetch]);
 
-  const handleViewDetails = (announcementId: string) => {
+  const handleViewDetails = useCallback((announcementId: string) => {
     setSelectedAnnouncementId(announcementId);
-  };
+  }, []);
 
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     setSelectedAnnouncementId(null);
-  };
+  }, []);
 
   if (isLoading) {
     return <AnnouncementStatsLoading />;

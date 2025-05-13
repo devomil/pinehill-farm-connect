@@ -1,5 +1,5 @@
 
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import { MessageItem } from "./MessageItem";
 import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
@@ -35,6 +35,8 @@ export function MessageList({
   const { currentUser } = useAuth();
   const refreshMessages = useRefreshMessages();
   const isAdmin = currentUser?.role === 'admin';
+  const refreshIntervalRef = useRef<number | null>(null);
+  const initialLoadRef = useRef<boolean>(false);
 
   // Group messages by conversation
   const groupedMessages = useMemo(() => {
@@ -69,23 +71,39 @@ export function MessageList({
 
   // Count unread direct messages - explicitly only count direct message types
   // and ensure they are actually unread and directed to the current user
-  const unreadCount = unreadMessages?.filter(
+  const unreadCount = useMemo(() => unreadMessages?.filter(
     msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
            msg.recipient_id === currentUser?.id &&
            msg.read_at === null
-  ).length || 0;
+  ).length || 0, [unreadMessages, currentUser]);
   
   // Auto-refresh messages when component mounts to ensure accurate counts
   useEffect(() => {
-    refreshMessages();
+    // Clear any existing interval when component re-renders
+    if (refreshIntervalRef.current !== null) {
+      clearInterval(refreshIntervalRef.current);
+    }
     
-    // More frequent refresh for admin users
-    const refreshInterval = setInterval(() => {
+    // Initial load only once
+    if (!initialLoadRef.current) {
+      console.log("Initial message list data load");
+      refreshMessages();
+      initialLoadRef.current = true;
+    }
+    
+    // Set up refresh interval with reasonable timing
+    const interval = window.setInterval(() => {
       console.log("Auto-refreshing message list");
       refreshMessages();
-    }, isAdmin ? 20000 : 30000); // Every 20 seconds for admins, 30 for others
+    }, isAdmin ? 60000 : 90000); // Every 60s for admins, 90s for others - increased to reduce flickering
     
-    return () => clearInterval(refreshInterval);
+    refreshIntervalRef.current = interval as unknown as number;
+    
+    return () => {
+      if (refreshIntervalRef.current !== null) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
   }, [refreshMessages, isAdmin]);
 
   // Loading state

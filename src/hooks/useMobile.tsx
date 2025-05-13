@@ -2,6 +2,8 @@
 import * as React from "react";
 import { useIsMobile } from "./use-mobile";
 
-export const useMobile = useIsMobile;
+// Export directly without reassigning to prevent unnecessary re-renders
+export { useIsMobile };
 
-export default useMobile;
+// This is for backward compatibility
+export default useIsMobile;

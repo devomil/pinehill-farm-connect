@@ -45,6 +45,11 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const isCommunicationsPage = location.pathname === '/communication';
   const isOnMessagesTab = isCommunicationsPage && location.search.includes('tab=messages');
   
+  // Track mounted state to avoid unnecessary refreshes
+  const isMounted = useRef(false);
+  const initialFetchDone = useRef(false);
+  const refreshTimeoutRef = useRef<number | null>(null);
+  
   // Function to mark all messages as read
   const markAllMessagesAsRead = useCallback(async (messagesToMark: Communication[]) => {
     if (!messagesToMark || messagesToMark.length === 0) return;
@@ -63,61 +68,80 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   }, [markMessageAsRead, refreshMessages]);
   
   // Effect to mark all messages as read when an admin views the messages tab
+  // Use a ref to track if we've already processed this condition
+  const hasProcessedReadAll = useRef(false);
+  
   useEffect(() => {
-    if (isOnMessagesTab && currentUser && currentUser.role === 'admin' && unreadMessages.length > 0) {
+    if (isOnMessagesTab && currentUser?.role === 'admin' && unreadMessages.length > 0 && !hasProcessedReadAll.current) {
+      console.log("Admin user on messages tab with unread messages, marking as read");
       markAllMessagesAsRead(unreadMessages);
+      hasProcessedReadAll.current = true;
       
-      // Force refresh to update all UI indicators
-      setTimeout(() => refreshMessages(), 500);
-      setTimeout(() => refreshMessages(), 1500);
+      // Reset this flag when navigating away
+      return () => {
+        hasProcessedReadAll.current = false;
+      };
     }
-  }, [isOnMessagesTab, unreadMessages, currentUser, refreshMessages, markAllMessagesAsRead]);
+  }, [isOnMessagesTab, unreadMessages, currentUser, markAllMessagesAsRead]);
 
-  // Effect to clear unread status when viewing messages tab
+  // Initial data loading
   useEffect(() => {
-    if (isOnMessagesTab && unreadMessages.length > 0 && currentUser) {
-      console.log("On messages tab with unread messages, refreshing data");
-      refreshMessages();
-      
-      // For admin users, do an additional refresh after a delay
-      if (currentUser.role === 'admin') {
-        setTimeout(() => refreshMessages(), 2000);
-      }
-    }
-  }, [isOnMessagesTab, unreadMessages.length, currentUser, refreshMessages]);
-
-  // Use a more aggressive fetch strategy for admins
-  useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id || initialFetchDone.current) return;
     
     // Initial fetch
     console.log(`Initial communications fetch for ${currentUser?.email}`);
-    refetch();
+    refetch().then(() => {
+      initialFetchDone.current = true;
+    });
     
-    // More aggressive refresh strategy for admin users
+    isMounted.current = true;
+    
+    // Clean up function
+    return () => {
+      isMounted.current = false;
+      if (refreshTimeoutRef.current !== null) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, [refetch, currentUser?.id, currentUser?.email]);
+
+  // Set up background refresh with reasonable intervals
+  useEffect(() => {
+    if (!currentUser?.id || !isMounted.current) return;
+    
+    // More reasonable refresh intervals
     const isAdmin = currentUser.role === 'admin';
     const refreshInterval = window.setInterval(() => {
+      // Don't refresh if component is unmounted or refresh is in progress
+      if (!isMounted.current || refreshInProgress.current) return;
+      
       const now = Date.now();
+      // Admin users need less frequent refreshes to prevent UI flashing
+      const refreshThreshold = isAdmin ? 45000 : 60000; // 45s for admins, 60s for others
       
-      // Admin users need more frequent refreshes to keep badge counts accurate
-      const refreshThreshold = isAdmin ? 20000 : 45000; // 20s for admins, 45s for others
-      
-      if (now - lastRefreshTime.current > refreshThreshold && !refreshInProgress.current) {
+      if (now - lastRefreshTime.current > refreshThreshold) {
         console.log(`Periodic refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
         refreshInProgress.current = true;
+        
         refetch().finally(() => {
-          setTimeout(() => {
+          // Use a timeout to prevent immediate subsequent refreshes
+          refreshTimeoutRef.current = window.setTimeout(() => {
             refreshInProgress.current = false;
-          }, 1000);
+          }, 2000) as unknown as number;
         });
+        
         lastRefreshTime.current = now;
       }
-    }, isAdmin ? 20000 : 30000); // Reduced to 20s for admins, 30s for others
+    }, isAdmin ? 60000 : 90000); // Every 60s for admins, 90s for others - increased to reduce flickering
     
+    // Clear interval on unmount
     return () => {
       if (refreshInterval) clearInterval(refreshInterval);
+      if (refreshTimeoutRef.current !== null) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
-  }, [refetch, currentUser?.id, currentUser?.email, currentUser?.role, lastRefreshTime, refreshInProgress]);
+  }, [refetch, currentUser?.id, currentUser?.role, lastRefreshTime, refreshInProgress]);
 
   return {
     messages: messages || [],

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Plus, RefreshCw } from "lucide-react";
 import { AdminAnnouncementDialog } from "./AdminAnnouncementDialog";
@@ -28,22 +28,31 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
 }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [showStatsDialog, setShowStatsDialog] = useState(false);
+  
+  // Add proper memoization to prevent unnecessary refetches
   const { stats, isLoading, error, refetch } = useAnnouncementStats();
 
-  const handleNewAnnouncement = () => {
+  const handleNewAnnouncement = useCallback(() => {
     setShowDialog(true);
-  };
+  }, []);
 
-  const handleViewStats = () => {
+  const handleViewStats = useCallback(() => {
     setShowStatsDialog(true);
-  };
+  }, []);
 
-  const handleStatsDialogClose = () => {
+  const handleStatsDialogClose = useCallback(() => {
     setShowStatsDialog(false);
-  };
+  }, []);
 
-  // Convert stats to AnnouncementData format
-  const announcementData = stats ? convertAnnouncementStatToData(stats) : [];
+  // Memoize this conversion to prevent unnecessary recalculation
+  const announcementData = React.useMemo(() => 
+    stats ? convertAnnouncementStatToData(stats) : []
+  , [stats]);
+
+  // Memoize the refresh handler to avoid creating new function references
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <>
@@ -95,7 +104,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
           stats={announcementData}
           isLoading={isLoading}
           error={error}
-          onRefresh={refetch}
+          onRefresh={handleRefresh}
         />
       )}
     </>

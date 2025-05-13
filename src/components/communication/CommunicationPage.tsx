@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CommunicationTabs } from "./CommunicationPageTabs";
 import { AnnouncementManager } from "./announcement/AnnouncementManager";
@@ -27,24 +27,29 @@ const CommunicationPage: React.FC = () => {
   
   // Determine if the current user is an admin
   const isAdmin = currentUser?.role === 'admin';
+  
+  // Use refs to track refresh timers and prevent duplicate refreshes
+  const initialDataLoaded = useRef<boolean>(false);
+  const lastRefreshTime = useRef<number>(Date.now());
+  const refreshTimeoutRef = useRef<number | null>(null);
 
   // Handle tab changes and update the URL
-  const handleTabChange = (value: string) => {
+  const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
     if (value === "messages") {
       navigate('/communication?tab=messages');
-      // Force refresh messages when switching to messages tab
-      refreshMessages();
       
-      // For admin users, do multiple refreshes with delays to ensure counts are updated
-      if (isAdmin) {
-        setTimeout(() => refreshMessages(), 700);
-        setTimeout(() => refreshMessages(), 2000);
+      // Only refresh if it's been more than 5 seconds since last refresh
+      const now = Date.now();
+      if (now - lastRefreshTime.current > 5000) {
+        console.log("Refreshing messages on tab change");
+        refreshMessages();
+        lastRefreshTime.current = now;
       }
     } else {
       navigate('/communication');
     }
-  };
+  }, [navigate, refreshMessages]);
 
   // Handle URL changes
   useEffect(() => {
@@ -55,50 +60,35 @@ const CommunicationPage: React.FC = () => {
     }
   }, [location]);
 
-  // Make sure we refresh unread messages when the component mounts
+  // Initial data load - only once
   useEffect(() => {
-    console.log("CommunicationPage mounted, refreshing messages");
-    refreshMessages();
-    
-    // Refresh again after a brief delay to catch any updates
-    const timer = setTimeout(() => refreshMessages(), 1000);
-    
-    return () => clearTimeout(timer);
-  }, [refreshMessages]);
-  
-  // Special effect for when viewing the messages tab to reset badge counters
-  useEffect(() => {
-    if (activeTab === "messages" && isAdmin) {
-      console.log("Admin user viewing messages tab, aggressively refreshing counters");
+    if (!initialDataLoaded.current && currentUser) {
+      console.log("CommunicationPage mounted, initial data load");
       refreshMessages();
-      
-      // Multiple refreshes with delays for admin users to ensure counts are updated
-      const timerOne = setTimeout(() => refreshMessages(), 800);
-      const timerTwo = setTimeout(() => refreshMessages(), 2000);
-      
-      return () => {
-        clearTimeout(timerOne);
-        clearTimeout(timerTwo);
-      };
+      initialDataLoaded.current = true;
     }
-  }, [activeTab, isAdmin, refreshMessages]);
+    
+    // Clear any previous refresh timeouts when unmounting
+    return () => {
+      if (refreshTimeoutRef.current !== null) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, [refreshMessages, currentUser]);
   
   // Handle announcement creation
-  const handleAnnouncementCreate = () => {
+  const handleAnnouncementCreate = useCallback(() => {
     console.log("Announcement created, refreshing data");
-    // Add any specific logic here if needed
-  };
+    // We can safely refresh here since it's an explicit user action
+    setTimeout(() => refreshMessages(), 1000);
+  }, [refreshMessages]);
   
-  // Handle manual refresh of data
+  // Handle manual refresh of data - explicitly requested by user
   const handleManualRefresh = useCallback(() => {
     console.log("Manual refresh requested");
     refreshMessages();
-    
-    // For admin users, do multiple refreshes with delays
-    if (isAdmin) {
-      setTimeout(() => refreshMessages(), 1000);
-    }
-  }, [refreshMessages, isAdmin]);
+    lastRefreshTime.current = Date.now();
+  }, [refreshMessages]);
   
   return (
     <div className="container mx-auto py-6 max-w-6xl">
