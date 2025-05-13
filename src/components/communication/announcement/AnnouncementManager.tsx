@@ -38,6 +38,16 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   const { markAsRead } = useAnnouncementReadStatus(currentUser?.id);
   const { handleAttachmentAction } = useAnnouncementAttachmentHandler();
   
+  // Debug log current state
+  useEffect(() => {
+    console.log("AnnouncementManager state:", {
+      announcementsCount: announcements.length,
+      loading,
+      isAdmin,
+      hasError: !!error
+    });
+  }, [announcements.length, loading, isAdmin, error]);
+  
   // Cleanup mounted ref when component unmounts
   useEffect(() => {
     return () => {

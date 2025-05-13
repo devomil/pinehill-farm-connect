@@ -23,8 +23,9 @@ export function useAnnouncementsDashboard(
       if (error) throw error;
       return data || [];
     },
-    staleTime: 30000,
-    retry: 3
+    staleTime: 60000, // Increase stale time to 1 minute to reduce unnecessary refetches
+    retry: 3,
+    refetchOnWindowFocus: false, // Prevent refetching when window focus changes
   });
   
   // Transform raw announcements to include readBy field
@@ -51,7 +52,8 @@ export function useAnnouncementsDashboard(
       return data || [];
     },
     enabled: !!currentUser?.id,
-    staleTime: 30000
+    staleTime: 60000, // Increase stale time to 1 minute
+    refetchOnWindowFocus: false
   });
   
   // Apply read receipts to announcements

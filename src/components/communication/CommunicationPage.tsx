@@ -33,9 +33,8 @@ const CommunicationPage: React.FC = () => {
   const initialDataLoaded = useRef<boolean>(false);
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshTimeoutRef = useRef<number | null>(null);
-  const stableLocationPathRef = useRef<string>(location.pathname);
-  const stableSearchRef = useRef<string>(location.search);
   const isPageMounted = useRef<boolean>(false);
+  const isRefreshing = useRef<boolean>(false);
 
   // Handle tab changes and update the URL
   const handleTabChange = useCallback((value: string) => {
@@ -47,10 +46,13 @@ const CommunicationPage: React.FC = () => {
       
       // Only refresh if it's been more than 5 seconds since last refresh
       const now = Date.now();
-      if (now - lastRefreshTime.current > 5000) {
+      if (now - lastRefreshTime.current > 5000 && !isRefreshing.current) {
         console.log("Refreshing messages on tab change");
-        refreshMessages();
-        lastRefreshTime.current = now;
+        isRefreshing.current = true;
+        refreshMessages().finally(() => {
+          isRefreshing.current = false;
+          lastRefreshTime.current = Date.now();
+        });
       }
     } else {
       navigate('/communication', { replace: true });
@@ -61,9 +63,6 @@ const CommunicationPage: React.FC = () => {
   useEffect(() => {
     // Only update if we're still on the communication page to prevent navigation issues
     if (location.pathname === '/communication') {
-      stableLocationPathRef.current = location.pathname;
-      stableSearchRef.current = location.search;
-      
       if (location.search.includes('tab=messages') && activeTab !== "messages") {
         setActiveTab("messages");
       } else if (!location.search.includes('tab=messages') && activeTab !== "announcements") {
@@ -78,6 +77,8 @@ const CommunicationPage: React.FC = () => {
     
     if (!initialDataLoaded.current && currentUser) {
       console.log("CommunicationPage mounted, initial data load");
+      isRefreshing.current = true;
+      
       // Use Promise.all to load data in parallel
       Promise.all([
         refreshMessages(),
@@ -86,17 +87,22 @@ const CommunicationPage: React.FC = () => {
         if (isPageMounted.current) {
           initialDataLoaded.current = true;
           console.log("Initial communication data loaded");
+          lastRefreshTime.current = Date.now();
         }
       }).catch(err => {
         console.error("Error loading initial communication data:", err);
+      }).finally(() => {
+        isRefreshing.current = false;
       });
     }
     
     // Clear any previous refresh timeouts when unmounting
     return () => {
       isPageMounted.current = false;
+      isRefreshing.current = false;
       if (refreshTimeoutRef.current !== null) {
         clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
       }
     };
   }, [refreshMessages, refetchEmployees, currentUser]);
@@ -104,24 +110,45 @@ const CommunicationPage: React.FC = () => {
   // Handle announcement creation
   const handleAnnouncementCreate = useCallback(() => {
     console.log("Announcement created, refreshing data");
-    // We can safely refresh here since it's an explicit user action
     toast.success("Announcement created successfully");
-    setTimeout(() => {
-      if (isPageMounted.current) {
-        refreshMessages();
-      }
-    }, 1000);
+    
+    // Prevent concurrent refreshes
+    if (!isRefreshing.current) {
+      isRefreshing.current = true;
+      setTimeout(() => {
+        if (isPageMounted.current) {
+          refreshMessages().finally(() => {
+            isRefreshing.current = false;
+            lastRefreshTime.current = Date.now();
+          });
+        }
+      }, 1000);
+    }
   }, [refreshMessages]);
   
   // Handle manual refresh of data - explicitly requested by user
   const handleManualRefresh = useCallback(() => {
     console.log("Manual refresh requested");
+    
     // Prevent multiple concurrent refreshes
+    if (isRefreshing.current) {
+      toast.info("Refresh already in progress...");
+      return;
+    }
+    
+    // Prevent refreshes that happen too quickly
+    const now = Date.now();
+    if (now - lastRefreshTime.current < 3000) {
+      toast.info("Please wait a moment before refreshing again");
+      return;
+    }
+    
     if (refreshTimeoutRef.current !== null) {
       clearTimeout(refreshTimeoutRef.current);
     }
     
     toast.info("Refreshing data...");
+    isRefreshing.current = true;
     
     // Use Promise.all to load all data in parallel
     Promise.all([
@@ -135,6 +162,8 @@ const CommunicationPage: React.FC = () => {
     }).catch(err => {
       console.error("Error refreshing communication data:", err);
       toast.error("Failed to refresh data");
+    }).finally(() => {
+      isRefreshing.current = false;
     });
   }, [refreshMessages, refetchEmployees]);
   
@@ -175,6 +204,7 @@ const CommunicationPage: React.FC = () => {
           <p><strong>Initial Data Loaded:</strong> {initialDataLoaded.current ? 'Yes' : 'No'}</p>
           <p><strong>Last Refresh:</strong> {new Date(lastRefreshTime.current).toLocaleTimeString()}</p>
           <p><strong>Is Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
+          <p><strong>Is Refreshing:</strong> {isRefreshing.current ? 'Yes' : 'No'}</p>
           <p><strong>Employee Count:</strong> {unfilteredEmployees?.length || 0}</p>
           <p><strong>Unread Messages:</strong> {unreadMessages?.length || 0}</p>
         </div>

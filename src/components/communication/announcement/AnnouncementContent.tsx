@@ -29,6 +29,14 @@ export const AnnouncementContent: React.FC<AnnouncementContentProps> = ({
   onAcknowledge,
   onAttachmentAction
 }) => {
+  // Debug announcement content props
+  console.log("AnnouncementContent rendering with:", {
+    announcements: announcements.length,
+    loading,
+    currentUserId: currentUser?.id,
+    isAdmin
+  });
+
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "urgent":

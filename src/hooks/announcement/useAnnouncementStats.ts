@@ -25,6 +25,7 @@ export function useAnnouncementStats() {
   const query = useQuery({
     queryKey: ["announcement_stats"],
     queryFn: async () => {
+      console.log("Fetching announcement stats...");
       try {
         const { data, error } = await supabase
           .from("announcements")
@@ -41,9 +42,17 @@ export function useAnnouncementStats() {
             )
           `);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching announcement stats", error);
+          throw error;
+        }
         
-        if (!data) return [];
+        if (!data || data.length === 0) {
+          console.log("No announcement data found");
+          return [];
+        }
+        
+        console.log(`Found ${data.length} announcements`);
         
         // Get user details for easier display
         const userIds = new Set<string>();
@@ -55,15 +64,27 @@ export function useAnnouncementStats() {
           }
         });
         
-        const { data: users } = await supabase
+        if (userIds.size === 0) {
+          console.log("No user IDs found in recipients");
+        } else {
+          console.log(`Found ${userIds.size} unique recipient user IDs`);
+        }
+        
+        const { data: users, error: usersError } = await supabase
           .from("profiles")
           .select("id, name, email")
           .in("id", Array.from(userIds));
+          
+        if (usersError) {
+          console.error("Error fetching user details", usersError);
+        }
         
         const usersMap = new Map();
-        users?.forEach(user => {
-          usersMap.set(user.id, user);
-        });
+        if (users) {
+          users.forEach(user => {
+            usersMap.set(user.id, user);
+          });
+        }
         
         const stats: AnnouncementStat[] = data.map(announcement => {
           const recipients = announcement.announcement_recipients || [];
@@ -96,6 +117,7 @@ export function useAnnouncementStats() {
           };
         });
         
+        console.log(`Processed ${stats.length} announcement stats`);
         return stats;
       } catch (error) {
         console.error("Error fetching announcement stats:", error);

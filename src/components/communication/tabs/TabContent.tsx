@@ -39,6 +39,14 @@ export const TabContent: React.FC<TabContentProps> = ({
   onAcknowledge,
   emptyMessage
 }) => {
+  // Debug the tab content
+  console.log(`TabContent ${value} rendering with:`, {
+    announcements: announcements.length,
+    loading,
+    currentPage,
+    totalPages
+  });
+
   return (
     <TabsContent value={value} className="mt-0">
       <AnnouncementList
