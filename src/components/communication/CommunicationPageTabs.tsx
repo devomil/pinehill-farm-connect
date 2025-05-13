@@ -1,5 +1,5 @@
 
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -15,11 +15,13 @@ interface CommunicationTabsProps {
   onTabChange: (value: string) => void;
 }
 
-export const CommunicationTabs: React.FC<CommunicationTabsProps> = memo(({
+export const CommunicationTabs = memo<CommunicationTabsProps>(({
   activeTab,
   unreadMessages,
   onTabChange
 }) => {
+  console.log("CommunicationTabs rendering, active tab:", activeTab);
+  
   // Filter direct messages only (explicitly include only direct message types)
   // and ensure only truly unread messages are counted
   const filteredUnreadMessages = unreadMessages 
@@ -36,7 +38,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = memo(({
     : [];
   
   // Get the names of up to 2 senders to display
-  const getSenderNamesPreview = (): string => {
+  const getSenderNamesPreview = useCallback((): string => {
     if (!filteredUnreadMessages || filteredUnreadMessages.length === 0) return "";
     
     // Extract unique sender names (if available in the message objects)
@@ -50,13 +52,14 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = memo(({
     if (uniqueSenderNames.length === 2) return `from ${uniqueSenderNames[0]} and ${uniqueSenderNames[1]}`;
     
     return `from ${uniqueSenderNames[0]}, ${uniqueSenderNames[1]}, and others`;
-  };
+  }, [filteredUnreadMessages]);
 
   const senderNamesPreview = getSenderNamesPreview();
 
-  // Handle tab change - prevent rerenders by using a memo/callback
-  const handleTabChange = React.useCallback((value: string) => {
+  // Handle tab change - prevent rerenders by using a stable callback
+  const handleTabChange = useCallback((value: string) => {
     if (value !== activeTab) {
+      console.log(`Tab change from ${activeTab} to ${value}`);
       onTabChange(value);
     }
   }, [activeTab, onTabChange]);
@@ -94,3 +97,4 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = memo(({
   );
 });
 
+CommunicationTabs.displayName = "CommunicationTabs";

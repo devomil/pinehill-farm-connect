@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { CommunicationHeader } from "./CommunicationHeader";
 import { useCommunications } from "@/hooks/useCommunications";
+import { toast } from "sonner";
 
 const CommunicationPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -23,7 +24,7 @@ const CommunicationPage: React.FC = () => {
   
   // Get unread messages for the badge counter
   const { unreadMessages, refreshMessages } = useCommunications();
-  const { unfilteredEmployees } = useEmployeeDirectory();
+  const { unfilteredEmployees, refetch: refetchEmployees } = useEmployeeDirectory();
   
   // Determine if the current user is an admin
   const isAdmin = currentUser?.role === 'admin';
@@ -34,10 +35,13 @@ const CommunicationPage: React.FC = () => {
   const refreshTimeoutRef = useRef<number | null>(null);
   const stableLocationPathRef = useRef<string>(location.pathname);
   const stableSearchRef = useRef<string>(location.search);
+  const isPageMounted = useRef<boolean>(false);
 
   // Handle tab changes and update the URL
   const handleTabChange = useCallback((value: string) => {
+    console.log(`Tab changing from ${activeTab} to ${value}`);
     setActiveTab(value);
+    
     if (value === "messages") {
       navigate('/communication?tab=messages', { replace: true });
       
@@ -51,7 +55,7 @@ const CommunicationPage: React.FC = () => {
     } else {
       navigate('/communication', { replace: true });
     }
-  }, [navigate, refreshMessages]);
+  }, [navigate, refreshMessages, activeTab]);
 
   // Handle URL changes - use refs to track stable values
   useEffect(() => {
@@ -60,43 +64,79 @@ const CommunicationPage: React.FC = () => {
       stableLocationPathRef.current = location.pathname;
       stableSearchRef.current = location.search;
       
-      if (location.search.includes('tab=messages')) {
+      if (location.search.includes('tab=messages') && activeTab !== "messages") {
         setActiveTab("messages");
-      } else {
+      } else if (!location.search.includes('tab=messages') && activeTab !== "announcements") {
         setActiveTab("announcements");
       }
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, location.search, activeTab]);
 
-  // Initial data load - only once
+  // Initial data load - only once when component is mounted
   useEffect(() => {
+    isPageMounted.current = true;
+    
     if (!initialDataLoaded.current && currentUser) {
       console.log("CommunicationPage mounted, initial data load");
-      refreshMessages();
-      initialDataLoaded.current = true;
+      // Use Promise.all to load data in parallel
+      Promise.all([
+        refreshMessages(),
+        refetchEmployees()
+      ]).then(() => {
+        if (isPageMounted.current) {
+          initialDataLoaded.current = true;
+          console.log("Initial communication data loaded");
+        }
+      }).catch(err => {
+        console.error("Error loading initial communication data:", err);
+      });
     }
     
     // Clear any previous refresh timeouts when unmounting
     return () => {
+      isPageMounted.current = false;
       if (refreshTimeoutRef.current !== null) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [refreshMessages, currentUser]);
+  }, [refreshMessages, refetchEmployees, currentUser]);
   
   // Handle announcement creation
   const handleAnnouncementCreate = useCallback(() => {
     console.log("Announcement created, refreshing data");
     // We can safely refresh here since it's an explicit user action
-    setTimeout(() => refreshMessages(), 1000);
+    toast.success("Announcement created successfully");
+    setTimeout(() => {
+      if (isPageMounted.current) {
+        refreshMessages();
+      }
+    }, 1000);
   }, [refreshMessages]);
   
   // Handle manual refresh of data - explicitly requested by user
   const handleManualRefresh = useCallback(() => {
     console.log("Manual refresh requested");
-    refreshMessages();
-    lastRefreshTime.current = Date.now();
-  }, [refreshMessages]);
+    // Prevent multiple concurrent refreshes
+    if (refreshTimeoutRef.current !== null) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    toast.info("Refreshing data...");
+    
+    // Use Promise.all to load all data in parallel
+    Promise.all([
+      refreshMessages(),
+      refetchEmployees()
+    ]).then(() => {
+      if (isPageMounted.current) {
+        toast.success("Data refreshed successfully");
+        lastRefreshTime.current = Date.now();
+      }
+    }).catch(err => {
+      console.error("Error refreshing communication data:", err);
+      toast.error("Failed to refresh data");
+    });
+  }, [refreshMessages, refetchEmployees]);
   
   return (
     <div className="container mx-auto py-6 max-w-6xl">
@@ -125,6 +165,19 @@ const CommunicationPage: React.FC = () => {
       
       {activeTab === "messages" && (
         <EmployeeCommunications />
+      )}
+      
+      {showDebugInfo && (
+        <div className="mt-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+          <h3 className="font-semibold mb-2">Debug Information</h3>
+          <p><strong>Active Tab:</strong> {activeTab}</p>
+          <p><strong>URL Search:</strong> {location.search}</p>
+          <p><strong>Initial Data Loaded:</strong> {initialDataLoaded.current ? 'Yes' : 'No'}</p>
+          <p><strong>Last Refresh:</strong> {new Date(lastRefreshTime.current).toLocaleTimeString()}</p>
+          <p><strong>Is Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
+          <p><strong>Employee Count:</strong> {unfilteredEmployees?.length || 0}</p>
+          <p><strong>Unread Messages:</strong> {unreadMessages?.length || 0}</p>
+        </div>
       )}
     </div>
   );

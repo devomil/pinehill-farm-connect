@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +35,8 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   // Use refs to prevent excessive refreshing
   const initialLoadComplete = useRef(false);
   const componentMounted = useRef(false);
+  const lastRefreshTime = useRef(Date.now());
+  const refreshTimeoutRef = useRef<number | null>(null);
   
   const processedMessages = useProcessMessages(messages, currentUser);
   const loading = employeesLoading || messagesLoading;
@@ -45,7 +47,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     if (propSelectedEmployee !== undefined && propSelectedEmployee !== selectedEmployee) {
       setSelectedEmployee(propSelectedEmployee);
     }
-  }, [propSelectedEmployee]);
+  }, [propSelectedEmployee, selectedEmployee]);
 
   // Force a refresh when retryCount changes
   useEffect(() => {
@@ -73,6 +75,7 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
           
           if (componentMounted.current) {
             initialLoadComplete.current = true;
+            lastRefreshTime.current = Date.now();
           }
         } catch (err) {
           console.error("Error loading communications data", err);
@@ -88,27 +91,50 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     // Component cleanup
     return () => {
       componentMounted.current = false;
+      if (refreshTimeoutRef.current !== null) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
     };
   }, [currentUser, refetchEmployees, refreshMessages]);
 
-  const handleSelectEmployee = (employee: User) => {
+  const handleSelectEmployee = useCallback((employee: User) => {
     console.log("Selected employee:", employee);
     setSelectedEmployee(employee);
     if (propSetSelectedEmployee) {
       propSetSelectedEmployee(employee);
     }
-  };
+  }, [propSetSelectedEmployee]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    const now = Date.now();
+    // Prevent multiple refreshes within a short time period
+    if (now - lastRefreshTime.current < 5000) {
+      toast.info("Already refreshed recently, please wait");
+      return;
+    }
+    
     toast.info("Refreshing employee data and messages");
-    refetchEmployees();
-    refreshMessages();
+    
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current !== null) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    Promise.all([
+      refetchEmployees(),
+      refreshMessages()
+    ]).then(() => {
+      if (componentMounted.current) {
+        lastRefreshTime.current = Date.now();
+      }
+    });
     
     // Also call parent's onRefresh if provided
     if (propsOnRefresh) {
       propsOnRefresh();
     }
-  };
+  }, [refetchEmployees, refreshMessages, propsOnRefresh]);
 
   // Show error message if there's an issue
   if (error && !loading) {

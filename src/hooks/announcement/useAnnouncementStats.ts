@@ -103,9 +103,11 @@ export function useAnnouncementStats() {
       }
     },
     // Add proper caching and stale time configuration to prevent too frequent refetches
-    staleTime: 60000, // 1 minute
+    staleTime: 300000, // 5 minutes (increased from 1 minute)
     refetchInterval: false, // Disable automatic refetching
     refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnMount: true, // Only fetch once on mount
+    retry: 1, // Limit retries to prevent excessive api calls
   });
 
   return {
