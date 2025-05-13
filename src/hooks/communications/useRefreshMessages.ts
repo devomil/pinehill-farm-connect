@@ -1,6 +1,7 @@
 
 import { useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { QueryObserverResult } from "@tanstack/react-query";
 
 /**
  * Hook for refreshing messages data
