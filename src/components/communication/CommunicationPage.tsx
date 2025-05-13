@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CommunicationTabs } from "./CommunicationPageTabs";
@@ -19,8 +18,10 @@ const CommunicationPage: React.FC = () => {
   // State for debug panel
   const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false);
   
-  // Check URL for active tab
-  const isMessagesTab = location.search.includes('tab=messages');
+  // Check URL for active tab - make sure to handle all ways the URL might be formatted
+  const urlParams = new URLSearchParams(location.search);
+  const tabParam = urlParams.get('tab');
+  const isMessagesTab = tabParam === 'messages';
   const [activeTab, setActiveTab] = useState<string>(isMessagesTab ? "messages" : "announcements");
   
   // Get unread messages for the badge counter
@@ -73,21 +74,20 @@ const CommunicationPage: React.FC = () => {
 
   // Handle URL changes - update active tab based on URL
   useEffect(() => {
-    if (!navigationComplete.current) {
-      console.log("Handling URL change:", location.search);
-      
-      // Update active tab based on URL
-      if (location.search.includes('tab=messages') && activeTab !== "messages") {
-        console.log("URL indicates messages tab, updating active tab");
-        setActiveTab("messages");
-      } else if (!location.search.includes('tab=messages') && activeTab !== "announcements") {
-        console.log("URL indicates announcements tab, updating active tab");
-        setActiveTab("announcements");
-      }
-      
-      navigationComplete.current = true;
+    // Update tab when URL changes, ensuring proper synchronization
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam === 'messages' && activeTab !== "messages") {
+      console.log("URL indicates messages tab, updating active tab");
+      setActiveTab("messages");
+    } else if (!tabParam && activeTab !== "announcements") {
+      console.log("URL indicates announcements tab, updating active tab");
+      setActiveTab("announcements");
     }
-  }, [location.search, activeTab, navigate]);
+    
+    navigationComplete.current = true;
+  }, [location.search, activeTab]);
 
   // Initial data load - only once when component is mounted
   useEffect(() => {

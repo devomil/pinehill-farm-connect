@@ -80,8 +80,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
             variant={item.badge !== null ? "default" : "ghost"}
             className={cn(
               "justify-start font-normal",
-              (pathname === item.to || 
-               (pathname === '/communication' && !search && item.to === '/communication') ||
+              ((pathname === '/communication' && !search && item.to === '/communication') ||
                (pathname === '/communication' && search.includes('tab=messages') && item.to.includes('messages'))) 
               && "bg-accent"
             )}
