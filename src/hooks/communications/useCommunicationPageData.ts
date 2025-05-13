@@ -6,6 +6,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { QueryObserverResult } from "@tanstack/react-query";
 
 export function useCommunicationPageData() {
   const { currentUser } = useAuth();

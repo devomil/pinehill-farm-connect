@@ -1,13 +1,14 @@
 
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { QueryObserverResult } from "@tanstack/react-query";
 
 interface UseTabNavigationProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
   location: { pathname: string; search: string };
   navigationComplete: React.MutableRefObject<boolean>;
-  refreshMessages: () => Promise<void>;
+  refreshMessages: () => Promise<void | QueryObserverResult<any, Error>>;
   isRefreshing: React.MutableRefObject<boolean>;
   lastRefreshTime: React.MutableRefObject<number>;
 }
