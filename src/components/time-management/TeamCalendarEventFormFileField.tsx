@@ -1,55 +1,111 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UseFormReturn } from "react-hook-form";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Paperclip, X } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 interface TeamCalendarEventFormFileFieldProps {
-  form: UseFormReturn<any>;
-  name?: string;
-  label?: string;
+  form: any;
+  name: string;
+  label: string;
+  accept?: string;
+  maxSize?: number; // in MB
+  required?: boolean;
 }
 
 export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({
   form,
-  name = "attachments",
-  label = "Attachments",
+  name,
+  label,
+  accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx",
+  maxSize = 5, // Default 5MB
+  required = false,
 }) => {
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const [fileName, setFileName] = useState<string>("");
+  const { toast } = useToast();
+  const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files?.length) return;
-
-    const oversizedFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-      toast({
-        description: `Files must be less than 5MB: ${oversizedFiles.map(f => f.name).join(", ")}`,
-        variant: "destructive",
-      });
-      e.target.value = '';
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: File | null) => void) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) {
+      onChange(null);
+      setFileName("");
       return;
     }
+    
+    // Check file size
+    if (file.size > maxSizeBytes) {
+      toast({
+        title: "File too large",
+        description: `File size must be less than ${maxSize}MB`,
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+    
+    setFileName(file.name);
+    onChange(file);
+  };
 
-    form.setValue(name, files);
+  const clearFile = (onChange: (value: null) => void) => {
+    onChange(null);
+    setFileName("");
   };
 
   return (
     <FormField
       control={form.control}
       name={name}
-      render={({ field: { onChange, ...field } }) => (
+      render={({ field: { onChange, value, ...rest } }) => (
         <FormItem>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel>{label}{required && <span className="text-destructive ml-1">*</span>}</FormLabel>
           <FormControl>
-            <Input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              {...field}
-            />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="file"
+                  accept={accept}
+                  onChange={(e) => handleFileChange(e, onChange)}
+                  className={cn(
+                    "cursor-pointer opacity-0 absolute inset-0 z-10",
+                    { "pointer-events-none": !!value }
+                  )}
+                  {...rest}
+                />
+                <div className="flex items-center border rounded-md px-3 py-2 text-sm">
+                  <Paperclip className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="flex-1 truncate">
+                    {fileName || value?.name || "No file selected"}
+                  </span>
+                </div>
+              </div>
+              
+              {value && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => clearFile(onChange)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {!value && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.click()}
+                >
+                  Browse
+                </Button>
+              )}
+            </div>
           </FormControl>
           <FormMessage />
         </FormItem>

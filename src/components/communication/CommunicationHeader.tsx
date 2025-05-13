@@ -28,7 +28,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
 }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [showStatsDialog, setShowStatsDialog] = useState(false);
-  const { data: stats, isLoading, error, refetch } = useAnnouncementStats();
+  const { stats, isLoading, error, refetch } = useAnnouncementStats();
 
   const handleNewAnnouncement = () => {
     setShowDialog(true);

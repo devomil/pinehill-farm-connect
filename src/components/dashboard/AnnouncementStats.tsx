@@ -16,14 +16,14 @@ interface AnnouncementStatsProps {
 }
 
 export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable, viewAllUrl }) => {
-  const { data: statsData, isLoading, error, refetch } = useAnnouncementStats();
+  const { stats, isLoading, error, refetch } = useAnnouncementStats();
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
   // Convert stats to expected format
-  const stats = statsData ? convertAnnouncementStatToData(statsData) : [];
+  const statsData = stats ? convertAnnouncementStatToData(stats) : [];
 
   // Find the selected announcement
-  const selectedAnnouncement = stats?.find(
+  const selectedAnnouncement = statsData?.find(
     announcement => announcement.id === selectedAnnouncementId
   ) || null;
 
@@ -88,9 +88,9 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
         {!selectedAnnouncement ? (
           <>
             <div className="h-[350px] mb-8">
-              {stats && <AnnouncementStatsChart data={stats} />}
+              {statsData && <AnnouncementStatsChart data={statsData} />}
             </div>
-            {stats && <AnnouncementStatsTable data={stats} onViewDetails={handleViewDetails} />}
+            {statsData && <AnnouncementStatsTable data={statsData} onViewDetails={handleViewDetails} />}
           </>
         ) : (
           <AnnouncementUserDetails users={selectedAnnouncement.users} />
