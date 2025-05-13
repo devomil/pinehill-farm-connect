@@ -108,13 +108,16 @@ export default function Communications() {
   };
 
   // Adapter for respondToShiftRequest that matches the expected signature
-  const handleRespondToShiftRequest = (data: {
-    communicationId: string;
-    shiftRequestId: string;
-    accept: boolean;
-    senderId: string;
-  }) => {
-    return respondToShiftRequest(data);
+  const handleRespondToShiftRequest = (messageId: string, response: string) => {
+    // Parse the messageId which contains both communicationId and shiftRequestId
+    const [communicationId, shiftRequestId, senderId] = messageId.split('|');
+    
+    return respondToShiftRequest({
+      communicationId: communicationId,
+      shiftRequestId: shiftRequestId,
+      accept: response === 'accepted',
+      senderId: senderId
+    });
   };
 
   return (

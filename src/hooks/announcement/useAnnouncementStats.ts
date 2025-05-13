@@ -22,7 +22,8 @@ export const useAnnouncementStats = () => {
             requires_acknowledgment,
             announcement_recipients(
               read_at,
-              acknowledged_at
+              acknowledged_at,
+              user_id
             )
           `);
           
