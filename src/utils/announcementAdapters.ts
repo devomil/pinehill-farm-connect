@@ -1,5 +1,6 @@
 
-import { AnnouncementStat, Announcement } from "@/types";
+import { AnnouncementStat as IndexAnnouncementStat } from "@/types";
+import { AnnouncementStat as HookAnnouncementStat } from "@/hooks/announcement/useAnnouncementStats";
 
 /**
  * AnnouncementData represents the processed data needed for displaying
@@ -25,9 +26,30 @@ export interface AnnouncementData {
 }
 
 /**
+ * Adapter function to convert hook's AnnouncementStat format to the index.ts AnnouncementStat format
+ */
+export function convertHookStatsToIndexFormat(stats: HookAnnouncementStat[]): IndexAnnouncementStat[] {
+  return stats.map(stat => ({
+    id: stat.id,
+    title: stat.title,
+    total_users: stat.totalRecipients || 0,
+    read_count: stat.readCount || 0,
+    acknowledged_count: stat.acknowledgedCount || 0,
+    created_at: stat.createdAt || new Date().toISOString(),
+    requires_acknowledgment: !!stat.requires_acknowledgment,
+    users: stat.userDetails?.map(user => ({
+      id: user.userId,
+      name: user.name || 'Unknown User',
+      read: user.read || false,
+      acknowledged: user.acknowledged || false
+    })) || []
+  }));
+}
+
+/**
  * Converts AnnouncementStat array to AnnouncementData array for UI rendering
  */
-export function convertAnnouncementStatsToData(stats: AnnouncementStat[]): AnnouncementData[] {
+export function convertAnnouncementStatsToData(stats: IndexAnnouncementStat[]): AnnouncementData[] {
   return stats.map(stat => ({
     id: stat.id,
     title: stat.title,

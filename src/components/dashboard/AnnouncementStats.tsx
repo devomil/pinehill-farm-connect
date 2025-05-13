@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnnouncementStatsChart } from "./announcements/AnnouncementStatsChart";
@@ -8,7 +7,7 @@ import { AnnouncementStatsLoading } from "./announcements/AnnouncementStatsLoadi
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { convertAnnouncementStatsToData } from "@/utils/announcementAdapters";
+import { convertAnnouncementStatsToData, convertHookStatsToIndexFormat } from "@/utils/announcementAdapters";
 
 interface AnnouncementStatsProps {
   clickable?: boolean;
@@ -20,9 +19,13 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
   // Memoize the conversion to prevent unnecessary recalculation
-  const statsData = useMemo(() => 
-    stats ? convertAnnouncementStatsToData(stats) : []
+  const adaptedStats = useMemo(() => 
+    stats ? convertHookStatsToIndexFormat(stats) : []
   , [stats]);
+  
+  const statsData = useMemo(() => 
+    convertAnnouncementStatsToData(adaptedStats)
+  , [adaptedStats]);
 
   // Memoize finding selected announcement to prevent recalculation
   const selectedAnnouncement = useMemo(() => 

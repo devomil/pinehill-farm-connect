@@ -1,3 +1,4 @@
+
 import React, { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -7,7 +8,7 @@ import { AnnouncementStatsDialog } from "./announcement/AnnouncementStatsDialog"
 import { RefreshCw, FilePlus, BarChartBig, Bug } from "lucide-react";
 import { User } from "@/types";
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
-import { convertAnnouncementStatsToData } from "@/utils/announcementAdapters";
+import { convertAnnouncementStatsToData, convertHookStatsToIndexFormat } from "@/utils/announcementAdapters";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -33,7 +34,8 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   const { stats, isLoading, error, refetch: refreshStats } = useAnnouncementStats();
   
   // Convert stats to AnnouncementData format using the adapter
-  const convertedStats = stats ? convertAnnouncementStatsToData(stats) : [];
+  const adaptedStats = stats ? convertHookStatsToIndexFormat(stats) : [];
+  const convertedStats = convertAnnouncementStatsToData(adaptedStats);
   
   // Debug that the buttons are properly wired
   console.log("CommunicationHeader rendered with proper handlers:", {

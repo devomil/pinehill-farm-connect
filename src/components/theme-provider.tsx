@@ -3,7 +3,9 @@
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import type { Attribute } from "next-themes/dist/types"
+
+// Define Attribute type locally instead of importing from next-themes/dist/types
+type Attribute = string | string[]
 
 interface ThemeProviderProps {
   children: React.ReactNode;
