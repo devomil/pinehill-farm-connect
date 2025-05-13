@@ -46,7 +46,7 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
   }, []);
   
   // Handle saving edited announcements
-  const handleSaveEdit = useCallback(async (updatedAnnouncement: Announcement) => {
+  const handleSaveEdit = useCallback(async (updatedAnnouncement: Announcement): Promise<void> => {
     console.log("Saving edited announcement:", updatedAnnouncement);
     try {
       const success = await handleEdit(updatedAnnouncement);
@@ -55,16 +55,14 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
         await fetchAnnouncements();
         toast.success("Announcement updated successfully");
       }
-      return success;
     } catch (error) {
       console.error("Error saving edited announcement:", error);
       toast.error("Failed to update announcement");
-      return false;
     }
   }, [handleEdit, fetchAnnouncements]);
 
   // Handle deleting announcements
-  const handleDeleteAnnouncement = useCallback(async (id: string) => {
+  const handleDeleteAnnouncement = useCallback(async (id: string): Promise<void> => {
     console.log("Deleting announcement:", id);
     try {
       const success = await handleDelete(id);
@@ -72,11 +70,9 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
         await fetchAnnouncements();
         toast.success("Announcement deleted successfully");
       }
-      return success;
     } catch (error) {
       console.error("Error deleting announcement:", error);
       toast.error("Failed to delete announcement");
-      return false;
     }
   }, [handleDelete, fetchAnnouncements]);
 
