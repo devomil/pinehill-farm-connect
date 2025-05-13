@@ -8,6 +8,7 @@ import { AnnouncementStatsDialog } from "./announcement/AnnouncementStatsDialog"
 import { RefreshCw, FilePlus, BarChartBig, Bug } from "lucide-react";
 import { User } from "@/types";
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
+import { convertAnnouncementStatToData } from "@/utils/announcementAdapters";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -31,6 +32,9 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   
   // Get announcement stats data
   const { stats, isLoading, error, refetch: refreshStats } = useAnnouncementStats();
+  
+  // Convert stats to AnnouncementData format using the adapter
+  const convertedStats = stats ? convertAnnouncementStatToData(stats) : [];
   
   // Debug that the buttons are properly wired
   console.log("CommunicationHeader rendered with proper handlers:", {
@@ -100,7 +104,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
             <AnnouncementStatsDialog
               open={statsDialogOpen}
               onClose={() => setStatsDialogOpen(false)}
-              stats={stats}
+              stats={convertedStats}
               isLoading={isLoading}
               onRefresh={handleStatsRefresh}
               error={error}
