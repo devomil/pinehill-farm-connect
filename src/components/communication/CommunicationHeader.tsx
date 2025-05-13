@@ -7,6 +7,7 @@ import { AdminAnnouncementDialog } from "./AdminAnnouncementDialog";
 import { AnnouncementStatsDialog } from "./announcement/AnnouncementStatsDialog";
 import { RefreshCw, FilePlus, BarChartBig, Bug } from "lucide-react";
 import { User } from "@/types";
+import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -27,6 +28,9 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
 }) => {
   const [announceDialogOpen, setAnnounceDialogOpen] = React.useState(false);
   const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
+  
+  // Get announcement stats data
+  const { stats, isLoading, error, refetch: refreshStats } = useAnnouncementStats();
   
   // Debug that the buttons are properly wired
   console.log("CommunicationHeader rendered with proper handlers:", {
@@ -50,6 +54,12 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   const toggleDebugInfo = useCallback(() => {
     setShowDebugInfo(!showDebugInfo);
   }, [showDebugInfo, setShowDebugInfo]);
+  
+  // Handle stats refresh
+  const handleStatsRefresh = useCallback(() => {
+    console.log("Refreshing announcement stats");
+    refreshStats();
+  }, [refreshStats]);
   
   return (
     <div className="flex justify-between items-center mb-6">
@@ -78,32 +88,38 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
         
         {isAdmin && (
           <>
-            <Dialog open={statsDialogOpen} onOpenChange={setStatsDialogOpen}>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setStatsDialogOpen(true)}
-              >
-                <BarChartBig className="h-4 w-4 mr-2" />
-                Stats
-              </Button>
-              <AnnouncementStatsDialog onClose={() => setStatsDialogOpen(false)} />
-            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setStatsDialogOpen(true)}
+            >
+              <BarChartBig className="h-4 w-4 mr-2" />
+              Stats
+            </Button>
             
-            <Dialog open={announceDialogOpen} onOpenChange={setAnnounceDialogOpen}>
-              <Button
-                variant="default"
-                onClick={handleCreateAnnouncementClick}
-              >
-                <FilePlus className="h-4 w-4 mr-2" />
-                New Announcement
-              </Button>
-              <AdminAnnouncementDialog
-                allEmployees={allEmployees}
-                onSuccess={onAnnouncementCreate}
-                onClose={() => setAnnounceDialogOpen(false)}
-              />
-            </Dialog>
+            <AnnouncementStatsDialog
+              open={statsDialogOpen}
+              onClose={() => setStatsDialogOpen(false)}
+              stats={stats}
+              isLoading={isLoading}
+              onRefresh={handleStatsRefresh}
+              error={error}
+            />
+            
+            <Button
+              variant="default"
+              onClick={handleCreateAnnouncementClick}
+            >
+              <FilePlus className="h-4 w-4 mr-2" />
+              New Announcement
+            </Button>
+            
+            <AdminAnnouncementDialog
+              open={announceDialogOpen}
+              onClose={() => setAnnounceDialogOpen(false)}
+              allEmployees={allEmployees}
+              onCreate={onAnnouncementCreate}
+            />
           </>
         )}
       </div>
