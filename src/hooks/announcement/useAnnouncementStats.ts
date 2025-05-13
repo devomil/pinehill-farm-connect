@@ -22,7 +22,7 @@ export interface AnnouncementStat {
 }
 
 export function useAnnouncementStats() {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["announcement_stats"],
     queryFn: async () => {
       try {
@@ -103,4 +103,11 @@ export function useAnnouncementStats() {
       }
     }
   });
+
+  return {
+    stats: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch
+  };
 }

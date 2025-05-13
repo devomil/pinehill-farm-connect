@@ -88,7 +88,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
         <AnnouncementStatsDialog 
           open={showStatsDialog} 
           onClose={handleStatsDialogClose} 
-          stats={stats}
+          stats={stats || []}
           isLoading={isLoading}
           error={error}
           onRefresh={refetch}

@@ -113,10 +113,10 @@ export default function Communications() {
     const [communicationId, shiftRequestId, senderId] = messageId.split('|');
     
     return respondToShiftRequest({
-      communicationId: communicationId,
-      shiftRequestId: shiftRequestId,
+      communicationId,
+      shiftRequestId,
       accept: response === 'accepted',
-      senderId: senderId
+      senderId
     });
   };
 

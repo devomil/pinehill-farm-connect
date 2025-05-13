@@ -6,7 +6,7 @@ export * from './useRespondToShiftRequest';
 export * from './useUnreadMessages';
 export * from './useRefreshMessages';
 export * from './useMessageReadingManager';
-export * from './useMessageRefreshManager';
+export { useMessageRefreshManager } from './useMessageRefreshManager';
 export * from './useMessageValidation';
 export * from './useMessageSendOperations';
 export * from './utils/notificationUtils';

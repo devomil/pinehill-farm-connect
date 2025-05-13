@@ -3,12 +3,9 @@ import { User } from "@/types";
 import { SendMessageParams, RespondToShiftRequestParams } from "@/types/communications/communicationTypes";
 import { UseMutationResult } from "@tanstack/react-query";
 
-interface SendMessageMutationResult extends UseMutationResult<any, Error, SendMessageParams> {}
-interface RespondToShiftRequestMutationResult extends UseMutationResult<any, Error, RespondToShiftRequestParams> {}
-
 export function useMessageSendOperations(
-  sendMessageMutation: SendMessageMutationResult,
-  respondToShiftRequestMutation: RespondToShiftRequestMutationResult,
+  sendMessageMutation: UseMutationResult<any, Error, SendMessageParams>,
+  respondToShiftRequestMutation: UseMutationResult<any, Error, RespondToShiftRequestParams>,
   refreshMessages: () => Promise<any>
 ) {
   const sendMessage = async (params: SendMessageParams): Promise<any> => {

@@ -8,7 +8,6 @@ import { AnnouncementStatsLoading } from "./announcements/AnnouncementStatsLoadi
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { AnnouncementData } from "@/types/announcements";
 
 interface AnnouncementStatsProps {
   clickable?: boolean;
@@ -72,7 +71,7 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
             <div>
               <CardTitle>{selectedAnnouncement.title}</CardTitle>
               <CardDescription>
-                {selectedAnnouncement.read_count} of {selectedAnnouncement.total_users} employees have read this announcement
+                {selectedAnnouncement.readCount} of {selectedAnnouncement.totalRecipients} employees have read this announcement
               </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={handleBackToList}>
@@ -90,7 +89,7 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
             {stats && <AnnouncementStatsTable data={stats} onViewDetails={handleViewDetails} />}
           </>
         ) : (
-          <AnnouncementUserDetails users={selectedAnnouncement.users} />
+          <AnnouncementUserDetails users={selectedAnnouncement.userDetails || []} />
         )}
       </CardContent>
       {!selectedAnnouncement && (
