@@ -25,7 +25,6 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
     const oversizedFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
     if (oversizedFiles.length > 0) {
       toast({
-        title: "File too large",
         description: `Files must be less than 5MB: ${oversizedFiles.map(f => f.name).join(", ")}`,
         variant: "destructive",
       });

@@ -7,6 +7,7 @@ import { User } from "@/types";
 import { CommunicationDebugPanel } from "./CommunicationDebugPanel";
 import { AnnouncementStatsDialog } from "./announcement/AnnouncementStatsDialog";
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
+import { convertAnnouncementStatToData } from "@/utils/announcementAdapters";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -27,7 +28,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
 }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [showStatsDialog, setShowStatsDialog] = useState(false);
-  const { stats, isLoading, error, refetch } = useAnnouncementStats();
+  const { data: stats, isLoading, error, refetch } = useAnnouncementStats();
 
   const handleNewAnnouncement = () => {
     setShowDialog(true);
@@ -40,6 +41,9 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   const handleStatsDialogClose = () => {
     setShowStatsDialog(false);
   };
+
+  // Convert stats to AnnouncementData format
+  const announcementData = stats ? convertAnnouncementStatToData(stats) : [];
 
   return (
     <>
@@ -88,7 +92,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
         <AnnouncementStatsDialog 
           open={showStatsDialog} 
           onClose={handleStatsDialogClose} 
-          stats={stats || []}
+          stats={announcementData}
           isLoading={isLoading}
           error={error}
           onRefresh={refetch}
