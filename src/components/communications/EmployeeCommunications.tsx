@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,9 +32,20 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   const { isMobileView } = useResponsiveLayout();
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
+  // Use refs to prevent excessive refreshing
+  const initialLoadComplete = useRef(false);
+  const componentMounted = useRef(false);
+  
   const processedMessages = useProcessMessages(messages, currentUser);
   const loading = employeesLoading || messagesLoading;
   const error = employeeError || messagesError;
+
+  // Sync with prop if changed externally
+  useEffect(() => {
+    if (propSelectedEmployee !== undefined && propSelectedEmployee !== selectedEmployee) {
+      setSelectedEmployee(propSelectedEmployee);
+    }
+  }, [propSelectedEmployee]);
 
   // Force a refresh when retryCount changes
   useEffect(() => {
@@ -45,24 +56,41 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     }
   }, [retryCount, refetchEmployees, refreshMessages]);
 
-  // Log debugging information
+  // Initial load effect with proper cleanup
   useEffect(() => {
-    console.log("EmployeeCommunications - employeesLoading:", employeesLoading);
-    console.log("EmployeeCommunications - messagesLoading:", messagesLoading);
-    console.log("EmployeeCommunications - unfilteredEmployees count:", unfilteredEmployees?.length || 0);
-    console.log("EmployeeCommunications - processedMessages count:", processedMessages?.length || 0);
-    console.log("EmployeeCommunications - employeeError:", employeeError ? 
-      (typeof employeeError === 'string' ? employeeError : employeeError.message || 'Unknown error') : 'None');
-    console.log("EmployeeCommunications - messagesError:", messagesError ? 
-      (typeof messagesError === 'string' ? messagesError : messagesError.message || 'Unknown error') : 'None');
+    componentMounted.current = true;
     
-    // When component mounts, ensure we have fresh employee data
-    if (!unfilteredEmployees || unfilteredEmployees.length === 0) {
-      console.log("No employees found, fetching fresh data");
-      refetchEmployees();
+    // Only load once on initial mount
+    if (!initialLoadComplete.current && currentUser) {
+      console.log("EmployeeCommunications - Initial data load");
+      
+      const loadData = async () => {
+        try {
+          await Promise.all([
+            refetchEmployees(),
+            refreshMessages()
+          ]);
+          
+          if (componentMounted.current) {
+            initialLoadComplete.current = true;
+          }
+        } catch (err) {
+          console.error("Error loading communications data", err);
+          if (componentMounted.current) {
+            toast.error("Failed to load communications data. Please try again.");
+          }
+        }
+      };
+      
+      loadData();
     }
-  }, [employeesLoading, messagesLoading, unfilteredEmployees, processedMessages, employeeError, messagesError, refetchEmployees]);
-  
+    
+    // Component cleanup
+    return () => {
+      componentMounted.current = false;
+    };
+  }, [currentUser, refetchEmployees, refreshMessages]);
+
   const handleSelectEmployee = (employee: User) => {
     console.log("Selected employee:", employee);
     setSelectedEmployee(employee);

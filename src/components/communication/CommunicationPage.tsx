@@ -32,12 +32,14 @@ const CommunicationPage: React.FC = () => {
   const initialDataLoaded = useRef<boolean>(false);
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshTimeoutRef = useRef<number | null>(null);
+  const stableLocationPathRef = useRef<string>(location.pathname);
+  const stableSearchRef = useRef<string>(location.search);
 
   // Handle tab changes and update the URL
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
     if (value === "messages") {
-      navigate('/communication?tab=messages');
+      navigate('/communication?tab=messages', { replace: true });
       
       // Only refresh if it's been more than 5 seconds since last refresh
       const now = Date.now();
@@ -47,18 +49,24 @@ const CommunicationPage: React.FC = () => {
         lastRefreshTime.current = now;
       }
     } else {
-      navigate('/communication');
+      navigate('/communication', { replace: true });
     }
   }, [navigate, refreshMessages]);
 
-  // Handle URL changes
+  // Handle URL changes - use refs to track stable values
   useEffect(() => {
-    if (location.search.includes('tab=messages')) {
-      setActiveTab("messages");
-    } else {
-      setActiveTab("announcements");
+    // Only update if we're still on the communication page to prevent navigation issues
+    if (location.pathname === '/communication') {
+      stableLocationPathRef.current = location.pathname;
+      stableSearchRef.current = location.search;
+      
+      if (location.search.includes('tab=messages')) {
+        setActiveTab("messages");
+      } else {
+        setActiveTab("announcements");
+      }
     }
-  }, [location]);
+  }, [location.pathname, location.search]);
 
   // Initial data load - only once
   useEffect(() => {

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle } from "lucide-react";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -15,7 +15,7 @@ interface CommunicationTabsProps {
   onTabChange: (value: string) => void;
 }
 
-export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
+export const CommunicationTabs: React.FC<CommunicationTabsProps> = memo(({
   activeTab,
   unreadMessages,
   onTabChange
@@ -54,8 +54,15 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
   const senderNamesPreview = getSenderNamesPreview();
 
+  // Handle tab change - prevent rerenders by using a memo/callback
+  const handleTabChange = React.useCallback((value: string) => {
+    if (value !== activeTab) {
+      onTabChange(value);
+    }
+  }, [activeTab, onTabChange]);
+
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full mb-6">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
       <TabsList className="mb-4">
         <TabsTrigger value="announcements">Company Announcements</TabsTrigger>
         <TabsTrigger value="messages" className="relative">
@@ -85,4 +92,5 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
       )}
     </Tabs>
   );
-};
+});
+

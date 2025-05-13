@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -9,11 +8,12 @@ import { ConversationTabs } from "@/components/communications/ConversationTabs";
 import { useErrorHandling } from "@/hooks/communications/useErrorHandling";
 import { toast } from "sonner";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Communications() {
   const { currentUser } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { loading: employeesLoading, error: employeeError, refetch: refetchEmployees, unfilteredEmployees: allEmployees } = useEmployeeDirectory();
   const { isLoading: assignmentsLoading } = useEmployeeAssignments();
   // Exclude shift coverage messages from the communications page
@@ -29,6 +29,16 @@ export default function Communications() {
   
   // Check if messages tab is active
   const isMessagesTabActive = location.search.includes('tab=messages');
+
+  // Redirect to new Communication page
+  useEffect(() => {
+    // Redirect to the new communication page with proper tab
+    const redirectPath = isMessagesTabActive 
+      ? '/communication?tab=messages' 
+      : '/communication';
+      
+    navigate(redirectPath, { replace: true });
+  }, [navigate, isMessagesTabActive]);
 
   // Debug log for search functionality
   useEffect(() => {
