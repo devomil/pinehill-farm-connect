@@ -1,8 +1,9 @@
 
-import { AnnouncementStat } from "@/hooks/announcement/useAnnouncementStats";
+import { AnnouncementStat, Announcement } from "@/types";
 
 /**
- * Interface for announcement data used in the AnnouncementStatsDialog
+ * AnnouncementData represents the processed data needed for displaying
+ * announcement statistics in the dashboard and admin interfaces
  */
 export interface AnnouncementData {
   id: string;
@@ -24,26 +25,25 @@ export interface AnnouncementData {
 }
 
 /**
- * Converts AnnouncementStat array to AnnouncementData array
- * for use in the AnnouncementStatsDialog component
+ * Converts AnnouncementStat array to AnnouncementData array for UI rendering
  */
-export function convertAnnouncementStatToData(stats: AnnouncementStat[]): AnnouncementData[] {
+export function convertAnnouncementStatsToData(stats: AnnouncementStat[]): AnnouncementData[] {
   return stats.map(stat => ({
     id: stat.id,
     title: stat.title,
-    total_users: stat.recipients?.length || 0,
-    read_count: stat.recipients?.filter(r => r.read).length || 0,
-    acknowledged_count: stat.recipients?.filter(r => r.acknowledged).length || 0,
+    total_users: stat.total_users || 0,
+    read_count: stat.read_count || 0,
+    acknowledged_count: stat.acknowledged_count || 0,
     requires_acknowledgment: !!stat.requires_acknowledgment,
-    created_at: stat.createdAt.toISOString(),
-    users: stat.recipients?.map(recipient => ({
-      id: recipient.user_id,
-      name: recipient.user_name || 'Unknown User',
-      avatar_url: recipient.avatar_url,
-      read: recipient.read,
-      acknowledged: recipient.acknowledged,
-      read_at: recipient.read_at,
-      acknowledged_at: recipient.acknowledged_at
+    created_at: stat.created_at || new Date().toISOString(),
+    users: stat.users?.map(user => ({
+      id: user.id,
+      name: user.name || 'Unknown User',
+      avatar_url: user.avatar_url,
+      read: user.read || false,
+      acknowledged: user.acknowledged || false,
+      read_at: user.read_at,
+      acknowledged_at: user.acknowledged_at
     })) || []
   }));
 }
