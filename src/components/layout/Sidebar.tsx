@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useMobile } from "@/hooks/useMobile";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut } from "lucide-react";
@@ -18,7 +18,7 @@ interface SidebarProps {
 export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
