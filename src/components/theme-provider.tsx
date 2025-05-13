@@ -15,7 +15,7 @@ interface ThemeProviderProps {
   enableColorScheme?: boolean;
   forcedTheme?: string;
   disableTransitionOnChange?: boolean;
-  attribute?: Attribute;
+  attribute?: Attribute | Attribute[];  // Updated to match the expected type
 }
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
