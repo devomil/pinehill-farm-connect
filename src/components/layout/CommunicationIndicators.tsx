@@ -65,6 +65,17 @@ export const CommunicationIndicators: React.FC = () => {
     }
   }, [location.pathname, manualRefresh, refetchData]);
 
+  // Handle navigation to communication pages
+  const handleAnnouncementsClick = () => {
+    navigate("/communication");
+  };
+  
+  const handleMessagesClick = () => {
+    navigate("/communication?tab=messages");
+    // Force immediate refresh when clicking on messages
+    setTimeout(() => manualRefresh(), 200);
+  };
+
   return (
     <div className="flex flex-col space-y-2 mb-4">
       <TooltipProvider>
@@ -74,7 +85,7 @@ export const CommunicationIndicators: React.FC = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate("/communication")}
+              onClick={handleAnnouncementsClick}
               className="relative w-full justify-start"
             >
               <Megaphone className="h-5 w-5 mr-3" />
@@ -97,11 +108,7 @@ export const CommunicationIndicators: React.FC = () => {
             <Button 
               variant={unreadMessageCount > 0 ? "default" : "ghost"}
               size="sm"
-              onClick={() => {
-                navigate("/communication?tab=messages");
-                // Force immediate refresh when clicking on messages
-                setTimeout(() => manualRefresh(), 200);
-              }}
+              onClick={handleMessagesClick}
               className="relative w-full justify-start"
             >
               <MessageSquare className="h-5 w-5 mr-3" />

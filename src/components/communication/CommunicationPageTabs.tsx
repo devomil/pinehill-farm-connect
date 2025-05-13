@@ -64,11 +64,16 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
     }
   }, [activeTab, onTabChange]);
 
+  // Log tab render
+  console.log(`Rendering CommunicationTabs with activeTab=${activeTab}, unreadCount=${filteredUnreadMessages.length}`);
+
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
       <TabsList className="mb-4">
-        <TabsTrigger value="announcements">Company Announcements</TabsTrigger>
-        <TabsTrigger value="messages" className="relative">
+        <TabsTrigger value="announcements" data-testid="announcements-tab">
+          Company Announcements
+        </TabsTrigger>
+        <TabsTrigger value="messages" data-testid="messages-tab" className="relative">
           Direct Messages
           {filteredUnreadMessages.length > 0 && (
             <div className="ml-2 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-xs flex items-center">

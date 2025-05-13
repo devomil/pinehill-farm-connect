@@ -9,6 +9,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { CommunicationHeader } from "./CommunicationHeader";
 import { useCommunications } from "@/hooks/useCommunications";
 import { toast } from "sonner";
+import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 
 const CommunicationPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -35,14 +36,24 @@ const CommunicationPage: React.FC = () => {
   const refreshTimeoutRef = useRef<number | null>(null);
   const isPageMounted = useRef<boolean>(false);
   const isRefreshing = useRef<boolean>(false);
+  const navigationComplete = useRef<boolean>(false);
+
+  // Log component renders
+  console.log("CommunicationPage rendering with activeTab:", activeTab, "URL:", location.pathname + location.search);
 
   // Handle tab changes and update the URL
   const handleTabChange = useCallback((value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
     setActiveTab(value);
+    navigationComplete.current = false;
     
-    if (value === "messages") {
-      navigate('/communication?tab=messages', { replace: true });
+    const newPath = value === "messages" 
+      ? '/communication?tab=messages' 
+      : '/communication';
+      
+    // Update URL without full page reload
+    if (location.pathname + location.search !== newPath) {
+      navigate(newPath, { replace: true });
       
       // Only refresh if it's been more than 5 seconds since last refresh
       const now = Date.now();
@@ -52,24 +63,31 @@ const CommunicationPage: React.FC = () => {
         refreshMessages().finally(() => {
           isRefreshing.current = false;
           lastRefreshTime.current = Date.now();
+          navigationComplete.current = true;
         });
+      } else {
+        navigationComplete.current = true;
       }
-    } else {
-      navigate('/communication', { replace: true });
     }
-  }, [navigate, refreshMessages, activeTab]);
+  }, [navigate, refreshMessages, activeTab, location.pathname, location.search]);
 
-  // Handle URL changes - use refs to track stable values
+  // Handle URL changes - update active tab based on URL
   useEffect(() => {
-    // Only update if we're still on the communication page to prevent navigation issues
-    if (location.pathname === '/communication') {
+    if (!navigationComplete.current) {
+      console.log("Handling URL change:", location.search);
+      
+      // Update active tab based on URL
       if (location.search.includes('tab=messages') && activeTab !== "messages") {
+        console.log("URL indicates messages tab, updating active tab");
         setActiveTab("messages");
       } else if (!location.search.includes('tab=messages') && activeTab !== "announcements") {
+        console.log("URL indicates announcements tab, updating active tab");
         setActiveTab("announcements");
       }
+      
+      navigationComplete.current = true;
     }
-  }, [location.pathname, location.search, activeTab]);
+  }, [location.search, activeTab, navigate]);
 
   // Initial data load - only once when component is mounted
   useEffect(() => {
@@ -196,19 +214,13 @@ const CommunicationPage: React.FC = () => {
         <EmployeeCommunications />
       )}
       
-      {showDebugInfo && (
-        <div className="mt-8 p-4 border border-gray-200 rounded-md bg-gray-50">
-          <h3 className="font-semibold mb-2">Debug Information</h3>
-          <p><strong>Active Tab:</strong> {activeTab}</p>
-          <p><strong>URL Search:</strong> {location.search}</p>
-          <p><strong>Initial Data Loaded:</strong> {initialDataLoaded.current ? 'Yes' : 'No'}</p>
-          <p><strong>Last Refresh:</strong> {new Date(lastRefreshTime.current).toLocaleTimeString()}</p>
-          <p><strong>Is Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
-          <p><strong>Is Refreshing:</strong> {isRefreshing.current ? 'Yes' : 'No'}</p>
-          <p><strong>Employee Count:</strong> {unfilteredEmployees?.length || 0}</p>
-          <p><strong>Unread Messages:</strong> {unreadMessages?.length || 0}</p>
-        </div>
-      )}
+      <CommunicationDebugHelper
+        showDebug={showDebugInfo}
+        activeTab={activeTab}
+        unreadMessages={unreadMessages || []}
+        onTabChange={handleTabChange}
+        onRefresh={handleManualRefresh}
+      />
     </div>
   );
 };

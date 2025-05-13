@@ -22,7 +22,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   
   // Add effect to refresh unread messages when navigating to communications
   useEffect(() => {
-    if (pathname.includes('/communication')) {
+    if (pathname === '/communication') {
       console.log("On communication page, refreshing message data");
       refreshMessages();
       refetchData();
@@ -80,8 +80,9 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
             variant={item.badge !== null ? "default" : "ghost"}
             className={cn(
               "justify-start font-normal",
-              (pathname === item.to || pathname === "/communications" || 
-               (pathname.includes('/communication') && item.to.includes(pathname.includes('?tab=messages') ? 'messages' : 'communication'))) 
+              (pathname === item.to || 
+               (pathname === '/communication' && !search && item.to === '/communication') ||
+               (pathname === '/communication' && search.includes('tab=messages') && item.to.includes('messages'))) 
               && "bg-accent"
             )}
             asChild
