@@ -8,7 +8,7 @@ import { AnnouncementStatsLoading } from "./announcements/AnnouncementStatsLoadi
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { convertAnnouncementStatToData } from "@/utils/announcementAdapters";
+import { convertAnnouncementStatsToData } from "@/utils/announcementAdapters";
 
 interface AnnouncementStatsProps {
   clickable?: boolean;
@@ -21,7 +21,7 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
 
   // Memoize the conversion to prevent unnecessary recalculation
   const statsData = useMemo(() => 
-    stats ? convertAnnouncementStatToData(stats) : []
+    stats ? convertAnnouncementStatsToData(stats) : []
   , [stats]);
 
   // Memoize finding selected announcement to prevent recalculation

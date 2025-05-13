@@ -140,3 +140,22 @@ export interface TrainingProgress {
   lastAttempt?: Date;
   status: "not-started" | "in-progress" | "completed" | "failed" | "expired";
 }
+
+export interface AnnouncementStat {
+  id: string;
+  title: string;
+  total_users: number;
+  read_count: number;
+  acknowledged_count: number;
+  created_at: string;
+  requires_acknowledgment: boolean;
+  users?: Array<{
+    id: string;
+    name: string;
+    avatar_url?: string;
+    read: boolean;
+    acknowledged: boolean;
+    read_at?: string;
+    acknowledged_at?: string;
+  }>;
+}
