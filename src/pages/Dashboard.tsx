@@ -17,6 +17,8 @@ import { addMonths, subMonths } from "date-fns";
 import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { EmployeeScheduleCard } from "@/components/time-management/work-schedule/EmployeeScheduleCard";
+import { useWorkSchedule } from "@/components/time-management/work-schedule/useWorkSchedule";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -38,6 +40,11 @@ export default function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const navigate = useNavigate();
 
+  // Get work schedule for the employee
+  const { scheduleData, loading: scheduleLoading } = useWorkSchedule(
+    currentUser?.id || null
+  );
+
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
   };
@@ -48,7 +55,7 @@ export default function Dashboard() {
 
   // Navigation handlers for dashboard widgets
   const handleTimeOffClick = () => {
-    navigate("/time?tab=time-off");
+    navigate("/time?tab=my-requests");
   };
 
   const handleTrainingClick = () => {
@@ -64,7 +71,11 @@ export default function Dashboard() {
   };
 
   const handleAdminTimeOffClick = () => {
-    navigate("/time?tab=time-off-approvals");
+    navigate("/time?tab=pending-approvals");
+  };
+
+  const handleScheduleClick = () => {
+    navigate("/time?tab=work-schedules");
   };
 
   const handleMarketingClick = () => {
@@ -80,7 +91,7 @@ export default function Dashboard() {
           {/* Priority alert for admins - full width */}
           {isAdmin && pendingTimeOff && (
             <div className="col-span-full" onClick={handleAdminTimeOffClick}>
-              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=time-off-approvals" />
+              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=pending-approvals" />
             </div>
           )}
 
@@ -122,7 +133,7 @@ export default function Dashboard() {
                 onRefresh={handleRefreshData}
                 showEmployeeName={true}
                 clickable={true}
-                viewAllUrl="/time?tab=time-off-approvals"
+                viewAllUrl="/time?tab=pending-approvals"
               />
             </div>
           )}
@@ -136,7 +147,19 @@ export default function Dashboard() {
                 error={dashboardDataError}
                 onRefresh={handleRefreshData}
                 clickable={true}
-                viewAllUrl="/time?tab=time-off"
+                viewAllUrl="/time?tab=my-requests"
+              />
+            </div>
+          )}
+
+          {/* Work Schedule Card */}
+          {!isAdmin && currentUser && (
+            <div className="md:col-span-2" onClick={handleScheduleClick}>
+              <EmployeeScheduleCard 
+                schedule={scheduleData}
+                loading={scheduleLoading}
+                clickable={true}
+                viewAllUrl="/time?tab=work-schedules"
               />
             </div>
           )}

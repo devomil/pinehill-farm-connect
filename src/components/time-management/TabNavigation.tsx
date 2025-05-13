@@ -35,6 +35,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
       <TabsTrigger value="shift-coverage" onClick={() => handleTabChange("shift-coverage")}>Shift Coverage</TabsTrigger>
       {isAdmin && <TabsTrigger value="pending-approvals" onClick={() => handleTabChange("pending-approvals")}>Pending Approvals</TabsTrigger>}
       <TabsTrigger value="team-calendar" onClick={() => handleTabChange("team-calendar")}>Team Calendar</TabsTrigger>
+      <TabsTrigger value="work-schedules" onClick={() => handleTabChange("work-schedules")}>Work Schedules</TabsTrigger>
     </TabsList>
   );
 };

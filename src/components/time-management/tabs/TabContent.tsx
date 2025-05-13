@@ -6,6 +6,7 @@ import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffReq
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
+import { WorkScheduleTab } from "@/components/time-management/work-schedule";
 import { useTimeManagement } from "@/contexts/timeManagement";
 
 interface TabContentProps {
@@ -61,6 +62,13 @@ export const TabContent: React.FC<TabContentProps> = ({ currentUser, isAdmin }) 
       
       <TabsContent value="team-calendar" className="pt-4">
         <TeamCalendar currentUser={currentUser} />
+      </TabsContent>
+      
+      <TabsContent value="work-schedules" className="pt-4">
+        <WorkScheduleTab 
+          currentUser={currentUser}
+          isAdmin={isAdmin}
+        />
       </TabsContent>
     </>
   );
