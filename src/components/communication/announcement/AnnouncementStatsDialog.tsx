@@ -14,7 +14,7 @@ import { AnnouncementStatsChart } from "@/components/dashboard/announcements/Ann
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
 
-interface AnnouncementStatsDialogProps {
+export interface AnnouncementStatsDialogProps {
   open: boolean;
   onClose: () => void;
   stats: AnnouncementData[] | null;

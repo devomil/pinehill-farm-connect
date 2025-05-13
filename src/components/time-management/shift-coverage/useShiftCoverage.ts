@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,9 +11,9 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 // Define the schema for the shift coverage request form
 const shiftCoverageRequestSchema = z.object({
   covering_employee_id: z.string().min(1, { message: "Covering employee is required" }),
-  shift_date: z.string().min(1, { message: "Shift date is required" }),
-  shift_start: z.string().min(1, { message: "Shift start is required" }),
-  shift_end: z.string().min(1, { message: "Shift end is required" }),
+  shift_date: z.string().min(1, { message: "Shift date is required" }).optional(),
+  shift_start: z.string().min(1, { message: "Shift start is required" }).optional(),
+  shift_end: z.string().min(1, { message: "Shift end is required" }).optional(),
 });
 
 // Define the type for the form data based on the schema
@@ -22,9 +23,10 @@ export const useShiftCoverage = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const userId = currentUser?.id;
-  const { data: employees } = useEmployeeDirectory();
+  const employeeDirectory = useEmployeeDirectory();
+  const employees = employeeDirectory?.unfilteredEmployees || [];
   const [isSubmitting, setSubmitting] = useState(false);
-  const [submitError, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Initialize the form with react-hook-form
   const form = useForm<ShiftCoverageRequestForm>({
@@ -40,14 +42,12 @@ export const useShiftCoverage = () => {
   // Function to handle form submission
   const handleSubmit = async (data: ShiftCoverageRequestForm) => {
     if (!data.covering_employee_id) {
-      setError('covering_employee_id', {
-        message: 'Please select an employee to cover the shift',
-      });
+      setSubmitError('Please select an employee to cover the shift');
       return;
     }
 
     setSubmitting(true);
-    setError(null);
+    setSubmitError(null);
 
     try {
       // Create the shift coverage request with proper field names
@@ -66,7 +66,7 @@ export const useShiftCoverage = () => {
           description: "There was an error submitting the shift coverage request. Please try again.",
           variant: "destructive",
         });
-        setError("general", { message: "Failed to submit request" });
+        setSubmitError("Failed to submit request");
       } else {
         toast({
           title: "Request submitted",
@@ -81,7 +81,7 @@ export const useShiftCoverage = () => {
         description: "There was a problem submitting your request. Please check your connection and try again.",
         variant: "destructive",
       });
-      setError("general", { message: "Submission failed" });
+      setSubmitError("Submission failed");
     } finally {
       setSubmitting(false);
     }

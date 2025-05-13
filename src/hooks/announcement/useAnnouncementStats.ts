@@ -1,112 +1,82 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { AnnouncementData } from '@/types/announcements';
+import { useState } from "react";
+import { AnnouncementData } from "@/types/announcements";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAnnouncementStats = () => {
-  return useQuery({
-    queryKey: ['announcementStats'],
-    queryFn: async (): Promise<AnnouncementData[]> => {
-      // First get all announcements
-      const { data: announcements, error: announcementsError } = await supabase
-        .from('announcements')
-        .select('*')
-        .order('created_at', { ascending: false });
+  const [error, setError] = useState<Error | null>(null);
 
-      if (announcementsError) throw new Error(`Failed to fetch announcements: ${announcementsError.message}`);
-      
-      // Early return if no announcements
-      if (!announcements || announcements.length === 0) return [];
-
-      // For each announcement, get read receipts
-      const statsPromises = announcements.map(async (announcement): Promise<AnnouncementData> => {
-        // Get total user count
-        const { count: totalUsers, error: countError } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true });
-
-        if (countError) throw new Error(`Failed to count users: ${countError.message}`);
-
-        // Get read receipts
-        const { data: readReceipts, error: readError } = await supabase
-          .from('announcement_recipients')
-          .select('user_id, read_at, acknowledged_at')
-          .eq('announcement_id', announcement.id);
-
-        if (readError) throw new Error(`Failed to fetch read receipts: ${readError.message}`);
-        
-        // Count reads and acknowledgements
-        const readCount = readReceipts?.filter(r => r.read_at !== null).length || 0;
-        const acknowledgedCount = announcement.requires_acknowledgment 
-          ? readReceipts?.filter(r => r.acknowledged_at !== null).length || 0
-          : null;
-        
-        // Get detailed user data
-        const { data: userDetails, error: userError } = await supabase
-          .from('announcement_recipients')
-          .select(`
-            user_id,
-            read_at,
-            acknowledged_at,
-            users:user_id (
-              id,
-              name: full_name,
-              avatar_url
-            )
-          `)
-          .eq('announcement_id', announcement.id);
-
-        if (userError) {
-          console.error("Error fetching user details:", userError);
-          // Provide fallback user data
-          const users = readReceipts?.map(r => ({
-            id: r.user_id,
-            name: "Unknown User",
-            read: r.read_at !== null,
-            acknowledged: r.acknowledged_at !== null,
-            read_at: r.read_at,
-            acknowledged_at: r.acknowledged_at
-          })) || [];
-
-          return {
-            id: announcement.id,
-            title: announcement.title,
-            total_users: totalUsers || 0,
-            read_count: readCount,
-            acknowledged_count: acknowledgedCount,
-            requires_acknowledgment: announcement.requires_acknowledgment,
-            created_at: announcement.created_at,
-            users
-          };
+  const { data: stats, isLoading, refetch } = useQuery({
+    queryKey: ["announcement-stats"],
+    queryFn: async () => {
+      try {
+        // Get all announcements with read status counts
+        const { data, error: fetchError } = await supabase
+          .rpc('get_announcement_stats')
+          .select('*');
+          
+        if (fetchError) {
+          throw new Error(`Failed to fetch announcement stats: ${fetchError.message}`);
         }
-
-        // Map user details to the expected format
-        const users = userDetails?.map(detail => {
-          const user = detail.users as any;
-          return {
-            id: user?.id || detail.user_id,
-            name: user?.name || "Unknown User",
-            avatar_url: user?.avatar_url,
-            read: detail.read_at !== null,
-            acknowledged: detail.acknowledged_at !== null,
-            read_at: detail.read_at,
-            acknowledged_at: detail.acknowledged_at
-          };
-        }) || [];
-
-        return {
-          id: announcement.id,
-          title: announcement.title,
-          total_users: totalUsers || 0,
-          read_count: readCount,
-          acknowledged_count: acknowledgedCount,
-          requires_acknowledgment: announcement.requires_acknowledgment,
-          created_at: announcement.created_at,
-          users
-        };
-      });
-      
-      return Promise.all(statsPromises);
+        
+        // If there's no RPC function, fallback to this query
+        if (!data) {
+          // Join announcements with recipients to get read counts
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('announcements')
+            .select(`
+              id, 
+              title,
+              created_at,
+              author_id,
+              requires_acknowledgment,
+              announcement_recipients(
+                read_at,
+                acknowledged_at
+              )
+            `);
+            
+          if (fallbackError) {
+            throw new Error(`Failed to fetch announcements: ${fallbackError.message}`);
+          }
+          
+          // Transform the data to match expected format
+          const transformedData = (fallbackData || []).map(announcement => {
+            const recipients = announcement.announcement_recipients || [];
+            const totalRecipients = recipients.length;
+            const readCount = recipients.filter(r => r.read_at).length;
+            const acknowledgedCount = recipients.filter(r => r.acknowledged_at).length;
+            
+            return {
+              id: announcement.id,
+              title: announcement.title,
+              date: announcement.created_at,
+              authorId: announcement.author_id,
+              requiresAcknowledgment: announcement.requires_acknowledgment,
+              totalRecipients,
+              readCount,
+              readPercentage: totalRecipients > 0 ? Math.round((readCount / totalRecipients) * 100) : 0,
+              acknowledgedPercentage: totalRecipients > 0 ? Math.round((acknowledgedCount / totalRecipients) * 100) : 0
+            };
+          });
+          
+          return transformedData as AnnouncementData[];
+        }
+        
+        return data as AnnouncementData[];
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        return [];
+      }
     }
   });
+
+  return {
+    stats: stats || [],
+    isLoading,
+    error,
+    refetch
+  };
 };

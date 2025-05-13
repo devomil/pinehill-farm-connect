@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useShiftCoverage } from "./useShiftCoverage";
+import { Form, FormField, FormItem, FormControl } from "@/components/ui/form";
 
 interface ShiftCoverageDialogProps {
   open: boolean;
@@ -41,27 +42,48 @@ export function ShiftCoverageDialog({
   onRequestSent
 }: ShiftCoverageDialogProps) {
   const {
-    selectedEmployeeId,
-    setSelectedEmployeeId,
-    message,
-    setMessage,
-    date,
-    setDate,
-    startTime,
-    setStartTime,
-    endTime,
-    setEndTime,
-    adminId,
-    isLoadingAdmin,
-    isSending,
-    filteredEmployees,
-    handleSubmit
-  } = useShiftCoverage(currentUser, allEmployees, onRequestSent, onOpenChange);
+    form,
+    onSubmit,
+    isSubmitting,
+    submitError,
+    employees
+  } = useShiftCoverage();
+
+  // Local state for the form fields
+  const [message, setMessage] = useState("");
+  const [date, setDate] = useState<Date | undefined>();
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  
+  // Filter out the current user from the employee list
+  const filteredEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
+
+  // Check if admin info is available
+  const adminId = "admin-jackie"; // Placeholder or use from a context/props
+  const isLoadingAdmin = false; // Could be dynamic if you're fetching admin info
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date) return;
+
+    onSubmit({
+      covering_employee_id: form.getValues("covering_employee_id"),
+      shift_date: date.toISOString().split('T')[0],
+      shift_start: startTime,
+      shift_end: endTime
+    });
+    
+    if (onRequestSent) {
+      onRequestSent();
+    }
+    
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <DialogHeader>
             <DialogTitle>Request Shift Coverage</DialogTitle>
             <DialogDescription>
@@ -75,8 +97,8 @@ export function ShiftCoverageDialog({
                 Employee
               </Label>
               <Select 
-                value={selectedEmployeeId} 
-                onValueChange={setSelectedEmployeeId}
+                value={form.getValues("covering_employee_id")} 
+                onValueChange={(value) => form.setValue("covering_employee_id", value)}
               >
                 <SelectTrigger className="col-span-3" id="employee">
                   <SelectValue placeholder="Select employee" />
@@ -180,11 +202,11 @@ export function ShiftCoverageDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSending || isLoadingAdmin}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting || isLoadingAdmin}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSending || isLoadingAdmin}>
-              {isSending ? (
+            <Button type="submit" disabled={isSubmitting || isLoadingAdmin}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Sending...
