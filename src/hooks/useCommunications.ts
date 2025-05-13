@@ -28,6 +28,8 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   // Get modular functionality hooks
   const { refreshMessages, lastRefreshTime, refreshInProgress } = useMessageRefreshManager(currentUser, refetch);
   const { markMessageAsRead, isMarking } = useMessageReadingManager(currentUser);
+  
+  // Create properly typed version of sendMessage and respondToShiftRequest
   const { sendMessage, sendBulkMessages, respondToShiftRequest } = useMessageSendOperations(
     sendMessageMutation,
     respondToShiftRequestMutation,

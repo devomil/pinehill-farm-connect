@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Communication } from "@/types";
+import { User } from "@/types";
+import { Communication } from "@/types/communications/communicationTypes";
 import { toast } from "sonner";
 
 interface MessageReadingResult {

@@ -56,7 +56,7 @@ export default function Communications() {
   
   // Special effect for messages tab to ensure we refresh data when viewing messages
   useEffect(() => {
-    if (isMessagesTabActive && unreadMessages && unreadMessages.length > 0) {
+    if (isMessagesTabActive && unreadMessages && unreadMessages.length > 0 && currentUser) {
       console.log("Messages tab is active with unread messages, refreshing data");
       
       // For admin users, refresh several times to ensure all badge counts are updated
@@ -107,6 +107,16 @@ export default function Communications() {
     setSearchQuery(query);
   };
 
+  // Adapter for respondToShiftRequest that matches the expected signature
+  const handleRespondToShiftRequest = (data: {
+    communicationId: string;
+    shiftRequestId: string;
+    accept: boolean;
+    senderId: string;
+  }) => {
+    return respondToShiftRequest(data);
+  };
+
   return (
     <CommunicationsLayout
       error={error}
@@ -122,7 +132,7 @@ export default function Communications() {
           loading={loading}
           unreadMessages={unreadMessages || []}
           employees={allEmployees || []}
-          onRespond={respondToShiftRequest}
+          onRespond={handleRespondToShiftRequest}
           onSendMessage={sendMessage}
           onRefresh={handleManualRefresh}
           searchQuery={searchQuery}

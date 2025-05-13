@@ -1,96 +1,83 @@
 
 import { UseMutationResult } from "@tanstack/react-query";
+import { SendMessageParams } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
-import { SendMessageParams } from "@/types/communications/messageTypes";
 
-interface MessageSendOperationsResult {
-  sendMessage: (params: SendMessageParams) => Promise<{ success: boolean; messageId?: string; error?: string }>;
-  sendBulkMessages: (recipients: User[], messageContent: string, senderId: string, type: "general" | "urgent" | "system_notification") => Promise<{ success: boolean; error?: string }>;
-  respondToShiftRequest: (messageId: string, response: "accepted" | "declined", responderId: string) => Promise<{ success: boolean; error?: string }>;
-}
-
+/**
+ * This hook standardizes the operations for sending messages and responding to shift requests
+ * while handling compatibility between different parameter formats
+ */
 export const useMessageSendOperations = (
   sendMessageMutation: UseMutationResult<any, Error, SendMessageParams>,
-  respondToShiftRequestMutation: UseMutationResult<any, Error, { messageId: string; response: string; responderId: string }>,
-  refreshCallback: () => void
-): MessageSendOperationsResult => {
+  respondToShiftRequestMutation: UseMutationResult<any, Error, any>,
+  refreshMessages: () => Promise<any>
+) => {
   
-  // Send an individual message
-  const sendMessage = async (params: SendMessageParams) => {
+  /**
+   * Sends a message with properly standardized parameters
+   */
+  const sendMessage = async (params: SendMessageParams): Promise<{success: boolean, error?: string}> => {
     try {
       const result = await sendMessageMutation.mutateAsync(params);
-      
-      // Refresh data after sending
-      setTimeout(() => refreshCallback(), 500);
-      
-      return { 
-        success: true, 
-        messageId: result?.id || result?.messageId
-      };
+      await refreshMessages();
+      return { success: true };
     } catch (error) {
-      console.error("Error sending message:", error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : "Failed to send message" 
+        error: error instanceof Error ? error.message : 'Unknown error sending message' 
       };
     }
   };
   
-  // Send message to multiple recipients at once
+  /**
+   * Sends multiple messages to different recipients
+   */
   const sendBulkMessages = async (
     recipients: User[],
     messageContent: string,
-    senderId: string,
-    type: "general" | "urgent" | "system_notification"
-  ) => {
+    type: string,
+    shiftDetails?: any
+  ): Promise<{success: boolean, error?: string}> => {
     try {
-      const sendPromises = recipients.map(recipient => 
-        sendMessage({
+      // Send each message one by one
+      for (const recipient of recipients) {
+        await sendMessageMutation.mutateAsync({
           recipientId: recipient.id,
           message: messageContent,
-          senderId,
-          type
-        })
-      );
-      
-      const results = await Promise.all(sendPromises);
-      const failedSends = results.filter(r => !r.success);
-      
-      if (failedSends.length > 0) {
-        return {
-          success: false,
-          error: `Failed to send ${failedSends.length} of ${recipients.length} messages`
-        };
+          type: type as any,
+          shiftDetails
+        });
       }
       
+      await refreshMessages();
       return { success: true };
     } catch (error) {
-      console.error("Error in bulk sending:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to send bulk messages"
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error sending bulk messages' 
       };
     }
   };
   
-  // Respond to shift coverage request
-  const respondToShiftRequest = async (messageId: string, response: "accepted" | "declined", responderId: string) => {
+  /**
+   * Responds to a shift coverage request, adapting the parameter format
+   */
+  const respondToShiftRequest = async (
+    data: {
+      communicationId: string;
+      shiftRequestId: string;
+      accept: boolean;
+      senderId: string;
+    }
+  ): Promise<{success: boolean, error?: string}> => {
     try {
-      await respondToShiftRequestMutation.mutateAsync({ 
-        messageId, 
-        response, 
-        responderId 
-      });
-      
-      // Refresh data after responding
-      setTimeout(() => refreshCallback(), 500);
-      
+      await respondToShiftRequestMutation.mutateAsync(data);
+      await refreshMessages();
       return { success: true };
     } catch (error) {
-      console.error("Error responding to shift request:", error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : "Failed to respond to request" 
+        error: error instanceof Error ? error.message : 'Unknown error responding to shift request' 
       };
     }
   };

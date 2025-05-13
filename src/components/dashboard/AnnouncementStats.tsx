@@ -16,7 +16,7 @@ interface AnnouncementStatsProps {
 }
 
 export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable, viewAllUrl }) => {
-  const { data: stats, isLoading, isError, error, refetch } = useAnnouncementStats();
+  const { stats, isLoading, error, refetch } = useAnnouncementStats();
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<string | null>(null);
 
   // Find the selected announcement
@@ -40,7 +40,7 @@ export const AnnouncementStats: React.FC<AnnouncementStatsProps> = ({ clickable,
     return <AnnouncementStatsLoading />;
   }
 
-  if (isError) {
+  if (error) {
     return (
       <div className="rounded-md p-4 border border-red-200 bg-red-50">
         <h3 className="font-semibold mb-2">Failed to load announcement statistics</h3>
