@@ -9,13 +9,17 @@ export interface AnnouncementData {
   title: string;
   total_users: number;
   read_count: number;
-  acknowledged_count: number;
+  acknowledged_count: number | null;
+  requires_acknowledgment: boolean;
   created_at: string;
   users: {
     id: string;
     name: string;
+    avatar_url?: string;
     read: boolean;
     acknowledged: boolean;
+    read_at?: string;
+    acknowledged_at?: string;
   }[];
 }
 
@@ -30,12 +34,16 @@ export function convertAnnouncementStatToData(stats: AnnouncementStat[]): Announ
     total_users: stat.recipients?.length || 0,
     read_count: stat.recipients?.filter(r => r.read).length || 0,
     acknowledged_count: stat.recipients?.filter(r => r.acknowledged).length || 0,
-    created_at: stat.created_at,
+    requires_acknowledgment: !!stat.requires_acknowledgment,
+    created_at: stat.createdAt.toISOString(),
     users: stat.recipients?.map(recipient => ({
       id: recipient.user_id,
       name: recipient.user_name || 'Unknown User',
+      avatar_url: recipient.avatar_url,
       read: recipient.read,
-      acknowledged: recipient.acknowledged
+      acknowledged: recipient.acknowledged,
+      read_at: recipient.read_at,
+      acknowledged_at: recipient.acknowledged_at
     })) || []
   }));
 }
