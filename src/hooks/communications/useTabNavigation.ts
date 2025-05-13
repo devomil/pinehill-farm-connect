@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { QueryObserverResult } from "@tanstack/react-query";
@@ -37,6 +38,7 @@ export function useTabNavigation({
     // Update URL without full page reload
     if (location.pathname + location.search !== newPath) {
       // Use replace: false to create a proper history entry
+      // This is critical to prevent redirecting away from the page
       navigate(newPath, { replace: false });
       
       // Only refresh if it's been more than 5 seconds since last refresh
@@ -47,9 +49,13 @@ export function useTabNavigation({
         refreshMessages().finally(() => {
           isRefreshing.current = false;
           lastRefreshTime.current = Date.now();
-          navigationComplete.current = true;
+          // Ensure navigation is marked as complete only after refresh finishes
+          setTimeout(() => {
+            navigationComplete.current = true;
+          }, 100);
         });
       } else {
+        // Mark navigation as complete immediately if not refreshing
         navigationComplete.current = true;
       }
     }

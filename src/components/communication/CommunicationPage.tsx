@@ -42,6 +42,11 @@ const CommunicationPage: React.FC = () => {
 
   // Handle URL changes - update active tab based on URL
   useEffect(() => {
+    // Skip processing if navigation is in progress to prevent loops
+    if (!navigationComplete.current) {
+      return;
+    }
+    
     // Update tab when URL changes, ensuring proper synchronization
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
@@ -54,7 +59,6 @@ const CommunicationPage: React.FC = () => {
       setActiveTab("announcements");
     }
     
-    navigationComplete.current = true;
   }, [location.search, activeTab, setActiveTab, navigationComplete]);
   
   return (

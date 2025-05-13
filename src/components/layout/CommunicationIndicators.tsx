@@ -71,7 +71,8 @@ export const CommunicationIndicators: React.FC = () => {
   };
   
   const handleMessagesClick = () => {
-    navigate("/communication?tab=messages");
+    // Use explicit path with search parameter to ensure proper navigation
+    navigate("/communication?tab=messages", { replace: false });
     // Force immediate refresh when clicking on messages
     setTimeout(() => manualRefresh(), 200);
   };
