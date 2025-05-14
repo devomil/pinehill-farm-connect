@@ -1,16 +1,23 @@
 
-import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { v4 as uuidv4 } from 'uuid';
 
-// Build a map of dates to shifts
-export const buildShiftsMap = (scheduleData: WorkSchedule | null): Map<string, WorkShift[]> => {
+// Get all days in a month
+export const getDaysInMonth = (date: Date) => {
+  return eachDayOfInterval({
+    start: startOfMonth(date),
+    end: endOfMonth(date)
+  });
+};
+
+// Build map of dates to shifts
+export const buildShiftsMap = (scheduleData: WorkSchedule | null) => {
   if (!scheduleData || !scheduleData.shifts) return new Map();
   
   const map = new Map();
   scheduleData.shifts.forEach(shift => {
-    const shiftDate = parse(shift.date, "yyyy-MM-dd", new Date());
-    const dateKey = format(shiftDate, "yyyy-MM-dd");
+    const dateKey = shift.date;
     if (!map.has(dateKey)) {
       map.set(dateKey, []);
     }
@@ -19,25 +26,23 @@ export const buildShiftsMap = (scheduleData: WorkSchedule | null): Map<string, W
   return map;
 };
 
-// Get all days in the current month
-export const getDaysInMonth = (date: Date) => {
-  return eachDayOfInterval({
-    start: startOfMonth(date),
-    end: endOfMonth(date)
-  });
-};
-
-// Create a new shift object
+// Create a new shift
 export const createNewShift = (employeeId: string, date: Date): WorkShift => {
-  const dateStr = format(date, "yyyy-MM-dd");
-  
   return {
     id: uuidv4(),
     employeeId,
-    date: dateStr,
-    startTime: "09:00",
-    endTime: "17:00",
-    isRecurring: false,
-    notes: ""
+    date: format(date, "yyyy-MM-dd"),
+    startTime: "09:00:00",
+    endTime: "17:00:00",
+    isRecurring: false
   };
+};
+
+// Compare two dates (day, month, year only)
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
 };
