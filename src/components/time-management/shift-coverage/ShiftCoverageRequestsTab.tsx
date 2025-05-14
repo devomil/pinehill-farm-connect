@@ -17,9 +17,9 @@ interface ShiftCoverageRequestsTabProps {
     shiftRequestId: string;
     accept: boolean;
     senderId: string;
-  }) => Promise<any>;
+  }) => void;
   currentUser: User;
-  onRefresh: () => Promise<any>;
+  onRefresh: () => void;
   error: any;
 }
 

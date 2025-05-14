@@ -13,7 +13,7 @@ interface ShiftRequestCardProps {
     shiftRequestId: string;
     accept: boolean;
     senderId: string;
-  }) => Promise<any>;
+  }) => void;
   currentUser: User;
 }
 

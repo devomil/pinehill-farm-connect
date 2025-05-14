@@ -5,27 +5,55 @@ import { User } from "@/types";
 import { ShiftRequestCard } from "./ShiftRequestCard";
 
 interface ShiftRequestsListProps {
-  messages: Communication[];
+  requests: Communication[];
+  currentUser: User;
+  findEmployee: (id: string) => User | undefined;
   onRespond: (data: {
     communicationId: string;
     shiftRequestId: string;
     accept: boolean;
     senderId: string;
-  }) => Promise<any>;
-  currentUser: User;
+  }) => void;
+  filter: 'all' | 'pending' | 'accepted' | 'declined';
+  setFilter: (filter: 'all' | 'pending' | 'accepted' | 'declined') => void;
+  onRefresh: () => void;
+  availableEmployeeCount: number;
 }
 
 export const ShiftRequestsList: React.FC<ShiftRequestsListProps> = ({
-  messages,
+  requests,
+  currentUser,
+  findEmployee,
   onRespond,
-  currentUser
+  filter,
+  setFilter,
+  onRefresh,
+  availableEmployeeCount
 }) => {
+  if (requests.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-muted-foreground">
+          No {filter !== 'all' ? filter : ''} shift coverage requests found.
+        </p>
+        {filter !== 'all' && (
+          <button
+            className="text-sm text-blue-500 hover:underline mt-2"
+            onClick={() => setFilter('all')}
+          >
+            View all requests
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {messages.map((message) => (
+      {requests.map((request) => (
         <ShiftRequestCard
-          key={message.id}
-          message={message}
+          key={request.id}
+          message={request}
           onRespond={onRespond}
           currentUser={currentUser}
         />
