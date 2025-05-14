@@ -1,25 +1,13 @@
 
-import React, { useCallback } from "react";
+import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { AdminTimeOffCard } from "@/components/dashboard/AdminTimeOffCard";
-import { TrainingCard } from "@/components/dashboard/TrainingCard";
-import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
-import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage";
-import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
-import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
-import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { CalendarContent } from "@/components/calendar/CalendarContent";
-import { useState } from "react";
-import { addMonths, subMonths } from "date-fns";
-import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { EmployeeScheduleCard } from "@/components/time-management/work-schedule/EmployeeScheduleCard";
-import { AdminEmployeeScheduleCard } from "@/components/time-management/work-schedule/AdminEmployeeScheduleCard";
 import { useWorkSchedule } from "@/components/time-management/work-schedule/useWorkSchedule";
+import { DashboardContent } from "@/components/dashboard/DashboardContent";
+import { useDashboardCalendar } from "@/components/dashboard/DashboardCalendar";
+import { useDashboardNavigation } from "@/components/dashboard/DashboardNavigationHandlers";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -30,176 +18,56 @@ export default function Dashboard() {
     announcements,
     assignedTrainings,
     isAdmin,
-    refetchData,
     loading: dashboardDataLoading,
     error: dashboardDataError,
     handleRefreshData
   } = useDashboardData();
 
-  const [date, setDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "team">("month");
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const navigate = useNavigate();
+  // Get calendar state and handlers
+  const {
+    date,
+    viewMode,
+    currentMonth,
+    handleDateSelect,
+    setViewMode,
+    goToPreviousMonth,
+    goToNextMonth
+  } = useDashboardCalendar();
+
+  // Get navigation handlers
+  const navigationHandlers = useDashboardNavigation();
 
   // Get work schedule for the employee
   const { scheduleData, loading: scheduleLoading } = useWorkSchedule(
     currentUser?.id || null
   );
 
-  const goToPreviousMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-
-  // Navigation handlers for dashboard widgets
-  const handleTimeOffClick = () => {
-    navigate("/time?tab=my-requests");
-  };
-
-  const handleTrainingClick = () => {
-    navigate("/training");
-  };
-
-  const handleAnnouncementsClick = () => {
-    navigate("/communication?tab=announcements");
-  };
-
-  const handleCalendarClick = () => {
-    navigate("/calendar");
-  };
-
-  const handleAdminTimeOffClick = () => {
-    navigate("/time?tab=pending-approvals");
-  };
-
-  const handleScheduleClick = () => {
-    navigate("/time?tab=work-schedules");
-  };
-
-  const handleMarketingClick = () => {
-    navigate("/marketing");
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-4">
         <DashboardHeader userName={currentUser?.name || ''} />
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Priority alert for admins - full width */}
-          {isAdmin && pendingTimeOff && (
-            <div className="col-span-full" onClick={handleAdminTimeOffClick}>
-              <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=pending-approvals" />
-            </div>
-          )}
-
-          {/* Left column - Calendar */}
-          <div className="md:col-span-2" onClick={handleCalendarClick}>
-            <CalendarContent
-              date={date}
-              currentMonth={currentMonth}
-              viewMode={viewMode}
-              currentUser={currentUser}
-              onDateSelect={(newDate) => newDate && setDate(newDate)}
-              onViewModeChange={setViewMode}
-              onPreviousMonth={goToPreviousMonth}
-              onNextMonth={goToNextMonth}
-              clickable={true}
-              viewAllUrl="/calendar"
-            />
-          </div>
-          
-          {/* Schedule cards - different view for admins vs employees */}
-          <div className="md:col-span-2">
-            {isAdmin ? (
-              <AdminEmployeeScheduleCard clickable={true} viewAllUrl="/time?tab=work-schedules" />
-            ) : (
-              <EmployeeScheduleCard 
-                schedule={scheduleData}
-                loading={scheduleLoading}
-                clickable={true}
-                viewAllUrl="/time?tab=work-schedules"
-              />
-            )}
-          </div>
-          
-          {/* Full width trainings section if applicable */}
-          {assignedTrainings && assignedTrainings.length > 0 && (
-            <div className="col-span-full" onClick={handleTrainingClick}>
-              <TrainingCard trainings={assignedTrainings} clickable={true} viewAllUrl="/training" />
-            </div>
-          )}
-
-          {/* Admin time off requests */}
-          {isAdmin && (
-            <div className="md:col-span-2" onClick={handleTimeOffClick}>
-              <TimeOffRequestsCard 
-                requests={pendingTimeOff || []} 
-                loading={dashboardDataLoading}
-                error={dashboardDataError}
-                onRefresh={handleRefreshData}
-                showEmployeeName={true}
-                clickable={true}
-                viewAllUrl="/time?tab=pending-approvals"
-              />
-            </div>
-          )}
-
-          {/* User time off requests */}
-          {!isAdmin && (
-            <div className="md:col-span-2" onClick={handleTimeOffClick}>
-              <TimeOffRequestsCard 
-                requests={userTimeOff || []} 
-                loading={dashboardDataLoading}
-                error={dashboardDataError}
-                onRefresh={handleRefreshData}
-                clickable={true}
-                viewAllUrl="/time?tab=my-requests"
-              />
-            </div>
-          )}
-
-          {/* Shift Coverage Card */}
-          {currentUser && (
-            <div className="md:col-span-2">
-              <ShiftCoverageCard 
-                messages={shiftCoverageMessages || []} 
-                currentUser={currentUser}
-                loading={dashboardDataLoading}
-                error={dashboardDataError}
-                onRefresh={handleRefreshData}
-                clickable={true}
-                viewAllUrl="/time?tab=shift-coverage"
-              />
-            </div>
-          )}
-
-          {/* Right column - Marketing content */}
-          <div className="md:col-span-2">
-            <MarketingContent viewAllUrl="/marketing" onViewAllClick={handleMarketingClick} />
-          </div>
-
-          {/* Announcements section */}
-          {announcements && announcements.length > 0 && (
-            <>
-              <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
-                <AnnouncementsCard announcements={announcements} clickable={true} viewAllUrl="/communication?tab=announcements" />
-              </div>
-              {isAdmin && (
-                <div className="md:col-span-2" onClick={handleAnnouncementsClick}>
-                  <AnnouncementStats clickable={true} viewAllUrl="/communication?tab=announcements" />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {assignedTrainings && assignedTrainings.length > 0 && (
-          <DashboardAlert trainingCount={assignedTrainings.length} />
-        )}
+        
+        <DashboardContent
+          isAdmin={isAdmin}
+          pendingTimeOff={pendingTimeOff}
+          userTimeOff={userTimeOff}
+          shiftCoverageMessages={shiftCoverageMessages}
+          announcements={announcements}
+          assignedTrainings={assignedTrainings}
+          currentUser={currentUser!}
+          scheduleData={scheduleData}
+          scheduleLoading={scheduleLoading}
+          date={date}
+          currentMonth={currentMonth}
+          viewMode={viewMode}
+          dashboardDataLoading={dashboardDataLoading}
+          dashboardDataError={dashboardDataError}
+          handleRefreshData={handleRefreshData}
+          onDateSelect={handleDateSelect}
+          onViewModeChange={setViewMode}
+          onPreviousMonth={goToPreviousMonth}
+          onNextMonth={goToNextMonth}
+        />
       </div>
     </DashboardLayout>
   );
