@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,7 +17,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   scheduleData,
   onSave,
   onReset,
-  loading
+  loading = false // Provide a default value of false
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -116,7 +115,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
       return;
     }
     
-    let newSchedule: WorkSchedule;
+    let newSchedule: WorkSchedule = { ...scheduleData };
     
     // If this is for multiple dates
     if (isSelectingMultiple && selectedDates.length > 0) {
@@ -148,10 +147,6 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
       
       // Reset selected dates
       setSelectedDates([]);
-      
-      if (newSchedule) {
-        onSave(newSchedule);
-      }
     } else {
       // Single date update
       const existingShifts = scheduleData.shifts || [];
@@ -180,10 +175,9 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         ...scheduleData,
         shifts: updatedShifts
       };
-      
-      onSave(newSchedule);
     }
     
+    onSave(newSchedule);
     setIsDialogOpen(false);
     toast.success("Schedule updated");
   };

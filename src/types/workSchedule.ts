@@ -22,4 +22,5 @@ export interface WorkScheduleEditorProps {
   scheduleData: WorkSchedule | null;
   onSave: (schedule: WorkSchedule) => void;
   onReset: () => void;
+  loading?: boolean; // Added loading prop
 }
