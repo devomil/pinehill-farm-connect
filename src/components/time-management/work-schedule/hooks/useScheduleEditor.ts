@@ -4,6 +4,7 @@ import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { buildShiftsMap, createNewShift } from "../scheduleHelpers";
 import { uuid } from "@/utils/uuid";
 import { useDaySelector } from "@/contexts/timeManagement/hooks";
+import { toast } from "sonner";
 
 export interface UseScheduleEditorProps {
   selectedEmployee: string | null;
@@ -106,8 +107,20 @@ export const useScheduleEditor = ({
   
   // Handle bulk scheduling (for either bulk mode or specific days)
   const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
-    if (!scheduleData || !selectedEmployee) return;
+    if (!scheduleData || !selectedEmployee) {
+      toast.error("No employee or schedule data available");
+      return;
+    }
     
+    if (days.length === 0) {
+      toast.error("No days selected for scheduling");
+      return;
+    }
+    
+    console.log(`Bulk scheduling for ${days.length} days, employee: ${selectedEmployee}`);
+    console.log("Days to schedule:", days);
+    
+    // Create new shifts for the selected days
     const newShifts = days.map(day => {
       const [year, month, dayOfMonth] = day.split('-').map(Number);
       const shiftDate = new Date(year, month - 1, dayOfMonth);
@@ -122,6 +135,8 @@ export const useScheduleEditor = ({
       };
     });
     
+    console.log(`Created ${newShifts.length} new shifts`);
+    
     // Remove any existing shifts on these days
     const existingShiftsFiltered = scheduleData.shifts.filter(
       shift => !days.includes(shift.date)
@@ -132,7 +147,13 @@ export const useScheduleEditor = ({
       shifts: [...existingShiftsFiltered, ...newShifts],
     };
     
+    console.log("Saving updated schedule with new shifts:", updatedSchedule);
+    
+    // Save the updated schedule and show feedback
     onSave(updatedSchedule);
+    toast.success(`Added ${newShifts.length} shifts to the schedule`);
+    
+    // Reset bulk mode and selection state
     setBulkMode(null);
     setSelectionMode("single");
     clearSelectedDays();

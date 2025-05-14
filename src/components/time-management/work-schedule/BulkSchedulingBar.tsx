@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface BulkSchedulingBarProps {
   bulkMode: string;
@@ -21,25 +22,38 @@ export const BulkSchedulingBar: React.FC<BulkSchedulingBarProps> = ({
   const [endTime, setEndTime] = useState<string>("17:00");
   
   const handleSchedule = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth() + 1;
-    const daysInMonth = new Date(year, month, 0).getDate();
-    
-    const days: string[] = [];
-    
-    // Create array of dates based on the bulk mode
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
-      const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    try {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth() + 1;
+      const daysInMonth = new Date(year, month, 0).getDate();
       
-      if (bulkMode === "weekdays" && dayOfWeek >= 1 && dayOfWeek <= 5) {
-        days.push(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
-      } else if (bulkMode === "weekend" && (dayOfWeek === 0 || dayOfWeek === 6)) {
-        days.push(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+      const days: string[] = [];
+      
+      // Create array of dates based on the bulk mode
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+        
+        if (bulkMode === "weekdays" && dayOfWeek >= 1 && dayOfWeek <= 5) {
+          days.push(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+        } else if (bulkMode === "weekend" && (dayOfWeek === 0 || dayOfWeek === 6)) {
+          days.push(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+        }
       }
+      
+      console.log(`Generated ${days.length} days for bulk scheduling: ${bulkMode}`);
+      
+      if (days.length === 0) {
+        toast.error(`No ${bulkMode} days found in the current month`);
+        return;
+      }
+      
+      // Call the onSchedule callback
+      onSchedule(days, startTime, endTime);
+    } catch (error) {
+      console.error("Error in bulk scheduling:", error);
+      toast.error("Failed to schedule shifts");
     }
-    
-    onSchedule(days, startTime, endTime);
   };
   
   return (
@@ -61,7 +75,7 @@ export const BulkSchedulingBar: React.FC<BulkSchedulingBarProps> = ({
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-24"
+            className="w-24 pointer-events-auto"
           />
         </div>
         
@@ -72,7 +86,7 @@ export const BulkSchedulingBar: React.FC<BulkSchedulingBarProps> = ({
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-24"
+            className="w-24 pointer-events-auto"
           />
         </div>
         
@@ -80,11 +94,13 @@ export const BulkSchedulingBar: React.FC<BulkSchedulingBarProps> = ({
           <Button
             variant="outline"
             onClick={onCancel}
+            className="pointer-events-auto"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSchedule}
+            className="pointer-events-auto"
           >
             Apply
           </Button>

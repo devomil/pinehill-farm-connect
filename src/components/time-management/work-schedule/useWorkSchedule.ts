@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { format, subMonths } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
@@ -14,8 +14,8 @@ export function useWorkSchedule(employeeId: string | null) {
   // Current month in YYYY-MM format
   const currentMonth = format(new Date(), "yyyy-MM");
   
-  // Mock data for demo purposes
-  const mockSchedules: Record<string, WorkSchedule> = {};
+  // Mock data store for demo purposes
+  const [mockSchedules, setMockSchedules] = useState<Record<string, WorkSchedule>>({});
   
   // Fetch employee schedule
   useEffect(() => {
@@ -34,6 +34,7 @@ export function useWorkSchedule(employeeId: string | null) {
         const existingSchedule = mockSchedules[employeeId];
         
         if (existingSchedule && existingSchedule.month === currentMonth) {
+          console.log("Found existing schedule:", existingSchedule);
           setScheduleData(existingSchedule);
         } else {
           // Create empty schedule for the month
@@ -44,10 +45,15 @@ export function useWorkSchedule(employeeId: string | null) {
             shifts: []
           };
           
+          console.log("Creating new schedule:", newSchedule);
           setScheduleData(newSchedule);
-          mockSchedules[employeeId] = newSchedule;
+          setMockSchedules(prev => ({
+            ...prev,
+            [employeeId]: newSchedule
+          }));
         }
       } catch (err) {
+        console.error("Error loading schedule data:", err);
         setError(err instanceof Error ? err : new Error('Failed to fetch schedule'));
         toast.error("Error loading schedule data");
       } finally {
@@ -56,33 +62,45 @@ export function useWorkSchedule(employeeId: string | null) {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [employeeId, currentMonth]);
+  }, [employeeId, currentMonth, mockSchedules]);
   
   // Save the schedule
-  const saveSchedule = (schedule: WorkSchedule) => {
-    if (!employeeId) return;
+  const saveSchedule = useCallback((schedule: WorkSchedule) => {
+    if (!employeeId) {
+      toast.error("No employee selected");
+      return;
+    }
     
+    console.log("Saving schedule:", schedule);
     setLoading(true);
     
     // Simulate API call
     setTimeout(() => {
       try {
         // Update mock data store
-        mockSchedules[employeeId] = schedule;
+        setMockSchedules(prev => ({
+          ...prev,
+          [employeeId]: schedule
+        }));
+        
         setScheduleData(schedule);
         toast.success("Schedule saved successfully");
       } catch (err) {
+        console.error("Error saving schedule:", err);
         setError(err instanceof Error ? err : new Error('Failed to save schedule'));
         toast.error("Error saving schedule");
       } finally {
         setLoading(false);
       }
     }, 500);
-  };
+  }, [employeeId]);
   
   // Reset the schedule
-  const resetSchedule = () => {
-    if (!employeeId) return;
+  const resetSchedule = useCallback(() => {
+    if (!employeeId) {
+      toast.error("No employee selected");
+      return;
+    }
     
     setLoading(true);
     
@@ -97,20 +115,29 @@ export function useWorkSchedule(employeeId: string | null) {
           shifts: []
         };
         
-        mockSchedules[employeeId] = newSchedule;
+        setMockSchedules(prev => ({
+          ...prev,
+          [employeeId]: newSchedule
+        }));
+        
         setScheduleData(newSchedule);
         toast.info("Schedule has been reset");
       } catch (err) {
+        console.error("Error resetting schedule:", err);
         setError(err instanceof Error ? err : new Error('Failed to reset schedule'));
+        toast.error("Error resetting schedule");
       } finally {
         setLoading(false);
       }
     }, 500);
-  };
+  }, [employeeId, currentMonth]);
   
   // Copy from last month
-  const copyFromLastMonth = () => {
-    if (!employeeId) return;
+  const copyFromLastMonth = useCallback(() => {
+    if (!employeeId) {
+      toast.error("No employee selected");
+      return;
+    }
     
     setLoading(true);
     
@@ -146,20 +173,25 @@ export function useWorkSchedule(employeeId: string | null) {
             shifts: adjustedShifts
           };
           
-          mockSchedules[employeeId] = newSchedule;
+          setMockSchedules(prev => ({
+            ...prev,
+            [employeeId]: newSchedule
+          }));
+          
           setScheduleData(newSchedule);
           toast.success("Schedule copied from last month");
         } else {
           toast.info("No schedule found from last month");
         }
       } catch (err) {
+        console.error("Error copying from last month:", err);
         setError(err instanceof Error ? err : new Error('Failed to copy from last month'));
         toast.error("Error copying schedule");
       } finally {
         setLoading(false);
       }
     }, 700);
-  };
+  }, [employeeId, currentMonth, mockSchedules]);
   
   return {
     scheduleData,
