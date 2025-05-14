@@ -53,9 +53,14 @@ export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> =
       </CardHeader>
       <CardContent>
         <ShiftRequestsList 
-          messages={shiftMessages}
-          onRespond={onRespond}
+          requests={shiftMessages}
           currentUser={currentUser}
+          onRespond={onRespond}
+          findEmployee={() => undefined} // Add a simple implementation for findEmployee
+          filter="all" // Add default filter value
+          setFilter={() => {}} // Add empty function for setFilter
+          onRefresh={onRefresh}
+          availableEmployeeCount={0} // Add default availableEmployeeCount
         />
       </CardContent>
     </Card>
