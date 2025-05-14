@@ -1,6 +1,8 @@
 
 import { toast as sonnerToast } from 'sonner';
 import { info, error } from '@/utils/debugUtils';
+import { ReactNode } from 'react';
+import { ExternalToast } from 'sonner';
 
 const COMPONENT = 'toast';
 
@@ -21,8 +23,9 @@ const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      onCancel: props.onCancel,
-      onAction: props.onAction,
+      // Fix: use cancel instead of onCancel to match ExternalToast type
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
     });
   };
 
@@ -32,8 +35,9 @@ const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      onCancel: props.onCancel,
-      onAction: props.onAction,
+      // Fix: use cancel instead of onCancel to match ExternalToast type
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
     });
   };
 
@@ -43,8 +47,9 @@ const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      onCancel: props.onCancel,
-      onAction: props.onAction,
+      // Fix: use cancel instead of onCancel to match ExternalToast type
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
     });
   };
 
@@ -54,8 +59,9 @@ const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      onCancel: props.onCancel,
-      onAction: props.onAction,
+      // Fix: use cancel instead of onCancel to match ExternalToast type
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
     });
   };
 
@@ -67,11 +73,8 @@ const useToast = () => {
     error: destructive,
   };
 
-  return {
-    ...toastObject,
-    // Add toasts property for Toaster component
-    toasts: sonnerToast.toasts,
-  };
+  // Return toast object without toasts property
+  return toastObject;
 };
 
 // Export the hook

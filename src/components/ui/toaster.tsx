@@ -117,7 +117,7 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
-// Use SonnerToaster directly to maintain compatibility
+// Use SonnerToaster directly 
 const Toaster = SonnerToaster;
 
 export {
