@@ -1,62 +1,75 @@
 
 import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { WorkShift } from "@/types/workSchedule";
 
-interface EmployeeShiftDetailsDialogProps {
+export interface EmployeeShiftDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedDate: Date | undefined;
   shifts: WorkShift[];
+  selectedDate?: Date;
 }
 
 export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProps> = ({
   isOpen,
   onClose,
-  selectedDate,
-  shifts
+  shifts,
+  selectedDate
 }) => {
   if (!selectedDate) return null;
   
+  const formattedDate = format(selectedDate, "EEEE, MMMM d, yyyy");
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            Schedule for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}
-          </DialogTitle>
+          <DialogTitle>Shift Details for {formattedDate}</DialogTitle>
+          <DialogDescription>
+            {shifts.length === 0 
+              ? "No shifts scheduled for this day." 
+              : `${shifts.length} shift${shifts.length > 1 ? 's' : ''} scheduled`}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4">
-          <div className="space-y-4">
-            {shifts.map((shift, index) => (
-              <div key={index} className="border rounded-md p-4 space-y-2">
-                <div className="font-medium">
-                  Shift {index + 1}: {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
+        <div className="space-y-4 py-4">
+          {shifts.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">No shifts found for this date.</p>
+          ) : (
+            shifts.map(shift => (
+              <div key={shift.id} className="border rounded-md p-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-muted-foreground">Start Time</div>
+                  <div>{shift.startTime}</div>
+                  
+                  <div className="text-muted-foreground">End Time</div>
+                  <div>{shift.endTime}</div>
+                  
+                  {shift.notes && (
+                    <>
+                      <div className="text-muted-foreground">Notes</div>
+                      <div>{shift.notes}</div>
+                    </>
+                  )}
+                  
+                  {shift.isRecurring && (
+                    <>
+                      <div className="text-muted-foreground">Recurring</div>
+                      <div>{shift.recurringPattern || "Weekly"}</div>
+                    </>
+                  )}
                 </div>
-                {shift.isRecurring && (
-                  <div className="text-sm bg-primary/10 inline-block px-2 py-1 rounded">
-                    Weekly recurring
-                  </div>
-                )}
-                {shift.notes && (
-                  <div className="text-sm mt-2">
-                    <div className="font-medium">Notes:</div>
-                    <p className="text-muted-foreground">{shift.notes}</p>
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-        
-        <DialogFooter>
-          <Button type="button" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
