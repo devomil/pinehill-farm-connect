@@ -10,5 +10,6 @@ export * from "./BulkSchedulingBar";
 export * from "./WorkScheduleHeader";
 export * from "./WorkScheduleError";
 export * from "./EmployeeSelector";
-export * from "./scheduleHelpers";
+// Export specific functions from scheduleHelpers instead of everything
+export { buildShiftsMap, createNewShift, isSameDay } from "./scheduleHelpers";
 export * from "./employeeScheduleUtils";
