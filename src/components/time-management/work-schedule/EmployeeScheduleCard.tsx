@@ -1,11 +1,14 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WorkSchedule } from "@/types/workSchedule";
-import { format, parse, isSameDay, startOfToday, endOfWeek } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { format, parse, isSameDay, startOfToday, endOfWeek, isSameMonth } from "date-fns";
+import { Calendar as CalendarIcon, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePrintSchedule } from "@/contexts/timeManagement/hooks";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 interface EmployeeScheduleCardProps {
   schedule: WorkSchedule | null;
@@ -23,6 +26,8 @@ export const EmployeeScheduleCard: React.FC<EmployeeScheduleCardProps> = ({
   const today = startOfToday();
   const endOfCurrentWeek = endOfWeek(today);
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { printEmployeeSchedule } = usePrintSchedule();
   
   // Find upcoming shifts (today and this week)
   const upcomingShifts = React.useMemo(() => {
@@ -48,11 +53,33 @@ export const EmployeeScheduleCard: React.FC<EmployeeScheduleCardProps> = ({
         return dateA.getTime() - dateB.getTime();
       });
   }, [schedule, today, endOfCurrentWeek]);
+
+  // Get this month's total scheduled days
+  const monthlyScheduleCount = React.useMemo(() => {
+    if (!schedule || !schedule.shifts) return 0;
+    
+    const currentDate = new Date();
+    const uniqueDays = new Set();
+    
+    schedule.shifts.forEach(shift => {
+      const shiftDate = parse(shift.date, "yyyy-MM-dd", new Date());
+      if (isSameMonth(shiftDate, currentDate)) {
+        uniqueDays.add(shift.date);
+      }
+    });
+    
+    return uniqueDays.size;
+  }, [schedule]);
   
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (clickable && viewAllUrl) {
       navigate(viewAllUrl);
     }
+  };
+  
+  const handlePrintSchedule = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    printEmployeeSchedule(schedule, currentUser);
   };
   
   // Format time display for readability
@@ -79,10 +106,10 @@ export const EmployeeScheduleCard: React.FC<EmployeeScheduleCardProps> = ({
             <CalendarIcon className="h-5 w-5 mr-2" />
             My Work Schedule
           </CardTitle>
-          {clickable && (
-            <Button variant="ghost" size="sm" onClick={handleClick}>
-              View All
-            </Button>
+          {monthlyScheduleCount > 0 && (
+            <Badge variant="outline" className="bg-primary/5">
+              {monthlyScheduleCount} days this month
+            </Badge>
           )}
         </div>
       </CardHeader>
@@ -134,6 +161,24 @@ export const EmployeeScheduleCard: React.FC<EmployeeScheduleCardProps> = ({
           </div>
         )}
       </CardContent>
+      <CardFooter className="flex justify-between pt-2">
+        {clickable && (
+          <Button variant="ghost" size="sm" onClick={handleClick}>
+            View Full Schedule
+          </Button>
+        )}
+        {schedule && schedule.shifts && schedule.shifts.length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handlePrintSchedule}
+            className="flex items-center"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print My Schedule
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 };

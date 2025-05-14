@@ -18,6 +18,7 @@ import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { EmployeeScheduleCard } from "@/components/time-management/work-schedule/EmployeeScheduleCard";
+import { AdminEmployeeScheduleCard } from "@/components/time-management/work-schedule/AdminEmployeeScheduleCard";
 import { useWorkSchedule } from "@/components/time-management/work-schedule/useWorkSchedule";
 
 export default function Dashboard() {
@@ -96,7 +97,7 @@ export default function Dashboard() {
           )}
 
           {/* Left column - Calendar */}
-          <div className="md:col-span-3" onClick={handleCalendarClick}>
+          <div className="md:col-span-2" onClick={handleCalendarClick}>
             <CalendarContent
               date={date}
               currentMonth={currentMonth}
@@ -111,9 +112,18 @@ export default function Dashboard() {
             />
           </div>
           
-          {/* Right column - Marketing content */}
-          <div className="md:col-span-1">
-            <MarketingContent viewAllUrl="/marketing" onViewAllClick={handleMarketingClick} />
+          {/* Schedule cards - different view for admins vs employees */}
+          <div className="md:col-span-2">
+            {isAdmin ? (
+              <AdminEmployeeScheduleCard clickable={true} viewAllUrl="/time?tab=work-schedules" />
+            ) : (
+              <EmployeeScheduleCard 
+                schedule={scheduleData}
+                loading={scheduleLoading}
+                clickable={true}
+                viewAllUrl="/time?tab=work-schedules"
+              />
+            )}
           </div>
           
           {/* Full width trainings section if applicable */}
@@ -152,18 +162,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Work Schedule Card */}
-          {!isAdmin && currentUser && (
-            <div className="md:col-span-2" onClick={handleScheduleClick}>
-              <EmployeeScheduleCard 
-                schedule={scheduleData}
-                loading={scheduleLoading}
-                clickable={true}
-                viewAllUrl="/time?tab=work-schedules"
-              />
-            </div>
-          )}
-
           {/* Shift Coverage Card */}
           {currentUser && (
             <div className="md:col-span-2">
@@ -178,6 +176,11 @@ export default function Dashboard() {
               />
             </div>
           )}
+
+          {/* Right column - Marketing content */}
+          <div className="md:col-span-2">
+            <MarketingContent viewAllUrl="/marketing" onViewAllClick={handleMarketingClick} />
+          </div>
 
           {/* Announcements section */}
           {announcements && announcements.length > 0 && (
