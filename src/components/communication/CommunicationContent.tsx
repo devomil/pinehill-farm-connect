@@ -11,12 +11,14 @@ interface CommunicationContentProps {
   isAdmin: boolean;
 }
 
-export const CommunicationContent: React.FC<CommunicationContentProps> = ({
+// Use React.memo to prevent unnecessary re-renders when props don't change
+export const CommunicationContent = React.memo<CommunicationContentProps>(({
   activeTab,
   currentUser,
   unfilteredEmployees,
   isAdmin
 }) => {
+  // Only render the component for the active tab to avoid unnecessary data fetching
   return (
     <>
       {activeTab === "announcements" && (
@@ -32,4 +34,6 @@ export const CommunicationContent: React.FC<CommunicationContentProps> = ({
       )}
     </>
   );
-};
+});
+
+CommunicationContent.displayName = "CommunicationContent";

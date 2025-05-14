@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
 import { useAnnouncementAcknowledge } from "@/hooks/announcement/useAnnouncementAcknowledge";
@@ -18,7 +18,7 @@ interface AnnouncementManagerProps {
   isAdmin: boolean;
 }
 
-export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
+export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.memo(({
   currentUser,
   allEmployees,
   isAdmin,
@@ -63,6 +63,11 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
       mountedRef.current = false;
     };
   }, []);
+  
+  // Memoize the announcement read check function to prevent unnecessary recalculations
+  const isAnnouncementRead = useCallback((announcement: Announcement) => {
+    return announcement.readBy.includes(currentUser?.id || "");
+  }, [currentUser?.id]);
   
   // Handle saving edited announcements
   const handleSaveEdit = useCallback(async (updatedAnnouncement: Announcement): Promise<void> => {
@@ -144,42 +149,58 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = ({
     }
   }, [currentUser?.id, markAsRead, fetchAnnouncements, debug]);
 
-  const isAnnouncementRead = useCallback((announcement: Announcement) => {
-    return announcement.readBy.includes(currentUser?.id || "");
-  }, [currentUser?.id]);
-
   // If there's an error, render the error component
   if (error) {
     debug.error("Rendering error handler due to", error);
     return <AnnouncementErrorHandler error={error} onRefresh={fetchAnnouncements} />;
   }
 
+  // Memoized content for better performance
+  const content = useMemo(() => (
+    <ErrorBoundary componentName="communication.announcement.content">
+      <AnnouncementContent
+        announcements={announcements}
+        loading={loading}
+        currentUser={currentUser}
+        isAdmin={isAdmin}
+        isRead={isAnnouncementRead}
+        markAsRead={handleMarkAsRead}
+        onEdit={setEditingAnnouncement}
+        onDelete={handleDeleteAnnouncement}
+        onAcknowledge={handleAcknowledge}
+        onAttachmentAction={handleAttachmentAction}
+      />
+    </ErrorBoundary>
+  ), [
+    announcements,
+    loading,
+    currentUser,
+    isAdmin,
+    isAnnouncementRead,
+    handleMarkAsRead,
+    handleDeleteAnnouncement,
+    handleAcknowledge,
+    handleAttachmentAction
+  ]);
+
+  const actionsManager = useMemo(() => (
+    <ErrorBoundary componentName="communication.announcement.actions">
+      <AnnouncementActionsManager
+        editingAnnouncement={editingAnnouncement}
+        setEditingAnnouncement={setEditingAnnouncement}
+        handleSaveEdit={handleSaveEdit}
+        loading={loading}
+        allEmployees={allEmployees}
+      />
+    </ErrorBoundary>
+  ), [editingAnnouncement, handleSaveEdit, loading, allEmployees]);
+
   return (
     <>
-      <ErrorBoundary componentName="communication.announcement.content">
-        <AnnouncementContent
-          announcements={announcements}
-          loading={loading}
-          currentUser={currentUser}
-          isAdmin={isAdmin}
-          isRead={isAnnouncementRead}
-          markAsRead={handleMarkAsRead}
-          onEdit={setEditingAnnouncement}
-          onDelete={handleDeleteAnnouncement}
-          onAcknowledge={handleAcknowledge}
-          onAttachmentAction={handleAttachmentAction}
-        />
-      </ErrorBoundary>
-
-      <ErrorBoundary componentName="communication.announcement.actions">
-        <AnnouncementActionsManager
-          editingAnnouncement={editingAnnouncement}
-          setEditingAnnouncement={setEditingAnnouncement}
-          handleSaveEdit={handleSaveEdit}
-          loading={loading}
-          allEmployees={allEmployees}
-        />
-      </ErrorBoundary>
+      {content}
+      {actionsManager}
     </>
   );
-};
+});
+
+AnnouncementManager.displayName = "AnnouncementManager";

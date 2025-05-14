@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -7,38 +7,60 @@ import { mapAnnouncementData, updateAnnouncementReadStatus } from "./utils/annou
 import { useAnnouncementReadStatus } from "./useAnnouncementReadStatus";
 import { useAnnouncementActions } from "./useAnnouncementActions";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDebug } from "@/hooks/useDebug";
 
 export const useAnnouncements = (currentUser: User | null, allEmployees: User[]) => {
+  const debug = useDebug('hooks.announcements', { logStateChanges: true });
+  
   const { toast } = useToast();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const isMounted = useRef(true);
+  const isFirstLoad = useRef(true);
+  const lastFetchTime = useRef(Date.now());
+  const isFetchingRef = useRef(false);
   
   const { markAsRead: markAsReadInDb } = useAnnouncementReadStatus(currentUser?.id);
   const { handleEdit: editAnnouncement, handleDelete: deleteAnnouncement } = useAnnouncementActions();
   const { refetchData: refreshDashboardData } = useDashboardData();
 
-  const fetchAnnouncements = useCallback(async () => {
-    setLoading(true);
+  const fetchAnnouncements = useCallback(async (force = false) => {
+    // Prevent concurrent fetches and throttle requests (5 second minimum between fetches)
+    const now = Date.now();
+    if (isFetchingRef.current) {
+      debug.info("Skipping fetch - already in progress");
+      return;
+    }
+    
+    if (!force && now - lastFetchTime.current < 5000) {
+      debug.info(`Skipping fetch - too soon (${Math.round((now - lastFetchTime.current) / 1000)}s since last fetch)`);
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    !isFirstLoad.current && setLoading(true);
     setError(null);
+    
     try {
-      console.log("Fetching announcements...");
+      debug.info("Fetching announcements...");
       const { data: annData, error } = await supabase
         .from("announcements")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Announcement fetch error:", error);
-        toast({ title: "Failed to load announcements", description: error.message, variant: "destructive" });
+        debug.error("Announcement fetch error:", error);
+        toast.error("Failed to load announcements", {
+          description: error.message,
+        });
         setError(error);
         setAnnouncements([]);
-        setLoading(false);
         return;
       }
 
-      console.log("Fetched announcements:", annData);
+      debug.info("Fetched announcements:", annData);
       let mappedAnnouncements = mapAnnouncementData(annData, allEmployees);
 
       if (currentUser) {
@@ -48,40 +70,65 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
           .eq("user_id", currentUser.id);
 
         if (readsError) {
-          console.error("Read status fetch error:", readsError);
+          debug.error("Read status fetch error:", readsError);
         } else if (reads) {
+          debug.info(`Updating read status with records: ${JSON.stringify(reads)} for user: ${currentUser.id}`);
           mappedAnnouncements = updateAnnouncementReadStatus(mappedAnnouncements, reads, currentUser.id);
         }
       }
       
-      console.log("Mapped announcements:", mappedAnnouncements);
-      setAnnouncements(mappedAnnouncements);
-      
-      // Refresh dashboard data to update unread counts
-      refreshDashboardData();
+      debug.info("Mapped announcements:", mappedAnnouncements);
+      if (isMounted.current) {
+        setAnnouncements(mappedAnnouncements);
+        lastFetchTime.current = Date.now();
+        isFirstLoad.current = false;
+        
+        // Refresh dashboard data to update unread counts but only if necessary
+        if (annData.length > 0) {
+          refreshDashboardData();
+        }
+      }
     } catch (err) {
-      console.error("Unexpected error in fetchAnnouncements:", err);
-      toast({ title: "Failed to load announcements", description: "An unexpected error occurred", variant: "destructive" });
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setAnnouncements([]);
+      debug.error("Unexpected error in fetchAnnouncements:", err);
+      toast.error("Failed to load announcements", {
+        description: "An unexpected error occurred",
+      });
+      if (isMounted.current) {
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+        setAnnouncements([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+        // Delay resetting the fetching flag to prevent rapid consecutive requests
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 300);
+      }
     }
-  }, [currentUser, allEmployees, toast, refreshDashboardData]);
+  }, [currentUser, allEmployees, toast, refreshDashboardData, debug]);
 
   // Add effect to fetch announcements when component mounts
   useEffect(() => {
-    console.log("useAnnouncements hook mounted, fetching data...");
-    fetchAnnouncements();
+    debug.info("useAnnouncements hook mounted");
+    isMounted.current = true;
+    
+    // Initial fetch
+    fetchAnnouncements(true);
     
     // Set up a polling interval to periodically refresh announcements
+    // but with much less frequency (every 2 minutes)
     const interval = setInterval(() => {
-      console.log("Refreshing announcements data...");
+      debug.info("Auto-refreshing announcements data...");
       fetchAnnouncements();
-    }, 60000); // Refresh every minute
+    }, 120000); // Refresh every 2 minutes
     
-    return () => clearInterval(interval);
-  }, [currentUser?.id, fetchAnnouncements]); // Re-fetch when user changes
+    return () => {
+      debug.info("useAnnouncements hook unmounted");
+      isMounted.current = false;
+      clearInterval(interval);
+    };
+  }, [currentUser?.id, fetchAnnouncements, debug]); // Re-fetch when user changes
 
   const markAsRead = async (id: string): Promise<void> => {
     if (!currentUser) return Promise.reject("No current user");
@@ -107,7 +154,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       
       return Promise.resolve();
     } catch (error) {
-      console.error("Error marking announcement as read:", error);
+      debug.error("Error marking announcement as read:", error);
       return Promise.reject(error);
     }
   };
@@ -116,7 +163,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     // Forward the Promise<boolean> result
     const result = await editAnnouncement(announcement);
     if (result) {
-      await fetchAnnouncements();
+      await fetchAnnouncements(true);
       refreshDashboardData();
     }
     return result;
@@ -126,7 +173,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     // Forward the Promise<boolean> result
     const result = await deleteAnnouncement(id);
     if (result) {
-      await fetchAnnouncements();
+      await fetchAnnouncements(true);
       refreshDashboardData();
     }
     return result;
@@ -134,7 +181,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
-    fetchAnnouncements();
+    fetchAnnouncements(true);
     return retryCount + 1;
   };
 
@@ -142,7 +189,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
     announcements,
     loading,
     error,
-    fetchAnnouncements,
+    fetchAnnouncements: () => fetchAnnouncements(true), // Force fetch when manually called
     markAsRead,
     handleEdit,
     handleDelete,

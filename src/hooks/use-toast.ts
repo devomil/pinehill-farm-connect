@@ -6,98 +6,91 @@ import { ExternalToast } from 'sonner';
 
 const COMPONENT = 'toast';
 
-type ToastProps = {
+// Define our toast props with proper types
+export interface ToastProps {
   title?: string;
-  description?: string;
-  action?: React.ReactNode;
-  cancel?: React.ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  cancel?: ReactNode;
   onCancel?: () => void;
   onAction?: () => void;
-  variant?: "default" | "destructive";
-};
+  variant?: "default" | "destructive" | "success";
+}
 
-const useToast = () => {
-  const toast = (props: ToastProps) => {
-    info(COMPONENT, `Toast shown: ${props.title || 'Untitled'}`);
-    return sonnerToast(props.title, {
-      description: props.description,
-      action: props.action,
-      cancel: props.cancel,
-      // Fix: use cancel instead of onCancel to match ExternalToast type
-      onDismiss: props.onCancel,
-      onAutoClose: props.onAction,
-    });
-  };
-
+export const useToast = () => {
+  // Basic toast function
   const success = (props: ToastProps) => {
-    info(COMPONENT, `Success toast: ${props.title || 'Untitled'}`);
+    info(COMPONENT, `Success toast: ${props.title}`);
     return sonnerToast.success(props.title, {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Fix: use cancel instead of onCancel to match ExternalToast type
+      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
   };
 
+  const info = (props: ToastProps) => {
+    info(COMPONENT, `Info toast: ${props.title}`);
+    return sonnerToast.info(props.title, {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      // Map to correct Sonner toast property names
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
+    });
+  };
+  
   const warning = (props: ToastProps) => {
-    info(COMPONENT, `Warning toast: ${props.title || 'Untitled'}`);
+    info(COMPONENT, `Warning toast: ${props.title}`);
     return sonnerToast.warning(props.title, {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Fix: use cancel instead of onCancel to match ExternalToast type
+      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
   };
 
   const destructive = (props: ToastProps) => {
-    error(COMPONENT, `Error toast: ${props.title || 'Untitled'}`);
+    error(COMPONENT, `Destructive toast: ${props.title}`);
     return sonnerToast.error(props.title, {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Fix: use cancel instead of onCancel to match ExternalToast type
+      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
   };
 
-  // Create proper toast object with methods
+  // Create a toast object that provides access to all variants
   const toastObject = {
-    toast,
     success,
+    info,
     warning,
     error: destructive,
   };
 
-  // Return toast object without toasts property
+  // Return toast object
   return toastObject;
 };
 
-// Export the hook
-export { useToast };
-
-// Create and export a singleton instance for direct imports
+// Export the toast object for direct usage
 export const toast = {
-  ...sonnerToast,
-  // Override standard methods with logging
-  error: (title: string, description?: string) => {
-    error(COMPONENT, `Error toast: ${title}`);
-    return sonnerToast.error(title, { description });
-  },
-  success: (title: string, description?: string) => {
-    info(COMPONENT, `Success toast: ${title}`);
-    return sonnerToast.success(title, { description });
-  },
-  warning: (title: string, description?: string) => {
-    info(COMPONENT, `Warning toast: ${title}`);
-    return sonnerToast.warning(title, { description });
-  },
-  info: (title: string, description?: string) => {
-    info(COMPONENT, `Info toast: ${title}`);
-    return sonnerToast.info(title, { description });
-  }
+  success: (title: string, description?: string) => sonnerToast.success(title, { description }),
+  error: (title: string, description?: string) => sonnerToast.error(title, { description }),
+  info: (message: ReactNode, data?: ExternalToast) => sonnerToast(message, data),
+  warning: (message: ReactNode, data?: ExternalToast) => sonnerToast.warning(message, data),
+  loading: (message: ReactNode, data?: ExternalToast) => sonnerToast.loading(message, data),
+  dismiss: (toastId?: string | number) => sonnerToast.dismiss(toastId),
+  promise: sonnerToast.promise,
+  custom: sonnerToast.custom,
+  message: sonnerToast,
 };
+
+// Re-export the hook
+export default useToast;
