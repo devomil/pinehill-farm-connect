@@ -1,22 +1,31 @@
 
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Paperclip } from 'lucide-react';
+import { FileIcon, Paperclip, X } from 'lucide-react';
+import { UseFormReturn } from "react-hook-form";
 import { Button } from '@/components/ui/button';
 import { toast } from "@/hooks/use-toast";
 
 // Define props interface for the component
 export interface TeamCalendarEventFormFileFieldProps {
-  files: File[];
-  setFiles: (files: File[]) => void;
-  disabled?: boolean;
+  name: string;
+  label: string;
+  form: UseFormReturn<any>;
 }
 
 export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({ 
-  files, 
-  setFiles, 
-  disabled 
+  form,
+  name,
+  label
 }) => {
+  const files = form.watch(name) || [];
+  
+  const setFiles = (newFiles: File[]) => {
+    form.setValue(name, newFiles, { shouldValidate: true });
+  };
+  
+  const disabled = form.formState.isSubmitting;
+  
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles([...files, ...acceptedFiles]);
   }, [files, setFiles]);
@@ -27,19 +36,20 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
   });
 
   const removeFile = (fileToRemove: File) => {
-    setFiles(files.filter(file => file !== fileToRemove));
+    const updatedFiles = files.filter((file: File) => file !== fileToRemove);
+    setFiles(updatedFiles);
   };
 
-  const handleDownload = async (file: File) => {
+  const handleDownload = (file: File) => {
     try {
-      const url = window.URL.createObjectURL(file);
+      const url = URL.createObjectURL(file);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', file.name);
+      link.download = file.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download error:', error);
       toast({
@@ -51,7 +61,7 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
 
   return (
     <div>
-      <label className="font-medium text-sm">Attachments</label>
+      <label className="font-medium text-sm">{label}</label>
       <div 
         {...getRootProps({ 
           className: `block mt-1 mb-2 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`
@@ -60,35 +70,24 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
         <Button asChild size="sm" variant="outline" disabled={disabled}>
           <span>
             <Paperclip className="h-4 w-4 mr-1 inline" /> {isDragActive ? "Drop it here!" : "Add Attachment"}
-            <input {...getInputProps()} className="hidden" disabled={disabled} />
+            <input {...getInputProps()} />
           </span>
         </Button>
       </div>
       
       <div className="flex flex-wrap gap-2">
-        {files.map((file, idx) => (
+        {files.map((file: File, idx: number) => (
           <div key={idx} className="flex items-center bg-muted px-2 py-1 rounded text-xs">
-            <span>{file.name}</span>
-            <Button
+            <FileIcon className="h-3 w-3 mr-1" />
+            <span className="truncate max-w-[150px]">{file.name}</span>
+            <button
               type="button"
-              size="icon"
-              variant="ghost"
-              className="ml-1 px-1"
+              className="ml-1 text-muted-foreground hover:text-destructive"
               onClick={() => removeFile(file)}
               disabled={disabled}
             >
-              ✕
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="ml-1 px-1"
-              onClick={() => handleDownload(file)}
-              disabled={disabled}
-            >
-              <Paperclip className="h-4 w-4 mr-1 inline" />
-            </Button>
+              <X className="h-3 w-3" />
+            </button>
           </div>
         ))}
       </div>

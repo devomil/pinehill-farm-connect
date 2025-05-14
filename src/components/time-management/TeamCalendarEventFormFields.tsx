@@ -55,7 +55,11 @@ export const TeamCalendarEventFormFields: React.FC<TeamCalendarEventFormFieldsPr
         )}
       />
 
-      <TeamCalendarEventFormFileField form={form} name="attachments" label="Attachments (Images or Documents, 5MB max)" />
+      <TeamCalendarEventFormFileField 
+        form={form} 
+        name="attachments" 
+        label="Attachments (Images or Documents, 5MB max)" 
+      />
     </>
   );
 };

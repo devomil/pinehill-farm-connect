@@ -5,7 +5,7 @@ import { Plus, RefreshCw } from "lucide-react";
 import { User } from "@/types";
 import { NewRequestDialog } from "./NewRequestDialog";
 import { useTimeManagement } from "@/contexts/timeManagement";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 interface TimeManagementHeaderProps {
   currentUser: User;

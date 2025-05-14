@@ -1,5 +1,5 @@
 
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Enhanced toast system with deduplication and throttling
@@ -22,21 +22,16 @@ export const createThrottledToast = (
       pendingToasts.add(toastKey);
       
       // Show the toast with the appropriate type
-      if (type === 'success') {
-        toast(message, {
-          id: toastKey,
-          onDismiss: () => {
-            pendingToasts.delete(toastKey);
-          }
-        });
-      } else {
-        toast(message, {
-          id: toastKey,
-          onDismiss: () => {
-            pendingToasts.delete(toastKey);
-          }
-        });
-      }
+      const variant = type === 'success' ? 'success' : 'default';
+      
+      toast({
+        description: message,
+        variant,
+        id: toastKey,
+        onDismiss: () => {
+          pendingToasts.delete(toastKey);
+        }
+      });
       
       // Update last toast time
       setLastToastTime(now);

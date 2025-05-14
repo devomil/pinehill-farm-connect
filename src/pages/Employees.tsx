@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { formatErrorMessage } from "@/utils/errorUtils";
 import { User } from "@/types";
 
@@ -41,15 +41,14 @@ export default function Employees() {
     try {
       await addEmployee(newEmployee);
       toast({
-        title: "Employee added successfully!",
         description: `${newEmployee.name} has been added to the employee directory.`,
+        variant: "success"
       });
       setIsFormOpen(false);
     } catch (err) {
       toast({
-        variant: "destructive",
-        title: "Error adding employee",
         description: formatErrorMessage(err),
+        variant: "destructive"
       });
     }
   };
@@ -63,16 +62,14 @@ export default function Employees() {
         setIsEditDialogOpen(true);
       } else {
         toast({
-          variant: "destructive",
-          title: "Error",
           description: "Employee not found",
+          variant: "destructive"
         });
       }
     } catch (err) {
       toast({
-        variant: "destructive",
-        title: "Error updating employee",
         description: formatErrorMessage(err),
+        variant: "destructive"
       });
     }
   };
@@ -83,17 +80,16 @@ export default function Employees() {
     try {
       await updateEmployee(currentEmployee.id, editedEmployee);
       toast({
-        title: "Employee updated successfully!",
         description: `${editedEmployee.name} has been updated.`,
+        variant: "success"
       });
       setIsEditDialogOpen(false);
       setCurrentEmployee(null);
       refetch(); // Refresh the employee list
     } catch (err) {
       toast({
-        variant: "destructive",
-        title: "Error updating employee",
         description: formatErrorMessage(err),
+        variant: "destructive"
       });
     }
   };
@@ -102,14 +98,13 @@ export default function Employees() {
     try {
       await deleteEmployee(id);
       toast({
-        title: "Employee deleted successfully!",
         description: "Employee has been removed from the directory.",
+        variant: "success"
       });
     } catch (err) {
       toast({
-        variant: "destructive",
-        title: "Error deleting employee",
         description: formatErrorMessage(err),
+        variant: "destructive"
       });
     }
   };
@@ -117,8 +112,8 @@ export default function Employees() {
   const handleRetry = useCallback(() => {
     refetch();
     toast({
-      title: "Attempting to reload employee data...",
-      description: "Retrying data fetch.",
+      description: "Attempting to reload employee data...",
+      variant: "default"
     });
   }, [refetch, toast]);
 

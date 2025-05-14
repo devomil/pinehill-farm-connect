@@ -40,7 +40,6 @@ export const useAnnouncementSubmit = ({
     try {
       if (!currentUser || !currentUser.id) {
         toast({
-          title: "Authentication error",
           description: "You need to be logged in to create announcements.",
           variant: "destructive"
         });
@@ -49,7 +48,6 @@ export const useAnnouncementSubmit = ({
       
       if (!validateUuid(currentUser.id)) {
         toast({
-          title: "Invalid user ID format",
           description: "Your user ID is not in the correct format. Please contact an administrator.",
           variant: "destructive"
         });
@@ -75,7 +73,6 @@ export const useAnnouncementSubmit = ({
             if (uploadError) {
               console.error("Error uploading file:", uploadError);
               toast({
-                title: "File upload failed",
                 description: `Could not upload ${file.name}: ${uploadError.message}`,
                 variant: "destructive"
               });
@@ -124,8 +121,7 @@ export const useAnnouncementSubmit = ({
       if (error) {
         console.error("Announcement error:", error);
         toast({
-          title: `Failed to ${initialData ? 'update' : 'create'} announcement`,
-          description: error.message,
+          description: `Failed to ${initialData ? 'update' : 'create'} announcement: ${error.message}`,
           variant: "destructive"
         });
         return false;
@@ -147,7 +143,6 @@ export const useAnnouncementSubmit = ({
         
         if (validRecipientIds.length === 0) {
           toast({
-            title: "Warning",
             description: "No valid recipients found. The announcement was created but no recipients were assigned.",
             variant: "default"
           });
@@ -164,8 +159,7 @@ export const useAnnouncementSubmit = ({
           if (recipErr) {
             console.error("Recipients assignment error:", recipErr);
             toast({
-              title: "Announcement created",
-              description: "But there was an error assigning recipients: " + recipErr.message,
+              description: "Announcement created, but there was an error assigning recipients: " + recipErr.message,
               variant: "default"
             });
             return true;
@@ -174,13 +168,12 @@ export const useAnnouncementSubmit = ({
       }
       
       toast({ 
-        title: initialData ? "Announcement updated!" : "Announcement created!" 
+        description: initialData ? "Announcement updated!" : "Announcement created!" 
       });
       return true;
     } catch (e: any) {
       console.error("Unexpected error:", e);
       toast({ 
-        title: "Unexpected error", 
         description: e.message || String(e), 
         variant: "destructive" 
       });
