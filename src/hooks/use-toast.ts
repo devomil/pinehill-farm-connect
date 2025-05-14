@@ -1,6 +1,7 @@
 
-import { toast as sonnerToast, Toast as SonnerToast, ExternalToast } from "sonner";
+import { toast as sonnerToast, Toast as SonnerToast, type ExternalToast } from "sonner";
 
+// Re-export the ExternalToast type for use elsewhere
 export type ToastProps = ExternalToast;
 
 export function useToast() {
