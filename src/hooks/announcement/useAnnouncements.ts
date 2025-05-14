@@ -52,9 +52,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
 
       if (error) {
         debug.error("Announcement fetch error:", error);
-        toast.error("Failed to load announcements", {
-          description: error.message,
-        });
+        toast.error("Failed to load announcements", "Error connecting to database");
         setError(error);
         setAnnouncements([]);
         return;
@@ -90,9 +88,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       }
     } catch (err) {
       debug.error("Unexpected error in fetchAnnouncements:", err);
-      toast.error("Failed to load announcements", {
-        description: "An unexpected error occurred",
-      });
+      toast.error("Failed to load announcements", "An unexpected error occurred");
       if (isMounted.current) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
         setAnnouncements([]);

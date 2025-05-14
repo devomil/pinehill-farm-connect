@@ -41,7 +41,7 @@ export const useToast = () => {
     });
   };
 
-  const info = (props: ToastProps) => {
+  const infoToast = (props: ToastProps) => {
     info(COMPONENT, `Info toast: ${props.title}`);
     return sonnerToast.info(props.title || '', {
       description: props.description,
@@ -76,20 +76,21 @@ export const useToast = () => {
 
   // Return the toast functions
   return {
+    toast: showToast,
     success,
-    info,
+    info: infoToast,
     warning,
-    error: destructive,
-    toast: showToast // This allows direct calls to toast
+    error: destructive
   };
 };
 
 // Export standalone toast functions for direct usage
 export const toast = {
-  // Direct method that can be called with title and description
+  // Direct method that can be called with simple title and description
+  default: (title: string, description?: string) => sonnerToast(title, { description }),
   success: (title: string, description?: string) => sonnerToast.success(title, { description }),
   error: (title: string, description?: string) => sonnerToast.error(title, { description }),
-  info: (title: string, description?: string) => sonnerToast(title, { description }),
+  info: (title: string, description?: string) => sonnerToast.info(title, { description }),
   warning: (title: string, description?: string) => sonnerToast.warning(title, { description }),
   loading: (message: string, data?: ExternalToast) => sonnerToast.loading(message, data),
   dismiss: (toastId?: string | number) => sonnerToast.dismiss(toastId),
