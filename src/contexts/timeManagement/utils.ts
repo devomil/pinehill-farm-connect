@@ -27,7 +27,6 @@ export const createThrottledToast = (
       toast({
         description: message,
         variant,
-        id: toastKey,
         onDismiss: () => {
           pendingToasts.delete(toastKey);
         }
