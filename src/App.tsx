@@ -15,13 +15,13 @@ import Employees from "@/pages/Employees";
 import Reports from "@/pages/Reports";
 import Communications from "@/pages/Communications";
 import Communication from "@/pages/Communication";
-import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      staleTime: 30000, // Add a reasonable stale time to prevent frequent refetches
     },
   },
 });
@@ -44,8 +44,8 @@ function App() {
             <Route path="/employees" element={<Employees />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/communication" element={<Communication />} />
-            {/* Keep the legacy route for backward compatibility */}
-            <Route path="/communications" element={<Communications />} />
+            {/* Legacy route redirects to new path */}
+            <Route path="/communications" element={<Navigate to="/communication" replace />} />
           </Routes>
         </ThemeProvider>
       </AuthProvider>

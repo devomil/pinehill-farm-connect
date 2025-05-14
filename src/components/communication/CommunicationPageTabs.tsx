@@ -56,7 +56,7 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
 
   const senderNamesPreview = getSenderNamesPreview();
 
-  // Handle tab change - prevent rerenders by using a stable callback
+  // Memoized tab change handler to prevent rerenders
   const handleTabChange = useCallback((value: string) => {
     if (value !== activeTab) {
       console.log(`Tab change from ${activeTab} to ${value}`);
@@ -64,11 +64,8 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
     }
   }, [activeTab, onTabChange]);
 
-  // Log tab render
-  console.log(`Rendering CommunicationTabs with activeTab=${activeTab}, unreadCount=${filteredUnreadMessages.length}`);
-
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6" defaultValue={activeTab}>
       <TabsList className="mb-4">
         <TabsTrigger value="announcements" data-testid="announcements-tab">
           Company Announcements

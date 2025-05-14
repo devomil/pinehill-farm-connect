@@ -56,13 +56,18 @@ const CommunicationPage: React.FC = () => {
     isAdmin
   });
 
-  // Enable this for debugging tab navigation issues
+  // Effect to sync the URL with the active tab on mount and location changes
   useEffect(() => {
-    debug.info("activeTab changed", { 
-      newActiveTab: activeTab,
-      location: location.pathname + location.search
-    });
-  }, [activeTab, debug, location]);
+    // Parse URL parameters and update active tab if needed
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    const newTab = tabParam === 'messages' ? "messages" : "announcements";
+    
+    if (newTab !== activeTab) {
+      debug.info("Syncing tab from URL", { urlTab: newTab, currentTab: activeTab });
+      setActiveTab(newTab);
+    }
+  }, [location, debug, activeTab, setActiveTab]);
   
   return (
     <DebugProvider>
