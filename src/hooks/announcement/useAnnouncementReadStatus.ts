@@ -10,8 +10,7 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
     if (!userId) {
       console.error("Cannot mark as read: No user ID provided");
       toast({
-        title: "Error",
-        description: "Cannot mark as read: User not authenticated",
+        description: "User not authenticated",
         variant: "destructive"
       });
       return Promise.reject("No user ID provided");
@@ -68,7 +67,6 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       if (error) {
         console.error("Error marking announcement as read:", error);
         toast({
-          title: "Error",
           description: "Failed to mark announcement as read",
           variant: "destructive"
         });
@@ -80,7 +78,6 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
     } catch (error) {
       console.error("Unexpected error in markAsRead:", error);
       toast({
-        title: "Error",
         description: "An unexpected error occurred",
         variant: "destructive"
       });

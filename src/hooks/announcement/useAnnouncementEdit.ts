@@ -22,7 +22,6 @@ export const useAnnouncementEdit = () => {
       if (error) throw error;
       
       toast({
-        title: "Success",
         description: "Announcement updated successfully",
         variant: "success"
       });
@@ -30,7 +29,6 @@ export const useAnnouncementEdit = () => {
     } catch (err: any) {
       console.error('Error updating announcement:', err);
       toast({
-        title: "Error",
         description: "Failed to update the announcement",
         variant: "destructive"
       });

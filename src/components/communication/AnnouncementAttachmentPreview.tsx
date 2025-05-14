@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Eye, Download } from "lucide-react";
@@ -93,7 +92,6 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
     } catch (error) {
       console.error('Download error:', error);
       toast({
-        title: "Download failed",
         description: "There was an error downloading the file",
         variant: "destructive"
       });
@@ -141,7 +139,6 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
     } catch (error) {
       console.error('Preview error:', error);
       toast({
-        title: "Preview failed",
         description: "Could not load the preview",
         variant: "destructive"
       });

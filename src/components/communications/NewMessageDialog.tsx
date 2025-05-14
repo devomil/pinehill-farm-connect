@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   DialogContent,
@@ -43,18 +44,16 @@ export function NewMessageDialog({
 
     if (!recipientId || !content) {
       toast({
-        title: "Error",
         description: "Please select a recipient and enter a message.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
     if (!currentUser) {
       toast({
-        title: "Error",
         description: "You must be logged in to send messages.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -67,8 +66,8 @@ export function NewMessageDialog({
       };
       await onSend(messageData);
       toast({
-        title: "Message sent!",
-        variant: "success",
+        description: "Message sent!",
+        variant: "success"
       });
       setContent("");
       setRecipientId("");
@@ -79,9 +78,8 @@ export function NewMessageDialog({
     } catch (error: any) {
       console.error("Error sending message:", error);
       toast({
-        title: "Error",
         description: "Failed to send message: " + error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -109,7 +107,7 @@ export function NewMessageDialog({
             <option value="">Select a recipient</option>
             {employees.map((employee) => (
               <option key={employee.id} value={employee.id}>
-                {employee.firstName} {employee.lastName}
+                {employee.name || `${employee.id}`}
               </option>
             ))}
           </select>

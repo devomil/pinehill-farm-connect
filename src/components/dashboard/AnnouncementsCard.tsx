@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
@@ -49,7 +48,6 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
       if (error) {
         console.error('Error creating signed URL:', error);
         toast({
-          title: "Failed to open attachment",
           description: "Could not retrieve the attachment URL. Please try again.",
           variant: "destructive"
         });
@@ -61,7 +59,6 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
         window.open(data.signedUrl, '_blank');
       } else {
         toast({
-          title: "Error",
           description: "No URL was returned for this attachment",
           variant: "destructive"
         });
@@ -69,7 +66,6 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
     } catch (error) {
       console.error('Error handling attachment:', error);
       toast({
-        title: "Failed to open attachment",
         description: "There was a problem opening this attachment. Please try again.",
         variant: "destructive"
       });

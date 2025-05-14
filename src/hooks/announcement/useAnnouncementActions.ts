@@ -15,7 +15,6 @@ export const useAnnouncementActions = () => {
       
       if (success) {
         toast({
-          title: "Announcement updated",
           description: "The announcement has been successfully updated",
           variant: "success"
         });
@@ -25,7 +24,6 @@ export const useAnnouncementActions = () => {
     } catch (error) {
       console.error("Error in handleEdit:", error);
       toast({
-        title: "Update failed",
         description: "There was an error updating the announcement",
         variant: "destructive"
       });
@@ -40,7 +38,6 @@ export const useAnnouncementActions = () => {
       
       if (success) {
         toast({
-          title: "Announcement deleted",
           description: "The announcement has been successfully deleted",
           variant: "success"
         });
@@ -50,7 +47,6 @@ export const useAnnouncementActions = () => {
     } catch (error) {
       console.error("Error in handleDelete:", error);
       toast({
-        title: "Delete failed",
         description: "There was an error deleting the announcement",
         variant: "destructive"
       });

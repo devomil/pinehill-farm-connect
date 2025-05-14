@@ -13,7 +13,6 @@ export const useAnnouncementDelete = () => {
       if (error) throw error;
       
       toast({
-        title: "Announcement deleted",
         description: "The announcement has been successfully deleted",
         variant: "success"
       });
@@ -21,7 +20,6 @@ export const useAnnouncementDelete = () => {
     } catch (err: any) {
       console.error('Error deleting announcement:', err);
       toast({
-        title: "Error",
         description: "Failed to delete the announcement",
         variant: "destructive"
       });

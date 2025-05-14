@@ -23,14 +23,18 @@ export const createThrottledToast = (
       
       // Show the toast with the appropriate type
       if (type === 'success') {
-        toast.success(message, {
+        toast({
+          description: message,
+          variant: "success",
           id: toastKey,
           onDismiss: () => {
             pendingToasts.delete(toastKey);
           }
         });
       } else {
-        toast.info(message, {
+        toast({
+          description: message,
+          variant: "default",
           id: toastKey,
           onDismiss: () => {
             pendingToasts.delete(toastKey);

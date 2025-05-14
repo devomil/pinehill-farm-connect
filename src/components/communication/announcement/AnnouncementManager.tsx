@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Announcement, User } from "@/types";
 import { useAnnouncements } from "@/hooks/announcement/useAnnouncements";
@@ -78,7 +77,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
         setEditingAnnouncement(null);
         await fetchAnnouncements();
         toast({
-          title: "Success",
           description: "Announcement updated successfully",
           variant: "success"
         });
@@ -87,7 +85,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     } catch (error) {
       debug.error("Error saving edited announcement", error);
       toast({
-        title: "Error",
         description: "Failed to update announcement",
         variant: "destructive"
       });
@@ -102,7 +99,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
       if (success && mountedRef.current) {
         await fetchAnnouncements();
         toast({
-          title: "Success",
           description: "Announcement deleted successfully",
           variant: "success"
         });
@@ -111,7 +107,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     } catch (error) {
       debug.error("Error deleting announcement", error);
       toast({
-        title: "Error",
         description: "Failed to delete announcement",
         variant: "destructive"
       });
@@ -124,7 +119,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     if (!currentUser?.id) {
       debug.error("No current user ID available");
       toast({
-        title: "Error",
         description: "Unable to acknowledge: No user ID available",
         variant: "destructive"
       });
@@ -136,7 +130,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
       if (mountedRef.current) {
         await fetchAnnouncements();
         toast({
-          title: "Success",
           description: "Announcement acknowledged successfully",
           variant: "success"
         });
@@ -146,7 +139,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     } catch (error) {
       debug.error("Error in handleAcknowledge", error);
       toast({
-        title: "Error",
         description: "Failed to acknowledge announcement",
         variant: "destructive"
       });
@@ -160,7 +152,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     if (!currentUser?.id) {
       debug.error("Cannot mark as read: No current user ID");
       toast({
-        title: "Error",
         description: "Unable to mark as read: No user ID available",
         variant: "destructive"
       });
@@ -177,7 +168,6 @@ export const AnnouncementManager: React.FC<AnnouncementManagerProps> = React.mem
     } catch (error) {
       debug.error("Error marking announcement as read", error);
       toast({
-        title: "Error",
         description: "Failed to mark announcement as read",
         variant: "destructive"
       });

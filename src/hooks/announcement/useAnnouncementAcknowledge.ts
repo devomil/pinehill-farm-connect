@@ -63,7 +63,6 @@ export const useAnnouncementAcknowledge = (userId: string | undefined) => {
       if (error) {
         console.error("Error acknowledging announcement:", error);
         toast({
-          title: "Error",
           description: "Failed to acknowledge announcement",
           variant: "destructive"
         });
@@ -71,7 +70,6 @@ export const useAnnouncementAcknowledge = (userId: string | undefined) => {
       }
       
       toast({
-        title: "Success",
         description: "Announcement acknowledged successfully",
         variant: "success"
       });
@@ -81,7 +79,6 @@ export const useAnnouncementAcknowledge = (userId: string | undefined) => {
     } catch (error) {
       console.error("Unexpected error in acknowledgeAnnouncement:", error);
       toast({
-        title: "Error",
         description: "An unexpected error occurred",
         variant: "destructive"
       });

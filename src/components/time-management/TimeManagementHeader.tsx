@@ -32,7 +32,10 @@ export const TimeManagementHeader: React.FC<TimeManagementHeaderProps> = ({
   const handleRequestSubmitted = () => {
     setDialogOpen(false);
     onRequestSubmitted();
-    toast.success("Request submitted successfully");
+    toast({
+      description: "Request submitted successfully",
+      variant: "success"
+    });
   };
 
   return (

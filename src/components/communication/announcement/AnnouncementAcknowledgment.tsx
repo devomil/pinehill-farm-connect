@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
@@ -49,7 +48,6 @@ export const AnnouncementAcknowledgment = ({
       // Keep the checked state - don't revert it after the operation completes
       // The database update should trigger a fetch that will update isAcknowledged prop
       toast({
-        title: "Announcement acknowledged",
         description: "Thank you for acknowledging this announcement",
         variant: "success"
       });
@@ -58,7 +56,6 @@ export const AnnouncementAcknowledgment = ({
       setIsChecked(false);
       console.error("Error acknowledging announcement:", error);
       toast({
-        title: "Failed to acknowledge announcement",
         description: "An error occurred while saving your acknowledgment",
         variant: "destructive"
       });
@@ -75,15 +72,13 @@ export const AnnouncementAcknowledgment = ({
       console.log("Marking announcement as read:", id);
       await onMarkAsRead(id);
       toast({
-        title: "Announcement marked as read",
         description: "Thank you for reviewing this announcement",
         variant: "success"
       });
     } catch (error) {
       console.error("Error marking announcement as read:", error);
       toast({
-        title: "Failed to mark as read",
-        description: "An error occurred",
+        description: "Failed to mark as read. An error occurred",
         variant: "destructive"
       });
     } finally {

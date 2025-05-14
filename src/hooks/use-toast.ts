@@ -1,5 +1,5 @@
 
-import { toast as sonnerToast, Toast as SonnerToast, type ExternalToast } from "sonner";
+import { toast as sonnerToast, type ExternalToast } from "sonner";
 
 // Re-export the ExternalToast type for use elsewhere
 export type ToastProps = ExternalToast;
@@ -21,32 +21,28 @@ export const toast = (props: ExternalToast) => {
 // but have them use the new object format internally
 const successToast = (title: string, description?: string) => {
   return sonnerToast({
-    title,
-    description,
+    description: description || title,
     variant: "success"
   });
 };
 
 const errorToast = (title: string, description?: string) => {
   return sonnerToast({
-    title,
-    description,
+    description: description || title,
     variant: "destructive"
   });
 };
 
 const warningToast = (title: string, description?: string) => {
   return sonnerToast({
-    title,
-    description,
+    description: description || title,
     variant: "warning"
   });
 };
 
 const infoToast = (title: string, description?: string) => {
   return sonnerToast({
-    title,
-    description,
+    description: description || title,
     variant: "default"
   });
 };
