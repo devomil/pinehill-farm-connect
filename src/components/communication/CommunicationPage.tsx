@@ -58,6 +58,12 @@ const CommunicationPage: React.FC = () => {
 
   // Effect to sync the URL with the active tab on mount and location changes
   useEffect(() => {
+    // Only run this effect if navigation is complete to prevent loops
+    if (!navigationComplete.current) {
+      debug.info("Skipping URL sync, navigation in progress");
+      return;
+    }
+    
     // Parse URL parameters and update active tab if needed
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
@@ -67,7 +73,7 @@ const CommunicationPage: React.FC = () => {
       debug.info("Syncing tab from URL", { urlTab: newTab, currentTab: activeTab });
       setActiveTab(newTab);
     }
-  }, [location, debug, activeTab, setActiveTab]);
+  }, [location, debug, activeTab, setActiveTab, navigationComplete]);
   
   return (
     <DebugProvider>
