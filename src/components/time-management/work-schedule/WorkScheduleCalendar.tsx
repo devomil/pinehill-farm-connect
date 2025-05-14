@@ -1,10 +1,11 @@
 
 import React from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isValid } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { isValid } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
+import { CalendarNavigation } from "./CalendarNavigation";
+import { CalendarDayCell } from "./CalendarDayCell";
+import { safeFormat, isDateSelected, getShiftsForDay } from "./calendarUtils";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -59,85 +60,14 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       onDateSelected();
     }
   };
-  
-  // Safe format function that checks validity
-  const safeFormat = (date: Date, formatString: string): string => {
-    try {
-      return isValid(date) ? format(date, formatString) : "";
-    } catch (e) {
-      console.error("Invalid date format:", e);
-      return "";
-    }
-  };
-  
-  // Render day content function
-  const renderDayContent = (day: Date) => {
-    if (!isValid(day)) {
-      console.warn("Invalid date in renderDayContent");
-      return <div className="h-full w-full"></div>;
-    }
-    
-    const dateStr = safeFormat(day, "yyyy-MM-dd");
-    const shifts = shiftsMap.get(dateStr) || [];
-    
-    return (
-      <div className="h-full w-full">
-        <div className="text-right text-xs">{safeFormat(day, "d")}</div>
-        {shifts.length > 0 && (
-          <div className="mt-1">
-            {shifts.map((shift, index) => (
-              <div 
-                key={`${shift.id}-${index}`}
-                className="bg-primary/10 text-xs p-1 rounded mt-1 cursor-pointer hover:bg-primary/20"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShiftClick(shift);
-                }}
-              >
-                {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Get classes for each day in the calendar
-  const getDayClass = (day: Date) => {
-    if (!isValid(day)) return {};
-    
-    const dateStr = safeFormat(day, "yyyy-MM-dd");
-    const hasShifts = shiftsMap.has(dateStr);
-    
-    // Check if this date is selected in single mode
-    const isSingleSelected = selectionMode === "single" && selectedDate && isValid(selectedDate) && 
-      day.getDate() === selectedDate.getDate() && 
-      day.getMonth() === selectedDate.getMonth() && 
-      day.getFullYear() === selectedDate.getFullYear();
-    
-    // Check if this date is selected in multiple mode
-    const isMultiSelected = selectionMode === "multiple" && isDaySelected && isDaySelected(day);
-    
-    return {
-      "bg-primary/5": hasShifts,
-      "ring-2 ring-primary": isSingleSelected,
-      "bg-primary/20": isMultiSelected && !isSingleSelected,
-      "cursor-pointer hover:bg-accent": true
-    };
-  };
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
-        <Button variant="ghost" onClick={handlePreviousMonth} size="sm">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-        </Button>
-        <h3 className="font-semibold">{safeFormat(safeCurrentMonth, "MMMM yyyy")}</h3>
-        <Button variant="ghost" onClick={handleNextMonth} size="sm">
-          Next <ArrowRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
+      <CalendarNavigation 
+        currentMonth={safeCurrentMonth}
+        onPreviousMonth={handlePreviousMonth}
+        onNextMonth={handleNextMonth}
+      />
       
       <div className="border rounded-lg p-2">
         <Calendar
@@ -151,19 +81,28 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
                 return null;
               }
               
+              // Get shifts for this day
+              const shifts = getShiftsForDay(day, shiftsMap);
+              const hasShifts = shifts.length > 0;
+              
+              // Check if this day is selected
+              const { isSingleSelected, isMultiSelected } = isDateSelected(
+                day, 
+                selectedDate,
+                isDaySelected
+              );
+              
               return (
-                <div
+                <CalendarDayCell
                   {...props}
-                  className={`h-20 w-full border rounded-md p-1 ${
-                    Object.entries(getDayClass(day))
-                      .filter(([, value]) => value)
-                      .map(([className]) => className)
-                      .join(" ")
-                  }`}
+                  day={day}
+                  shifts={shifts}
+                  isSingleSelected={isSingleSelected}
+                  isMultiSelected={isMultiSelected}
+                  hasShifts={hasShifts}
                   onClick={() => handleDayClick(day)}
-                >
-                  {renderDayContent(day)}
-                </div>
+                  onShiftClick={onShiftClick}
+                />
               );
             },
           }}

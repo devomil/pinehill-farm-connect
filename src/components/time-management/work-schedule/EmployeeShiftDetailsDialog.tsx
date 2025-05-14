@@ -1,73 +1,48 @@
 
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 
 export interface EmployeeShiftDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  date: Date;
   shifts: WorkShift[];
-  selectedDate?: Date;
 }
 
 export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProps> = ({
   isOpen,
   onClose,
+  date,
   shifts,
-  selectedDate
 }) => {
-  if (!selectedDate) return null;
-  
-  const formattedDate = format(selectedDate, "EEEE, MMMM d, yyyy");
-  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Shift Details for {formattedDate}</DialogTitle>
-          <DialogDescription>
-            {shifts.length === 0 
-              ? "No shifts scheduled for this day." 
-              : `${shifts.length} shift${shifts.length > 1 ? 's' : ''} scheduled`}
-          </DialogDescription>
+          <DialogTitle>Shift Details - {format(date, "EEEE, MMMM d, yyyy")}</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          {shifts.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">No shifts found for this date.</p>
-          ) : (
-            shifts.map(shift => (
-              <div key={shift.id} className="border rounded-md p-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-muted-foreground">Start Time</div>
-                  <div>{shift.startTime}</div>
-                  
-                  <div className="text-muted-foreground">End Time</div>
-                  <div>{shift.endTime}</div>
-                  
-                  {shift.notes && (
-                    <>
-                      <div className="text-muted-foreground">Notes</div>
-                      <div>{shift.notes}</div>
-                    </>
-                  )}
-                  
-                  {shift.isRecurring && (
-                    <>
-                      <div className="text-muted-foreground">Recurring</div>
-                      <div>{shift.recurringPattern || "Weekly"}</div>
-                    </>
-                  )}
+        <div className="py-4">
+          {shifts.length > 0 ? (
+            <div className="space-y-3">
+              {shifts.map((shift, index) => (
+                <div key={index} className="border rounded-md p-3">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Shift {index + 1}</span>
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <div>Time: {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}</div>
+                    {shift.isRecurring && (
+                      <div>Recurring: {shift.recurringPattern || "Weekly"}</div>
+                    )}
+                    {shift.notes && <div>Notes: {shift.notes}</div>}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">No shifts scheduled for this day.</p>
           )}
         </div>
       </DialogContent>
