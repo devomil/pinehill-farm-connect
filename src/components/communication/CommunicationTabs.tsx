@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AnnouncementList } from "./AnnouncementList";
 import { Announcement } from "@/types";
@@ -40,11 +40,12 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriority, setSelectedPriority] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [lastAnnouncementCount, setLastAnnouncementCount] = useState(0);
   
   const ITEMS_PER_PAGE = 5;
 
-  // Filter announcements based on active tab, search query, priority, and date range
-  const filteredAnnouncements = useCallback(() => {
+  // Only recompute filtered announcements when necessary inputs change
+  const filteredAnnouncements = useMemo(() => {
     console.log(`Filtering announcements for tab: ${activeTab}, with ${announcements.length} total announcements`);
     
     let filtered = [...announcements];
@@ -93,23 +94,57 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
     setCurrentPage(1);
   }, [activeTab, searchQuery, selectedPriority, dateRange]);
 
-  // Pagination logic
-  const paginatedAnnouncements = useCallback(() => {
-    const filtered = filteredAnnouncements();
+  // Check if announcements have actually changed to prevent unnecessary re-renders
+  useEffect(() => {
+    if (announcements.length !== lastAnnouncementCount) {
+      setLastAnnouncementCount(announcements.length);
+    }
+  }, [announcements.length, lastAnnouncementCount]);
+
+  // Pagination logic - also memoized
+  const paginatedData = useMemo(() => {
+    const filtered = filteredAnnouncements;
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
     
-    console.log(`Returning ${filtered.slice(start, end).length} announcements for page ${currentPage} of ${Math.ceil(filtered.length / ITEMS_PER_PAGE)}`);
+    const paginatedItems = filtered.slice(start, end);
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     
-    return filtered.slice(start, end);
+    console.log(`Returning ${paginatedItems.length} announcements for page ${currentPage} of ${totalPages}`);
+    
+    return { 
+      items: paginatedItems, 
+      totalPages: Math.max(1, totalPages)
+    };
   }, [filteredAnnouncements, currentPage]);
-
-  const totalPages = Math.ceil(filteredAnnouncements().length / ITEMS_PER_PAGE);
   
   // Calculate unread count for badge
-  const unreadCount = announcements.filter(a => !isRead(a)).length;
+  const unreadCount = useMemo(() => {
+    return announcements.filter(a => !isRead(a)).length;
+  }, [announcements, isRead]);
   
   console.log("CommunicationTabs rendered with", announcements.length, "announcements");
+
+  // Memoize the tab content to prevent unnecessary re-renders
+  const renderTabContent = useCallback((tabValue: string) => (
+    <TabsContent value={tabValue} className="mt-6">
+      <AnnouncementList
+        announcements={paginatedData.items}
+        loading={loading}
+        isRead={isRead}
+        markAsRead={markAsRead}
+        getPriorityBadge={getPriorityBadge}
+        currentPage={currentPage}
+        totalPages={paginatedData.totalPages}
+        onPageChange={setCurrentPage}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isAdmin={isAdmin}
+        onAttachmentAction={onAttachmentAction}
+        onAcknowledge={onAcknowledge}
+      />
+    </TabsContent>
+  ), [paginatedData, loading, isRead, markAsRead, getPriorityBadge, currentPage, onEdit, onDelete, isAdmin, onAttachmentAction, onAcknowledge]);
 
   return (
     <div>
@@ -133,59 +168,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           onDateRangeChange={setDateRange}
         />
 
-        <TabsContent value="all" className="mt-6">
-          <AnnouncementList
-            announcements={paginatedAnnouncements()}
-            loading={loading}
-            isRead={isRead}
-            markAsRead={markAsRead}
-            getPriorityBadge={getPriorityBadge}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            isAdmin={isAdmin}
-            onAttachmentAction={onAttachmentAction}
-            onAcknowledge={onAcknowledge}
-          />
-        </TabsContent>
-        
-        <TabsContent value="unread" className="mt-6">
-          <AnnouncementList
-            announcements={paginatedAnnouncements()}
-            loading={loading}
-            isRead={isRead}
-            markAsRead={markAsRead}
-            getPriorityBadge={getPriorityBadge}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            isAdmin={isAdmin}
-            onAttachmentAction={onAttachmentAction}
-            onAcknowledge={onAcknowledge}
-          />
-        </TabsContent>
-        
-        <TabsContent value="important" className="mt-6">
-          <AnnouncementList
-            announcements={paginatedAnnouncements()}
-            loading={loading}
-            isRead={isRead}
-            markAsRead={markAsRead}
-            getPriorityBadge={getPriorityBadge}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            isAdmin={isAdmin}
-            onAttachmentAction={onAttachmentAction}
-            onAcknowledge={onAcknowledge}
-          />
-        </TabsContent>
+        {renderTabContent("all")}
+        {renderTabContent("unread")}
+        {renderTabContent("important")}
       </Tabs>
     </div>
   );

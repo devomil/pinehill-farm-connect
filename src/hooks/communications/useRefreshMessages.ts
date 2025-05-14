@@ -11,6 +11,7 @@ export function useRefreshMessages() {
   const queryClient = useQueryClient();
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshInProgress = useRef<boolean>(false);
+  const MIN_REFRESH_INTERVAL = 10000; // 10 seconds between refreshes
   
   const refreshMessages = useCallback(() => {
     // Skip if already refreshing or too soon after previous refresh
@@ -20,7 +21,7 @@ export function useRefreshMessages() {
     }
     
     const now = Date.now();
-    if (now - lastRefreshTime.current < 1000) {
+    if (now - lastRefreshTime.current < MIN_REFRESH_INTERVAL) {
       console.log("Skipping refetch - too soon");
       return Promise.resolve();
     }
@@ -33,7 +34,7 @@ export function useRefreshMessages() {
       .finally(() => {
         setTimeout(() => {
           refreshInProgress.current = false;
-        }, 500);
+        }, 2000); // Longer cooldown to prevent excessive refreshes
       });
   }, [queryClient]);
   
@@ -49,6 +50,7 @@ export function useRefreshMessages() {
 export function useMessageRefreshManager(currentUser: any, refetch: () => Promise<any>) {
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshInProgress = useRef<boolean>(false);
+  const MIN_REFRESH_INTERVAL = 10000; // 10 seconds between refreshes
   
   const refreshMessages = useCallback(() => {
     // Skip if already refreshing or too soon after previous refresh
@@ -58,7 +60,7 @@ export function useMessageRefreshManager(currentUser: any, refetch: () => Promis
     }
     
     const now = Date.now();
-    if (now - lastRefreshTime.current < 1000) {
+    if (now - lastRefreshTime.current < MIN_REFRESH_INTERVAL) {
       console.log("Skipping refetch - too soon");
       return Promise.resolve();
     }
@@ -70,7 +72,7 @@ export function useMessageRefreshManager(currentUser: any, refetch: () => Promis
     return refetch().finally(() => {
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, 500);
+      }, 2000); // Longer cooldown period
     });
   }, [refetch]);
   

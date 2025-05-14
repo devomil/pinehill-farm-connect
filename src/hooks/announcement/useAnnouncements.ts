@@ -18,6 +18,8 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const [error, setError] = useState<Error | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const loadingRef = useRef(false);
+  const lastFetchTime = useRef(0);
+  const REFRESH_COOLDOWN = 5000; // 5 seconds minimum between refreshes
   
   const { markAsRead } = useAnnouncementReadStatus(currentUser?.id);
   const { handleEdit, handleDelete } = useAnnouncementActions();
@@ -50,13 +52,21 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   }, [currentUser?.id, markAsRead]);
 
   // Function to fetch announcements from the database
-  const fetchAnnouncements = useCallback(async () => {
+  const fetchAnnouncements = useCallback(async (force = false) => {
     if (!currentUser?.id || loadingRef.current) return;
+    
+    // Prevent too frequent refreshes unless forced
+    const now = Date.now();
+    if (!force && (now - lastFetchTime.current < REFRESH_COOLDOWN)) {
+      debug.info("Skipping fetch - too soon since last fetch");
+      return;
+    }
     
     try {
       debug.info("Fetching announcements");
       loadingRef.current = true;
       setLoading(true);
+      lastFetchTime.current = now;
       
       // Fetch announcements from the database
       const { data, error: dbError } = await supabase
@@ -90,11 +100,17 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   // Effect to fetch announcements initially and when dependencies change
   useEffect(() => {
     if (currentUser?.id && allEmployees.length > 0) {
+      // Skip if we've already loaded and it's too soon for a refresh
+      if (hasLoaded && (Date.now() - lastFetchTime.current < REFRESH_COOLDOWN)) {
+        debug.info("Skipping initial fetch - already loaded recently");
+        return;
+      }
+      
       // Use setTimeout to avoid blocking the UI
       if (!hasLoaded) {
         debug.info("Initial load of announcements");
         const timer = setTimeout(() => {
-          fetchAnnouncements();
+          fetchAnnouncements(true);
         }, 300);
         
         return () => clearTimeout(timer);
@@ -114,7 +130,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   useEffect(() => {
     // Only fetch on first mount or when currentUser changes
     if (currentUser?.id && !hasLoaded) {
-      fetchAnnouncements();
+      fetchAnnouncements(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);

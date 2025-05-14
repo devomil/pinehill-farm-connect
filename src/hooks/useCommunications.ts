@@ -105,22 +105,22 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     };
   }, [refetch, currentUser?.id, currentUser?.email]);
 
-  // Set up background refresh with reasonable intervals
+  // Set up background refresh with reasonable intervals - MUCH LESS FREQUENTLY
   useEffect(() => {
     if (!currentUser?.id || !isMounted.current) return;
     
-    // More reasonable refresh intervals
+    // MUCH less frequent refreshes to prevent UI flickering
     const isAdmin = currentUser.role === 'admin';
     const refreshInterval = window.setInterval(() => {
       // Don't refresh if component is unmounted or refresh is in progress
       if (!isMounted.current || refreshInProgress.current) return;
       
       const now = Date.now();
-      // Admin users need less frequent refreshes to prevent UI flashing
-      const refreshThreshold = isAdmin ? 45000 : 60000; // 45s for admins, 60s for others
+      // Increased refresh thresholds to reduce flickering
+      const refreshThreshold = isAdmin ? 120000 : 180000; // 2min for admins, 3min for others
       
       if (now - lastRefreshTime.current > refreshThreshold) {
-        console.log(`Periodic refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
+        console.log(`Scheduled background refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
         refreshInProgress.current = true;
         
         refetch().finally(() => {
@@ -132,7 +132,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         
         lastRefreshTime.current = now;
       }
-    }, isAdmin ? 60000 : 90000); // Every 60s for admins, 90s for others - increased to reduce flickering
+    }, isAdmin ? 180000 : 240000); // Every 3min for admins, 4min for others - greatly increased
     
     // Clear interval on unmount
     return () => {

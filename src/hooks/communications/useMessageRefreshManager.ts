@@ -22,9 +22,9 @@ export function useMessageRefreshManager(
       refreshDebounceTimer.current = null;
     }
     
-    // Prevent multiple refreshes within a short time period
+    // Prevent multiple refreshes within a short time period - INCREASED intervals
     const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 4000 : 5000; // 4s for admins, 5s for others
+    const minRefreshInterval = isAdmin ? 10000 : 15000; // 10s for admins, 15s for others - increased
     
     if (refreshInProgress.current) {
       console.log("Communications refresh skipped - already in progress");
@@ -58,10 +58,10 @@ export function useMessageRefreshManager(
     lastRefreshTime.current = now;
     
     return refetch().finally(() => {
-      // Cooldown to prevent immediate subsequent refreshes
+      // Longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, isAdmin ? 1000 : 2000); // Shorter cooldown for admins
+      }, isAdmin ? 2000 : 3000); // Longer cooldown periods
     });
   }, [refetch, currentUser]);
 

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { AnnouncementList } from "../AnnouncementList";
 import { Announcement } from "@/types";
@@ -22,7 +22,7 @@ interface TabContentProps {
   emptyMessage?: React.ReactNode;
 }
 
-export const TabContent: React.FC<TabContentProps> = ({
+export const TabContent: React.FC<TabContentProps> = memo(({
   value,
   announcements,
   loading,
@@ -67,4 +67,17 @@ export const TabContent: React.FC<TabContentProps> = ({
       />
     </TabsContent>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.currentPage === nextProps.currentPage &&
+    prevProps.totalPages === nextProps.totalPages &&
+    prevProps.announcements.length === nextProps.announcements.length &&
+    JSON.stringify(prevProps.announcements.map(a => a.id)) === 
+      JSON.stringify(nextProps.announcements.map(a => a.id))
+  );
+});
+
+TabContent.displayName = 'TabContent';
