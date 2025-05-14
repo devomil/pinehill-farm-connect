@@ -70,11 +70,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       const mappedAnnouncements = await Promise.all(
         data.map(async (announcement) => await mapAnnouncementData(
           announcement, 
-          currentUser?.id,
-          allEmployees
+          currentUser?.id
         ))
       );
       
+      // Fix: Ensure we're setting a flat array of announcements, not a nested array
       setAnnouncements(mappedAnnouncements);
       setHasLoaded(true);
       setError(null);
@@ -89,7 +89,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [currentUser?.id, allEmployees, debug]);
+  }, [currentUser?.id, debug]);
   
   // Effect to fetch announcements initially and when dependencies change
   useEffect(() => {
