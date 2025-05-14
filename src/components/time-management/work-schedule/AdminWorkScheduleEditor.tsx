@@ -1,16 +1,14 @@
+
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { WorkSchedule, WorkShift, WorkScheduleEditorProps } from "@/types/workSchedule";
+import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
+import { ShiftDialog } from "./ShiftDialog";
+import { BulkSchedulingBar } from "./BulkSchedulingBar";
+import { buildShiftsMap, getDaysInMonth, createNewShift } from "./scheduleHelpers";
 
 export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   selectedEmployee,
@@ -27,51 +25,21 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
 
   // Get all days in the current month
-  const daysInMonth = useMemo(() => {
-    return eachDayOfInterval({
-      start: startOfMonth(currentDate),
-      end: endOfMonth(currentDate)
-    });
-  }, [currentDate]);
+  const daysInMonth = useMemo(() => getDaysInMonth(currentDate), [currentDate]);
 
   // Get shifts for each day
-  const shiftsMap = useMemo(() => {
-    if (!scheduleData || !scheduleData.shifts) return new Map();
-    
-    const map = new Map();
-    scheduleData.shifts.forEach(shift => {
-      const shiftDate = parse(shift.date, "yyyy-MM-dd", new Date());
-      const dateKey = format(shiftDate, "yyyy-MM-dd");
-      if (!map.has(dateKey)) {
-        map.set(dateKey, []);
-      }
-      map.get(dateKey).push(shift);
-    });
-    return map;
-  }, [scheduleData]);
-
-  // Custom Day content rendering
-  const renderDayContent = (day: Date) => {
-    const dateStr = format(day, "yyyy-MM-dd");
-    const shifts = shiftsMap.get(dateStr) || [];
-    
-    return (
-      <div className="h-full w-full">
-        <div className="text-right text-xs">{format(day, "d")}</div>
-        {shifts.length > 0 && (
-          <div className="mt-1 bg-primary/10 text-xs p-1 rounded">
-            {shifts.length} shift{shifts.length > 1 ? "s" : ""}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const shiftsMap = useMemo(() => buildShiftsMap(scheduleData), [scheduleData]);
 
   // Handle day click
   const handleDayClick = (day: Date) => {
     if (isSelectingMultiple) {
       // Toggle selection of multiple dates
-      const isAlreadySelected = selectedDates.some(d => isSameDay(d, day));
+      const isAlreadySelected = selectedDates.some(d => 
+        d.getDate() === day.getDate() && 
+        d.getMonth() === day.getMonth() && 
+        d.getFullYear() === day.getFullYear()
+      );
+      
       if (isAlreadySelected) {
         setSelectedDates(selectedDates.filter(d => !isSameDay(d, day)));
       } else {
@@ -90,19 +58,16 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         });
       } else {
         // Create a new shift
-        setCurrentShift({
-          id: uuidv4(),
-          employeeId: selectedEmployee || "",
-          date: dateStr,
-          startTime: "09:00",
-          endTime: "17:00",
-          isRecurring: false,
-          notes: ""
-        });
+        setCurrentShift(createNewShift(selectedEmployee || "", day));
       }
       
       setIsDialogOpen(true);
     }
+  };
+
+  // Update shift field
+  const updateShiftField = (field: string, value: any) => {
+    setCurrentShift(prev => prev ? { ...prev, [field]: value } : null);
   };
 
   // Save shift from dialog
@@ -217,6 +182,12 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     setIsDialogOpen(true);
   };
 
+  // Cancel bulk scheduling
+  const cancelBulkScheduling = () => {
+    setIsSelectingMultiple(false);
+    setSelectedDates([]);
+  };
+
   // Navigate between months
   const goToPreviousMonth = () => {
     const newDate = new Date(currentDate);
@@ -230,21 +201,6 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     setCurrentDate(newDate);
   };
 
-  // Get classes for each day in the calendar
-  const getDayClass = (day: Date) => {
-    const dateStr = format(day, "yyyy-MM-dd");
-    const hasShifts = shiftsMap.has(dateStr);
-    
-    // Check if this date is in the multiple selection array
-    const isSelected = selectedDates.some(d => isSameDay(d, day));
-    
-    return {
-      "bg-primary/5": hasShifts,
-      "ring-2 ring-primary": isSelected && isSelectingMultiple,
-      "cursor-pointer hover:bg-accent": true
-    };
-  };
-
   if (!selectedEmployee) {
     return (
       <div className="text-center p-8 text-muted-foreground">
@@ -255,64 +211,22 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
 
   return (
     <div className="space-y-4">
-      {isSelectingMultiple && (
-        <div className="bg-accent/20 p-3 rounded-md flex justify-between items-center">
-          <div>
-            <h3 className="font-medium">Bulk Scheduling Mode</h3>
-            <p className="text-sm text-muted-foreground">Select multiple days to apply the same schedule</p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsSelectingMultiple(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={applyBulkSchedule}
-              disabled={selectedDates.length === 0}
-            >
-              Apply to {selectedDates.length} day{selectedDates.length !== 1 ? "s" : ""}
-            </Button>
-          </div>
-        </div>
-      )}
+      <BulkSchedulingBar
+        isSelectingMultiple={isSelectingMultiple}
+        selectedDatesCount={selectedDates.length}
+        onCancel={cancelBulkScheduling}
+        onApply={applyBulkSchedule}
+      />
       
-      <div className="flex justify-between items-center mb-4">
-        <Button variant="ghost" onClick={goToPreviousMonth} size="sm">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-        </Button>
-        <h3 className="font-semibold">{format(currentDate, "MMMM yyyy")}</h3>
-        <Button variant="ghost" onClick={goToNextMonth} size="sm">
-          Next <ArrowRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-      
-      <div className="border rounded-lg p-2">
-        <Calendar
-          mode="default"
-          month={currentDate}
-          onDayClick={handleDayClick}
-          components={{
-            Day: ({ day, ...props }: any) => (
-              <div
-                {...props}
-                className={`h-20 w-full border rounded-md p-1 ${
-                  Object.entries(getDayClass(day))
-                    .filter(([, value]) => value)
-                    .map(([className]) => className)
-                    .join(" ")
-                }`}
-                onClick={() => handleDayClick(day)}
-              >
-                {renderDayContent(day)}
-              </div>
-            ),
-          }}
-          className="w-full"
-        />
-      </div>
+      <WorkScheduleCalendar
+        currentDate={currentDate}
+        shiftsMap={shiftsMap}
+        isSelectingMultiple={isSelectingMultiple}
+        selectedDates={selectedDates}
+        onDayClick={handleDayClick}
+        onPreviousMonth={goToPreviousMonth}
+        onNextMonth={goToNextMonth}
+      />
       
       <div className="flex justify-end gap-2 mt-4">
         <Button
@@ -330,110 +244,18 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         </Button>
       </div>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {isSelectingMultiple
-                ? `Schedule for ${selectedDates.length} selected days`
-                : `Schedule for ${selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}`}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={currentShift?.startTime || ""}
-                  onChange={(e) =>
-                    setCurrentShift(prev =>
-                      prev ? { ...prev, startTime: e.target.value } : null
-                    )
-                  }
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={currentShift?.endTime || ""}
-                  onChange={(e) =>
-                    setCurrentShift(prev =>
-                      prev ? { ...prev, endTime: e.target.value } : null
-                    )
-                  }
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={currentShift?.notes || ""}
-                onChange={(e) =>
-                  setCurrentShift(prev =>
-                    prev ? { ...prev, notes: e.target.value } : null
-                  )
-                }
-                placeholder="Add any special instructions or notes"
-              />
-            </div>
-            
-            {!isSelectingMultiple && (
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="recurring"
-                  checked={currentShift?.isRecurring || false}
-                  onCheckedChange={(checked) =>
-                    setCurrentShift(prev =>
-                      prev ? { ...prev, isRecurring: checked } : null
-                    )
-                  }
-                />
-                <Label htmlFor="recurring">Recurring weekly</Label>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter className="flex justify-between sm:justify-between">
-            <div>
-              {!isSelectingMultiple && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={applyToMultipleDates}
-                >
-                  Apply to Multiple Days
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              {!isSelectingMultiple && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={deleteShift}
-                >
-                  Delete
-                </Button>
-              )}
-              <Button
-                type="button"
-                onClick={saveShift}
-              >
-                Save
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ShiftDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        currentShift={currentShift}
+        selectedDate={selectedDate}
+        isSelectingMultiple={isSelectingMultiple}
+        selectedDatesCount={selectedDates.length}
+        onSave={saveShift}
+        onDelete={deleteShift}
+        onApplyToMultiple={applyToMultipleDates}
+        onShiftChange={updateShiftField}
+      />
     </div>
   );
 };
