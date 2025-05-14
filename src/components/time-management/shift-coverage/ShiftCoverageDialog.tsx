@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import {
   Popover,
   PopoverContent,
@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useShiftCoverage } from "./useShiftCoverage";
-import { Form, FormField, FormItem, FormControl } from "@/components/ui/form";
 
 interface ShiftCoverageDialogProps {
   open: boolean;
@@ -51,9 +50,9 @@ export function ShiftCoverageDialog({
 
   // Local state for the form fields
   const [message, setMessage] = useState("");
-  const [date, setDate] = useState<Date | undefined>();
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
   
   // Filter out the current user from the employee list
   const filteredEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
@@ -64,11 +63,13 @@ export function ShiftCoverageDialog({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date) return;
+    if (!date || !isValid(date)) return;
 
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    
     onSubmit({
       covering_employee_id: form.getValues("covering_employee_id"),
-      shift_date: date.toISOString().split('T')[0],
+      shift_date: formattedDate,
       shift_start: startTime,
       shift_end: endTime
     });
@@ -128,7 +129,7 @@ export function ShiftCoverageDialog({
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      {date && isValid(date) ? format(date, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -137,6 +138,7 @@ export function ShiftCoverageDialog({
                       selected={date}
                       onSelect={setDate}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

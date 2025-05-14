@@ -46,9 +46,9 @@ export const NewShiftCoverageRequestForm: React.FC<NewShiftCoverageRequestFormPr
     resolver: zodResolver(formSchema),
     defaultValues: {
       message: `Hi, would you be able to cover my shift?`,
-      shiftDate: "",
-      shiftStart: "",
-      shiftEnd: "",
+      shiftDate: new Date().toISOString().split('T')[0], // Default to today's date in YYYY-MM-DD format
+      shiftStart: "09:00",
+      shiftEnd: "17:00",
     },
   });
 

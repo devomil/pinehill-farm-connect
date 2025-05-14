@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { WorkShift } from "@/types/workSchedule";
@@ -25,34 +25,54 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   onDateSelected,
   onShiftClick
 }) => {
+  // Ensure current month is valid
+  const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
+  
   // Handle previous month click
   const handlePreviousMonth = () => {
-    const prevMonth = new Date(currentMonth);
+    const prevMonth = new Date(safeCurrentMonth);
     prevMonth.setMonth(prevMonth.getMonth() - 1);
     setCurrentMonth(prevMonth);
   };
   
   // Handle next month click
   const handleNextMonth = () => {
-    const nextMonth = new Date(currentMonth);
+    const nextMonth = new Date(safeCurrentMonth);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     setCurrentMonth(nextMonth);
   };
   
   // Handle day click
-  const handleDayClick = (day: Date) => {
-    setSelectedDate(day);
-    onDateSelected();
+  const handleDayClick = (day: Date | undefined) => {
+    if (day && isValid(day)) {
+      setSelectedDate(day);
+      onDateSelected();
+    }
+  };
+  
+  // Safe format function that checks validity
+  const safeFormat = (date: Date, formatString: string): string => {
+    try {
+      return isValid(date) ? format(date, formatString) : "";
+    } catch (e) {
+      console.error("Invalid date format:", e);
+      return "";
+    }
   };
   
   // Render day content function
   const renderDayContent = (day: Date) => {
-    const dateStr = format(day, "yyyy-MM-dd");
+    if (!isValid(day)) {
+      console.warn("Invalid date in renderDayContent");
+      return <div className="h-full w-full"></div>;
+    }
+    
+    const dateStr = safeFormat(day, "yyyy-MM-dd");
     const shifts = shiftsMap.get(dateStr) || [];
     
     return (
       <div className="h-full w-full">
-        <div className="text-right text-xs">{format(day, "d")}</div>
+        <div className="text-right text-xs">{safeFormat(day, "d")}</div>
         {shifts.length > 0 && (
           <div className="mt-1">
             {shifts.map((shift, index) => (
@@ -75,11 +95,13 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
 
   // Get classes for each day in the calendar
   const getDayClass = (day: Date) => {
-    const dateStr = format(day, "yyyy-MM-dd");
+    if (!isValid(day)) return {};
+    
+    const dateStr = safeFormat(day, "yyyy-MM-dd");
     const hasShifts = shiftsMap.has(dateStr);
     
     // Check if this date is selected
-    const isSelected = selectedDate && 
+    const isSelected = selectedDate && isValid(selectedDate) && 
       day.getDate() === selectedDate.getDate() && 
       day.getMonth() === selectedDate.getMonth() && 
       day.getFullYear() === selectedDate.getFullYear();
@@ -97,7 +119,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         <Button variant="ghost" onClick={handlePreviousMonth} size="sm">
           <ArrowLeft className="h-4 w-4 mr-1" /> Previous
         </Button>
-        <h3 className="font-semibold">{format(currentMonth, "MMMM yyyy")}</h3>
+        <h3 className="font-semibold">{safeFormat(safeCurrentMonth, "MMMM yyyy")}</h3>
         <Button variant="ghost" onClick={handleNextMonth} size="sm">
           Next <ArrowRight className="h-4 w-4 ml-1" />
         </Button>
@@ -106,23 +128,30 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       <div className="border rounded-lg p-2">
         <Calendar
           mode="default"
-          month={currentMonth}
+          month={safeCurrentMonth}
           onDayClick={handleDayClick}
           components={{
-            Day: ({ day, ...props }: any) => (
-              <div
-                {...props}
-                className={`h-20 w-full border rounded-md p-1 ${
-                  Object.entries(getDayClass(day))
-                    .filter(([, value]) => value)
-                    .map(([className]) => className)
-                    .join(" ")
-                }`}
-                onClick={() => handleDayClick(day)}
-              >
-                {renderDayContent(day)}
-              </div>
-            ),
+            Day: ({ day, ...props }: any) => {
+              if (!day || !isValid(day)) {
+                console.warn("Invalid day in Calendar component");
+                return null;
+              }
+              
+              return (
+                <div
+                  {...props}
+                  className={`h-20 w-full border rounded-md p-1 ${
+                    Object.entries(getDayClass(day))
+                      .filter(([, value]) => value)
+                      .map(([className]) => className)
+                      .join(" ")
+                  }`}
+                  onClick={() => handleDayClick(day)}
+                >
+                  {renderDayContent(day)}
+                </div>
+              );
+            },
           }}
           className="w-full"
         />
