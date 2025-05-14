@@ -1,6 +1,6 @@
 
-import { useState, useCallback } from "react";
-import { format } from "date-fns";
+import { useState, useCallback, useEffect } from "react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 
 export interface SelectedDayInfo {
   dateStr: string;
@@ -9,6 +9,21 @@ export interface SelectedDayInfo {
 
 export function useDaySelector(currentMonth: Date) {
   const [selectedDays, setSelectedDays] = useState<Map<string, boolean>>(new Map());
+  const [availableDays, setAvailableDays] = useState<Date[]>([]);
+  
+  // Update available days when the month changes
+  useEffect(() => {
+    if (!currentMonth) return;
+    
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    
+    const daysInMonth = eachDayOfInterval({ start, end });
+    setAvailableDays(daysInMonth);
+    
+    // Clear selections when month changes
+    setSelectedDays(new Map());
+  }, [currentMonth]);
 
   const toggleDay = useCallback((date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
@@ -41,6 +56,7 @@ export function useDaySelector(currentMonth: Date) {
     toggleDay,
     isDaySelected,
     clearSelectedDays,
-    getSelectedDaysArray
+    getSelectedDaysArray,
+    availableDays
   };
 }

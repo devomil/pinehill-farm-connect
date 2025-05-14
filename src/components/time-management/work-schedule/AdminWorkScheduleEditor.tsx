@@ -32,8 +32,14 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     toggleDay, 
     isDaySelected, 
     clearSelectedDays, 
-    getSelectedDaysArray 
+    getSelectedDaysArray,
+    availableDays
   } = useDaySelector(currentMonth);
+  
+  // Debug available days
+  useEffect(() => {
+    console.log("Available days in month:", availableDays.length);
+  }, [availableDays]);
   
   // If employee changes or schedule data changes, reset editing state
   useEffect(() => {

@@ -87,7 +87,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
           <div className="mt-1">
             {shifts.map((shift, index) => (
               <div 
-                key={shift.id}
+                key={`${shift.id}-${index}`}
                 className="bg-primary/10 text-xs p-1 rounded mt-1 cursor-pointer hover:bg-primary/20"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -141,13 +141,13 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       
       <div className="border rounded-lg p-2">
         <Calendar
-          mode="default"
+          mode={selectionMode === "single" ? "single" : "default"}
+          selected={selectionMode === "single" ? selectedDate : undefined}
           month={safeCurrentMonth}
           onDayClick={handleDayClick}
           components={{
             Day: ({ day, ...props }: any) => {
               if (!day || !isValid(day)) {
-                console.warn("Invalid day in Calendar component");
                 return null;
               }
               
@@ -168,6 +168,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
             },
           }}
           className="w-full"
+          showOutsideDays={true}
         />
       </div>
     </>
