@@ -42,3 +42,17 @@ export const getShiftsForDay = (
   const dateStr = safeFormat(day, "yyyy-MM-dd");
   return shiftsMap.get(dateStr) || [];
 };
+
+// Create calendar days for testing and debugging
+export const getDebugInfo = (
+  currentMonth: Date,
+  shiftsMap: Map<string, WorkShift[]>,
+  selectedDate?: Date,
+  isDaySelected?: (date: Date) => boolean
+) => {
+  console.log("Calendar Debug Info:");
+  console.log("Current month:", format(currentMonth, "MMMM yyyy"));
+  console.log("Selected date:", selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None");
+  console.log("Shifts count:", shiftsMap.size);
+  console.log("Selection mode:", isDaySelected ? "multiple" : "single");
+};

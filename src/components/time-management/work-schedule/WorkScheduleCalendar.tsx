@@ -1,11 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { isValid } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarDayCell } from "./CalendarDayCell";
-import { safeFormat, isDateSelected, getShiftsForDay } from "./calendarUtils";
+import { safeFormat, isDateSelected, getShiftsForDay, getDebugInfo } from "./calendarUtils";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -35,6 +35,12 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   // Ensure current month is valid
   const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
   
+  // Debug calendar data on mount and when key props change
+  useEffect(() => {
+    getDebugInfo(safeCurrentMonth, shiftsMap, selectedDate, isDaySelected);
+    console.log("WorkScheduleCalendar rendered with selectionMode:", selectionMode);
+  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode]);
+  
   // Handle previous month click
   const handlePreviousMonth = () => {
     const prevMonth = new Date(safeCurrentMonth);
@@ -54,10 +60,10 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     if (!day || !isValid(day)) return;
     
     if (selectionMode === "multiple" && onDayToggle) {
-      // Multiple selection mode - toggle day selection
+      console.log("Toggle day selection for:", safeFormat(day, "yyyy-MM-dd"));
       onDayToggle(day);
     } else {
-      // Single selection mode - select this day only
+      console.log("Set selected date to:", safeFormat(day, "yyyy-MM-dd"));
       setSelectedDate(day);
       onDateSelected();
     }
@@ -73,13 +79,17 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       
       <div className="border rounded-lg p-2">
         <Calendar
-          mode={selectionMode === "single" ? "single" : "default"}
+          mode="default" // Use "default" instead of "single" to ensure days are shown
           selected={selectionMode === "single" ? selectedDate : undefined}
           month={safeCurrentMonth}
           onDayClick={handleDayClick}
           components={{
             Day: ({ day, ...props }: any) => {
+              // Add debug log for day rendering
+              console.log("Rendering day:", day ? safeFormat(day, "yyyy-MM-dd") : "undefined day");
+              
               if (!day || !isValid(day)) {
+                console.warn("Invalid day in calendar:", day);
                 return null;
               }
               

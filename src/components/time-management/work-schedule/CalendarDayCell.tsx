@@ -53,6 +53,9 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     return classes.join(" ");
   };
 
+  // Log to debug
+  console.log("Rendering CalendarDayCell for:", safeFormat(day, "yyyy-MM-dd"));
+
   return (
     <div className={getClassNames()} onClick={onClick}>
       <div className="h-full w-full">

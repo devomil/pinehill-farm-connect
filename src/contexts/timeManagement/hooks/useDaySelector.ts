@@ -15,13 +15,20 @@ export function useDaySelector(currentMonth: Date) {
   const availableDays = useMemo(() => {
     if (!currentMonth) return [];
     
+    // Log month generation
+    console.log("Generating available days for month:", format(currentMonth, "MMMM yyyy"));
+    
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start, end });
+    const days = eachDayOfInterval({ start, end });
+    
+    console.log("Generated days count:", days.length);
+    return days;
   }, [currentMonth]);
   
   // Clear selections when month changes
   useEffect(() => {
+    console.log("Month changed, clearing selections");
     setSelectedDays(new Map());
   }, [currentMonth]);
 
@@ -50,16 +57,27 @@ export function useDaySelector(currentMonth: Date) {
 
   // Clear all selections
   const clearSelectedDays = useCallback(() => {
+    console.log("Clearing all selected days");
     setSelectedDays(new Map());
   }, []);
 
   // Get array of selected day strings
   const getSelectedDaysArray = useCallback((): string[] => {
-    return Array.from(selectedDays.keys());
+    const result = Array.from(selectedDays.keys());
+    console.log("Selected days array:", result);
+    return result;
   }, [selectedDays]);
   
   // Count selected days
   const selectedCount = useMemo(() => selectedDays.size, [selectedDays]);
+
+  // Log current selection state
+  useEffect(() => {
+    console.log("Selected days count:", selectedCount);
+    if (selectedCount > 0) {
+      console.log("Currently selected days:", Array.from(selectedDays.keys()));
+    }
+  }, [selectedDays, selectedCount]);
 
   return {
     selectedDays,
