@@ -79,7 +79,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       
       <div className="border rounded-lg p-2">
         <Calendar
-          mode="default" // Use "default" instead of "single" to ensure days are shown
+          mode="default"
           selected={selectionMode === "single" ? selectedDate : undefined}
           month={safeCurrentMonth}
           onDayClick={handleDayClick}
@@ -118,8 +118,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               );
             },
           }}
-          className="w-full"
-          showOutsideDays={true}
+          className="w-full pointer-events-auto"
         />
       </div>
     </>

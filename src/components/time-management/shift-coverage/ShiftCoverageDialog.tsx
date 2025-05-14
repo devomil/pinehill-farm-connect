@@ -59,7 +59,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto pointer-events-auto">
         <DialogHeader>
           <DialogTitle>Request Shift Coverage</DialogTitle>
         </DialogHeader>
@@ -79,7 +79,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border rounded-md px-3 py-2"
+                className="w-full border rounded-md px-3 py-2 pointer-events-auto"
               />
             </div>
             <div className="space-y-2">
@@ -91,7 +91,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full border rounded-md px-3 py-2"
+                className="w-full border rounded-md px-3 py-2 pointer-events-auto"
               />
             </div>
           </div>

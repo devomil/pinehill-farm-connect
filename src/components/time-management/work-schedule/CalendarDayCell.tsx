@@ -34,7 +34,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
 
   // Generate CSS classes for the day cell
   const getClassNames = () => {
-    const classes = ["h-20 w-full border rounded-md p-1 cursor-pointer"];
+    const classes = ["h-20 w-full border rounded-md p-1 cursor-pointer pointer-events-auto"];
     
     if (hasShifts) {
       classes.push("bg-primary/5");
@@ -53,11 +53,18 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     return classes.join(" ");
   };
 
-  // Log to debug
-  console.log("Rendering CalendarDayCell for:", safeFormat(day, "yyyy-MM-dd"));
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick();
+  };
+
+  const handleShiftClick = (e: React.MouseEvent, shift: WorkShift) => {
+    e.stopPropagation();
+    onShiftClick(shift);
+  };
 
   return (
-    <div className={getClassNames()} onClick={onClick}>
+    <div className={getClassNames()} onClick={handleClick}>
       <div className="h-full w-full">
         <div className="text-right text-xs">{safeFormat(day, "d")}</div>
         
@@ -72,10 +79,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
               <div 
                 key={`${shift.id}-${index}`}
                 className="bg-primary/10 text-xs p-1 rounded mt-1 cursor-pointer hover:bg-primary/20"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShiftClick(shift);
-                }}
+                onClick={(e) => handleShiftClick(e, shift)}
               >
                 {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
               </div>
