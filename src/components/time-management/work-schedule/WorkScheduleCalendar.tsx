@@ -85,9 +85,6 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
           onDayClick={handleDayClick}
           components={{
             Day: ({ day, ...props }: any) => {
-              // Add debug log for day rendering
-              console.log("Rendering day:", day ? safeFormat(day, "yyyy-MM-dd") : "undefined day");
-              
               if (!day || !isValid(day)) {
                 console.warn("Invalid day in calendar:", day);
                 return null;

@@ -1,91 +1,62 @@
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { format, isValid } from "date-fns";
 
-export interface SelectedDayInfo {
-  dateStr: string;
-  selected: boolean;
-}
-
-export function useDaySelector(currentMonth: Date) {
-  // Map of date strings to selection status
-  const [selectedDays, setSelectedDays] = useState<Map<string, boolean>>(new Map());
+/**
+ * Hook for managing day selection in calendars
+ * Supports multiple day selection with tracking
+ */
+export const useDaySelector = (currentMonth: Date) => {
+  const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set());
   
-  // Generate available days for the current month
-  const availableDays = useMemo(() => {
-    if (!currentMonth) return [];
-    
-    // Log month generation
-    console.log("Generating available days for month:", format(currentMonth, "MMMM yyyy"));
-    
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    const days = eachDayOfInterval({ start, end });
-    
-    console.log("Generated days count:", days.length);
-    return days;
-  }, [currentMonth]);
-  
-  // Clear selections when month changes
+  // Reset selected days when month changes
   useEffect(() => {
-    console.log("Month changed, clearing selections");
-    setSelectedDays(new Map());
-  }, [currentMonth]);
-
-  // Toggle selection status of a day
-  const toggleDay = useCallback((date: Date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    
-    setSelectedDays(prev => {
-      const newMap = new Map(prev);
-      if (newMap.has(dateStr)) {
-        newMap.delete(dateStr);
-      } else {
-        newMap.set(dateStr, true);
-      }
-      return newMap;
-    });
-    
-    console.log(`Toggled day: ${dateStr}, now ${!selectedDays.has(dateStr) ? 'selected' : 'unselected'}`);
-  }, [selectedDays]);
-
+    setSelectedDays(new Set());
+  }, [currentMonth.getMonth(), currentMonth.getFullYear()]);
+  
   // Check if a day is selected
   const isDaySelected = useCallback((date: Date): boolean => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return selectedDays.has(dateStr);
-  }, [selectedDays]);
-
-  // Clear all selections
-  const clearSelectedDays = useCallback(() => {
-    console.log("Clearing all selected days");
-    setSelectedDays(new Map());
-  }, []);
-
-  // Get array of selected day strings
-  const getSelectedDaysArray = useCallback((): string[] => {
-    const result = Array.from(selectedDays.keys());
-    console.log("Selected days array:", result);
-    return result;
+    if (!isValid(date)) return false;
+    
+    const dateKey = format(date, "yyyy-MM-dd");
+    return selectedDays.has(dateKey);
   }, [selectedDays]);
   
-  // Count selected days
+  // Toggle selection state of a day
+  const toggleDay = useCallback((date: Date) => {
+    if (!isValid(date)) return;
+    
+    const dateKey = format(date, "yyyy-MM-dd");
+    
+    setSelectedDays(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateKey)) {
+        newSet.delete(dateKey);
+      } else {
+        newSet.add(dateKey);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  // Clear all selected days
+  const clearSelectedDays = useCallback(() => {
+    setSelectedDays(new Set());
+  }, []);
+  
+  // Get array of selected days
+  const getSelectedDaysArray = useCallback((): string[] => {
+    return Array.from(selectedDays);
+  }, [selectedDays]);
+  
+  // Count of selected days
   const selectedCount = useMemo(() => selectedDays.size, [selectedDays]);
-
-  // Log current selection state
-  useEffect(() => {
-    console.log("Selected days count:", selectedCount);
-    if (selectedCount > 0) {
-      console.log("Currently selected days:", Array.from(selectedDays.keys()));
-    }
-  }, [selectedDays, selectedCount]);
-
+  
   return {
-    selectedDays,
-    availableDays,
-    toggleDay,
     isDaySelected,
+    toggleDay,
     clearSelectedDays,
     getSelectedDaysArray,
     selectedCount
   };
-}
+};

@@ -55,7 +55,7 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] pointer-events-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Shift" : "Add Shift"} for {formattedDate}
@@ -117,7 +117,7 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
                     recurringPattern: e.target.value,
                   }));
                 }}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded pointer-events-auto"
               >
                 <option value="weekly">Weekly</option>
                 <option value="bi-weekly">Bi-weekly</option>
@@ -144,7 +144,7 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
               <Button
                 variant="destructive"
                 onClick={handleDelete}
-                className="mr-2"
+                className="mr-2 pointer-events-auto"
               >
                 Delete
               </Button>
@@ -154,11 +154,11 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
             <Button
               variant="outline"
               onClick={onClose}
-              className="mr-2"
+              className="mr-2 pointer-events-auto"
             >
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} className="pointer-events-auto">Save</Button>
           </div>
         </DialogFooter>
       </DialogContent>

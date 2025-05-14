@@ -62,7 +62,7 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-24"
+              className="w-24 pointer-events-auto"
             />
           </div>
           
@@ -73,7 +73,7 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-24"
+              className="w-24 pointer-events-auto"
             />
           </div>
           
@@ -81,12 +81,14 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
             <Button
               variant="outline"
               onClick={onCancel}
+              className="pointer-events-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSchedule}
               disabled={selectedDays.length === 0}
+              className="pointer-events-auto"
             >
               Apply to {selectedDays.length} Day{selectedDays.length !== 1 ? 's' : ''}
             </Button>

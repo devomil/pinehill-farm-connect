@@ -116,12 +116,13 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
               {getSelectedDaysArray().length} day(s) selected
             </p>
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={handleCancel}>
+              <Button variant="outline" onClick={handleCancel} className="pointer-events-auto">
                 Cancel
               </Button>
               <Button 
                 onClick={handleConfirm}
                 disabled={getSelectedDaysArray().length === 0}
+                className="pointer-events-auto"
               >
                 Request Coverage
               </Button>
