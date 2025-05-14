@@ -3,6 +3,8 @@ import React from "react";
 import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { TeamCalendarEventsList } from "./TeamCalendarEventsList";
 import { CalendarItem } from "./TeamCalendar.types";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface TeamCalendarSidebarProps {
   calendarHighlightDays: Date[];
@@ -10,6 +12,8 @@ interface TeamCalendarSidebarProps {
   selectedDate: Date | null;
   loading: boolean;
   onDateSelect: (date: Date | undefined) => void;
+  includeDeclinedRequests?: boolean;
+  setIncludeDeclinedRequests?: (value: boolean) => void;
 }
 
 export const TeamCalendarSidebar: React.FC<TeamCalendarSidebarProps> = ({
@@ -17,32 +21,46 @@ export const TeamCalendarSidebar: React.FC<TeamCalendarSidebarProps> = ({
   calendarItems,
   selectedDate,
   loading,
-  onDateSelect
+  onDateSelect,
+  includeDeclinedRequests = false,
+  setIncludeDeclinedRequests
 }) => (
-  <div className="flex flex-col md:flex-row md:space-x-8">
-    <div className="flex-1">
-      <DayCalendar
-        mode="multiple"
-        selected={calendarHighlightDays}
-        modifiersClassNames={{
-          selected: "bg-blue-400 text-white !opacity-100"
-        }}
-        className="border border-muted rounded-md"
-        showOutsideDays
-        onDayClick={onDateSelect}
-      />
-    </div>
-    <div className="flex-1 mt-6 md:mt-0">
-      {loading ? (
-        <div className="text-center py-8">Loading...</div>
-      ) : (
-        <TeamCalendarEventsList
-          calendarItems={calendarItems}
-          selectedDate={selectedDate}
-          loading={loading}
+  <div className="flex flex-col space-y-4">
+    {setIncludeDeclinedRequests && (
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-declined"
+          checked={includeDeclinedRequests}
+          onCheckedChange={setIncludeDeclinedRequests}
         />
-      )}
+        <Label htmlFor="show-declined">Show declined requests</Label>
+      </div>
+    )}
+    
+    <div className="flex flex-col md:flex-row md:space-x-8">
+      <div className="flex-1">
+        <DayCalendar
+          mode="multiple"
+          selected={calendarHighlightDays}
+          modifiersClassNames={{
+            selected: "bg-blue-400 text-white !opacity-100"
+          }}
+          className="border border-muted rounded-md"
+          showOutsideDays
+          onDayClick={onDateSelect}
+        />
+      </div>
+      <div className="flex-1 mt-6 md:mt-0">
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <TeamCalendarEventsList
+            calendarItems={calendarItems}
+            selectedDate={selectedDate}
+            loading={loading}
+          />
+        )}
+      </div>
     </div>
   </div>
 );
-

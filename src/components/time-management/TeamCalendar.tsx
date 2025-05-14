@@ -14,7 +14,9 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
     calendarItems,
     loading,
     calendarHighlightDays,
-    fetchData
+    fetchData,
+    includeDeclinedRequests,
+    setIncludeDeclinedRequests
   } = useTeamCalendarData(currentUser);
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -38,6 +40,8 @@ export const TeamCalendar: React.FC<TeamCalendarProps> = ({ currentUser }) => {
           selectedDate={selectedDate}
           loading={loading}
           onDateSelect={handleDateSelect}
+          includeDeclinedRequests={includeDeclinedRequests}
+          setIncludeDeclinedRequests={setIncludeDeclinedRequests}
         />
       </CardContent>
     </Card>

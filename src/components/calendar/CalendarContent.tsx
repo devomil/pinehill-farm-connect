@@ -1,4 +1,5 @@
 
+import React, { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WorkShift } from "@/types/workSchedule";
 import { TimeOffRequest } from "@/types/timeManagement";
 import { DayProps } from "react-day-picker";
+import { useRequestFiltering } from "@/hooks/timeManagement/useRequestFiltering";
 
 interface CalendarContentProps {
   date: Date;
@@ -48,8 +50,17 @@ export function CalendarContent({
   viewAllUrl,
 }: CalendarContentProps) {
   const { timeOffRequests } = useTimeManagement();
+  const { filterTimeOffRequests } = useRequestFiltering();
+  
   const [shifts, setShifts] = useState<WorkShift[]>([]);
   const [shiftCoverage, setShiftCoverage] = useState<any[]>([]);
+  const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
+  
+  // Filter time off requests to exclude declined unless specifically requested
+  const filteredTimeOffRequests = useMemo(() => {
+    return filterTimeOffRequests(timeOffRequests, includeDeclinedRequests);
+  }, [timeOffRequests, includeDeclinedRequests, filterTimeOffRequests]);
+
   const [calendarEvents, setCalendarEvents] = useState<Map<string, {
     timeOff: TimeOffRequest[],
     shifts: WorkShift[],
@@ -73,15 +84,18 @@ export function CalendarContent({
         } else if (data) {
           // Process the data differently since we're not using work_schedules table
           // This is a temporary approach until we have proper work schedules table
-          const formattedShifts: WorkShift[] = data.map(item => ({
-            id: item.id,
-            employeeId: item.original_employee_id,
-            date: item.shift_date,
-            startTime: item.shift_start,
-            endTime: item.shift_end,
-            isRecurring: false,
-            notes: `Shift coverage: ${item.status}`
-          }));
+          const formattedShifts: WorkShift[] = data
+            // Filter out declined shifts if we're not including declined requests
+            .filter(item => includeDeclinedRequests || item.status !== 'declined')
+            .map(item => ({
+              id: item.id,
+              employeeId: item.original_employee_id,
+              date: item.shift_date,
+              startTime: item.shift_start,
+              endTime: item.shift_end,
+              isRecurring: false,
+              notes: `Shift coverage: ${item.status}`
+            }));
           setShifts(formattedShifts);
         }
       } catch (error) {
@@ -94,7 +108,9 @@ export function CalendarContent({
         const { data, error } = await supabase
           .from('shift_coverage_requests')
           .select('*')
-          .or(`original_employee_id.eq.${currentUser.id},covering_employee_id.eq.${currentUser.id}`);
+          .or(`original_employee_id.eq.${currentUser.id},covering_employee_id.eq.${currentUser.id}`)
+          // Filter out declined shifts if we're not including declined requests
+          .not('status', 'eq', includeDeclinedRequests ? '' : 'declined');
           
         if (error) {
           console.error('Error fetching shift coverage:', error);
@@ -108,7 +124,7 @@ export function CalendarContent({
 
     fetchWorkSchedules();
     fetchShiftCoverage();
-  }, [currentUser.id, currentMonth]);
+  }, [currentUser.id, currentMonth, includeDeclinedRequests]);
 
   // Process all events for the calendar
   useEffect(() => {
@@ -118,9 +134,9 @@ export function CalendarContent({
       shiftCoverage: any[]
     }>();
     
-    // Add time off requests
-    if (timeOffRequests) {
-      timeOffRequests.forEach(request => {
+    // Add time off requests that aren't declined (or include all if flag is set)
+    if (filteredTimeOffRequests && filteredTimeOffRequests.length > 0) {
+      filteredTimeOffRequests.forEach(request => {
         const startDate = new Date(request.start_date);
         const endDate = new Date(request.end_date);
         let currentDate = new Date(startDate);
@@ -131,7 +147,10 @@ export function CalendarContent({
           currentEvents.timeOff.push(request);
           eventsMap.set(dateKey, currentEvents);
           
-          currentDate.setDate(currentDate.getDate() + 1);
+          // Move to next day
+          const nextDate = new Date(currentDate);
+          nextDate.setDate(nextDate.getDate() + 1);
+          currentDate = nextDate;
         }
       });
     }
@@ -153,7 +172,7 @@ export function CalendarContent({
     });
     
     setCalendarEvents(eventsMap);
-  }, [timeOffRequests, shifts, shiftCoverage]);
+  }, [filteredTimeOffRequests, shifts, shiftCoverage]);
 
   const handleButtonClick = (e: React.MouseEvent) => {
     // Stop propagation to prevent parent click handlers from firing
@@ -193,11 +212,25 @@ export function CalendarContent({
             View team schedules and time-off
           </CardDescription>
         </div>
-        <CalendarNavigation
-          currentMonth={currentMonth}
-          onPreviousMonth={onPreviousMonth}
-          onNextMonth={onNextMonth}
-        />
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
+            <input
+              type="checkbox"
+              id="showDeclinedRequests"
+              checked={includeDeclinedRequests}
+              onChange={(e) => setIncludeDeclinedRequests(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="showDeclinedRequests" className="text-sm text-muted-foreground">
+              Show Declined
+            </label>
+          </div>
+          <CalendarNavigation
+            currentMonth={currentMonth}
+            onPreviousMonth={onPreviousMonth}
+            onNextMonth={onNextMonth}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as "month" | "team")}>
@@ -218,8 +251,8 @@ export function CalendarContent({
                   // Create a proper div with HTML attributes from props
                   return (
                     <div className="relative h-full">
-                      {/* This spreads the HTML attributes properly to the div */}
-                      <div {...props as React.HTMLAttributes<HTMLDivElement>} />
+                      {/* Spread HTML attributes to the div */}
+                      <div {...props} />
                       {dayDate && renderDay(dayDate)}
                     </div>
                   );

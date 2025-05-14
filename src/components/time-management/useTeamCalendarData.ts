@@ -1,14 +1,22 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { User } from "@/types";
 import { CompanyEvent } from "./TeamCalendar.types";
 import { CalendarItem } from "./TeamCalendar.types";
+import { useRequestFiltering } from "@/hooks/timeManagement/useRequestFiltering";
+import { useTimeManagement } from "@/contexts/timeManagement";
 
 export function useTeamCalendarData(currentUser: User) {
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
+  const { timeOffRequests } = useTimeManagement();
+  const { filterTimeOffRequests } = useRequestFiltering();
+  
+  // Filter time off requests to exclude declined unless specifically requested
+  const filteredTimeOffRequests = filterTimeOffRequests(timeOffRequests, includeDeclinedRequests);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -67,17 +75,33 @@ export function useTeamCalendarData(currentUser: User) {
     attendanceType: e.attendance_type,
   }));
   
-  const calendarItems = eventItems;
+  // Add time off items if available through the context
+  const timeOffItems: CalendarItem[] = filteredTimeOffRequests?.map((request) => ({
+    id: request.id,
+    type: "event",
+    label: `Time Off: ${request.status}`,
+    startDate: new Date(request.start_date),
+    endDate: new Date(request.end_date),
+    attendanceType: "info-only"
+  })) || [];
+  
+  const calendarItems = [...eventItems, ...timeOffItems];
 
   // Map days to events for quick lookup
   const dayItemMap: Record<string, CalendarItem[]> = {};
   for (const item of calendarItems) {
     let day = new Date(item.startDate);
-    while (day <= item.endDate) {
+    const endDate = new Date(item.endDate);
+    
+    while (day <= endDate) {
       const key = day.toISOString().split("T")[0];
       if (!dayItemMap[key]) dayItemMap[key] = [];
       dayItemMap[key].push(item);
-      day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+      
+      // Move to next day
+      const nextDate = new Date(day);
+      nextDate.setDate(nextDate.getDate() + 1);
+      day = nextDate;
     }
   }
   
@@ -88,6 +112,8 @@ export function useTeamCalendarData(currentUser: User) {
     loading,
     dayItemMap,
     calendarHighlightDays,
-    fetchData
+    fetchData,
+    includeDeclinedRequests,
+    setIncludeDeclinedRequests
   };
 }

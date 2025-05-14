@@ -1,116 +1,125 @@
 
-import { useCallback } from 'react';
-import { WorkSchedule, WorkShift } from '@/types/workSchedule';
-import { format } from 'date-fns';
+import { useState, useCallback } from "react";
 
+/**
+ * Hook to manage schedule printing functionality
+ */
 export function usePrintSchedule() {
-  const printSchedule = useCallback((schedule: WorkSchedule | null) => {
-    if (!schedule || !schedule.shifts.length) {
-      return;
-    }
-
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
+  const [isPrinting, setIsPrinting] = useState<boolean>(false);
+  
+  /**
+   * Generate and print a user's schedule for a given period
+   */
+  const printSchedule = useCallback((data: any, period: string) => {
+    setIsPrinting(true);
     
-    if (!printWindow) {
-      console.error('Failed to open print window. Pop-ups might be blocked.');
-      return;
-    }
-
-    // Group shifts by date
-    const shiftsByDate = schedule.shifts.reduce((acc: Record<string, WorkShift[]>, shift) => {
-      if (!acc[shift.date]) {
-        acc[shift.date] = [];
+    try {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        console.error('Unable to open print window');
+        return;
       }
-      acc[shift.date].push(shift);
-      return acc;
-    }, {});
-
-    // Sort dates
-    const sortedDates = Object.keys(shiftsByDate).sort();
-
-    // Build HTML content
-    let content = `
+      
+      // Generate print content
+      const title = `Schedule for ${period}`;
+      const content = generatePrintContent(data, title);
+      
+      // Write content to window and print
+      printWindow.document.open();
+      printWindow.document.write(content);
+      printWindow.document.close();
+      
+      // Wait for content to load before printing
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+        setIsPrinting(false);
+      }, 500);
+    } catch (error) {
+      console.error('Error printing schedule:', error);
+      setIsPrinting(false);
+    }
+  }, []);
+  
+  /**
+   * Generate HTML content for printing
+   */
+  const generatePrintContent = (data: any, title: string) => {
+    return `
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Work Schedule - ${schedule.month}</title>
+          <title>${title}</title>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 30px;
-              line-height: 1.5;
-            }
-            h1 {
-              color: #333;
-              border-bottom: 2px solid #333;
-              padding-bottom: 10px;
-            }
-            .date-header {
-              margin-top: 20px;
-              font-weight: bold;
-              background-color: #f0f0f0;
-              padding: 5px;
-            }
-            .shift-item {
-              margin: 10px 0;
-              padding: 10px;
-              border-left: 4px solid #4f46e5;
-              background-color: #f9fafb;
-            }
-            .no-print {
-              margin-top: 30px;
-            }
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .no-events { text-align: center; margin: 40px 0; color: #666; }
             @media print {
-              .no-print {
-                display: none;
-              }
-              button {
-                display: none;
-              }
+              .no-print { display: none; }
             }
           </style>
         </head>
         <body>
-          <h1>Work Schedule - ${format(new Date(schedule.month), 'MMMM yyyy')}</h1>
-    `;
-
-    // Add shifts grouped by date
-    sortedDates.forEach(dateStr => {
-      const formattedDate = format(new Date(dateStr), 'EEEE, MMMM do, yyyy');
-      content += `<div class="date-header">${formattedDate}</div>`;
-      
-      shiftsByDate[dateStr].forEach(shift => {
-        content += `
-          <div class="shift-item">
-            <div><strong>Time:</strong> ${shift.startTime} - ${shift.endTime}</div>
-            ${shift.notes ? `<div><strong>Notes:</strong> ${shift.notes}</div>` : ''}
-          </div>
-        `;
-      });
-    });
-
-    // Add print button and close
-    content += `
-          <div class="no-print">
-            <button onclick="window.print()">Print Schedule</button>
+          <h1>${title}</h1>
+          ${renderScheduleContent(data)}
+          <div class="no-print" style="margin-top: 30px; text-align: center;">
+            <button onclick="window.print()">Print</button>
             <button onclick="window.close()">Close</button>
           </div>
         </body>
       </html>
     `;
-
-    // Write to print window and trigger print
-    printWindow.document.open();
-    printWindow.document.write(content);
-    printWindow.document.close();
+  };
+  
+  /**
+   * Render schedule content for printing
+   */
+  const renderScheduleContent = (data: any) => {
+    if (!data || data.length === 0) {
+      return `<div class="no-events">No events scheduled for this period</div>`;
+    }
     
-    // Give the browser a moment to render before printing
-    setTimeout(() => {
-      printWindow.focus();
-      // Uncomment to automatically trigger print dialog
-      // printWindow.print();
-    }, 300);
-  }, []);
-
-  return { printSchedule };
+    // Implement schedule rendering logic here
+    return `
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map((item: any) => `
+            <tr>
+              <td>${formatDate(item.date)}</td>
+              <td>${item.type}</td>
+              <td>${item.details}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  };
+  
+  /**
+   * Format date for printing
+   */
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
+  
+  return {
+    isPrinting,
+    printSchedule
+  };
 }
