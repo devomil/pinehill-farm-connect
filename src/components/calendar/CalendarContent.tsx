@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -246,16 +245,12 @@ export function CalendarContent({
               month={currentMonth}
               className="rounded-md border"
               components={{
-                Day: ({ date: dayDate, ...props }) => {
-                  // Create a proper div with HTML attributes from props
-                  return (
-                    <div className="relative h-full">
-                      {/* Spread HTML attributes to the div */}
-                      <div {...props} />
-                      {dayDate && renderDay(dayDate)}
-                    </div>
-                  );
-                }
+                Day: ({ date: dayDate, ...props }) => (
+                  <div className="relative h-full">
+                    <div {...props} />
+                    {dayDate && renderDay(dayDate)}
+                  </div>
+                )
               }}
             />
           </TabsContent>

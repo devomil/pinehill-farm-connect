@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { WorkSchedule } from "@/types/workSchedule";
@@ -57,7 +56,9 @@ export const EmployeeScheduleCard: React.FC<EmployeeScheduleCardProps> = ({
   }, [schedule]);
 
   const handlePrint = () => {
-    printSchedule(schedule);
+    if (schedule) {
+      printSchedule(schedule, {});  // Add an empty object as second argument
+    }
   };
   
   const WrapperComponent = clickable && viewAllUrl ? Link : React.Fragment;

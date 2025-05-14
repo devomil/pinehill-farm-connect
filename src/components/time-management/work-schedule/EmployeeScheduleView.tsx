@@ -54,7 +54,9 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({
   };
 
   const handlePrint = () => {
-    printSchedule(scheduleData);
+    if (scheduleData) {
+      printSchedule(scheduleData, {});  // Add an empty object as second argument
+    }
   };
   
   if (loading) {
