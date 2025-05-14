@@ -36,18 +36,15 @@ export default function TimeManagement() {
   return (
     <DashboardLayout>
       <TimeManagementProvider currentUser={currentUser}>
-        <TimeManagementInnerContent currentUser={currentUser} />
+        <TimeManagementContent />
       </TimeManagementProvider>
     </DashboardLayout>
   );
 }
 
 // Separate inner content component that uses the context after it's provided
-interface TimeManagementInnerContentProps {
-  currentUser: User;
-}
-
-const TimeManagementInnerContent: React.FC<TimeManagementInnerContentProps> = ({ currentUser }) => {
+const TimeManagementContent: React.FC = () => {
+  const { currentUser } = useAuth();
   const { error, messagesError, handleRetry, forceRefreshData, allEmployees } = useTimeManagement();
   const initialLoadDone = useRef(false);
   const refreshTimeoutRef = useRef<number | null>(null);
