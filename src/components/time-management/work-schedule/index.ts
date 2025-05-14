@@ -7,6 +7,7 @@ export * from "./EmployeeShiftDetailsDialog";
 export * from "./WorkScheduleCalendar";
 export * from "./ShiftDialog";
 export * from "./BulkSchedulingBar";
+export * from "./SpecificDaysSchedulingBar";
 export * from "./WorkScheduleHeader";
 export * from "./WorkScheduleError";
 export * from "./EmployeeSelector";

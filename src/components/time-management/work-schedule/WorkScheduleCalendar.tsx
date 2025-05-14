@@ -14,6 +14,9 @@ interface WorkScheduleCalendarProps {
   setSelectedDate: (date: Date | undefined) => void;
   onDateSelected: () => void;
   onShiftClick: (shift: WorkShift) => void;
+  selectionMode?: "single" | "multiple";
+  isDaySelected?: (date: Date) => boolean;
+  onDayToggle?: (date: Date) => void;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -23,7 +26,10 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   selectedDate,
   setSelectedDate,
   onDateSelected,
-  onShiftClick
+  onShiftClick,
+  selectionMode = "single",
+  isDaySelected,
+  onDayToggle
 }) => {
   // Ensure current month is valid
   const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
@@ -44,7 +50,11 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   
   // Handle day click
   const handleDayClick = (day: Date | undefined) => {
-    if (day && isValid(day)) {
+    if (!day || !isValid(day)) return;
+    
+    if (selectionMode === "multiple" && onDayToggle) {
+      onDayToggle(day);
+    } else {
       setSelectedDate(day);
       onDateSelected();
     }
@@ -100,15 +110,19 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     const dateStr = safeFormat(day, "yyyy-MM-dd");
     const hasShifts = shiftsMap.has(dateStr);
     
-    // Check if this date is selected
-    const isSelected = selectedDate && isValid(selectedDate) && 
+    // Check if this date is selected in single mode
+    const isSingleSelected = selectionMode === "single" && selectedDate && isValid(selectedDate) && 
       day.getDate() === selectedDate.getDate() && 
       day.getMonth() === selectedDate.getMonth() && 
       day.getFullYear() === selectedDate.getFullYear();
     
+    // Check if this date is selected in multiple mode
+    const isMultiSelected = selectionMode === "multiple" && isDaySelected && isDaySelected(day);
+    
     return {
       "bg-primary/5": hasShifts,
-      "ring-2 ring-primary": isSelected,
+      "ring-2 ring-primary": isSingleSelected,
+      "bg-primary/20": isMultiSelected && !isSingleSelected,
       "cursor-pointer hover:bg-accent": true
     };
   };

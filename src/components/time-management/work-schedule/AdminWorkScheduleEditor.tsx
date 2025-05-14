@@ -6,7 +6,9 @@ import { CardDescription } from "@/components/ui/card";
 import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 import { ShiftDialog } from "./ShiftDialog";
 import { BulkSchedulingBar } from "./BulkSchedulingBar";
+import { SpecificDaysSchedulingBar } from "./SpecificDaysSchedulingBar";
 import { createNewShift, buildShiftsMap } from "./scheduleHelpers";
+import { useDaySelector } from "@/contexts/timeManagement/hooks/useDaySelector";
 import { uuid } from "@/utils/uuid";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +25,15 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   const [editingShift, setEditingShift] = useState<WorkShift | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [bulkMode, setBulkMode] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState<"single" | "multiple">("single");
+  
+  // Use the day selector hook
+  const { 
+    toggleDay, 
+    isDaySelected, 
+    clearSelectedDays, 
+    getSelectedDaysArray 
+  } = useDaySelector(currentMonth);
   
   // If employee changes or schedule data changes, reset editing state
   useEffect(() => {
@@ -30,7 +41,10 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     setEditingShift(null);
     setIsEditMode(false);
     setIsDialogOpen(false);
-  }, [selectedEmployee, scheduleData?.id]);
+    setBulkMode(null);
+    setSelectionMode("single");
+    clearSelectedDays();
+  }, [selectedEmployee, scheduleData?.id, clearSelectedDays]);
   
   // Create map of dates to shifts
   const shiftsMap = useMemo(() => {
@@ -122,6 +136,18 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     
     onSave(updatedSchedule);
     setBulkMode(null);
+    setSelectionMode("single");
+    clearSelectedDays();
+  };
+  
+  // Toggle selection mode for specific days
+  const toggleSelectionMode = () => {
+    if (selectionMode === "single") {
+      setSelectionMode("multiple");
+    } else {
+      setSelectionMode("single");
+      clearSelectedDays();
+    }
   };
   
   if (!selectedEmployee) {
@@ -143,7 +169,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
           variant="outline"
           size="sm"
           onClick={() => setBulkMode("weekdays")}
-          disabled={loading}
+          disabled={loading || selectionMode === "multiple"}
         >
           Add Weekday Shifts
         </Button>
@@ -151,9 +177,17 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
           variant="outline"
           size="sm"
           onClick={() => setBulkMode("weekend")}
-          disabled={loading}
+          disabled={loading || selectionMode === "multiple"}
         >
           Add Weekend Shifts
+        </Button>
+        <Button
+          variant={selectionMode === "multiple" ? "default" : "outline"}
+          size="sm"
+          onClick={toggleSelectionMode}
+          disabled={loading || bulkMode !== null}
+        >
+          {selectionMode === "multiple" ? "Done Selecting Days" : "Select Specific Days"}
         </Button>
         <Button
           variant="outline" 
@@ -174,6 +208,18 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         />
       )}
       
+      {selectionMode === "multiple" && getSelectedDaysArray().length > 0 && (
+        <SpecificDaysSchedulingBar
+          selectedDays={getSelectedDaysArray()}
+          currentMonth={currentMonth}
+          onSchedule={handleBulkSchedule}
+          onCancel={() => {
+            setSelectionMode("single");
+            clearSelectedDays();
+          }}
+        />
+      )}
+      
       <WorkScheduleCalendar
         currentMonth={currentMonth}
         setCurrentMonth={setCurrentMonth}
@@ -182,6 +228,9 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         setSelectedDate={setSelectedDate}
         onDateSelected={handleAddShift}
         onShiftClick={handleEditShift}
+        selectionMode={selectionMode}
+        isDaySelected={isDaySelected}
+        onDayToggle={toggleDay}
       />
       
       {isDialogOpen && editingShift && (
