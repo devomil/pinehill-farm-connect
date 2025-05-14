@@ -66,15 +66,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
         
       if (dbError) throw dbError;
       
-      // Map the fetched data to add readBy array and current user ID
-      const mappedAnnouncements = await Promise.all(
-        data.map(async (announcement) => await mapAnnouncementData(
-          announcement, 
-          currentUser?.id
-        ))
+      // Map each announcement individually and then create an array
+      const mappedAnnouncements: Announcement[] = data.map(announcement => 
+        mapAnnouncementData(announcement, currentUser?.id)
       );
       
-      // Fix: Ensure we're setting a flat array of announcements, not a nested array
       setAnnouncements(mappedAnnouncements);
       setHasLoaded(true);
       setError(null);

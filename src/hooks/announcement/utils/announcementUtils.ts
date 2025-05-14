@@ -1,29 +1,41 @@
 
 import { Announcement, User } from "@/types";
 
-export const mapAnnouncementData = (annData: any[], allEmployees: User[]): Announcement[] => {
-  if (!annData || !Array.isArray(annData)) {
+export const mapAnnouncementData = (annData: any, currentUserId?: string): Announcement => {
+  if (!annData) {
     console.warn("Invalid announcement data received:", annData);
-    return [];
+    return {
+      id: '',
+      title: "Untitled",
+      content: "",
+      createdAt: new Date(),
+      author: "Unknown",
+      priority: "fyi",
+      readBy: [],
+      hasQuiz: false,
+      requires_acknowledgment: false,
+      attachments: [],
+      target_type: "all",
+      acknowledgements: [],
+      currentUserId
+    };
   }
   
-  return annData.map((a: any) => {
-    const author = allEmployees.find(x => x.id === a.author_id);
-    return {
-      id: a.id,
-      title: a.title || "Untitled",
-      content: a.content || "",
-      createdAt: a.created_at ? new Date(a.created_at) : new Date(),
-      author: author?.name || "Unknown",
-      priority: a.priority || "fyi",
-      readBy: [],
-      hasQuiz: !!a.has_quiz,
-      requires_acknowledgment: a.requires_acknowledgment || false,
-      attachments: Array.isArray(a.attachments) ? a.attachments : [],
-      target_type: a.target_type || "all",
-      acknowledgements: [] // Initialize empty array for acknowledgements
-    };
-  });
+  return {
+    id: annData.id,
+    title: annData.title || "Untitled",
+    content: annData.content || "",
+    createdAt: annData.created_at ? new Date(annData.created_at) : new Date(),
+    author: annData.author_name || "Unknown",
+    priority: annData.priority || "fyi",
+    readBy: [],
+    hasQuiz: !!annData.has_quiz,
+    requires_acknowledgment: annData.requires_acknowledgment || false,
+    attachments: Array.isArray(annData.attachments) ? annData.attachments : [],
+    target_type: annData.target_type || "all",
+    acknowledgements: [], // Initialize empty array for acknowledgements
+    currentUserId // Add currentUserId to announcement for easy access
+  };
 };
 
 export const updateAnnouncementReadStatus = (
