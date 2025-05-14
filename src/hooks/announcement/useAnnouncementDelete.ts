@@ -1,10 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useAnnouncementDelete = () => {
-  const { toast } = useToast();
-
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -14,18 +12,11 @@ export const useAnnouncementDelete = () => {
       
       if (error) throw error;
       
-      toast({
-        title: "Announcement deleted",
-        description: "The announcement has been successfully deleted",
-      });
+      toast.success("Announcement deleted", "The announcement has been successfully deleted");
       return true;
     } catch (err: any) {
       console.error('Error deleting announcement:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete the announcement",
-        variant: "destructive"
-      });
+      toast.error("Error", "Failed to delete the announcement");
       return false;
     }
   };

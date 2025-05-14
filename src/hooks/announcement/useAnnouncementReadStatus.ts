@@ -1,20 +1,15 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useAnnouncementReadStatus = (userId: string | undefined) => {
-  const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
 
   const markAsRead = async (announcementId: string) => {
     if (!userId) {
       console.error("Cannot mark as read: No user ID provided");
-      toast({
-        title: "Error",
-        description: "Cannot mark as read: User not authenticated",
-        variant: "destructive"
-      });
+      toast.error("Error", "Cannot mark as read: User not authenticated");
       return Promise.reject("No user ID provided");
     }
 
@@ -68,11 +63,7 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       
       if (error) {
         console.error("Error marking announcement as read:", error);
-        toast({
-          title: "Error",
-          description: "Failed to mark announcement as read",
-          variant: "destructive"
-        });
+        toast.error("Error", "Failed to mark announcement as read");
         return Promise.reject(error);
       }
       
@@ -80,11 +71,7 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       return Promise.resolve();
     } catch (error) {
       console.error("Unexpected error in markAsRead:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+      toast.error("Error", "An unexpected error occurred");
       return Promise.reject(error);
     } finally {
       setProcessing(false);

@@ -1,11 +1,9 @@
 
 import { Announcement } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useAnnouncementEdit = () => {
-  const { toast } = useToast();
-
   const handleEdit = async (announcement: Announcement) => {
     try {
       const { error } = await supabase
@@ -23,18 +21,11 @@ export const useAnnouncementEdit = () => {
       
       if (error) throw error;
       
-      toast({
-        title: "Success",
-        description: "Announcement updated successfully",
-      });
+      toast.success("Success", "Announcement updated successfully");
       return true;
     } catch (err: any) {
       console.error('Error updating announcement:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update the announcement",
-        variant: "destructive"
-      });
+      toast.error("Error", "Failed to update the announcement");
       return false;
     }
   };
