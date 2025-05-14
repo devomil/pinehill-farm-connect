@@ -11,18 +11,18 @@ export function CalendarViewSelector({ viewMode, onViewModeChange }: CalendarVie
   return (
     <div className="flex justify-between items-center mb-4">
       <TabsList>
-        <TabsTrigger value="month">Month</TabsTrigger>
-        <TabsTrigger value="team">Event View</TabsTrigger>
+        <TabsTrigger value="month">Schedule View</TabsTrigger>
+        <TabsTrigger value="team">Company Events</TabsTrigger>
       </TabsList>
       <Select defaultValue="all">
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filter by type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Events</SelectItem>
+          <SelectItem value="all">All Items</SelectItem>
+          <SelectItem value="shifts">Work Shifts</SelectItem>
           <SelectItem value="time-off">Time Off</SelectItem>
-          <SelectItem value="training">Training</SelectItem>
-          <SelectItem value="meeting">Meetings</SelectItem>
+          <SelectItem value="coverage">Shift Coverage</SelectItem>
         </SelectContent>
       </Select>
     </div>

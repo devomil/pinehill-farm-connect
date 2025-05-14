@@ -3,43 +3,24 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { User } from "@/types";
-import { TimeOffRequest } from "@/types/timeManagement";
-import { CalendarItem, CompanyEvent } from "./TeamCalendar.types";
+import { CompanyEvent } from "./TeamCalendar.types";
+import { CalendarItem } from "./TeamCalendar.types";
 
 export function useTeamCalendarData(currentUser: User) {
-  const [requests, setRequests] = useState<TimeOffRequest[]>([]);
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      let requestQuery = supabase
-        .from("time_off_requests")
-        .select("*");
-      if (currentUser.role !== "admin" && currentUser.role !== "manager") {
-        requestQuery = requestQuery.eq("status", "approved");
-      }
-      const { data: requestData, error: requestError } = await requestQuery;
-      if (requestError) {
-        toast.error("Failed to load time off requests");
-      } else if (requestData) {
-        setRequests(
-          requestData.map((r: any) => ({
-            ...r,
-            // Add the camelCase versions for compatibility
-            startDate: new Date(r.start_date),
-            endDate: new Date(r.end_date),
-            userId: r.user_id
-          }))
-        );
-      }
-
+      // Only fetch company events - no longer fetching time_off_requests
       const { data: eventData, error: eventError } = await supabase
         .from("company_events")
         .select("*");
+
       if (eventError) {
         toast.error("Failed to load company events");
+        console.error("Error fetching company events:", eventError);
       } else if (eventData) {
         setEvents(
           eventData.map((e: any) => ({
@@ -54,8 +35,9 @@ export function useTeamCalendarData(currentUser: User) {
           }))
         );
       }
-    } catch {
+    } catch (error) {
       toast.error("Error fetching calendar data");
+      console.error("Error in useTeamCalendarData:", error);
     } finally {
       setLoading(false);
     }
@@ -63,23 +45,18 @@ export function useTeamCalendarData(currentUser: User) {
 
   useEffect(() => {
     fetchData();
+    // Set up realtime subscription for company_events table only
     const channel = supabase
       .channel('calendar-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'time_off_requests' }, fetchData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'company_events' }, fetchData)
       .subscribe();
-    return () => { supabase.removeChannel(channel); }
+    
+    return () => { 
+      supabase.removeChannel(channel); 
+    }
   }, [currentUser, fetchData]);
 
-  // Convert requests & events for listing/calendar highlight
-  const timeoffItems: CalendarItem[] = requests.map((r) => ({
-    id: r.id,
-    type: "timeoff",
-    label: `Time off (${r.status})${r.reason ? ": " + r.reason : ""}`,
-    startDate: r.startDate || new Date(r.start_date),
-    endDate: r.endDate || new Date(r.end_date),
-    status: r.status,
-  }));
+  // Convert events for listing/calendar highlight
   const eventItems: CalendarItem[] = events.map((e) => ({
     id: e.id,
     type: "event",
@@ -89,7 +66,8 @@ export function useTeamCalendarData(currentUser: User) {
     attachments: e.attachments,
     attendanceType: e.attendance_type,
   }));
-  const calendarItems = [...timeoffItems, ...eventItems];
+  
+  const calendarItems = eventItems;
 
   // Map days to events for quick lookup
   const dayItemMap: Record<string, CalendarItem[]> = {};
@@ -102,6 +80,7 @@ export function useTeamCalendarData(currentUser: User) {
       day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
     }
   }
+  
   const calendarHighlightDays = Object.keys(dayItemMap).map((d) => new Date(d));
 
   return {

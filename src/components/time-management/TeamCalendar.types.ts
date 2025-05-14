@@ -1,3 +1,4 @@
+
 import { User } from "@/types";
 
 export interface TeamCalendarProps {
@@ -6,9 +7,8 @@ export interface TeamCalendarProps {
 
 export type CalendarItem = {
   id: string;
-  type: "timeoff" | "event";
+  type: "event";
   label: string;
-  status?: "pending" | "approved" | "rejected";
   startDate: Date;
   endDate: Date;
   attachments?: string[];
