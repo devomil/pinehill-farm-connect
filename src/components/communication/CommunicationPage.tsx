@@ -7,8 +7,18 @@ import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 import { CommunicationContent } from "./CommunicationContent";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
 import { useTabNavigation } from "@/hooks/communications/useTabNavigation";
+import { useDebug } from "@/hooks/useDebug";
+import ErrorBoundary from "@/components/debug/ErrorBoundary";
+import { DebugProvider } from "@/components/debug/DebugProvider";
 
 const CommunicationPage: React.FC = () => {
+  // Setup component debugging
+  const debug = useDebug('CommunicationPage', {
+    trackRenders: true,
+    logStateChanges: true,
+    traceLifecycle: true
+  });
+  
   const {
     currentUser,
     showDebugInfo,
@@ -37,46 +47,65 @@ const CommunicationPage: React.FC = () => {
     lastRefreshTime
   });
 
-  // Log component renders
-  console.log("CommunicationPage rendering with activeTab:", activeTab, "URL:", location.pathname + location.search);
+  // Log component renders - using our new debugging system
+  debug.info("CommunicationPage rendering", {
+    activeTab, 
+    url: location.pathname + location.search,
+    unreadMessageCount: unreadMessages?.length,
+    employeeCount: unfilteredEmployees?.length,
+    isAdmin
+  });
 
   // Enable this for debugging tab navigation issues
   useEffect(() => {
-    console.log("CommunicationPage effect - activeTab changed to:", activeTab);
-  }, [activeTab]);
+    debug.info("activeTab changed", { 
+      newActiveTab: activeTab,
+      location: location.pathname + location.search
+    });
+  }, [activeTab, debug, location]);
   
   return (
-    <div className="container mx-auto py-6 max-w-6xl">
-      <CommunicationHeader 
-        isAdmin={isAdmin}
-        allEmployees={unfilteredEmployees || []}
-        onAnnouncementCreate={handleAnnouncementCreate}
-        onManualRefresh={handleManualRefresh}
-        showDebugInfo={showDebugInfo}
-        setShowDebugInfo={setShowDebugInfo}
-      />
-      
-      <CommunicationTabs 
-        activeTab={activeTab} 
-        onTabChange={handleTabChange} 
-        unreadMessages={unreadMessages}
-      />
-      
-      <CommunicationContent
-        activeTab={activeTab}
-        currentUser={currentUser}
-        unfilteredEmployees={unfilteredEmployees || []}
-        isAdmin={isAdmin}
-      />
-      
-      <CommunicationDebugHelper
-        showDebug={showDebugInfo}
-        activeTab={activeTab}
-        unreadMessages={unreadMessages || []}
-        onTabChange={handleTabChange}
-        onRefresh={handleManualRefresh}
-      />
-    </div>
+    <DebugProvider>
+      <ErrorBoundary componentName="CommunicationPage">
+        <div className="container mx-auto py-6 max-w-6xl">
+          <CommunicationHeader 
+            isAdmin={isAdmin}
+            allEmployees={unfilteredEmployees || []}
+            onAnnouncementCreate={handleAnnouncementCreate}
+            onManualRefresh={handleManualRefresh}
+            showDebugInfo={showDebugInfo}
+            setShowDebugInfo={setShowDebugInfo}
+          />
+          
+          <ErrorBoundary componentName="CommunicationTabs">
+            <CommunicationTabs 
+              activeTab={activeTab} 
+              onTabChange={handleTabChange} 
+              unreadMessages={unreadMessages}
+            />
+          </ErrorBoundary>
+          
+          <ErrorBoundary componentName="CommunicationContent">
+            <CommunicationContent
+              activeTab={activeTab}
+              currentUser={currentUser}
+              unfilteredEmployees={unfilteredEmployees || []}
+              isAdmin={isAdmin}
+            />
+          </ErrorBoundary>
+          
+          {showDebugInfo && (
+            <CommunicationDebugHelper
+              showDebug={showDebugInfo}
+              activeTab={activeTab}
+              unreadMessages={unreadMessages || []}
+              onTabChange={handleTabChange}
+              onRefresh={handleManualRefresh}
+            />
+          )}
+        </div>
+      </ErrorBoundary>
+    </DebugProvider>
   );
 };
 

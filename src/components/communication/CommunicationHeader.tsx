@@ -9,6 +9,8 @@ import { RefreshCw, FilePlus, BarChartBig, Bug } from "lucide-react";
 import { User } from "@/types";
 import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 import { convertAnnouncementStatsToData, convertHookStatsToIndexFormat } from "@/utils/announcementAdapters";
+import { useDebug } from "@/hooks/useDebug";
+import { DebugButton } from "@/components/debug/DebugButton";
 
 interface CommunicationHeaderProps {
   isAdmin: boolean;
@@ -30,6 +32,12 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   const [announceDialogOpen, setAnnounceDialogOpen] = React.useState(false);
   const [statsDialogOpen, setStatsDialogOpen] = React.useState(false);
   
+  // Use our new debug hook
+  const debug = useDebug('communication.header', { 
+    logProps: true, 
+    traceLifecycle: true 
+  });
+  
   // Get announcement stats data
   const { stats, isLoading, error, refetch: refreshStats } = useAnnouncementStats();
   
@@ -37,48 +45,55 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
   const adaptedStats = stats ? convertHookStatsToIndexFormat(stats) : [];
   const convertedStats = convertAnnouncementStatsToData(adaptedStats);
   
-  // Debug that the buttons are properly wired
-  console.log("CommunicationHeader rendered with proper handlers:", {
-    onManualRefresh: !!onManualRefresh,
-    onAnnouncementCreate: !!onAnnouncementCreate
+  // Debug button props and handlers
+  debug.debug("Rendering with props", {
+    isAdmin,
+    employeeCount: allEmployees?.length,
+    showDebugInfo,
+    hasRefreshHandler: !!onManualRefresh,
+    hasCreateHandler: !!onAnnouncementCreate
   });
   
   // Create stable handler functions with useCallback
   const handleRefreshClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    console.log("Refresh button clicked");
+    debug.info("Refresh button clicked");
     onManualRefresh();
-  }, [onManualRefresh]);
+  }, [onManualRefresh, debug]);
   
   const handleCreateAnnouncementClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    console.log("New Announcement button clicked");
+    debug.info("New Announcement button clicked");
     setAnnounceDialogOpen(true);
-  }, []);
+  }, [debug]);
   
   const toggleDebugInfo = useCallback(() => {
+    debug.info(`Toggling debug info: ${!showDebugInfo}`);
     setShowDebugInfo(!showDebugInfo);
-  }, [showDebugInfo, setShowDebugInfo]);
+  }, [showDebugInfo, setShowDebugInfo, debug]);
   
   // Handle stats refresh
   const handleStatsRefresh = useCallback(() => {
-    console.log("Refreshing announcement stats");
+    debug.info("Refreshing announcement stats");
     refreshStats();
-  }, [refreshStats]);
+  }, [refreshStats, debug]);
   
   return (
     <div className="flex justify-between items-center mb-6">
       <Heading title="Communication Center" />
       
       <div className="flex items-center space-x-2">
+        {/* Use our new DebugButton component */}
+        <DebugButton />
+        
         <Button
           variant="outline"
           size="sm"
           onClick={toggleDebugInfo}
-          title="Toggle debug panel"
+          title="Toggle component debug info"
         >
           <Bug className="h-4 w-4 mr-2" />
-          Debug
+          Component Debug
         </Button>
         
         <Button
@@ -86,6 +101,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
           size="sm"
           onClick={handleRefreshClick}
           title="Refresh data"
+          id="communication-refresh-button" // Add ID for easier debugging
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
@@ -97,6 +113,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setStatsDialogOpen(true)}
+              id="stats-button"
             >
               <BarChartBig className="h-4 w-4 mr-2" />
               Stats
@@ -114,6 +131,7 @@ export const CommunicationHeader: React.FC<CommunicationHeaderProps> = ({
             <Button
               variant="default"
               onClick={handleCreateAnnouncementClick}
+              id="new-announcement-button"
             >
               <FilePlus className="h-4 w-4 mr-2" />
               New Announcement

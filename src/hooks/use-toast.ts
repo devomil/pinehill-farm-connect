@@ -1,40 +1,84 @@
 
-// This is a wrapper around a toast library
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast } from 'sonner';
+import { info, error } from '@/utils/debugUtils';
 
-export interface ToastProps {
+const COMPONENT = 'toast';
+
+type ToastProps = {
   title?: string;
   description?: string;
-  variant?: "default" | "destructive";
-  duration?: number;
-  id?: string;
   action?: React.ReactNode;
-}
+  cancel?: React.ReactNode;
+  onCancel?: () => void;
+  onAction?: () => void;
+  variant?: "default" | "destructive";
+};
 
-export function toast(props: ToastProps) {
-  const { title, description, variant, duration } = props;
-
-  if (variant === "destructive") {
-    return sonnerToast.error(title, {
-      description,
-      duration,
+const useToast = () => {
+  const toast = (props: ToastProps) => {
+    info(COMPONENT, `Toast shown: ${props.title || 'Untitled'}`);
+    return sonnerToast(props.title, {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      onCancel: props.onCancel,
+      onAction: props.onAction,
     });
-  }
+  };
 
-  return sonnerToast(title, {
-    description,
-    duration,
-  });
-}
+  const success = (props: ToastProps) => {
+    info(COMPONENT, `Success toast: ${props.title || 'Untitled'}`);
+    return sonnerToast.success(props.title, {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      onCancel: props.onCancel,
+      onAction: props.onAction,
+    });
+  };
 
-export type ToastActionElement = React.ReactElement<HTMLAnchorElement | HTMLButtonElement>;
+  const warning = (props: ToastProps) => {
+    info(COMPONENT, `Warning toast: ${props.title || 'Untitled'}`);
+    return sonnerToast.warning(props.title, {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      onCancel: props.onCancel,
+      onAction: props.onAction,
+    });
+  };
 
-export function useToast() {
-  // Create a mock toasts array to satisfy the component expecting it
-  const toasts: any[] = [];
-  
+  const destructive = (props: ToastProps) => {
+    error(COMPONENT, `Error toast: ${props.title || 'Untitled'}`);
+    return sonnerToast.error(props.title, {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      onCancel: props.onCancel,
+      onAction: props.onAction,
+    });
+  };
+
   return {
     toast,
-    toasts
+    success,
+    warning,
+    error: destructive,
+    // For backward compatibility
+    toast: {
+      ...sonnerToast,
+      // Add logger to standard toast methods
+      error: (title: string, description?: string) => {
+        error(COMPONENT, `Error toast: ${title}`);
+        return sonnerToast.error(title, { description });
+      },
+      success: (title: string, description?: string) => {
+        info(COMPONENT, `Success toast: ${title}`);
+        return sonnerToast.success(title, { description });
+      }
+    }
   };
-}
+};
+
+export { useToast };
+export const toast = sonnerToast;
