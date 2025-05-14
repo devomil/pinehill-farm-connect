@@ -1,11 +1,9 @@
 
 import React from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useAnnouncementAttachmentHandler = () => {
-  const { toast } = useToast();
-
   const handleAttachmentAction = async (attachment: { name: string; type: string; url?: string; size?: number }) => {
     try {
       console.log("Handling attachment action:", attachment);
@@ -24,11 +22,7 @@ export const useAnnouncementAttachmentHandler = () => {
       
       if (error) {
         console.error('Error creating signed URL:', error);
-        toast({
-          title: "Could not open attachment",
-          description: "There was an issue accessing the attachment",
-          variant: "destructive"
-        });
+        toast.error("Could not open attachment", "There was an issue accessing the attachment");
         return;
       }
 
@@ -36,19 +30,11 @@ export const useAnnouncementAttachmentHandler = () => {
         console.log("Opening signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
       } else {
-        toast({
-          title: "Error",
-          description: "Could not generate a URL for this attachment",
-          variant: "destructive"
-        });
+        toast.error("Error", "Could not generate a URL for this attachment");
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
-      toast({
-        title: "Could not open attachment",
-        description: "There was an issue accessing the attachment",
-        variant: "destructive"
-      });
+      toast.error("Could not open attachment", "There was an issue accessing the attachment");
     }
   };
 

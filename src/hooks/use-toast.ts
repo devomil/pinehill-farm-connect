@@ -59,26 +59,42 @@ const useToast = () => {
     });
   };
 
-  return {
+  // Create proper toast object with methods
+  const toastObject = {
     toast,
     success,
     warning,
     error: destructive,
-    // For backward compatibility
-    toast: {
-      ...sonnerToast,
-      // Add logger to standard toast methods
-      error: (title: string, description?: string) => {
-        error(COMPONENT, `Error toast: ${title}`);
-        return sonnerToast.error(title, { description });
-      },
-      success: (title: string, description?: string) => {
-        info(COMPONENT, `Success toast: ${title}`);
-        return sonnerToast.success(title, { description });
-      }
-    }
+  };
+
+  return {
+    ...toastObject,
+    // Add toasts property for Toaster component
+    toasts: sonnerToast.toasts,
   };
 };
 
+// Export the hook
 export { useToast };
-export const toast = sonnerToast;
+
+// Create and export a singleton instance for direct imports
+export const toast = {
+  ...sonnerToast,
+  // Override standard methods with logging
+  error: (title: string, description?: string) => {
+    error(COMPONENT, `Error toast: ${title}`);
+    return sonnerToast.error(title, { description });
+  },
+  success: (title: string, description?: string) => {
+    info(COMPONENT, `Success toast: ${title}`);
+    return sonnerToast.success(title, { description });
+  },
+  warning: (title: string, description?: string) => {
+    info(COMPONENT, `Warning toast: ${title}`);
+    return sonnerToast.warning(title, { description });
+  },
+  info: (title: string, description?: string) => {
+    info(COMPONENT, `Info toast: ${title}`);
+    return sonnerToast.info(title, { description });
+  }
+};

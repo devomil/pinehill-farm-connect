@@ -1,6 +1,6 @@
 
-import { useToast as useHookToast } from "@/hooks/use-toast";
+import { useToast as useHookToast, toast } from "@/hooks/use-toast";
 
 // Re-export the toast function while maintaining the same interface
 export const useToast = useHookToast;
-export const toast = useHookToast().toast;
+export { toast };
