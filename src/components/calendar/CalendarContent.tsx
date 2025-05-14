@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkShift } from "@/types/workSchedule";
 import { TimeOffRequest } from "@/types/timeManagement";
+import { DayProps } from "react-day-picker";
 
 interface CalendarContentProps {
   date: Date;
@@ -61,21 +62,30 @@ export function CalendarContent({
       const monthStr = format(currentMonth, "yyyy-MM");
       
       try {
+        // Use specific table name and structure that exists in Supabase
         const { data, error } = await supabase
-          .from('work_schedules')
+          .from('shift_coverage_requests')
           .select('*')
-          .eq('employee_id', currentUser.id)
-          .eq('month', monthStr);
+          .eq('original_employee_id', currentUser.id);
           
         if (error) {
-          console.error('Error fetching work schedules:', error);
-        } else if (data && data.length > 0) {
-          setShifts(data[0].shifts || []);
-        } else {
-          setShifts([]);
+          console.error('Error fetching shift data:', error);
+        } else if (data) {
+          // Process the data differently since we're not using work_schedules table
+          // This is a temporary approach until we have proper work schedules table
+          const formattedShifts: WorkShift[] = data.map(item => ({
+            id: item.id,
+            employeeId: item.original_employee_id,
+            date: item.shift_date,
+            startTime: item.shift_start,
+            endTime: item.shift_end,
+            isRecurring: false,
+            notes: `Shift coverage: ${item.status}`
+          }));
+          setShifts(formattedShifts);
         }
       } catch (error) {
-        console.error('Error in work schedule fetch:', error);
+        console.error('Error in fetch:', error);
       }
     };
 
@@ -151,7 +161,7 @@ export function CalendarContent({
   };
   
   // Render day contents for the calendar
-  const renderDay = (day: Date) => {
+  const renderDay = (day: Date | undefined) => {
     if (!day) return null;
     
     const dateKey = getDateKey(day);
@@ -204,14 +214,12 @@ export function CalendarContent({
               month={currentMonth}
               className="rounded-md border"
               components={{
-                Day: ({ day, ...props }) => {
-                  return (
-                    <div className="relative h-full">
-                      <div {...props} />
-                      {day && renderDay(day)}
-                    </div>
-                  );
-                }
+                Day: ({ date: dayDate, ...props }) => (
+                  <div className="relative h-full">
+                    <div {...props} />
+                    {dayDate && renderDay(dayDate)}
+                  </div>
+                )
               }}
             />
           </TabsContent>
