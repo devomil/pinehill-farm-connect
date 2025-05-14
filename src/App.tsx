@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext"; // Add this import
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import TimeManagement from "@/pages/TimeManagement";
