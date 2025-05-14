@@ -35,6 +35,22 @@ const getDateKey = (date: Date) => {
   return format(date, "yyyy-MM-dd");
 };
 
+// Helper to extract standard HTML attributes and exclude custom props
+const extractHTMLAttributes = (props: Record<string, any>) => {
+  // Create a shallow copy to avoid modifying the original props
+  const htmlProps = { ...props };
+  
+  // Remove known non-HTML attributes that might be present in DayPicker props
+  const nonHTMLAttributes = ['displayMonth', 'selected', 'disabled', 'hidden', 'outside', 'today'];
+  nonHTMLAttributes.forEach(attr => {
+    if (attr in htmlProps) {
+      delete htmlProps[attr];
+    }
+  });
+  
+  return htmlProps;
+};
+
 export function CalendarContent({
   date,
   currentMonth,
@@ -246,10 +262,13 @@ export function CalendarContent({
               className="rounded-md border"
               components={{
                 Day: ({ date: dayDate, ...props }) => {
+                  // Extract only valid HTML attributes for the div
+                  const safeHtmlProps = extractHTMLAttributes(props);
+                  
                   return (
                     <div className="relative h-full">
-                      {/* Fix: Only pass valid HTML attributes to the div, not the displayMonth prop */}
-                      <div {...props} />
+                      {/* Only pass valid HTML attributes to the div */}
+                      <div {...safeHtmlProps} />
                       {dayDate && renderDay(dayDate)}
                     </div>
                   );
