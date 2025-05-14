@@ -1,10 +1,9 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useAnnouncementAcknowledge = (userId: string | undefined) => {
-  const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
 
   const acknowledgeAnnouncement = async (announcementId: string) => {
@@ -63,28 +62,17 @@ export const useAnnouncementAcknowledge = (userId: string | undefined) => {
       
       if (error) {
         console.error("Error acknowledging announcement:", error);
-        toast({
-          title: "Error",
-          description: "Failed to acknowledge announcement",
-          variant: "destructive"
-        });
+        toast.error("Error", "Failed to acknowledge announcement");
         throw error;
       }
       
-      toast({
-        title: "Success",
-        description: "Announcement acknowledged successfully",
-      });
+      toast.success("Success", "Announcement acknowledged successfully");
       
       console.log("Successfully acknowledged announcement");
       return Promise.resolve();
     } catch (error) {
       console.error("Unexpected error in acknowledgeAnnouncement:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
+      toast.error("Error", "An unexpected error occurred");
       return Promise.reject(error);
     } finally {
       setProcessing(false);
