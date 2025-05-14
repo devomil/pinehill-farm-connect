@@ -8,6 +8,7 @@ import { useWorkSchedule } from "@/components/time-management/work-schedule/useW
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { useDashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 import { useDashboardNavigation } from "@/components/dashboard/DashboardNavigationHandlers";
+import { TimeManagementProvider } from "@/contexts/timeManagement";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
@@ -47,27 +48,29 @@ export default function Dashboard() {
       <div className="space-y-4">
         <DashboardHeader userName={currentUser?.name || ''} />
         
-        <DashboardContent
-          isAdmin={isAdmin}
-          pendingTimeOff={pendingTimeOff}
-          userTimeOff={userTimeOff}
-          shiftCoverageMessages={shiftCoverageMessages}
-          announcements={announcements}
-          assignedTrainings={assignedTrainings}
-          currentUser={currentUser!}
-          scheduleData={scheduleData}
-          scheduleLoading={scheduleLoading}
-          date={date}
-          currentMonth={currentMonth}
-          viewMode={viewMode}
-          dashboardDataLoading={dashboardDataLoading}
-          dashboardDataError={dashboardDataError}
-          handleRefreshData={handleRefreshData}
-          onDateSelect={handleDateSelect}
-          onViewModeChange={setViewMode}
-          onPreviousMonth={goToPreviousMonth}
-          onNextMonth={goToNextMonth}
-        />
+        <TimeManagementProvider currentUser={currentUser}>
+          <DashboardContent
+            isAdmin={isAdmin}
+            pendingTimeOff={pendingTimeOff}
+            userTimeOff={userTimeOff}
+            shiftCoverageMessages={shiftCoverageMessages}
+            announcements={announcements}
+            assignedTrainings={assignedTrainings}
+            currentUser={currentUser!}
+            scheduleData={scheduleData}
+            scheduleLoading={scheduleLoading}
+            date={date}
+            currentMonth={currentMonth}
+            viewMode={viewMode}
+            dashboardDataLoading={dashboardDataLoading}
+            dashboardDataError={dashboardDataError}
+            handleRefreshData={handleRefreshData}
+            onDateSelect={handleDateSelect}
+            onViewModeChange={setViewMode}
+            onPreviousMonth={goToPreviousMonth}
+            onNextMonth={goToNextMonth}
+          />
+        </TimeManagementProvider>
       </div>
     </DashboardLayout>
   );

@@ -24,6 +24,7 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   onPreviousMonth,
   onNextMonth,
 }) => {
+  // The TimeManagementProvider is now at the Dashboard page level
   return (
     <div className="md:col-span-2">
       <CalendarContent
