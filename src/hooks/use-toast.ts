@@ -5,69 +5,53 @@ export type ToastProps = ExternalToast;
 
 export function useToast() {
   return {
-    toast: {
-      success: (title: string, description?: string) => {
-        return sonnerToast({
-          title,
-          description,
-          variant: "success"
-        });
-      },
-      error: (title: string, description?: string) => {
-        return sonnerToast({
-          title,
-          description,
-          variant: "destructive"
-        });
-      },
-      warning: (title: string, description?: string) => {
-        return sonnerToast({
-          title,
-          description,
-          variant: "warning"
-        });
-      },
-      info: (title: string, description?: string) => {
-        return sonnerToast({
-          title,
-          description,
-          variant: "default"
-        });
-      },
+    toast: (props: ExternalToast) => {
+      return sonnerToast(props);
     }
   };
 }
 
 // Direct toast function for simpler usage
-export const toast = {
-  success: (title: string, description?: string) => {
-    return sonnerToast({
-      title,
-      description,
-      variant: "success"
-    });
-  },
-  error: (title: string, description?: string) => {
-    return sonnerToast({
-      title,
-      description,
-      variant: "destructive"
-    });
-  },
-  warning: (title: string, description?: string) => {
-    return sonnerToast({
-      title,
-      description,
-      variant: "warning"
-    });
-  },
-  info: (title: string, description?: string) => {
-    return sonnerToast({
-      title,
-      description,
-      variant: "default"
-    });
-  },
-  // Expose the raw toast function for direct object usage
-  ...sonnerToast
+export const toast = (props: ExternalToast) => {
+  return sonnerToast(props);
 };
+
+// For backward compatibility, maintain the old method structure
+// but have them use the new object format internally
+const successToast = (title: string, description?: string) => {
+  return sonnerToast({
+    title,
+    description,
+    variant: "success"
+  });
+};
+
+const errorToast = (title: string, description?: string) => {
+  return sonnerToast({
+    title,
+    description,
+    variant: "destructive"
+  });
+};
+
+const warningToast = (title: string, description?: string) => {
+  return sonnerToast({
+    title,
+    description,
+    variant: "warning"
+  });
+};
+
+const infoToast = (title: string, description?: string) => {
+  return sonnerToast({
+    title,
+    description,
+    variant: "default"
+  });
+};
+
+// Add these methods to toast for backward compatibility
+toast.success = successToast;
+toast.error = errorToast;
+toast.warning = warningToast;
+toast.info = infoToast;
