@@ -1,223 +1,125 @@
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { User } from "@/types";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format, isValid } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useShiftCoverage } from "./useShiftCoverage";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useDaySelector } from "@/contexts/timeManagement/hooks/useDaySelector";
+import { uuid } from "@/utils/uuid";
+import { WorkScheduleCalendar } from "@/components/time-management/work-schedule/WorkScheduleCalendar";
 
 interface ShiftCoverageDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  currentUser: User;
-  allEmployees: User[];
-  onRequestSent: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  employeeId: string;
+  employeeName: string;
+  onConfirm: (selectedDays: string[], startTime: string, endTime: string) => void;
 }
 
-export function ShiftCoverageDialog({
-  open,
-  onOpenChange,
-  currentUser,
-  allEmployees,
-  onRequestSent
-}: ShiftCoverageDialogProps) {
-  const {
-    form,
-    onSubmit,
-    isSubmitting,
-    submitError,
-    employees
-  } = useShiftCoverage();
-
-  // Local state for the form fields
-  const [message, setMessage] = useState("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
+  isOpen,
+  onClose,
+  employeeId,
+  employeeName,
+  onConfirm
+}) => {
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  
-  // Filter out the current user from the employee list
-  const filteredEmployees = allEmployees.filter(emp => emp.id !== currentUser.id);
+  const { 
+    toggleDay, 
+    isDaySelected, 
+    getSelectedDaysArray,
+    clearSelectedDays
+  } = useDaySelector(currentMonth);
 
-  // Check if admin info is available
-  const adminId = "admin-jackie"; // Placeholder or use from a context/props
-  const isLoadingAdmin = false; // Could be dynamic if you're fetching admin info
+  const handleConfirm = () => {
+    const selectedDays = getSelectedDaysArray();
+    if (selectedDays.length === 0) return;
+    
+    onConfirm(selectedDays, startTime, endTime);
+    clearSelectedDays();
+    onClose();
+  };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!date || !isValid(date)) return;
-
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    
-    onSubmit({
-      covering_employee_id: form.getValues("covering_employee_id"),
-      shift_date: formattedDate,
-      shift_start: startTime,
-      shift_end: endTime
-    });
-    
-    if (onRequestSent) {
-      onRequestSent();
-    }
-    
-    onOpenChange(false);
+  const handleCancel = () => {
+    clearSelectedDays();
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleFormSubmit}>
-          <DialogHeader>
-            <DialogTitle>Request Shift Coverage</DialogTitle>
-            <DialogDescription>
-              Request another employee to cover your shift. You will receive a notification when they respond.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="employee" className="text-right">
-                Employee
-              </Label>
-              <Select 
-                value={form.getValues("covering_employee_id")} 
-                onValueChange={(value) => form.setValue("covering_employee_id", value)}
-              >
-                <SelectTrigger className="col-span-3" id="employee">
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredEmployees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name || employee.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">
-                Date
-              </Label>
-              <div className="col-span-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date && isValid(date) ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="start-time" className="text-right">
+    <Dialog open={isOpen} onOpenChange={handleCancel}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Schedule Shifts for {employeeName}</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Select specific days to schedule shifts for this employee. Click on multiple dates to select them.
+          </p>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label htmlFor="startTime" className="text-sm font-medium">
                 Start Time
-              </Label>
-              <Input
-                id="start-time"
+              </label>
+              <input
+                id="startTime"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="col-span-3"
+                className="w-full border rounded-md px-3 py-2"
               />
             </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="end-time" className="text-right">
+            <div className="space-y-2">
+              <label htmlFor="endTime" className="text-sm font-medium">
                 End Time
-              </Label>
-              <Input
-                id="end-time"
+              </label>
+              <input
+                id="endTime"
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="col-span-3"
+                className="w-full border rounded-md px-3 py-2"
               />
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="message" className="text-right align-top mt-2">
-                Message
-              </Label>
-              <Textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Any additional details about the shift..."
-                className="col-span-3"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="text-right">
-                Admin CC
-              </div>
-              <div className="col-span-3 text-muted-foreground">
-                {isLoadingAdmin ? (
-                  <span className="flex items-center">
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading admin info...
-                  </span>
-                ) : adminId ? (
-                  "Jackie Phillips (jackie@pinehillfarm.co)"
-                ) : (
-                  "Admin information not available"
-                )}
-              </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting || isLoadingAdmin}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isLoadingAdmin}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : "Send Request"}
-            </Button>
-          </DialogFooter>
-        </form>
+          
+          <div className="border rounded-md p-3">
+            <WorkScheduleCalendar
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              shiftsMap={new Map()}
+              selectedDate={undefined}
+              setSelectedDate={() => {}}
+              onDateSelected={() => {}}
+              onShiftClick={() => {}}
+              selectionMode="multiple"
+              isDaySelected={isDaySelected}
+              onDayToggle={toggleDay}
+            />
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <p className="text-sm">
+              {getSelectedDaysArray().length} day(s) selected
+            </p>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirm}
+                disabled={getSelectedDaysArray().length === 0}
+              >
+                Confirm Shifts
+              </Button>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
-}
+};

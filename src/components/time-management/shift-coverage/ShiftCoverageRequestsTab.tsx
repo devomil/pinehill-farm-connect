@@ -1,166 +1,57 @@
 
 import React from "react";
-import { Communication } from "@/types/communications/communicationTypes";
-import { User } from "@/types";
-import { ShiftCoverageMainContent } from "./ShiftCoverageMainContent";
-import { ShiftCoverageDebugPanel } from "./ShiftCoverageDebugPanel";
-import { ShiftRequestsLoadingState } from "./ShiftRequestsLoadingState";
-import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useShiftCoverageFilters } from "@/hooks/communications/useShiftCoverageFilters";
-import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { ShiftCoverageErrorDebugPanel } from "./ShiftCoverageErrorDebugPanel";
-import { toast } from "sonner";
+import { ShiftCoverageDialog } from "./ShiftCoverageDialog";
+import { useShiftCoverage } from "./useShiftCoverage";
+import { useTimeManagement } from "@/contexts/timeManagement";
 
-interface ShiftCoverageRequestsTabProps {
-  messages: Communication[];
-  loading: boolean;
-  error?: any;
-  onRespond: (data: {
-    communicationId: string;
-    shiftRequestId: string;
-    accept: boolean;
-    senderId: string;
-  }) => void;
-  currentUser: User;
-  onRefresh: () => void;
-  allEmployees?: User[];
-}
-
-export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> = ({
-  messages,
-  loading,
-  error,
-  onRespond,
-  currentUser,
-  onRefresh,
-  allEmployees: propEmployees
-}) => {
-  // Always initialize all hooks at the top level
-  const { unfilteredEmployees: directoryEmployees, loading: employeesLoading, refetch: refetchEmployees, error: employeesError } = useEmployeeDirectory();
-  const [filter, setFilter] = React.useState<'all' | 'pending' | 'accepted' | 'declined'>('all');
-  const [showDebugInfo, setShowDebugInfo] = React.useState(false);
-  
-  // Use either the provided employees or the ones from the directory hook - memoize once
-  const allEmployees = React.useMemo(() => propEmployees || directoryEmployees || [], [propEmployees, directoryEmployees]);
-  
-  // Ensure we always pass valid arrays to hooks, never undefined
-  const safeMessages = React.useMemo(() => messages || [], [messages]);
-  
-  // Always define the filter hook with safe values
+export const ShiftCoverageRequestsTab: React.FC = () => {
+  const { allEmployees } = useTimeManagement();
   const {
-    shiftCoverageRequests,
-    pendingCount,
-    acceptedCount,
-    declinedCount,
-    filterByStatus,
-    updateFilter
-  } = useShiftCoverageFilters(safeMessages, currentUser);
-  
-  // Apply status filter with useMemo to prevent recalculation on every render
-  const filteredRequests = React.useMemo(() => {
-    try {
-      return filterByStatus(filter, shiftCoverageRequests || []);
-    } catch (err) {
-      console.error("Error filtering requests:", err);
-      return [];
-    }
-  }, [filter, shiftCoverageRequests, filterByStatus]);
-  
-  // Format error message safely - memoize to prevent recreation on each render
-  const formatErrorMessage = React.useCallback((err: any): string => {
-    if (typeof err === 'string') return err;
-    if (err?.message) return err.message;
-    return "Unknown error";
-  }, []);
+    isDialogOpen,
+    selectedEmployee,
+    openDialog,
+    closeDialog,
+    handleConfirmShifts
+  } = useShiftCoverage();
 
-  // Find employee by ID - memoize to prevent recreation on each render
-  const findEmployee = React.useCallback((id: string): User | undefined => {
-    if (!allEmployees) return undefined;
-    return allEmployees.find(emp => emp.id === id);
-  }, [allEmployees]);
-
-  // Handle manual refresh with feedback - memoize to prevent recreation on each render
-  const handleManualRefresh = React.useCallback(() => {
-    toast.info("Refreshing shift coverage requests...");
-    if (refetchEmployees) refetchEmployees();
-    if (onRefresh) onRefresh();
-    if (updateFilter) updateFilter();
-  }, [refetchEmployees, onRefresh, updateFilter]);
-
-  // If still loading, show loading state
-  if (loading || employeesLoading) {
-    return <ShiftRequestsLoadingState />;
-  }
-
-  // If there's an error, show error state with retry option
-  if (error || employeesError) {
-    return (
-      <>
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error loading shift coverage data: {formatErrorMessage(error || employeesError)}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleManualRefresh} 
-              className="ml-2"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" /> Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-
-        <ShiftCoverageErrorDebugPanel
-          loading={loading}
-          employeesLoading={employeesLoading}
-          messagesCount={safeMessages.length}
-          employeeCount={allEmployees?.length || 0}
-          currentUser={currentUser}
-          error={error}
-          employeesError={employeesError}
-        />
-
-        <ShiftRequestsErrorState onRetry={handleManualRefresh} />
-      </>
-    );
-  }
-  
-  // Get available employees (excluding current user) - this must be outside the hooks
-  const availableEmployees = allEmployees?.filter(emp => emp.id !== currentUser?.id) || [];
-  
   return (
-    <>
-      <ShiftCoverageDebugPanel 
-        showDebugInfo={showDebugInfo}
-        setShowDebugInfo={setShowDebugInfo}
-        shiftCoverageRequests={shiftCoverageRequests}
-        pendingCount={pendingCount}
-        acceptedCount={acceptedCount}
-        declinedCount={declinedCount}
-        filter={filter}
-        availableEmployees={availableEmployees}
-        currentUser={currentUser}
-      />
-      
-      <ShiftCoverageMainContent
-        filter={filter}
-        setFilter={setFilter}
-        pendingCount={pendingCount}
-        acceptedCount={acceptedCount}
-        declinedCount={declinedCount}
-        shiftCoverageRequests={shiftCoverageRequests}
-        filteredRequests={filteredRequests}
-        currentUser={currentUser}
-        availableEmployees={availableEmployees}
-        allEmployees={allEmployees || []}
-        findEmployee={findEmployee}
-        onRespond={onRespond}
-        handleManualRefresh={handleManualRefresh}
-      />
-    </>
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="text-xl">Employee Shift Coverage</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {allEmployees?.map((employee) => (
+            <Card key={employee.id} className="overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{employee.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {employee.department || "No department"}
+                    </p>
+                  </div>
+                  <Button onClick={() => openDialog({ id: employee.id, name: employee.name })}>
+                    Schedule
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {isDialogOpen && selectedEmployee && (
+          <ShiftCoverageDialog
+            isOpen={isDialogOpen}
+            onClose={closeDialog}
+            employeeId={selectedEmployee.id}
+            employeeName={selectedEmployee.name}
+            onConfirm={handleConfirmShifts}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 };
