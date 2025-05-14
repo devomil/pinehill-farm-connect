@@ -7,7 +7,6 @@ import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 import { ShiftDialog } from "./ShiftDialog";
 import { BulkSchedulingBar } from "./BulkSchedulingBar";
 import { SpecificDaysSchedulingBar } from "./SpecificDaysSchedulingBar";
-import { useDaySelector } from "@/contexts/timeManagement/hooks/useDaySelector";
 import { ScheduleActionBar } from "./ScheduleActionBar";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
 
@@ -18,15 +17,6 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   onReset,
   loading
 }) => {
-  // Use the day selector hook
-  const { 
-    toggleDay, 
-    isDaySelected, 
-    clearSelectedDays, 
-    getSelectedDaysArray,
-    availableDays
-  } = useDaySelector(useScheduleEditor({ selectedEmployee, scheduleData, onSave }).currentMonth);
-  
   // Use the schedule editor hook
   const {
     selectedDate,
@@ -40,26 +30,18 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     bulkMode,
     setBulkMode,
     selectionMode,
+    selectedCount,
     shiftsMap,
     handleAddShift,
     handleEditShift,
     handleSaveShift,
     handleDeleteShift,
     handleBulkSchedule,
-    toggleSelectionMode
+    toggleSelectionMode,
+    toggleDay,
+    isDaySelected,
+    getSelectedDaysArray
   } = useScheduleEditor({ selectedEmployee, scheduleData, onSave });
-  
-  // Debug available days
-  React.useEffect(() => {
-    console.log("Available days in month:", availableDays.length);
-  }, [availableDays]);
-  
-  // When selection mode changes, clear selected days
-  React.useEffect(() => {
-    if (selectionMode === "single") {
-      clearSelectedDays();
-    }
-  }, [selectionMode, clearSelectedDays]);
   
   if (!selectedEmployee) {
     return (
@@ -79,6 +61,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         bulkMode={bulkMode}
         selectionMode={selectionMode}
         loading={loading}
+        selectedCount={selectedCount}
         onToggleSelectionMode={toggleSelectionMode}
         onSetBulkMode={setBulkMode}
         onReset={onReset}
@@ -93,14 +76,13 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         />
       )}
       
-      {selectionMode === "multiple" && getSelectedDaysArray().length > 0 && (
+      {selectionMode === "multiple" && selectedCount > 0 && (
         <SpecificDaysSchedulingBar
           selectedDays={getSelectedDaysArray()}
           currentMonth={currentMonth}
           onSchedule={handleBulkSchedule}
           onCancel={() => {
             toggleSelectionMode();
-            clearSelectedDays();
           }}
         />
       )}

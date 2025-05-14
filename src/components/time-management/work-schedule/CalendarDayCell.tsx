@@ -44,8 +44,8 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
       classes.push("ring-2 ring-primary");
     }
     
-    if (isMultiSelected && !isSingleSelected) {
-      classes.push("bg-primary/20");
+    if (isMultiSelected) {
+      classes.push("bg-primary/20 border-primary");
     }
     
     classes.push("hover:bg-accent");
@@ -57,6 +57,12 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     <div className={getClassNames()} onClick={onClick}>
       <div className="h-full w-full">
         <div className="text-right text-xs">{safeFormat(day, "d")}</div>
+        
+        {/* Show selection indicator for multi-select mode */}
+        {isMultiSelected && (
+          <div className="absolute top-1 left-1 h-2 w-2 rounded-full bg-primary"></div>
+        )}
+        
         {shifts.length > 0 && (
           <div className="mt-1">
             {shifts.map((shift, index) => (

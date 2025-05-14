@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { buildShiftsMap, createNewShift } from "../scheduleHelpers";
 import { uuid } from "@/utils/uuid";
+import { useDaySelector } from "@/contexts/timeManagement/hooks";
 
 export interface UseScheduleEditorProps {
   selectedEmployee: string | null;
@@ -23,6 +24,15 @@ export const useScheduleEditor = ({
   const [bulkMode, setBulkMode] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<"single" | "multiple">("single");
   
+  // Use the day selector hook for multiple day selection
+  const { 
+    toggleDay, 
+    isDaySelected, 
+    clearSelectedDays, 
+    getSelectedDaysArray,
+    selectedCount
+  } = useDaySelector(currentMonth);
+  
   // If employee changes or schedule data changes, reset editing state
   useEffect(() => {
     setSelectedDate(undefined);
@@ -31,7 +41,8 @@ export const useScheduleEditor = ({
     setIsDialogOpen(false);
     setBulkMode(null);
     setSelectionMode("single");
-  }, [selectedEmployee, scheduleData?.id]);
+    clearSelectedDays();
+  }, [selectedEmployee, scheduleData?.id, clearSelectedDays]);
   
   // Create map of dates to shifts
   const shiftsMap = useMemo(() => {
@@ -93,7 +104,7 @@ export const useScheduleEditor = ({
     setIsDialogOpen(false);
   };
   
-  // Handle bulk scheduling
+  // Handle bulk scheduling (for either bulk mode or specific days)
   const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
     if (!scheduleData || !selectedEmployee) return;
     
@@ -124,6 +135,7 @@ export const useScheduleEditor = ({
     onSave(updatedSchedule);
     setBulkMode(null);
     setSelectionMode("single");
+    clearSelectedDays();
   };
   
   // Toggle selection mode for specific days
@@ -132,6 +144,7 @@ export const useScheduleEditor = ({
       setSelectionMode("multiple");
     } else {
       setSelectionMode("single");
+      clearSelectedDays();
     }
   };
   
@@ -147,12 +160,17 @@ export const useScheduleEditor = ({
     bulkMode,
     setBulkMode,
     selectionMode,
+    selectedCount,
     shiftsMap,
     handleAddShift,
     handleEditShift,
     handleSaveShift,
     handleDeleteShift,
     handleBulkSchedule,
-    toggleSelectionMode
+    toggleSelectionMode,
+    toggleDay,
+    isDaySelected,
+    clearSelectedDays,
+    getSelectedDaysArray
   };
 };

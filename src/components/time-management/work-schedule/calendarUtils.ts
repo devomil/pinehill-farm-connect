@@ -1,5 +1,5 @@
 
-import { format, isValid } from "date-fns";
+import { format, isValid, isSameDay } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 
 // Format a date safely, handling errors
@@ -22,11 +22,11 @@ export const isDateSelected = (
     return { isSingleSelected: false, isMultiSelected: false };
   }
   
+  // Check if day is selected in single selection mode
   const isSingleSelected = selectedDate && isValid(selectedDate) && 
-    day.getDate() === selectedDate.getDate() && 
-    day.getMonth() === selectedDate.getMonth() && 
-    day.getFullYear() === selectedDate.getFullYear();
+    isSameDay(day, selectedDate);
   
+  // Check if day is selected in multiple selection mode
   const isMultiSelected = Boolean(isDaySelected && isDaySelected(day));
   
   return { isSingleSelected, isMultiSelected };

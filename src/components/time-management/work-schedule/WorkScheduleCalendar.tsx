@@ -49,13 +49,15 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     setCurrentMonth(nextMonth);
   };
   
-  // Handle day click
+  // Handle day click - depends on selection mode
   const handleDayClick = (day: Date | undefined) => {
     if (!day || !isValid(day)) return;
     
     if (selectionMode === "multiple" && onDayToggle) {
+      // Multiple selection mode - toggle day selection
       onDayToggle(day);
     } else {
+      // Single selection mode - select this day only
       setSelectedDate(day);
       onDateSelected();
     }
@@ -85,7 +87,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               const shifts = getShiftsForDay(day, shiftsMap);
               const hasShifts = shifts.length > 0;
               
-              // Check if this day is selected
+              // Check if this day is selected in single or multiple mode
               const { isSingleSelected, isMultiSelected } = isDateSelected(
                 day, 
                 selectedDate,

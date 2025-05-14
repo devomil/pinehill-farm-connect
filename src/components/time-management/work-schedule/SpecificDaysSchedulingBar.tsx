@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 interface SpecificDaysSchedulingBarProps {
   selectedDays: string[];
@@ -29,57 +30,80 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
     onSchedule(selectedDays, startTime, endTime);
   };
   
+  // Format dates for display
+  const formatDay = (dateStr: string): string => {
+    try {
+      const date = parse(dateStr, "yyyy-MM-dd", new Date());
+      return format(date, "MMM d");
+    } catch (e) {
+      return dateStr;
+    }
+  };
+  
   const monthName = format(currentMonth, 'MMMM yyyy');
   
   return (
-    <div className="bg-accent/20 p-3 rounded-md flex justify-between items-center flex-wrap gap-4">
-      <div>
-        <h3 className="font-medium">
-          Add Shifts for {selectedDays.length} Specific Day{selectedDays.length !== 1 ? 's' : ''}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Set hours for selected days in {monthName}
-        </p>
+    <div className="bg-accent/20 p-3 rounded-md space-y-3">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h3 className="font-medium">
+            Add Shifts for {selectedDays.length} Selected Day{selectedDays.length !== 1 ? 's' : ''}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Set hours for selected days in {monthName}
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="space-y-2">
+            <Label htmlFor="startTime">Start Time</Label>
+            <Input
+              id="startTime"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-24"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="endTime">End Time</Label>
+            <Input
+              id="endTime"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="w-24"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSchedule}
+              disabled={selectedDays.length === 0}
+            >
+              Apply to {selectedDays.length} Day{selectedDays.length !== 1 ? 's' : ''}
+            </Button>
+          </div>
+        </div>
       </div>
       
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="space-y-2">
-          <Label htmlFor="startTime">Start Time</Label>
-          <Input
-            id="startTime"
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-24"
-          />
+      {/* Show selected days */}
+      {selectedDays.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedDays.sort().map((day) => (
+            <Badge key={day} variant="secondary">
+              {formatDay(day)}
+            </Badge>
+          ))}
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="endTime">End Time</Label>
-          <Input
-            id="endTime"
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-24"
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSchedule}
-            disabled={selectedDays.length === 0}
-          >
-            Apply to {selectedDays.length} Day{selectedDays.length !== 1 ? 's' : ''}
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
