@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Eye, Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AttachmentPreviewProps {
@@ -16,7 +16,6 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
   onAttachmentAction,
   compact = false 
 }) => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
   const handleDownload = async () => {

@@ -1,9 +1,10 @@
+
 import React, { useState } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface TeamCalendarEventFormFileFieldProps {
@@ -24,7 +25,6 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
   required = false,
 }) => {
   const [fileName, setFileName] = useState<string>("");
-  const { toast } = useToast();
   const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: File | null) => void) => {
@@ -38,11 +38,7 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
     
     // Check file size
     if (file.size > maxSizeBytes) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSize}MB`,
-        variant: "destructive",
-      });
+      toast.error("File too large", `File size must be less than ${maxSize}MB`);
       e.target.value = "";
       return;
     }

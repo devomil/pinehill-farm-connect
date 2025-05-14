@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
@@ -24,7 +24,6 @@ export const AnnouncementAcknowledgment = ({
   const [isChecked, setIsChecked] = useState(isAcknowledged);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMarkingRead, setIsMarkingRead] = useState(false);
-  const { toast } = useToast();
 
   // Update local state when props change
   useEffect(() => {

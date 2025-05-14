@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
 import { AnnouncementAttachmentsList } from "@/components/communication/announcement/AnnouncementAttachmentsList";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -15,8 +15,6 @@ interface AnnouncementsCardProps {
 }
 
 export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announcements, clickable = false, viewAllUrl }) => {
-  const { toast } = useToast();
-
   const handleAttachmentAction = async (attachment: any, event: React.MouseEvent) => {
     // Stop event propagation to prevent card click handler from firing
     event.stopPropagation();
@@ -50,11 +48,7 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
       
       if (error) {
         console.error('Error creating signed URL:', error);
-        toast({
-          title: "Failed to open attachment",
-          description: "Could not retrieve the attachment URL. Please try again.",
-          variant: "destructive"
-        });
+        toast.error("Failed to open attachment", "Could not retrieve the attachment URL. Please try again.");
         return;
       }
       
@@ -62,19 +56,11 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
         console.log("Got signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
       } else {
-        toast({
-          title: "Error",
-          description: "No URL was returned for this attachment",
-          variant: "destructive"
-        });
+        toast.error("Error", "No URL was returned for this attachment");
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
-      toast({
-        title: "Failed to open attachment",
-        description: "There was a problem opening this attachment. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to open attachment", "There was a problem opening this attachment. Please try again.");
     }
   };
 

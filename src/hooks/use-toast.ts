@@ -18,14 +18,24 @@ export interface ToastProps {
 }
 
 export const useToast = () => {
-  // Basic toast function
+  // Basic toast function - directly callable
+  const showToast = (props: ToastProps) => {
+    info(COMPONENT, `Standard toast: ${props.title}`);
+    return sonnerToast(props.title || '', {
+      description: props.description,
+      action: props.action,
+      cancel: props.cancel,
+      onDismiss: props.onCancel,
+      onAutoClose: props.onAction,
+    });
+  };
+
   const success = (props: ToastProps) => {
     info(COMPONENT, `Success toast: ${props.title}`);
     return sonnerToast.success(props.title || '', {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
@@ -37,7 +47,6 @@ export const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
@@ -49,7 +58,6 @@ export const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
@@ -61,29 +69,24 @@ export const useToast = () => {
       description: props.description,
       action: props.action,
       cancel: props.cancel,
-      // Map to correct Sonner toast property names
       onDismiss: props.onCancel,
       onAutoClose: props.onAction,
     });
   };
 
-  // Return an object with toast method directly on it
+  // Return the toast functions
   return {
     success,
     info,
     warning,
     error: destructive,
-    toast: {
-      success,
-      info,
-      warning,
-      error: destructive
-    }
+    toast: showToast // This allows direct calls to toast
   };
 };
 
-// Export the standalone toast object for direct usage
+// Export standalone toast functions for direct usage
 export const toast = {
+  // Direct method that can be called with title and description
   success: (title: string, description?: string) => sonnerToast.success(title, { description }),
   error: (title: string, description?: string) => sonnerToast.error(title, { description }),
   info: (title: string, description?: string) => sonnerToast(title, { description }),

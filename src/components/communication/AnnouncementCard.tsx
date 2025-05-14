@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, FileText } from "lucide-react";
 import { Announcement } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { AnnouncementActions } from "./announcement/AnnouncementActions";
 import { AnnouncementAttachmentsList } from "./announcement/AnnouncementAttachmentsList";
 import { AnnouncementAcknowledgment } from "./announcement/AnnouncementAcknowledgment";
@@ -38,8 +38,6 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   onDelete,
   onAttachmentAction,
 }) => {
-  const { toast } = useToast();
-
   const handleAttachmentAction = (attachment: { name: string; type: string; url?: string; size?: number }) => {
     if (onAttachmentAction) {
       onAttachmentAction(attachment);
@@ -48,18 +46,10 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         window.open(attachment.url, '_blank');
       } catch (error) {
         console.error('Error opening attachment:', error);
-        toast({
-          title: "Failed to open attachment",
-          description: "There was a problem opening this attachment. Please try again.",
-          variant: "destructive"
-        });
+        toast.error("Failed to open attachment", "There was a problem opening this attachment. Please try again.");
       }
     } else {
-      toast({
-        title: "Error",
-        description: "Attachment URL not available",
-        variant: "destructive"
-      });
+      toast.error("Error", "Attachment URL not available");
     }
   };
 
@@ -69,11 +59,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       onDelete(announcement.id);
     } catch (error) {
       console.error('Error deleting announcement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete announcement",
-        variant: "destructive"
-      });
+      toast.error("Error", "Failed to delete announcement");
     }
   };
 
