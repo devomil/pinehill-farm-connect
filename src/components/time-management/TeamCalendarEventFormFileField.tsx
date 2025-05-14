@@ -5,24 +5,25 @@ import { Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from "@/hooks/use-toast";
 
-interface TeamCalendarEventFormFileFieldProps {
+// Define props interface for the component
+export interface TeamCalendarEventFormFileFieldProps {
   files: File[];
   setFiles: (files: File[]) => void;
   disabled?: boolean;
 }
 
-export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({
-  files,
-  setFiles,
-  disabled
+export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({ 
+  files, 
+  setFiles, 
+  disabled 
 }) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles([...files, ...acceptedFiles]);
   }, [files, setFiles]);
 
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
-    disabled
+    disabled 
   });
 
   const removeFile = (fileToRemove: File) => {
@@ -42,7 +43,6 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
     } catch (error) {
       console.error('Download error:', error);
       toast({
-        title: "Download failed",
         description: "There was an error downloading the file",
         variant: "destructive"
       });
@@ -52,7 +52,11 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
   return (
     <div>
       <label className="font-medium text-sm">Attachments</label>
-      <div {...getRootProps({className: `block mt-1 mb-2 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`})}>
+      <div 
+        {...getRootProps({ 
+          className: `block mt-1 mb-2 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`
+        })}
+      >
         <Button asChild size="sm" variant="outline" disabled={disabled}>
           <span>
             <Paperclip className="h-4 w-4 mr-1 inline" /> {isDragActive ? "Drop it here!" : "Add Attachment"}
@@ -60,6 +64,7 @@ export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileF
           </span>
         </Button>
       </div>
+      
       <div className="flex flex-wrap gap-2">
         {files.map((file, idx) => (
           <div key={idx} className="flex items-center bg-muted px-2 py-1 rounded text-xs">

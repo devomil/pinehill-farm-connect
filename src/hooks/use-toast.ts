@@ -1,19 +1,21 @@
 
 import { toast as sonnerToast, type ExternalToast } from "sonner";
 
-// Re-export the ExternalToast type for use elsewhere
-export type ToastProps = ExternalToast;
+// Extend the ExternalToast type to include our custom variant property
+export interface ToastProps extends ExternalToast {
+  variant?: "default" | "destructive" | "success" | "warning";
+}
 
 export function useToast() {
   return {
-    toast: (props: ExternalToast) => {
+    toast: (props: ToastProps) => {
       return sonnerToast(props);
     }
   };
 }
 
 // Direct toast function for simpler usage
-export const toast = (props: ExternalToast) => {
+export const toast = (props: ToastProps) => {
   return sonnerToast(props);
 };
 
