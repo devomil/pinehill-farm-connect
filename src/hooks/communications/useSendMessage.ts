@@ -1,5 +1,6 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { SendMessageParams } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { sendMessageService } from "./services/messageSendingService";
@@ -23,7 +24,7 @@ export function useSendMessage(currentUser: User | null) {
     },
     onError: (error) => {
       console.error('Error sending message:', error);
-      toast.error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Failed to send message', error instanceof Error ? error.message : 'Unknown error');
     }
   });
 }

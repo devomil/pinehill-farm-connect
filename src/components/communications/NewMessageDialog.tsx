@@ -10,7 +10,7 @@ import { RecipientSelect } from "./RecipientSelect";
 import { ShiftDetailsForm } from "./ShiftDetailsForm";
 import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/communications";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 export function NewMessageDialog({ employees, onSend, onClose, onRefresh }: NewMessageDialogProps) {
   const { currentUser } = useAuth();
@@ -62,7 +62,7 @@ export function NewMessageDialog({ employees, onSend, onClose, onRefresh }: NewM
         type: "manual", 
         message: "Selected recipient is no longer available" 
       });
-      toast.error("Selected recipient is no longer available. Please refresh and try again.");
+      toast.error("Selected recipient is no longer available", "Please refresh and try again.");
       return;
     }
     
