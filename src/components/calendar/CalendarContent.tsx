@@ -12,7 +12,6 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { format } from "date-fns";
-import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkShift } from "@/types/workSchedule";
 import { TimeOffRequest } from "@/types/timeManagement";
