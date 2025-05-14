@@ -216,6 +216,7 @@ export function CalendarContent({
               components={{
                 Day: ({ date: dayDate, ...props }) => (
                   <div className="relative h-full">
+                    {/* Use the spread operator to pass all props to the div */}
                     <div {...props} />
                     {dayDate && renderDay(dayDate)}
                   </div>
