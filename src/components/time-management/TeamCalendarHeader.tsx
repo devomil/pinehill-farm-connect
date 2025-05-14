@@ -19,7 +19,7 @@ export const TeamCalendarHeader: React.FC<TeamCalendarHeaderProps> = ({
   <CardHeader>
     <div className="flex justify-between items-center">
       <div>
-        <CardTitle>Team Calendar</CardTitle>
+        <CardTitle>Event Calendar</CardTitle>
         <CardDescription>
           View upcoming time-off and company events for better team coverage.
         </CardDescription>

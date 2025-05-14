@@ -12,7 +12,7 @@ export function CalendarViewSelector({ viewMode, onViewModeChange }: CalendarVie
     <div className="flex justify-between items-center mb-4">
       <TabsList>
         <TabsTrigger value="month">Month</TabsTrigger>
-        <TabsTrigger value="team">Team View</TabsTrigger>
+        <TabsTrigger value="team">Event View</TabsTrigger>
       </TabsList>
       <Select defaultValue="all">
         <SelectTrigger className="w-[180px]">
