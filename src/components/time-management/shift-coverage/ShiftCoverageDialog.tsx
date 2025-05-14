@@ -8,21 +8,22 @@ import { cn } from "@/lib/utils";
 import { useDaySelector } from "@/contexts/timeManagement/hooks/useDaySelector";
 import { uuid } from "@/utils/uuid";
 import { WorkScheduleCalendar } from "@/components/time-management/work-schedule/WorkScheduleCalendar";
+import { User } from "@/types";
 
 interface ShiftCoverageDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  employeeId: string;
-  employeeName: string;
-  onConfirm: (selectedDays: string[], startTime: string, endTime: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currentUser: User;
+  allEmployees: User[];
+  onRequestSent: () => void;
 }
 
 export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
-  isOpen,
-  onClose,
-  employeeId,
-  employeeName,
-  onConfirm
+  open,
+  onOpenChange,
+  currentUser,
+  allEmployees,
+  onRequestSent
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [startTime, setStartTime] = useState("09:00");
@@ -38,26 +39,34 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
     const selectedDays = getSelectedDaysArray();
     if (selectedDays.length === 0) return;
     
-    onConfirm(selectedDays, startTime, endTime);
+    // This would typically call an API to save the schedule
+    console.log("Scheduled shifts for:", {
+      currentUser,
+      selectedDays,
+      startTime,
+      endTime
+    });
+    
+    onRequestSent();
     clearSelectedDays();
-    onClose();
+    onOpenChange(false);
   };
 
   const handleCancel = () => {
     clearSelectedDays();
-    onClose();
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleCancel}>
+    <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Schedule Shifts for {employeeName}</DialogTitle>
+          <DialogTitle>Request Shift Coverage</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Select specific days to schedule shifts for this employee. Click on multiple dates to select them.
+            Select specific days for which you need shift coverage. Click on multiple dates to select them.
           </p>
           
           <div className="grid grid-cols-2 gap-3">
@@ -114,7 +123,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
                 onClick={handleConfirm}
                 disabled={getSelectedDaysArray().length === 0}
               >
-                Confirm Shifts
+                Request Coverage
               </Button>
             </div>
           </div>

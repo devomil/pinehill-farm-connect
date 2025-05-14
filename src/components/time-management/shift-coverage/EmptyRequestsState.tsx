@@ -1,64 +1,35 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, RefreshCw, UserPlus, Users } from "lucide-react";
+import { User } from "@/types";
+import { NewShiftCoverageRequestButton } from "../NewShiftCoverageRequestButton";
+import { useTimeManagement } from "@/contexts/timeManagement";
 
 interface EmptyRequestsStateProps {
-  filter: 'all' | 'pending' | 'accepted' | 'declined';
-  setFilter: (filter: 'all' | 'pending' | 'accepted' | 'declined') => void;
-  onRefresh?: () => void;
-  employeeCount?: number;
+  currentUser: User;
 }
 
-export const EmptyRequestsState: React.FC<EmptyRequestsStateProps> = ({ 
-  filter, 
-  setFilter, 
-  onRefresh,
-  employeeCount = 0
+export const EmptyRequestsState: React.FC<EmptyRequestsStateProps> = ({
+  currentUser
 }) => {
-  // Determine if we should show the no employees message
-  const showNoEmployeesMessage = employeeCount === 0;
-
+  const { allEmployees, refreshMessages } = useTimeManagement();
+  
   return (
-    <Card>
-      <CardContent className="p-8 text-center">
-        {showNoEmployeesMessage ? (
-          <>
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No other employees available</h3>
-            <p className="text-muted-foreground mb-4">
-              There are no other employees in the system to request shift coverage from.
-            </p>
-          </>
-        ) : (
-          <>
-            <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No shift coverage requests found</h3>
-            <p className="text-muted-foreground mb-4">
-              {filter !== 'all' ? 
-                `You don't have any ${filter} shift coverage requests at the moment.` : 
-                "There are currently no shift coverage requests."}
-            </p>
-          </>
-        )}
-        
-        <div className="flex flex-col sm:flex-row justify-center gap-2">
-          {filter !== 'all' && (
-            <Button variant="outline" onClick={() => setFilter('all')}>
-              View all requests
-            </Button>
-          )}
-          {onRefresh && (
-            <Button variant="secondary" onClick={onRefresh} className="mt-2 sm:mt-0">
-              <RefreshCw className="h-4 w-4 mr-2" /> Refresh data
-            </Button>
-          )}
-          {showNoEmployeesMessage && (
-            <Button variant="default" className="mt-2 sm:mt-0">
-              <UserPlus className="h-4 w-4 mr-2" /> Add employees in system
-            </Button>
-          )}
+    <Card className="mt-4">
+      <CardContent className="pt-6">
+        <div className="text-center space-y-4 py-8">
+          <h3 className="text-lg font-medium">No Shift Coverage Requests</h3>
+          <p className="text-sm text-muted-foreground">
+            There are no shift coverage requests at this time.
+          </p>
+          
+          <div className="flex justify-center">
+            <NewShiftCoverageRequestButton
+              currentUser={currentUser}
+              allEmployees={allEmployees || []}
+              onRequestSent={refreshMessages}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

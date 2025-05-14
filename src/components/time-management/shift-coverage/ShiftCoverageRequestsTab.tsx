@@ -2,55 +2,61 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShiftCoverageDialog } from "./ShiftCoverageDialog";
-import { useShiftCoverage } from "./useShiftCoverage";
-import { useTimeManagement } from "@/contexts/timeManagement";
+import { Communication } from "@/types/communications/communicationTypes";
+import { User } from "@/types";
+import { ShiftRequestsList } from "./ShiftRequestsList";
+import { ShiftRequestsLoadingState } from "./ShiftRequestsLoadingState";
+import { ShiftRequestsErrorState } from "./ShiftRequestsErrorState";
+import { EmptyRequestsState } from "./EmptyRequestsState";
 
-export const ShiftCoverageRequestsTab: React.FC = () => {
-  const { allEmployees } = useTimeManagement();
-  const {
-    isDialogOpen,
-    selectedEmployee,
-    openDialog,
-    closeDialog,
-    handleConfirmShifts
-  } = useShiftCoverage();
+interface ShiftCoverageRequestsTabProps {
+  messages: Communication[];
+  loading: boolean;
+  onRespond: (data: {
+    communicationId: string;
+    shiftRequestId: string;
+    accept: boolean;
+    senderId: string;
+  }) => Promise<any>;
+  currentUser: User;
+  onRefresh: () => Promise<any>;
+  error: any;
+}
 
+export const ShiftCoverageRequestsTab: React.FC<ShiftCoverageRequestsTabProps> = ({
+  messages,
+  loading,
+  onRespond,
+  currentUser,
+  onRefresh,
+  error
+}) => {
+  // Filter for shift coverage type messages
+  const shiftMessages = messages.filter(msg => msg.type === 'shift_coverage') || [];
+  
+  if (error) {
+    return <ShiftRequestsErrorState error={error} onRetry={onRefresh} />;
+  }
+  
+  if (loading) {
+    return <ShiftRequestsLoadingState />;
+  }
+  
+  if (shiftMessages.length === 0) {
+    return <EmptyRequestsState currentUser={currentUser} />;
+  }
+  
   return (
     <Card className="mt-4">
       <CardHeader>
-        <CardTitle className="text-xl">Employee Shift Coverage</CardTitle>
+        <CardTitle className="text-xl">Shift Coverage Requests</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allEmployees?.map((employee) => (
-            <Card key={employee.id} className="overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-medium">{employee.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {employee.department || "No department"}
-                    </p>
-                  </div>
-                  <Button onClick={() => openDialog({ id: employee.id, name: employee.name })}>
-                    Schedule
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {isDialogOpen && selectedEmployee && (
-          <ShiftCoverageDialog
-            isOpen={isDialogOpen}
-            onClose={closeDialog}
-            employeeId={selectedEmployee.id}
-            employeeName={selectedEmployee.name}
-            onConfirm={handleConfirmShifts}
-          />
-        )}
+        <ShiftRequestsList 
+          messages={shiftMessages}
+          onRespond={onRespond}
+          currentUser={currentUser}
+        />
       </CardContent>
     </Card>
   );
