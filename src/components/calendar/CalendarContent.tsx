@@ -214,13 +214,16 @@ export function CalendarContent({
               month={currentMonth}
               className="rounded-md border"
               components={{
-                Day: ({ date: dayDate, ...props }) => (
-                  <div className="relative h-full">
-                    {/* Use the spread operator to pass all props to the div */}
-                    <div {...props} />
-                    {dayDate && renderDay(dayDate)}
-                  </div>
-                )
+                Day: ({ date: dayDate, ...props }) => {
+                  // Create a proper div with HTML attributes from props
+                  return (
+                    <div className="relative h-full">
+                      {/* This spreads the HTML attributes properly to the div */}
+                      <div {...props as React.HTMLAttributes<HTMLDivElement>} />
+                      {dayDate && renderDay(dayDate)}
+                    </div>
+                  );
+                }
               }}
             />
           </TabsContent>
