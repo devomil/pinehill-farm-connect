@@ -92,7 +92,11 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       }
     } catch (error) {
       console.error('Download error:', error);
-      toast.error("Download failed", "There was an error downloading the file");
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading the file",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -136,7 +140,11 @@ export const AnnouncementAttachmentPreview: React.FC<AttachmentPreviewProps> = (
       }
     } catch (error) {
       console.error('Preview error:', error);
-      toast.error("Preview failed", "Could not load the preview");
+      toast({
+        title: "Preview failed",
+        description: "Could not load the preview",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }

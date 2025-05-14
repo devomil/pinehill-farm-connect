@@ -9,7 +9,11 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
   const markAsRead = async (announcementId: string) => {
     if (!userId) {
       console.error("Cannot mark as read: No user ID provided");
-      toast.error("Error", "Cannot mark as read: User not authenticated");
+      toast({
+        title: "Error",
+        description: "Cannot mark as read: User not authenticated",
+        variant: "destructive"
+      });
       return Promise.reject("No user ID provided");
     }
 
@@ -63,7 +67,11 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       
       if (error) {
         console.error("Error marking announcement as read:", error);
-        toast.error("Error", "Failed to mark announcement as read");
+        toast({
+          title: "Error",
+          description: "Failed to mark announcement as read",
+          variant: "destructive"
+        });
         return Promise.reject(error);
       }
       
@@ -71,7 +79,11 @@ export const useAnnouncementReadStatus = (userId: string | undefined) => {
       return Promise.resolve();
     } catch (error) {
       console.error("Unexpected error in markAsRead:", error);
-      toast.error("Error", "An unexpected error occurred");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
       return Promise.reject(error);
     } finally {
       setProcessing(false);

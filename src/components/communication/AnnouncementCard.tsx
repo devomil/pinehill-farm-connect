@@ -46,10 +46,18 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         window.open(attachment.url, '_blank');
       } catch (error) {
         console.error('Error opening attachment:', error);
-        toast.error("Failed to open attachment", "There was a problem opening this attachment. Please try again.");
+        toast({
+          title: "Failed to open attachment",
+          description: "There was a problem opening this attachment. Please try again.",
+          variant: "destructive" 
+        });
       }
     } else {
-      toast.error("Error", "Attachment URL not available");
+      toast({
+        title: "Error",
+        description: "Attachment URL not available",
+        variant: "destructive"
+      });
     }
   };
 
@@ -59,7 +67,11 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       onDelete(announcement.id);
     } catch (error) {
       console.error('Error deleting announcement:', error);
-      toast.error("Error", "Failed to delete announcement");
+      toast({
+        title: "Error",
+        description: "Failed to delete announcement",
+        variant: "destructive"
+      });
     }
   };
 

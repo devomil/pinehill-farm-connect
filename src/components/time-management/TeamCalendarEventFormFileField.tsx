@@ -1,110 +1,91 @@
-import React, { useState } from "react";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Paperclip, X } from "lucide-react";
+import React, { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Paperclip } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 interface TeamCalendarEventFormFileFieldProps {
-  form: any;
-  name: string;
-  label: string;
-  accept?: string;
-  maxSize?: number; // in MB
-  required?: boolean;
+  files: File[];
+  setFiles: (files: File[]) => void;
+  disabled?: boolean;
 }
 
 export const TeamCalendarEventFormFileField: React.FC<TeamCalendarEventFormFileFieldProps> = ({
-  form,
-  name,
-  label,
-  accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx",
-  maxSize = 5, // Default 5MB
-  required = false,
+  files,
+  setFiles,
+  disabled
 }) => {
-  const [fileName, setFileName] = useState<string>("");
-  const maxSizeBytes = maxSize * 1024 * 1024; // Convert MB to bytes
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setFiles([...files, ...acceptedFiles]);
+  }, [files, setFiles]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: File | null) => void) => {
-    const file = e.target.files?.[0];
-    
-    if (!file) {
-      onChange(null);
-      setFileName("");
-      return;
-    }
-    
-    // Check file size
-    if (file.size > maxSizeBytes) {
-      toast.error("File too large", `File size must be less than ${maxSize}MB`);
-      e.target.value = "";
-      return;
-    }
-    
-    setFileName(file.name);
-    onChange(file);
+  const {getRootProps, getInputProps, isDragActive} = useDropzone({
+    onDrop,
+    disabled
+  });
+
+  const removeFile = (fileToRemove: File) => {
+    setFiles(files.filter(file => file !== fileToRemove));
   };
 
-  const clearFile = (onChange: (value: null) => void) => {
-    onChange(null);
-    setFileName("");
+  const handleDownload = async (file: File) => {
+    try {
+      const url = window.URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', file.name);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading the file",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field: { onChange, value, ...rest } }) => (
-        <FormItem>
-          <FormLabel>{label}{required && <span className="text-destructive ml-1">*</span>}</FormLabel>
-          <FormControl>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Input
-                  type="file"
-                  accept={accept}
-                  onChange={(e) => handleFileChange(e, onChange)}
-                  className={cn(
-                    "cursor-pointer opacity-0 absolute inset-0 z-10",
-                    { "pointer-events-none": !!value }
-                  )}
-                  {...rest}
-                />
-                <div className="flex items-center border rounded-md px-3 py-2 text-sm">
-                  <Paperclip className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="flex-1 truncate">
-                    {fileName || value?.name || "No file selected"}
-                  </span>
-                </div>
-              </div>
-              
-              {value && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => clearFile(onChange)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {!value && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.click()}
-                >
-                  Browse
-                </Button>
-              )}
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div>
+      <label className="font-medium text-sm">Attachments</label>
+      <div {...getRootProps({className: `block mt-1 mb-2 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`})}>
+        <Button asChild size="sm" variant="outline" disabled={disabled}>
+          <span>
+            <Paperclip className="h-4 w-4 mr-1 inline" /> {isDragActive ? "Drop it here!" : "Add Attachment"}
+            <input {...getInputProps()} className="hidden" disabled={disabled} />
+          </span>
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {files.map((file, idx) => (
+          <div key={idx} className="flex items-center bg-muted px-2 py-1 rounded text-xs">
+            <span>{file.name}</span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="ml-1 px-1"
+              onClick={() => removeFile(file)}
+              disabled={disabled}
+            >
+              ✕
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="ml-1 px-1"
+              onClick={() => handleDownload(file)}
+              disabled={disabled}
+            >
+              <Paperclip className="h-4 w-4 mr-1 inline" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };

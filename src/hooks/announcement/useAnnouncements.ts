@@ -44,8 +44,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       );
     } catch (err) {
       // Use toast.error with title first, then description
-      toast.error("Failed to mark announcement as read", 
-        err instanceof Error ? err.message : "Unknown error");
+      toast({
+        title: "Failed to mark announcement as read",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive"
+      });
       setError(err instanceof Error ? err : new Error("Unknown error"));
     }
   }, [currentUser?.id, markAsReadById]);
@@ -82,8 +85,11 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
       debug.info(`Fetched ${mappedAnnouncements.length} announcements`);
     } catch (err) {
       // Use toast.error with title first, then description
-      toast.error("Failed to load announcements", 
-        err instanceof Error ? err.message : "Unknown error");
+      toast({
+        title: "Failed to load announcements",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive"
+      });
       setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setLoading(false);

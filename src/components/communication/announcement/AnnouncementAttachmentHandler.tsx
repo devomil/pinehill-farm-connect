@@ -22,7 +22,11 @@ export const useAnnouncementAttachmentHandler = () => {
       
       if (error) {
         console.error('Error creating signed URL:', error);
-        toast.error("Could not open attachment", "There was an issue accessing the attachment");
+        toast({
+          title: "Could not open attachment",
+          description: "There was an issue accessing the attachment",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -30,11 +34,19 @@ export const useAnnouncementAttachmentHandler = () => {
         console.log("Opening signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
       } else {
-        toast.error("Error", "Could not generate a URL for this attachment");
+        toast({
+          title: "Error",
+          description: "Could not generate a URL for this attachment",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
-      toast.error("Could not open attachment", "There was an issue accessing the attachment");
+      toast({
+        title: "Could not open attachment",
+        description: "There was an issue accessing the attachment", 
+        variant: "destructive"
+      });
     }
   };
 

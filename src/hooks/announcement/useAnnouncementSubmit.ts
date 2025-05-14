@@ -39,19 +39,19 @@ export const useAnnouncementSubmit = ({
 
     try {
       if (!currentUser || !currentUser.id) {
-        toast({ 
-          title: "Authentication error", 
-          description: "You need to be logged in to create announcements.", 
-          variant: "destructive" 
+        toast({
+          title: "Authentication error",
+          description: "You need to be logged in to create announcements.",
+          variant: "destructive"
         });
         return false;
       }
       
       if (!validateUuid(currentUser.id)) {
-        toast({ 
-          title: "Invalid user ID format", 
-          description: "Your user ID is not in the correct format. Please contact an administrator.", 
-          variant: "destructive" 
+        toast({
+          title: "Invalid user ID format",
+          description: "Your user ID is not in the correct format. Please contact an administrator.",
+          variant: "destructive"
         });
         return false;
       }
@@ -123,10 +123,10 @@ export const useAnnouncementSubmit = ({
 
       if (error) {
         console.error("Announcement error:", error);
-        toast({ 
-          title: `Failed to ${initialData ? 'update' : 'create'} announcement`, 
-          description: error.message, 
-          variant: "destructive" 
+        toast({
+          title: `Failed to ${initialData ? 'update' : 'create'} announcement`,
+          description: error.message,
+          variant: "destructive"
         });
         return false;
       }
@@ -146,10 +146,10 @@ export const useAnnouncementSubmit = ({
         }
         
         if (validRecipientIds.length === 0) {
-          toast({ 
-            title: "Warning", 
-            description: "No valid recipients found. The announcement was created but no recipients were assigned.", 
-            variant: "default" 
+          toast({
+            title: "Warning",
+            description: "No valid recipients found. The announcement was created but no recipients were assigned.",
+            variant: "default"
           });
         } else {
           const recipientsRows = validRecipientIds.map(user_id => ({ 
@@ -163,21 +163,27 @@ export const useAnnouncementSubmit = ({
             
           if (recipErr) {
             console.error("Recipients assignment error:", recipErr);
-            toast({ 
-              title: "Announcement created", 
+            toast({
+              title: "Announcement created",
               description: "But there was an error assigning recipients: " + recipErr.message,
-              variant: "default" 
+              variant: "default"
             });
             return true;
           }
         }
       }
       
-      toast({ title: initialData ? "Announcement updated!" : "Announcement created!" });
+      toast({ 
+        title: initialData ? "Announcement updated!" : "Announcement created!" 
+      });
       return true;
     } catch (e: any) {
       console.error("Unexpected error:", e);
-      toast({ title: "Unexpected error", description: e.message || String(e), variant: "destructive" });
+      toast({ 
+        title: "Unexpected error", 
+        description: e.message || String(e), 
+        variant: "destructive" 
+      });
       return false;
     } finally {
       setLoading(false);

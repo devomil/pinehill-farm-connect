@@ -14,13 +14,21 @@ export const useAnnouncementActions = () => {
       const success = await editAnnouncement(announcement);
       
       if (success) {
-        toast.success("Announcement updated", "The announcement has been successfully updated");
+        toast({
+          title: "Announcement updated",
+          description: "The announcement has been successfully updated",
+          variant: "success"
+        });
       }
       
       return success;
     } catch (error) {
       console.error("Error in handleEdit:", error);
-      toast.error("Update failed", "There was an error updating the announcement");
+      toast({
+        title: "Update failed",
+        description: "There was an error updating the announcement",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -31,13 +39,21 @@ export const useAnnouncementActions = () => {
       const success = await deleteAnnouncement(id);
       
       if (success) {
-        toast.success("Announcement deleted", "The announcement has been successfully deleted");
+        toast({
+          title: "Announcement deleted",
+          description: "The announcement has been successfully deleted",
+          variant: "success"
+        });
       }
       
       return success;
     } catch (error) {
       console.error("Error in handleDelete:", error);
-      toast.error("Delete failed", "There was an error deleting the announcement");
+      toast({
+        title: "Delete failed",
+        description: "There was an error deleting the announcement",
+        variant: "destructive"
+      });
       return false;
     }
   };

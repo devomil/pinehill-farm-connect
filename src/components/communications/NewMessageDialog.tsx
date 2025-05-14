@@ -1,192 +1,140 @@
-
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import React, { useState } from "react";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { RecipientSelect } from "./RecipientSelect";
-import { ShiftDetailsForm } from "./ShiftDetailsForm";
-import { NewMessageDialogProps, NewMessageFormData, MessageType } from "@/types/communications";
+import { User } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
-export function NewMessageDialog({ employees, onSend, onClose, onRefresh }: NewMessageDialogProps) {
+interface NewMessageDialogProps {
+  employees: User[];
+  onSend: (data: any) => void;
+  onClose: () => void;
+  onRefresh?: () => void;
+}
+
+interface MessageData {
+  recipientId: string;
+  content: string;
+}
+
+export function NewMessageDialog({
+  employees,
+  onSend,
+  onClose,
+  onRefresh
+}: NewMessageDialogProps) {
+  const [recipientId, setRecipientId] = useState("");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
   const { currentUser } = useAuth();
-  const form = useForm<NewMessageFormData>({
-    defaultValues: {
-      recipientId: "",
-      message: "",
-      type: "general",
-      shiftDate: "",
-      shiftStart: "",
-      shiftEnd: ""
-    }
-  });
 
-  const type = form.watch("type") as MessageType;
-  
-  // Filter out the current user to avoid sending messages to self
-  const filteredEmployees = React.useMemo(() => {
-    if (!currentUser) return employees;
-    return employees.filter(emp => emp.id !== currentUser.id);
-  }, [employees, currentUser]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Reset form when dialog is opened
-  useEffect(() => {
-    form.reset({
-      recipientId: "",
-      message: "",
-      type: "general",
-      shiftDate: "",
-      shiftStart: "",
-      shiftEnd: ""
-    });
-  }, [form]);
-
-  const onSubmit = (values: NewMessageFormData) => {
-    // Enhanced validation to ensure recipient exists
-    if (!values.recipientId) {
-      form.setError("recipientId", { 
-        type: "manual", 
-        message: "Please select a recipient" 
+    if (!recipientId || !content) {
+      toast({
+        title: "Error",
+        description: "Please select a recipient and enter a message.",
+        variant: "destructive",
       });
       return;
     }
-    
-    const recipientExists = filteredEmployees.some(emp => emp.id === values.recipientId);
-    
-    if (!recipientExists) {
-      form.setError("recipientId", { 
-        type: "manual", 
-        message: "Selected recipient is no longer available" 
-      });
-      toast.error("Selected recipient is no longer available", "Please refresh and try again.");
-      return;
-    }
-    
-    // Validate required message
-    if (!values.message.trim()) {
-      form.setError("message", {
-        type: "manual",
-        message: "Message is required"
-      });
-      return;
-    }
-    
-    // For shift coverage, validate shift details
-    if (type === "shift_coverage") {
-      if (!values.shiftDate) {
-        form.setError("shiftDate", {
-          type: "manual",
-          message: "Shift date is required"
-        });
-        return;
-      }
-      
-      if (!values.shiftStart) {
-        form.setError("shiftStart", {
-          type: "manual",
-          message: "Shift start time is required"
-        });
-        return;
-      }
-      
-      if (!values.shiftEnd) {
-        form.setError("shiftEnd", {
-          type: "manual",
-          message: "Shift end time is required"
-        });
-        return;
-      }
-    }
-    
-    const shiftDetails = type === "shift_coverage" ? {
-      shift_date: values.shiftDate,
-      shift_start: values.shiftStart,
-      shift_end: values.shiftEnd
-    } : undefined;
 
-    onSend({
-      recipientId: values.recipientId,
-      message: values.message,
-      type: values.type,
-      shiftDetails
-    });
-    
-    // Close dialog on successful submission
-    if (onClose) onClose();
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const messageData: MessageData = {
+        recipientId: recipientId,
+        content: content,
+      };
+      await onSend(messageData);
+      toast({
+        title: "Message sent!",
+        variant: "success",
+      });
+      setContent("");
+      setRecipientId("");
+      onClose();
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message: " + error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl">
       <DialogHeader>
-        <DialogTitle>New Message</DialogTitle>
+        <DialogTitle>Send New Message</DialogTitle>
         <DialogDescription>
-          Send a direct message to another employee
+          Select a recipient and compose your message below.
         </DialogDescription>
       </DialogHeader>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <RecipientSelect 
-            form={form} 
-            employees={filteredEmployees}
-            onRefresh={onRefresh} 
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="recipient">Recipient</Label>
+          <select
+            id="recipient"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={recipientId}
+            onChange={(e) => setRecipientId(e.target.value)}
+            disabled={loading}
+          >
+            <option value="">Select a recipient</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.firstName} {employee.lastName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="message">Message</Label>
+          <Textarea
+            id="message"
+            placeholder="Type your message..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            disabled={loading}
           />
-
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Message Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="general">General Message</SelectItem>
-                    <SelectItem value="shift_coverage">Shift Coverage Request</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {type === "shift_coverage" && <ShiftDetailsForm form={form} />}
-
-          <FormField
-            control={form.control}
-            name="message"
-            rules={{ required: "Message is required" }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Message</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder={
-                      type === "shift_coverage"
-                        ? "Add any additional details about the shift coverage request..."
-                        : "Type your message here..."
-                    }
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="flex justify-end">
-            <Button type="submit">Send</Button>
-          </div>
-        </form>
-      </Form>
+        </div>
+        <DialogFooter>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send Message"}
+          </Button>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary" disabled={loading} onClick={onClose}>
+              Cancel
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </form>
     </DialogContent>
   );
 }

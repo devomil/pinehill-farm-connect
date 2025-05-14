@@ -62,17 +62,29 @@ export const useAnnouncementAcknowledge = (userId: string | undefined) => {
       
       if (error) {
         console.error("Error acknowledging announcement:", error);
-        toast.error("Error", "Failed to acknowledge announcement");
+        toast({
+          title: "Error",
+          description: "Failed to acknowledge announcement",
+          variant: "destructive"
+        });
         throw error;
       }
       
-      toast.success("Success", "Announcement acknowledged successfully");
+      toast({
+        title: "Success",
+        description: "Announcement acknowledged successfully",
+        variant: "success"
+      });
       
       console.log("Successfully acknowledged announcement");
       return Promise.resolve();
     } catch (error) {
       console.error("Unexpected error in acknowledgeAnnouncement:", error);
-      toast.error("Error", "An unexpected error occurred");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
       return Promise.reject(error);
     } finally {
       setProcessing(false);

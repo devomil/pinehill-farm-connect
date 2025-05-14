@@ -48,7 +48,11 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
       
       if (error) {
         console.error('Error creating signed URL:', error);
-        toast.error("Failed to open attachment", "Could not retrieve the attachment URL. Please try again.");
+        toast({
+          title: "Failed to open attachment",
+          description: "Could not retrieve the attachment URL. Please try again.",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -56,11 +60,19 @@ export const AnnouncementsCard: React.FC<AnnouncementsCardProps> = ({ announceme
         console.log("Got signed URL:", data.signedUrl);
         window.open(data.signedUrl, '_blank');
       } else {
-        toast.error("Error", "No URL was returned for this attachment");
+        toast({
+          title: "Error",
+          description: "No URL was returned for this attachment",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error handling attachment:', error);
-      toast.error("Failed to open attachment", "There was a problem opening this attachment. Please try again.");
+      toast({
+        title: "Failed to open attachment",
+        description: "There was a problem opening this attachment. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

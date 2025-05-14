@@ -21,11 +21,19 @@ export const useAnnouncementEdit = () => {
       
       if (error) throw error;
       
-      toast.success("Success", "Announcement updated successfully");
+      toast({
+        title: "Success",
+        description: "Announcement updated successfully",
+        variant: "success"
+      });
       return true;
     } catch (err: any) {
       console.error('Error updating announcement:', err);
-      toast.error("Error", "Failed to update the announcement");
+      toast({
+        title: "Error",
+        description: "Failed to update the announcement",
+        variant: "destructive"
+      });
       return false;
     }
   };

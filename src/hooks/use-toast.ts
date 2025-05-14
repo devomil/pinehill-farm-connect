@@ -1,34 +1,37 @@
 
 import { toast as sonnerToast, Toast as SonnerToast, ExternalToast } from "sonner";
 
-export type ToastProps = {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-  [key: string]: any;
-};
+export type ToastProps = ExternalToast;
 
 export function useToast() {
   return {
     toast: {
       success: (title: string, description?: string) => {
-        return sonnerToast.success(title, {
+        return sonnerToast({
+          title,
           description,
+          variant: "success"
         });
       },
       error: (title: string, description?: string) => {
-        return sonnerToast.error(title, {
+        return sonnerToast({
+          title,
           description,
+          variant: "destructive"
         });
       },
       warning: (title: string, description?: string) => {
-        return sonnerToast.warning(title, {
+        return sonnerToast({
+          title,
           description,
+          variant: "warning"
         });
       },
       info: (title: string, description?: string) => {
-        return sonnerToast.info(title, {
+        return sonnerToast({
+          title,
           description,
+          variant: "default"
         });
       },
     }
@@ -38,25 +41,33 @@ export function useToast() {
 // Direct toast function for simpler usage
 export const toast = {
   success: (title: string, description?: string) => {
-    return sonnerToast.success(title, {
+    return sonnerToast({
+      title,
       description,
+      variant: "success"
     });
   },
   error: (title: string, description?: string) => {
-    return sonnerToast.error(title, {
+    return sonnerToast({
+      title,
       description,
+      variant: "destructive"
     });
   },
   warning: (title: string, description?: string) => {
-    return sonnerToast.warning(title, {
+    return sonnerToast({
+      title,
       description,
+      variant: "warning"
     });
   },
   info: (title: string, description?: string) => {
-    return sonnerToast.info(title, {
+    return sonnerToast({
+      title,
       description,
+      variant: "default"
     });
   },
-  // Add the raw sonner toast to support other use cases
+  // Expose the raw toast function for direct object usage
   ...sonnerToast
 };
