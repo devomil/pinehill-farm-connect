@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { AdminWorkScheduleEditor } from "./AdminWorkScheduleEditor";
 import { EmployeeScheduleView } from "./EmployeeScheduleView";
@@ -39,10 +38,6 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
       setSelectedEmployee(currentUser.id);
     }
   }, [isAdmin, currentUser.id]);
-
-  if (!isAdmin && !selectedEmployee) {
-    return null;
-  }
 
   if (error) {
     return (
