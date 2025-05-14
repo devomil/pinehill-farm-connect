@@ -40,7 +40,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     toggleSelectionMode,
     toggleDay,
     isDaySelected,
-    getSelectedDaysArray
+    getSelectedDayStrings
   } = useScheduleEditor({ selectedEmployee, scheduleData, onSave });
   
   if (!selectedEmployee) {
@@ -78,7 +78,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
       
       {selectionMode === "multiple" && selectedCount > 0 && (
         <SpecificDaysSchedulingBar
-          selectedDays={getSelectedDaysArray()}
+          selectedDays={getSelectedDayStrings()}
           currentMonth={currentMonth}
           onSchedule={handleBulkSchedule}
           onCancel={() => {

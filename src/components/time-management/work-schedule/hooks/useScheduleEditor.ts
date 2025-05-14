@@ -31,8 +31,9 @@ export const useScheduleEditor = ({
     isDaySelected, 
     clearSelectedDays, 
     getSelectedDaysArray,
+    getSelectedDayStrings,
     selectedCount
-  } = useDaySelector(currentMonth);
+  } = useDaySelector();
   
   // If employee changes or schedule data changes, reset editing state
   useEffect(() => {
@@ -192,6 +193,7 @@ export const useScheduleEditor = ({
     toggleDay,
     isDaySelected,
     clearSelectedDays,
-    getSelectedDaysArray
+    getSelectedDaysArray,
+    getSelectedDayStrings
   };
 };

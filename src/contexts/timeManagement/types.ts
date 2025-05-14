@@ -20,6 +20,7 @@ export interface TimeManagementContextType {
   messagesLoading: boolean;
   messagesError: any;
   allEmployees: User[];
+  lastSaveTime: number;
 
   // Actions
   respondToShiftRequest: (data: {
@@ -33,4 +34,5 @@ export interface TimeManagementContextType {
   refreshMessages: () => Promise<any>;
   forceRefreshData: () => void;
   handleRetry: () => number;
+  setLastSaveTime: (time: number) => void;
 }

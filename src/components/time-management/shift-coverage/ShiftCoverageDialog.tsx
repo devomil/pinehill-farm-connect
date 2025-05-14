@@ -31,12 +31,12 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
   const { 
     toggleDay, 
     isDaySelected, 
-    getSelectedDaysArray,
+    getSelectedDayStrings,
     clearSelectedDays
-  } = useDaySelector(currentMonth);
+  } = useDaySelector();
 
   const handleConfirm = () => {
-    const selectedDays = getSelectedDaysArray();
+    const selectedDays = getSelectedDayStrings();
     if (selectedDays.length === 0) return;
     
     // This would typically call an API to save the schedule
@@ -113,7 +113,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
           
           <div className="flex justify-between items-center">
             <p className="text-sm">
-              {getSelectedDaysArray().length} day(s) selected
+              {getSelectedDayStrings().length} day(s) selected
             </p>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={handleCancel} className="pointer-events-auto">
@@ -121,7 +121,7 @@ export const ShiftCoverageDialog: React.FC<ShiftCoverageDialogProps> = ({
               </Button>
               <Button 
                 onClick={handleConfirm}
-                disabled={getSelectedDaysArray().length === 0}
+                disabled={getSelectedDayStrings().length === 0}
                 className="pointer-events-auto"
               >
                 Request Coverage

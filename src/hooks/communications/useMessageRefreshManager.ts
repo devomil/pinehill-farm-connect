@@ -54,7 +54,7 @@ export function useMessageRefreshManager(
           lastRefreshTime.current = Date.now();
           refreshCount.current++;
           
-          refetch({ stale: false })
+          refetch()
             .then(() => resolve())
             .finally(() => {
               setTimeout(() => {
@@ -71,7 +71,7 @@ export function useMessageRefreshManager(
     lastRefreshTime.current = now;
     refreshCount.current++;
     
-    return refetch({ stale: false }).finally(() => {
+    return refetch().finally(() => {
       // Much longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;

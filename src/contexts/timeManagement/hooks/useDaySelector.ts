@@ -1,52 +1,59 @@
 
-import { useState, useCallback } from 'react';
-import { format } from 'date-fns';
+import { useState, useCallback, useMemo } from "react";
 
 /**
- * Hook to manage day selection for calendars
- * with proper memoization and performance optimization
+ * Hook for managing date selections in calendars and schedules
  */
-export function useDaySelector() {
+export const useDaySelector = (currentMonth?: Date) => {
+  // Track selected days in a Map for O(1) lookups
   const [selectedDays, setSelectedDays] = useState<Map<string, Date>>(new Map());
-  
-  // Memoized toggle function to prevent unnecessary re-renders
+
+  // Toggle a day's selection status
   const toggleDay = useCallback((date: Date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
+    const dateKey = date.toISOString().split('T')[0];
     
     setSelectedDays(prev => {
       const newMap = new Map(prev);
-      
       if (newMap.has(dateKey)) {
         newMap.delete(dateKey);
       } else {
         newMap.set(dateKey, date);
       }
-      
       return newMap;
     });
   }, []);
-  
-  // Check if a day is selected - optimized to prevent unnecessary calculations
-  const isDaySelected = useCallback((date: Date): boolean => {
-    const dateKey = format(date, 'yyyy-MM-dd');
+
+  // Check if a day is selected
+  const isDaySelected = useCallback((date: Date) => {
+    const dateKey = date.toISOString().split('T')[0];
     return selectedDays.has(dateKey);
   }, [selectedDays]);
-  
-  // Get all selected days as an array - memoized to prevent recreating on every render
-  const getSelectedDaysArray = useCallback((): Date[] => {
+
+  // Get selected count
+  const selectedCount = useMemo(() => selectedDays.size, [selectedDays]);
+
+  // Get array of selected days as Date objects
+  const getSelectedDaysArray = useCallback(() => {
     return Array.from(selectedDays.values());
   }, [selectedDays]);
-  
-  // Clear all selections
+
+  // Get array of selected days as strings (YYYY-MM-DD)
+  const getSelectedDayStrings = useCallback(() => {
+    return Array.from(selectedDays.keys());
+  }, [selectedDays]);
+
+  // Clear all selected days
   const clearSelectedDays = useCallback(() => {
     setSelectedDays(new Map());
   }, []);
-  
+
   return {
     selectedDays,
     toggleDay,
     isDaySelected,
     getSelectedDaysArray,
-    clearSelectedDays
+    getSelectedDayStrings,
+    clearSelectedDays,
+    selectedCount
   };
-}
+};
