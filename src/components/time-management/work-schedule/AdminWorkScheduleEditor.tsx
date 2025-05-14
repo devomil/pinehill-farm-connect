@@ -1,260 +1,199 @@
-import React, { useState, useMemo } from "react";
-import { WorkSchedule, WorkShift, WorkScheduleEditorProps } from "@/types/workSchedule";
-import { uuid } from "@/utils/uuid";
-import { format, parse, isSameDay } from "date-fns";
-import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
+
+import React, { useState, useEffect, useMemo } from "react";
+import { WorkScheduleEditorProps, WorkShift } from "@/types/workSchedule";
+import { format } from "date-fns";
+import { CardDescription } from "@/components/ui/card";
 import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 import { ShiftDialog } from "./ShiftDialog";
 import { BulkSchedulingBar } from "./BulkSchedulingBar";
-import { buildShiftsMap, getDaysInMonth, createNewShift } from "./scheduleHelpers";
+import { createNewShift, buildShiftsMap } from "./scheduleHelpers";
+import { uuid } from "@/utils/uuid";
+import { Button } from "@/components/ui/button";
 
 export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   selectedEmployee,
   scheduleData,
   onSave,
   onReset,
-  loading = false // Provide a default value of false
+  loading
 }) => {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [currentShift, setCurrentShift] = useState<WorkShift | null>(null);
-  const [isSelectingMultiple, setIsSelectingMultiple] = useState<boolean>(false);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-
-  // Get all days in the current month
-  const daysInMonth = useMemo(() => getDaysInMonth(currentDate), [currentDate]);
-
-  // Get shifts for each day
-  const shiftsMap = useMemo(() => buildShiftsMap(scheduleData), [scheduleData]);
-
-  // Handle day click
-  const handleDayClick = (day: Date) => {
-    if (isSelectingMultiple) {
-      // Toggle selection of multiple dates
-      const isAlreadySelected = selectedDates.some(d => 
-        d.getDate() === day.getDate() && 
-        d.getMonth() === day.getMonth() && 
-        d.getFullYear() === day.getFullYear()
-      );
-      
-      if (isAlreadySelected) {
-        setSelectedDates(selectedDates.filter(d => !isSameDay(d, day)));
-      } else {
-        setSelectedDates([...selectedDates, day]);
-      }
-    } else {
-      // Single date selection - open dialog for scheduling
-      setSelectedDate(day);
-      const dateStr = format(day, "yyyy-MM-dd");
-      const existingShifts = shiftsMap.get(dateStr) || [];
-      
-      if (existingShifts.length > 0) {
-        // If shifts exist, show the first one in the dialog
-        setCurrentShift({
-          ...existingShifts[0]
-        });
-      } else {
-        // Create a new shift
-        setCurrentShift(createNewShift(selectedEmployee || "", day));
-      }
-      
-      setIsDialogOpen(true);
-    }
-  };
-
-  // Update shift field
-  const updateShiftField = (field: string, value: any) => {
-    setCurrentShift(prev => prev ? { ...prev, [field]: value } : null);
-  };
-
-  // Save shift from dialog
-  const saveShift = () => {
-    if (!currentShift || !selectedEmployee || !scheduleData) return;
-    
-    // Validate times
-    if (currentShift.startTime >= currentShift.endTime) {
-      toast.error("End time must be after start time");
-      return;
-    }
-    
-    let newSchedule: WorkSchedule = { ...scheduleData };
-    
-    // If this is for multiple dates
-    if (isSelectingMultiple && selectedDates.length > 0) {
-      const newShifts = [...(scheduleData.shifts || [])];
-      
-      selectedDates.forEach(date => {
-        const dateStr = format(date, "yyyy-MM-dd");
-        // Remove existing shifts for this date
-        const filteredShifts = newShifts.filter(s => s.date !== dateStr);
-        
-        // Add new shift for this date
-        filteredShifts.push({
-          id: uuidv4(),
-          employeeId: selectedEmployee,
-          date: dateStr,
-          startTime: currentShift.startTime,
-          endTime: currentShift.endTime,
-          isRecurring: currentShift.isRecurring,
-          recurringPattern: currentShift.recurringPattern,
-          notes: currentShift.notes
-        });
-        
-        // Update shifts array
-        newSchedule = {
-          ...scheduleData,
-          shifts: filteredShifts
-        };
-      });
-      
-      // Reset selected dates
-      setSelectedDates([]);
-    } else {
-      // Single date update
-      const existingShifts = scheduleData.shifts || [];
-      
-      // Find if we're updating an existing shift or adding a new one
-      const shiftIndex = existingShifts.findIndex(s => s.id === currentShift.id);
-      let updatedShifts;
-      
-      if (shiftIndex >= 0) {
-        // Update existing shift
-        updatedShifts = [...existingShifts];
-        updatedShifts[shiftIndex] = {
-          ...currentShift
-        };
-      } else {
-        // Add new shift
-        updatedShifts = [
-          ...existingShifts,
-          {
-            ...currentShift
-          }
-        ];
-      }
-      
-      newSchedule = {
-        ...scheduleData,
-        shifts: updatedShifts
-      };
-    }
-    
-    onSave(newSchedule);
+  const [editingShift, setEditingShift] = useState<WorkShift | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [bulkMode, setBulkMode] = useState<string | null>(null);
+  
+  // If employee changes or schedule data changes, reset editing state
+  useEffect(() => {
+    setSelectedDate(undefined);
+    setEditingShift(null);
+    setIsEditMode(false);
     setIsDialogOpen(false);
-    toast.success("Schedule updated");
-  };
-
-  // Delete shift
-  const deleteShift = () => {
-    if (!currentShift || !selectedEmployee || !scheduleData) return;
+  }, [selectedEmployee, scheduleData?.id]);
+  
+  // Create map of dates to shifts
+  const shiftsMap = useMemo(() => {
+    return buildShiftsMap(scheduleData);
+  }, [scheduleData]);
+  
+  // Handle adding a new shift
+  const handleAddShift = () => {
+    if (!selectedEmployee || !selectedDate) return;
     
-    const updatedShifts = (scheduleData.shifts || []).filter(
-      shift => shift.id !== currentShift.id
-    );
-    
-    const newSchedule = {
-      ...scheduleData,
-      shifts: updatedShifts
-    };
-    
-    onSave(newSchedule);
-    setIsDialogOpen(false);
-    toast.success("Shift removed");
-  };
-
-  // Apply shifts to multiple days
-  const applyToMultipleDates = () => {
-    setIsSelectingMultiple(true);
-    setIsDialogOpen(false);
-    toast.info("Select multiple dates to apply this schedule");
-  };
-
-  // Apply bulk scheduling
-  const applyBulkSchedule = () => {
-    if (!currentShift || selectedDates.length === 0) {
-      setIsSelectingMultiple(false);
-      return;
-    }
-    
+    const newShift = createNewShift(selectedEmployee, selectedDate);
+    setEditingShift(newShift);
+    setIsEditMode(false);
     setIsDialogOpen(true);
   };
-
-  // Cancel bulk scheduling
-  const cancelBulkScheduling = () => {
-    setIsSelectingMultiple(false);
-    setSelectedDates([]);
-  };
-
-  // Navigate between months
-  const goToPreviousMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentDate(newDate);
+  
+  // Handle editing an existing shift
+  const handleEditShift = (shift: WorkShift) => {
+    setEditingShift(shift);
+    setIsEditMode(true);
+    setIsDialogOpen(true);
   };
   
-  const goToNextMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentDate(newDate);
+  // Handle saving a shift (new or edited)
+  const handleSaveShift = (shift: WorkShift) => {
+    if (!scheduleData || !selectedEmployee) return;
+    
+    let updatedShifts;
+    
+    if (isEditMode) {
+      // Update existing shift
+      updatedShifts = scheduleData.shifts.map(s => 
+        s.id === shift.id ? shift : s
+      );
+    } else {
+      // Add new shift
+      updatedShifts = [...scheduleData.shifts, shift];
+    }
+    
+    const updatedSchedule = {
+      ...scheduleData,
+      shifts: updatedShifts,
+    };
+    
+    onSave(updatedSchedule);
+    setIsDialogOpen(false);
   };
-
+  
+  // Handle deleting a shift
+  const handleDeleteShift = (shiftId: string) => {
+    if (!scheduleData) return;
+    
+    const updatedSchedule = {
+      ...scheduleData,
+      shifts: scheduleData.shifts.filter(s => s.id !== shiftId),
+    };
+    
+    onSave(updatedSchedule);
+    setIsDialogOpen(false);
+  };
+  
+  // Handle bulk scheduling
+  const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
+    if (!scheduleData || !selectedEmployee) return;
+    
+    const newShifts = days.map(day => {
+      const [year, month, dayOfMonth] = day.split('-').map(Number);
+      const shiftDate = new Date(year, month - 1, dayOfMonth);
+      
+      return {
+        id: uuid(),
+        employeeId: selectedEmployee,
+        date: day,
+        startTime,
+        endTime,
+        isRecurring: false,
+      };
+    });
+    
+    // Remove any existing shifts on these days
+    const existingShiftsFiltered = scheduleData.shifts.filter(
+      shift => !days.includes(shift.date)
+    );
+    
+    const updatedSchedule = {
+      ...scheduleData,
+      shifts: [...existingShiftsFiltered, ...newShifts],
+    };
+    
+    onSave(updatedSchedule);
+    setBulkMode(null);
+  };
+  
   if (!selectedEmployee) {
     return (
       <div className="text-center p-8 text-muted-foreground">
-        Please select an employee to manage their work schedule
+        Please select an employee to manage their schedule
       </div>
     );
   }
-
+  
   return (
     <div className="space-y-4">
-      <BulkSchedulingBar
-        isSelectingMultiple={isSelectingMultiple}
-        selectedDatesCount={selectedDates.length}
-        onCancel={cancelBulkScheduling}
-        onApply={applyBulkSchedule}
-      />
+      <CardDescription>
+        Schedule for {format(currentMonth, 'MMMM yyyy')}
+      </CardDescription>
       
-      <WorkScheduleCalendar
-        currentDate={currentDate}
-        shiftsMap={shiftsMap}
-        isSelectingMultiple={isSelectingMultiple}
-        selectedDates={selectedDates}
-        onDayClick={handleDayClick}
-        onPreviousMonth={goToPreviousMonth}
-        onNextMonth={goToNextMonth}
-      />
-      
-      <div className="flex justify-end gap-2 mt-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button
           variant="outline"
+          size="sm"
+          onClick={() => setBulkMode("weekdays")}
+          disabled={loading}
+        >
+          Add Weekday Shifts
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setBulkMode("weekend")}
+          disabled={loading}
+        >
+          Add Weekend Shifts
+        </Button>
+        <Button
+          variant="outline" 
+          size="sm"
           onClick={onReset}
           disabled={loading}
         >
-          Reset
-        </Button>
-        <Button
-          onClick={() => onSave(scheduleData as WorkSchedule)}
-          disabled={loading || !scheduleData}
-        >
-          Save Schedule
+          Reset Schedule
         </Button>
       </div>
       
-      <ShiftDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        currentShift={currentShift}
+      {bulkMode && (
+        <BulkSchedulingBar
+          bulkMode={bulkMode}
+          currentMonth={currentMonth}
+          onSchedule={handleBulkSchedule}
+          onCancel={() => setBulkMode(null)}
+        />
+      )}
+      
+      <WorkScheduleCalendar
+        currentMonth={currentMonth}
+        setCurrentMonth={setCurrentMonth}
+        shiftsMap={shiftsMap}
         selectedDate={selectedDate}
-        isSelectingMultiple={isSelectingMultiple}
-        selectedDatesCount={selectedDates.length}
-        onSave={saveShift}
-        onDelete={deleteShift}
-        onApplyToMultiple={applyToMultipleDates}
-        onShiftChange={updateShiftField}
+        setSelectedDate={setSelectedDate}
+        onDateSelected={handleAddShift}
+        onShiftClick={handleEditShift}
       />
+      
+      {isDialogOpen && editingShift && (
+        <ShiftDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          shift={editingShift}
+          isEditMode={isEditMode}
+          onSave={handleSaveShift}
+          onDelete={handleDeleteShift}
+        />
+      )}
     </div>
   );
 };

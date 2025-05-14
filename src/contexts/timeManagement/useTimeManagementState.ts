@@ -1,21 +1,26 @@
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { User } from "@/types";
-import { createThrottledToast, shouldAllowRefresh } from "./utils";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useTimeOffRequests } from "@/hooks/timeManagement/useTimeOffRequests";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
+import { 
+  useRefreshManager,
+  useToastManager,
+  useInitialLoad,
+  useRetryHandler
+} from "./hooks";
 
 export const useTimeManagementState = (currentUser: User | null) => {
+  // Tab state
   const [activeTab, setActiveTab] = useState("my-requests");
-  const [retryCount, setRetryCount] = useState(0);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
-  const [lastToastTime, setLastToastTime] = useState(0);
-  const [lastRefreshTime, setLastRefreshTime] = useState(0);
-  const pendingToasts = useRef<Set<string>>(new Set());
-  const refreshInProgress = useRef<boolean>(false);
-  const initialLoadRef = useRef<boolean>(false);
+  
+  // Hook composition for better organization
+  const { showThrottledToast } = useToastManager();
+  const { canRefresh, startRefresh } = useRefreshManager();
+  const { initialLoadDone, setInitialLoadDone, initialLoadRef } = useInitialLoad(currentUser);
+  const { retryCount, setRetryCount, handleRetry } = useRetryHandler(showThrottledToast);
   
   // Fetch employee directory for shift coverage operations
   const { unfilteredEmployees: allEmployees, refetch: refetchEmployees } = useEmployeeDirectory();
@@ -48,38 +53,14 @@ export const useTimeManagementState = (currentUser: User | null) => {
   // Process messages with the enhanced hook
   const processedMessages = useProcessMessages(rawMessages, currentUser);
 
-  // Enhanced toast system with deduplication and throttling
-  const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
-    return createThrottledToast(
-      pendingToasts.current, 
-      setLastToastTime,
-      lastToastTime
-    )(message, type);
-  }, [lastToastTime]);
-
-  // Retry logic for failed fetches
-  const handleRetry = useCallback(() => {
-    console.log("Manual retry triggered");
-    setRetryCount(prevCount => prevCount + 1);
-    showThrottledToast("Retrying data fetch...");
-    refetchEmployees().then(() => {
-      setTimeout(() => {
-        fetchRequests();
-        refreshMessages();
-      }, 1000);
-    });
-    return retryCount + 1;
-  }, [fetchRequests, refreshMessages, retryCount, showThrottledToast, refetchEmployees]);
-
   // Force refresh of all data with improved handling
   const forceRefreshData = useCallback(() => {
-    if (!shouldAllowRefresh(refreshInProgress.current, lastRefreshTime)) {
+    if (!canRefresh()) {
       return;
     }
     
     console.log("Force refresh triggered");
-    refreshInProgress.current = true;
-    setLastRefreshTime(Date.now());
+    startRefresh();
     
     setRetryCount(prevCount => prevCount + 1);
     
@@ -98,11 +79,7 @@ export const useTimeManagementState = (currentUser: User | null) => {
       }, 1000);
     });
     
-    // Reset the refresh lock after a timeout
-    setTimeout(() => {
-      refreshInProgress.current = false;
-    }, 5000);
-  }, [fetchRequests, refreshMessages, showThrottledToast, lastRefreshTime, refetchEmployees]);
+  }, [fetchRequests, refreshMessages, showThrottledToast, canRefresh, startRefresh, refetchEmployees, setRetryCount, initialLoadRef]);
   
   // Initial data load - only once
   useEffect(() => {
@@ -122,7 +99,7 @@ export const useTimeManagementState = (currentUser: User | null) => {
         initialLoadRef.current = true;
       }, 5000);
     }
-  }, [currentUser, fetchRequests, refreshMessages, initialLoadDone, refetchEmployees]);
+  }, [currentUser, fetchRequests, refreshMessages, initialLoadDone, refetchEmployees, setInitialLoadDone, initialLoadRef]);
 
   return {
     // State
