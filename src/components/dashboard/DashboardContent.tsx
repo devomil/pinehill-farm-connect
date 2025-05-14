@@ -1,17 +1,13 @@
 
 import React from "react";
-import { AdminTimeOffCard } from "@/components/dashboard/AdminTimeOffCard";
-import { TrainingCard } from "@/components/dashboard/TrainingCard";
-import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
-import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage";
-import { AnnouncementsCard } from "@/components/dashboard/AnnouncementsCard";
-import { DashboardAlert } from "@/components/dashboard/DashboardAlert";
-import { MarketingContent } from "@/components/dashboard/MarketingContent";
-import { CalendarContent } from "@/components/calendar/CalendarContent";
-import { AnnouncementStats } from "@/components/dashboard/AnnouncementStats";
-import { EmployeeScheduleCard } from "@/components/time-management/work-schedule/EmployeeScheduleCard";
-import { AdminEmployeeScheduleCard } from "@/components/time-management/work-schedule/AdminEmployeeScheduleCard";
 import { User } from "@/types";
+import { DashboardCalendarSection } from "@/components/dashboard/sections/DashboardCalendarSection";
+import { DashboardScheduleSection } from "@/components/dashboard/sections/DashboardScheduleSection";
+import { DashboardTimeOffSection } from "@/components/dashboard/sections/DashboardTimeOffSection";
+import { DashboardShiftCoverageSection } from "@/components/dashboard/sections/DashboardShiftCoverageSection";
+import { DashboardAnnouncementsSection } from "@/components/dashboard/sections/DashboardAnnouncementsSection";
+import { DashboardTrainingSection } from "@/components/dashboard/sections/DashboardTrainingSection";
+import { DashboardMarketingSection } from "@/components/dashboard/sections/DashboardMarketingSection";
 
 interface DashboardContentProps {
   isAdmin: boolean;
@@ -59,117 +55,58 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Priority alert for admins - full width */}
-        {isAdmin && pendingTimeOff && (
-          <div className="col-span-full">
-            <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=pending-approvals" />
-          </div>
-        )}
+        {/* Time Off Section */}
+        <DashboardTimeOffSection 
+          isAdmin={isAdmin}
+          pendingTimeOff={pendingTimeOff}
+          userTimeOff={userTimeOff}
+          dashboardDataLoading={dashboardDataLoading}
+          dashboardDataError={dashboardDataError}
+          handleRefreshData={handleRefreshData}
+        />
 
-        {/* Left column - Calendar */}
-        <div className="md:col-span-2">
-          <CalendarContent
-            date={date}
-            currentMonth={currentMonth}
-            viewMode={viewMode}
-            currentUser={currentUser}
-            onDateSelect={onDateSelect}
-            onViewModeChange={onViewModeChange}
-            onPreviousMonth={onPreviousMonth}
-            onNextMonth={onNextMonth}
-            clickable={true}
-            viewAllUrl="/calendar"
-          />
-        </div>
+        {/* Calendar Section */}
+        <DashboardCalendarSection 
+          date={date}
+          currentMonth={currentMonth}
+          viewMode={viewMode}
+          currentUser={currentUser}
+          onDateSelect={onDateSelect}
+          onViewModeChange={onViewModeChange}
+          onPreviousMonth={onPreviousMonth}
+          onNextMonth={onNextMonth}
+        />
         
-        {/* Schedule cards - different view for admins vs employees */}
-        <div className="md:col-span-2">
-          {isAdmin ? (
-            <AdminEmployeeScheduleCard clickable={true} viewAllUrl="/time?tab=work-schedules" />
-          ) : (
-            <EmployeeScheduleCard 
-              schedule={scheduleData}
-              loading={scheduleLoading}
-              clickable={true}
-              viewAllUrl="/time?tab=work-schedules"
-            />
-          )}
-        </div>
+        {/* Schedule Section */}
+        <DashboardScheduleSection
+          isAdmin={isAdmin}
+          scheduleData={scheduleData}
+          scheduleLoading={scheduleLoading}
+        />
         
-        {/* Full width trainings section if applicable */}
-        {assignedTrainings && assignedTrainings.length > 0 && (
-          <div className="col-span-full">
-            <TrainingCard trainings={assignedTrainings} clickable={true} viewAllUrl="/training" />
-          </div>
-        )}
+        {/* Training Section */}
+        <DashboardTrainingSection assignedTrainings={assignedTrainings} />
 
-        {/* Admin time off requests */}
-        {isAdmin && (
-          <div className="md:col-span-2">
-            <TimeOffRequestsCard 
-              requests={pendingTimeOff || []} 
-              loading={dashboardDataLoading}
-              error={dashboardDataError}
-              onRefresh={handleRefreshData}
-              showEmployeeName={true}
-              clickable={true}
-              viewAllUrl="/time?tab=pending-approvals"
-            />
-          </div>
-        )}
-
-        {/* User time off requests */}
-        {!isAdmin && (
-          <div className="md:col-span-2">
-            <TimeOffRequestsCard 
-              requests={userTimeOff || []} 
-              loading={dashboardDataLoading}
-              error={dashboardDataError}
-              onRefresh={handleRefreshData}
-              clickable={true}
-              viewAllUrl="/time?tab=my-requests"
-            />
-          </div>
-        )}
-
-        {/* Shift Coverage Card */}
+        {/* Shift Coverage Section */}
         {currentUser && (
-          <div className="md:col-span-2">
-            <ShiftCoverageCard 
-              messages={shiftCoverageMessages || []} 
-              currentUser={currentUser}
-              loading={dashboardDataLoading}
-              error={dashboardDataError}
-              onRefresh={handleRefreshData}
-              clickable={true}
-              viewAllUrl="/time?tab=shift-coverage"
-            />
-          </div>
+          <DashboardShiftCoverageSection
+            shiftCoverageMessages={shiftCoverageMessages}
+            currentUser={currentUser}
+            dashboardDataLoading={dashboardDataLoading}
+            dashboardDataError={dashboardDataError}
+            handleRefreshData={handleRefreshData}
+          />
         )}
 
-        {/* Right column - Marketing content */}
-        <div className="md:col-span-2">
-          <MarketingContent viewAllUrl="/marketing" onViewAllClick={() => {}} />
-        </div>
+        {/* Marketing Section */}
+        <DashboardMarketingSection />
 
-        {/* Announcements section */}
-        {announcements && announcements.length > 0 && (
-          <>
-            <div className="md:col-span-2">
-              <AnnouncementsCard announcements={announcements} clickable={true} viewAllUrl="/communication?tab=announcements" />
-            </div>
-            {isAdmin && (
-              <div className="md:col-span-2">
-                <AnnouncementStats clickable={true} viewAllUrl="/communication?tab=announcements" />
-              </div>
-            )}
-          </>
-        )}
+        {/* Announcements Section */}
+        <DashboardAnnouncementsSection
+          announcements={announcements}
+          isAdmin={isAdmin}
+        />
       </div>
-
-      {assignedTrainings && assignedTrainings.length > 0 && (
-        <DashboardAlert trainingCount={assignedTrainings.length} />
-      )}
     </div>
   );
 };
