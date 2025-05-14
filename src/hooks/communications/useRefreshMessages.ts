@@ -1,80 +1,40 @@
 
-import { useRef, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { QueryObserverResult } from "@tanstack/react-query";
+import { useCallback } from 'react';
+import { useCommunications } from '@/hooks/useCommunications';
+import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 /**
- * Hook for refreshing messages data
- * @returns A function to refresh messages
+ * Custom hook that provides a centralized way to refresh message-related data
+ * across different components without duplicating code or logic.
  */
 export function useRefreshMessages() {
-  const queryClient = useQueryClient();
-  const lastRefreshTime = useRef<number>(Date.now());
-  const refreshInProgress = useRef<boolean>(false);
-  const MIN_REFRESH_INTERVAL = 10000; // 10 seconds between refreshes
+  const { refreshMessages } = useCommunications();
+  const { refetch: refetchEmployees } = useEmployeeDirectory();
+  const { refetchData: refreshDashboardData } = useDashboardData();
   
-  const refreshMessages = useCallback(() => {
-    // Skip if already refreshing or too soon after previous refresh
-    if (refreshInProgress.current) {
-      console.log("Skipping refetch - already in progress");
-      return Promise.resolve();
+  // Combined refresh function that ensures all message-related data is up-to-date
+  const refresh = useCallback(async () => {
+    console.log("useRefreshMessages: Refreshing all message data");
+    
+    try {
+      // Refresh all data in parallel
+      await Promise.all([
+        refreshMessages(),
+        refetchEmployees(),
+        refreshDashboardData()
+      ]);
+      
+      console.log("useRefreshMessages: Successfully refreshed all message data");
+      return true;
+    } catch (error) {
+      console.error("useRefreshMessages: Error refreshing message data", error);
+      return false;
     }
-    
-    const now = Date.now();
-    if (now - lastRefreshTime.current < MIN_REFRESH_INTERVAL) {
-      console.log("Skipping refetch - too soon");
-      return Promise.resolve();
-    }
-    
-    console.log("Refreshing messages data");
-    refreshInProgress.current = true;
-    lastRefreshTime.current = now;
-    
-    return queryClient.invalidateQueries({ queryKey: ["communications"] })
-      .finally(() => {
-        setTimeout(() => {
-          refreshInProgress.current = false;
-        }, 2000); // Longer cooldown to prevent excessive refreshes
-      });
-  }, [queryClient]);
+  }, [refreshMessages, refetchEmployees, refreshDashboardData]);
   
-  return refreshMessages;
+  return refresh;
 }
 
-/**
- * Enhanced hook for managing message refresh with user context
- * @param currentUser The current user
- * @param refetch The refetch function from useQuery
- * @returns Object with refresh function and state refs
- */
-export function useMessageRefreshManager(currentUser: any, refetch: () => Promise<any>) {
-  const lastRefreshTime = useRef<number>(Date.now());
-  const refreshInProgress = useRef<boolean>(false);
-  const MIN_REFRESH_INTERVAL = 10000; // 10 seconds between refreshes
-  
-  const refreshMessages = useCallback(() => {
-    // Skip if already refreshing or too soon after previous refresh
-    if (refreshInProgress.current) {
-      console.log("Refresh already in progress");
-      return Promise.resolve();
-    }
-    
-    const now = Date.now();
-    if (now - lastRefreshTime.current < MIN_REFRESH_INTERVAL) {
-      console.log("Skipping refetch - too soon");
-      return Promise.resolve();
-    }
-    
-    console.log("Refreshing messages data");
-    refreshInProgress.current = true;
-    lastRefreshTime.current = now;
-    
-    return refetch().finally(() => {
-      setTimeout(() => {
-        refreshInProgress.current = false;
-      }, 2000); // Longer cooldown period
-    });
-  }, [refetch]);
-  
-  return { refreshMessages, lastRefreshTime, refreshInProgress };
-}
+// Export a consolidated file for message refresh management hooks
+export * from './useMessageRefreshManager';
