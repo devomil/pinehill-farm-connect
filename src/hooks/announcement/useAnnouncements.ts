@@ -20,7 +20,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
   const loadingRef = useRef(false);
   
   const { markAsRead } = useAnnouncementReadStatus(currentUser?.id);
-  const { handleEdit, handleDelete } = useAnnouncementActions(currentUser?.id);
+  const { handleEdit, handleDelete } = useAnnouncementActions();
   const { refreshDashboardData } = useDashboardDataRefresh();
   
   // Function to mark an announcement as read
