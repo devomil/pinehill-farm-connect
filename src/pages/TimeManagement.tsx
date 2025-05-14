@@ -45,8 +45,17 @@ export default function TimeManagement() {
 // Separate inner content component that uses the context after it's provided
 const TimeManagementContent: React.FC = () => {
   const { currentUser } = useAuth();
-  const { error, messagesError, handleRetry, forceRefreshData, allEmployees } = useTimeManagement();
+  const { 
+    error, 
+    messagesError, 
+    handleRetry, 
+    forceRefreshData, 
+    allEmployees, 
+    lastSaveTime, 
+    setLastSaveTime 
+  } = useTimeManagement();
   const initialLoadDone = useRef(false);
+  const refreshCountRef = useRef(0);
   const refreshTimeoutRef = useRef<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   
@@ -64,21 +73,43 @@ const TimeManagementContent: React.FC = () => {
     if (error) console.error("Time-off requests error:", error);
     if (messagesError) console.error("Messages error:", messagesError);
 
-    // Force an initial load but wait a moment to let things settle
+    // Force an initial load but wait longer to let things settle
     if (!initialLoadDone.current && currentUser) {
+      // Limit refresh attempts
+      if (refreshCountRef.current >= 3) {
+        console.log("Maximum initial refresh attempts reached");
+        initialLoadDone.current = true;
+        setIsDataLoaded(true);
+        return;
+      }
+      
       // Clear any existing timeout to prevent multiple refreshes
       if (refreshTimeoutRef.current !== null) {
         window.clearTimeout(refreshTimeoutRef.current);
       }
       
-      // Set new timeout
+      // Longer initial delay to ensure everything is ready
       refreshTimeoutRef.current = window.setTimeout(() => {
         console.log("TimeManagementContent: Initial data refresh");
+        
+        // Track when we last refreshed to prevent rapid re-renders
+        const now = Date.now();
+        if (now - lastSaveTime < 30000) {
+          console.log("Skipping refresh, too soon since last save");
+          initialLoadDone.current = true;
+          setIsDataLoaded(true);
+          refreshTimeoutRef.current = null;
+          return;
+        }
+        
+        setLastSaveTime(now);
+        refreshCountRef.current++;
+        
         forceRefreshData();
         initialLoadDone.current = true;
         refreshTimeoutRef.current = null;
         setIsDataLoaded(true);
-      }, 1000);
+      }, 3000); // Much longer delay for initial load
     }
     
     // Cleanup function
@@ -88,7 +119,7 @@ const TimeManagementContent: React.FC = () => {
         refreshTimeoutRef.current = null;
       }
     };
-  }, [currentUser, error, messagesError, forceRefreshData, allEmployees]);
+  }, [currentUser, error, messagesError, forceRefreshData, allEmployees, lastSaveTime, setLastSaveTime]);
   
   if (!currentUser) {
     return <div className="p-6">You must be logged in to view this page.</div>;
@@ -100,7 +131,15 @@ const TimeManagementContent: React.FC = () => {
   const showGlobalError = error && messagesError;
 
   const handleManualRefresh = () => {
+    // Prevent rapid refreshes
+    const now = Date.now();
+    if (now - lastSaveTime < 30000) { // 30 second minimum between refreshes
+      toast.info("Please wait before refreshing again");
+      return;
+    }
+    
     toast.info("Refreshing time management data...");
+    setLastSaveTime(now);
     forceRefreshData();
   };
 

@@ -37,9 +37,22 @@ export function MessageList({
   const isAdmin = currentUser?.role === 'admin';
   const refreshIntervalRef = useRef<number | null>(null);
   const initialLoadRef = useRef<boolean>(false);
+  const messageHashRef = useRef<string>("");
+  
+  // Compute a hash of the messages to detect real changes
+  const messagesHash = useMemo(() => {
+    return messages.map(m => m.id).join(',');
+  }, [messages]);
 
-  // Group messages by conversation
+  // Group messages by conversation with improved memoization
   const groupedMessages = useMemo(() => {
+    // Skip recomputation if messages haven't changed
+    if (messageHashRef.current === messagesHash && messageHashRef.current !== "") {
+      return groupedMessagesRef.current;
+    }
+    
+    console.log("Recomputing grouped messages");
+    
     // Sort messages by time, newest first
     const sortedMessages = [...messages].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -65,19 +78,24 @@ export function MessageList({
         }
       }
     });
+    
+    const result = Array.from(conversations.values());
+    messageHashRef.current = messagesHash;
+    groupedMessagesRef.current = result;
+    return result;
+  }, [messages, messagesHash, currentUser?.id]);
+  
+  // Ref to store the latest computed grouped messages
+  const groupedMessagesRef = useRef<Communication[]>([]);
 
-    return Array.from(conversations.values());
-  }, [messages, currentUser]);
-
-  // Count unread direct messages - explicitly only count direct message types
-  // and ensure they are actually unread and directed to the current user
+  // Count unread direct messages with improved memoization
   const unreadCount = useMemo(() => unreadMessages?.filter(
     msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
            msg.recipient_id === currentUser?.id &&
            msg.read_at === null
   ).length || 0, [unreadMessages, currentUser]);
   
-  // Auto-refresh messages when component mounts to ensure accurate counts
+  // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
     // Clear any existing interval when component re-renders
     if (refreshIntervalRef.current !== null) {
@@ -91,11 +109,11 @@ export function MessageList({
       initialLoadRef.current = true;
     }
     
-    // Set up refresh interval with reasonable timing
+    // Set up refresh interval with much longer timing
     const interval = window.setInterval(() => {
       console.log("Auto-refreshing message list");
       refreshMessages();
-    }, isAdmin ? 60000 : 90000); // Every 60s for admins, 90s for others - increased to reduce flickering
+    }, isAdmin ? 180000 : 300000); // Every 3-5 minutes instead - drastically reduced frequency
     
     refreshIntervalRef.current = interval as unknown as number;
     
@@ -137,7 +155,6 @@ export function MessageList({
         const otherPerson = employees.find(emp => emp.id === otherPersonId);
 
         if (!otherPerson) {
-          console.warn(`Could not find employee with ID ${otherPersonId}`);
           return null;
         }
 

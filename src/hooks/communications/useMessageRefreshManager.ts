@@ -5,6 +5,9 @@ import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 
 type RefetchFunction = (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<any, Error>>;
 
+/**
+ * Optimized refresh manager with improved debounce and throttling
+ */
 export function useMessageRefreshManager(
   currentUser: User | null,
   refetch: RefetchFunction
@@ -12,8 +15,16 @@ export function useMessageRefreshManager(
   const lastRefreshTime = useRef<number>(Date.now());
   const refreshInProgress = useRef<boolean>(false);
   const refreshDebounceTimer = useRef<number | null>(null);
+  const refreshCount = useRef<number>(0);
+  const MAX_REFRESHES_PER_SESSION = 100; // Limit total refreshes per session
 
   const refreshMessages = useCallback(() => {
+    // Guard against too many refreshes
+    if (refreshCount.current > MAX_REFRESHES_PER_SESSION) {
+      console.warn("Maximum refresh count reached for this session");
+      return Promise.resolve();
+    }
+    
     const now = Date.now();
     
     // Clear any existing debounce timer
@@ -22,9 +33,9 @@ export function useMessageRefreshManager(
       refreshDebounceTimer.current = null;
     }
     
-    // Prevent multiple refreshes within a short time period - INCREASED intervals
+    // Much longer refresh intervals to reduce database load
     const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 10000 : 15000; // 10s for admins, 15s for others - increased
+    const minRefreshInterval = isAdmin ? 30000 : 60000; // 30s for admins, 60s for others - greatly increased
     
     if (refreshInProgress.current) {
       console.log("Communications refresh skipped - already in progress");
@@ -32,40 +43,43 @@ export function useMessageRefreshManager(
     }
     
     if (now - lastRefreshTime.current < minRefreshInterval) {
-      console.log("Debouncing communications refresh - too soon");
+      console.log("Debouncing communications refresh - too soon, waiting:", 
+        Math.round((minRefreshInterval - (now - lastRefreshTime.current)) / 1000), "seconds");
       
-      // Set up a debounced refresh
+      // Set up a debounced refresh with even longer delay
       return new Promise<void>((resolve) => {
         refreshDebounceTimer.current = window.setTimeout(() => {
           console.log("Executing debounced communications refresh");
           refreshInProgress.current = true;
           lastRefreshTime.current = Date.now();
+          refreshCount.current++;
           
-          refetch()
+          refetch({ stale: false })
             .then(() => resolve())
             .finally(() => {
               setTimeout(() => {
                 refreshInProgress.current = false;
-              }, 1000);
+              }, 2000);
             });
         }, minRefreshInterval - (now - lastRefreshTime.current)) as unknown as number;
       });
     }
     
-    // Regular refresh flow
+    // Regular refresh flow with longer cooldown
     console.log("Manually refreshing communications data");
     refreshInProgress.current = true;
     lastRefreshTime.current = now;
+    refreshCount.current++;
     
-    return refetch().finally(() => {
-      // Longer cooldown to prevent immediate subsequent refreshes
+    return refetch({ stale: false }).finally(() => {
+      // Much longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, isAdmin ? 2000 : 3000); // Longer cooldown periods
+      }, isAdmin ? 5000 : 10000); // 5-10s cooldown periods
     });
-  }, [refetch, currentUser]);
+  }, [refetch, currentUser, MAX_REFRESHES_PER_SESSION]);
 
-  // Clean up function
+  // Clean up function with improved timeout clearing
   const cleanup = useCallback(() => {
     if (refreshDebounceTimer.current !== null) {
       clearTimeout(refreshDebounceTimer.current);
@@ -77,6 +91,7 @@ export function useMessageRefreshManager(
     refreshMessages,
     lastRefreshTime,
     refreshInProgress,
+    refreshCount,
     cleanup
   };
 }
