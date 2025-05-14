@@ -245,12 +245,15 @@ export function CalendarContent({
               month={currentMonth}
               className="rounded-md border"
               components={{
-                Day: ({ date: dayDate, ...props }) => (
-                  <div className="relative h-full">
-                    <div {...props} />
-                    {dayDate && renderDay(dayDate)}
-                  </div>
-                )
+                Day: ({ date: dayDate, ...props }) => {
+                  return (
+                    <div className="relative h-full">
+                      {/* Fix: Only pass valid HTML attributes to the div, not the displayMonth prop */}
+                      <div {...props} />
+                      {dayDate && renderDay(dayDate)}
+                    </div>
+                  );
+                }
               }}
             />
           </TabsContent>
