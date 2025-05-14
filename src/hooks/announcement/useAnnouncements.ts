@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Announcement, User } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { mapAnnouncementData, updateAnnouncementReadStatus } from "./utils/announcementUtils";
 import { useAnnouncementReadStatus } from "./useAnnouncementReadStatus";
 import { useAnnouncementActions } from "./useAnnouncementActions";
@@ -12,7 +12,6 @@ import { useDebug } from "@/hooks/useDebug";
 export const useAnnouncements = (currentUser: User | null, allEmployees: User[]) => {
   const debug = useDebug('hooks.announcements', { logStateChanges: true });
   
-  const { toast } = useToast();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -102,7 +101,7 @@ export const useAnnouncements = (currentUser: User | null, allEmployees: User[])
         }, 300);
       }
     }
-  }, [currentUser, allEmployees, toast, refreshDashboardData, debug]);
+  }, [currentUser, allEmployees, refreshDashboardData, debug]);
 
   // Add effect to fetch announcements when component mounts
   useEffect(() => {
