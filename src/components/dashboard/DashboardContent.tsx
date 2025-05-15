@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { User } from "@/types";
 import { DashboardCalendarSection } from "@/components/dashboard/sections/DashboardCalendarSection";
@@ -12,15 +11,83 @@ import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Plus, RotateCcw, Save } from "lucide-react";
+import { Eye, EyeOff, Plus, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
+
+// Add the CSS styles directly in the component to avoid import issues
+// These styles are based on react-resizable's CSS but included inline
+const resizableStyles = `
+.react-resizable {
+  position: relative;
+}
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+}
+.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  transform: rotate(90deg);
+}
+.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  transform: rotate(180deg);
+}
+.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  transform: rotate(270deg);
+}
+.react-resizable-handle-w,
+.react-resizable-handle-e {
+  top: 50%;
+  margin-top: -10px;
+  cursor: ew-resize;
+}
+.react-resizable-handle-w {
+  left: 0;
+  transform: rotate(135deg);
+}
+.react-resizable-handle-e {
+  right: 0;
+  transform: rotate(315deg);
+}
+.react-resizable-handle-n,
+.react-resizable-handle-s {
+  left: 50%;
+  margin-left: -10px;
+  cursor: ns-resize;
+}
+.react-resizable-handle-n {
+  top: 0;
+  transform: rotate(225deg);
+}
+.react-resizable-handle-s {
+  bottom: 0;
+  transform: rotate(45deg);
+}
+`;
 
 interface DashboardContentProps {
   isAdmin: boolean;
@@ -384,249 +451,228 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   const cols = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
 
   return (
-    <div className="space-y-6">
-      {/* Dashboard Controls */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Dashboard</CardTitle>
-              <CardDescription>Your personalized dashboard</CardDescription>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              {isCustomizing ? (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={cancelCustomization}
-                    disabled={!hasLayoutChanged}
-                    className="flex items-center gap-1"
-                  >
-                    Cancel
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetLayout}
-                    className="flex items-center gap-1"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Reset
-                  </Button>
-                  
-                  <Button
-                    variant="accent"
-                    size="sm"
-                    onClick={saveLayout}
-                    disabled={!hasLayoutChanged}
-                    className="flex items-center gap-1"
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    Save Layout
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleCustomizationMode}
-                  className="flex items-center gap-1"
-                >
-                  Customize Layout
-                </Button>
-              )}
+    <>
+      {/* Inject the resizable styles directly in the component */}
+      <style>{resizableStyles}</style>
+      
+      <div className="space-y-6">
+        {/* Dashboard Controls */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Dashboard</CardTitle>
+                <CardDescription>Your personalized dashboard</CardDescription>
+              </div>
               
-              <Dialog open={showHiddenDialog} onOpenChange={setShowHiddenDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Eye className="mr-1 h-4 w-4" />
-                    Manage Widgets
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                {isCustomizing ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelCustomization}
+                      disabled={!hasLayoutChanged}
+                      className="flex items-center gap-1"
+                    >
+                      Cancel
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetLayout}
+                      className="flex items-center gap-1"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Reset
+                    </Button>
+                    
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      onClick={saveLayout}
+                      disabled={!hasLayoutChanged}
+                      className="flex items-center gap-1"
+                    >
+                      <Save className="h-4 w-4 mr-1" />
+                      Save Layout
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleCustomizationMode}
+                    className="flex items-center gap-1"
+                  >
+                    Customize Layout
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Manage Dashboard Widgets</DialogTitle>
-                    <DialogDescription>
-                      Choose which widgets to display on your dashboard
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="grid gap-4 py-4">
-                    <Tabs defaultValue="visible">
-                      <TabsList className="grid grid-cols-2 w-full">
-                        <TabsTrigger value="visible">
-                          Visible ({currentLayout.length})
-                        </TabsTrigger>
-                        <TabsTrigger value="hidden">
-                          Hidden ({Object.keys(initialWidgets).length - currentLayout.length})
-                        </TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="visible" className="h-[320px] overflow-y-auto">
-                        <div className="space-y-2">
-                          {currentLayout.length > 0 ? (
-                            currentLayout.map(item => {
-                              const widget = initialWidgets[item.i];
-                              return (
-                                <div key={item.i} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                  <span className="font-medium">{widget.title}</span>
+                )}
+                
+                <Dialog open={showHiddenDialog} onOpenChange={setShowHiddenDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Eye className="mr-1 h-4 w-4" />
+                      Manage Widgets
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Manage Dashboard Widgets</DialogTitle>
+                      <DialogDescription>
+                        Choose which widgets to display on your dashboard
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                      <Tabs defaultValue="visible">
+                        <TabsList className="grid grid-cols-2 w-full">
+                          <TabsTrigger value="visible">
+                            Visible ({currentLayout.length})
+                          </TabsTrigger>
+                          <TabsTrigger value="hidden">
+                            Hidden ({Object.keys(initialWidgets).length - currentLayout.length})
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="visible" className="h-[320px] overflow-y-auto">
+                          <div className="space-y-2">
+                            {currentLayout.length > 0 ? (
+                              currentLayout.map(item => {
+                                const widget = initialWidgets[item.i];
+                                return (
+                                  <div key={item.i} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                    <span className="font-medium">{widget.title}</span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => toggleWidgetVisibility(item.i)}
+                                          >
+                                            <EyeOff className="h-4 w-4" />
+                                            <span className="sr-only">Hide {widget.title}</span>
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Hide from dashboard</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center p-4 text-gray-500">
+                                No visible widgets
+                              </div>
+                            )}
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="hidden" className="h-[320px] overflow-y-auto">
+                          <div className="space-y-2">
+                            {hiddenWidgets.length > 0 ? (
+                              hiddenWidgets.map(id => (
+                                <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                  <span className="font-medium">{initialWidgets[id].title}</span>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          onClick={() => toggleWidgetVisibility(item.i)}
+                                          onClick={() => toggleWidgetVisibility(id)}
                                         >
-                                          <EyeOff className="h-4 w-4" />
-                                          <span className="sr-only">Hide {widget.title}</span>
+                                          <Plus className="h-4 w-4" />
+                                          <span className="sr-only">Show {initialWidgets[id].title}</span>
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Hide from dashboard</p>
+                                        <p>Add to dashboard</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 </div>
-                              );
-                            })
-                          ) : (
-                            <div className="text-center p-4 text-gray-500">
-                              No visible widgets
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="hidden" className="h-[320px] overflow-y-auto">
-                        <div className="space-y-2">
-                          {hiddenWidgets.length > 0 ? (
-                            hiddenWidgets.map(id => (
-                              <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                <span className="font-medium">{initialWidgets[id].title}</span>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => toggleWidgetVisibility(id)}
-                                      >
-                                        <Plus className="h-4 w-4" />
-                                        <span className="sr-only">Show {initialWidgets[id].title}</span>
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Add to dashboard</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                              ))
+                            ) : (
+                              <div className="text-center p-4 text-gray-500">
+                                No hidden widgets
                               </div>
-                            ))
-                          ) : (
-                            <div className="text-center p-4 text-gray-500">
-                              No hidden widgets
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button onClick={() => setShowHiddenDialog(false)} variant="accent">
-                      Done
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-      
-      {isCustomizing && (
-        <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h3 className="font-medium text-blue-700">Customization Mode</h3>
-              <p className="text-sm text-blue-600">
-                {hasLayoutChanged 
-                  ? "Drag to reposition widgets • Resize using the bottom-right corner"
-                  : "Drag widgets to reposition • Resize using the bottom-right corner"
-                }
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {hasLayoutChanged && (
-                <>
-                  <Button variant="outline" size="sm" onClick={cancelCustomization}>
-                    Cancel
-                  </Button>
-                  <Button variant="accent" size="sm" onClick={saveLayout}>
-                    Save Changes
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Dashboard Grid */}
-      <div className="grid-dashboard">
-        <ResponsiveGridLayout
-          className="layout"
-          layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout, xs: currentLayout, xxs: currentLayout }}
-          breakpoints={breakpoints}
-          cols={cols}
-          rowHeight={30}
-          containerPadding={[0, 0]}
-          margin={[16, 16]}
-          onLayoutChange={handleLayoutChange}
-          isDraggable={isCustomizing}
-          isResizable={isCustomizing}
-          draggableHandle={`.${dragHandleClass}`}
-          compactType="vertical"
-          useCSSTransforms={true}
-        >
-          {currentLayout.map(item => {
-            const widgetId = item.i;
-            const widget = initialWidgets[widgetId];
-            
-            if (!widget) return null;
-            
-            return (
-              <div key={widgetId} className="h-full">
-                <DashboardWidget
-                  title={widget.title}
-                  isCustomizing={isCustomizing}
-                  onRemove={() => toggleWidgetVisibility(widgetId)}
-                  dragHandleClass={dragHandleClass}
-                  className="h-full"
-                >
-                  {widget.component}
-                </DashboardWidget>
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button onClick={() => setShowHiddenDialog(false)} variant="accent">
+                        Done
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
-            );
-          })}
-        </ResponsiveGridLayout>
+            </div>
+          </CardHeader>
+        </Card>
+        
+        {/* ... keep existing code (customization mode notification) */}
+        
+        {/* Dashboard Grid */}
+        <div className="grid-dashboard">
+          <ResponsiveGridLayout
+            className="layout"
+            layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout, xs: currentLayout, xxs: currentLayout }}
+            breakpoints={breakpoints}
+            cols={cols}
+            rowHeight={30}
+            containerPadding={[0, 0]}
+            margin={[16, 16]}
+            onLayoutChange={handleLayoutChange}
+            isDraggable={isCustomizing}
+            isResizable={isCustomizing}
+            draggableHandle={`.${dragHandleClass}`}
+            compactType="vertical"
+            useCSSTransforms={true}
+          >
+            {currentLayout.map(item => {
+              const widgetId = item.i;
+              const widget = initialWidgets[widgetId];
+              
+              if (!widget) return null;
+              
+              return (
+                <div key={widgetId} className="h-full">
+                  <DashboardWidget
+                    title={widget.title}
+                    isCustomizing={isCustomizing}
+                    onRemove={() => toggleWidgetVisibility(widgetId)}
+                    dragHandleClass={dragHandleClass}
+                    className="h-full"
+                  >
+                    {widget.component}
+                  </DashboardWidget>
+                </div>
+              );
+            })}
+          </ResponsiveGridLayout>
+        </div>
+        
+        {/* Hidden Widgets Indicator */}
+        {hiddenWidgets.length > 0 && !isCustomizing && (
+          <Button 
+            variant="outline"
+            onClick={() => setShowHiddenDialog(true)}
+            className="mt-4"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            {hiddenWidgets.length} hidden widget{hiddenWidgets.length !== 1 ? 's' : ''}
+          </Button>
+        )}
       </div>
-      
-      {/* Hidden Widgets Indicator */}
-      {hiddenWidgets.length > 0 && !isCustomizing && (
-        <Button 
-          variant="outline"
-          onClick={() => setShowHiddenDialog(true)}
-          className="mt-4"
-        >
-          <Eye className="mr-2 h-4 w-4" />
-          {hiddenWidgets.length} hidden widget{hiddenWidgets.length !== 1 ? 's' : ''}
-        </Button>
-      )}
-    </div>
+    </>
   );
 };
