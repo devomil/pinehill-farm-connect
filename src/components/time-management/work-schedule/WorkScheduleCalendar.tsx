@@ -18,6 +18,7 @@ interface WorkScheduleCalendarProps {
   selectionMode?: "single" | "multiple";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
+  selectedCount?: number;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -30,7 +31,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   onShiftClick,
   selectionMode = "single",
   isDaySelected,
-  onDayToggle
+  onDayToggle,
+  selectedCount = 0
 }) => {
   // Ensure current month is valid
   const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
@@ -49,7 +51,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     getDebugInfo(safeCurrentMonth, shiftsMap, selectedDate, isDaySelected);
     console.log("WorkScheduleCalendar rendered with selectionMode:", selectionMode);
     console.log("Days in month:", daysOfMonth.length, "First day:", format(daysOfMonth[0], "yyyy-MM-dd"));
-  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode, daysOfMonth]);
+    console.log("Selected count:", selectedCount);
+  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode, daysOfMonth, selectedCount]);
   
   // Handle previous month click
   const handlePreviousMonth = () => {
@@ -85,6 +88,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         currentMonth={safeCurrentMonth}
         onPreviousMonth={handlePreviousMonth}
         onNextMonth={handleNextMonth}
+        selectionMode={selectionMode}
+        selectedCount={selectedCount}
       />
       
       <div className="border rounded-lg p-2">
@@ -122,6 +127,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
                   hasShifts={hasShifts}
                   onClick={() => handleDayClick(day)}
                   onShiftClick={onShiftClick}
+                  selectionMode={selectionMode}
                 />
               );
             },

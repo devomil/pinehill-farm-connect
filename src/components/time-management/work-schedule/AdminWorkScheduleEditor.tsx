@@ -47,6 +47,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     toggleSelectionMode,
     toggleDay,
     isDaySelected,
+    clearSelectedDays,
     getSelectedDayStrings
   } = useScheduleEditor({ selectedEmployee, scheduleData, onSave });
   
@@ -119,9 +120,8 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
           selectedDays={getSelectedDayStrings()}
           currentMonth={currentMonth}
           onSchedule={handleBulkSchedule}
-          onCancel={() => {
-            toggleSelectionMode();
-          }}
+          onCancel={toggleSelectionMode}
+          onClearSelection={clearSelectedDays}
         />
       )}
       
@@ -136,6 +136,7 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         selectionMode={selectionMode}
         isDaySelected={isDaySelected}
         onDayToggle={toggleDay}
+        selectedCount={selectedCount}
       />
       
       {isDialogOpen && editingShift && (

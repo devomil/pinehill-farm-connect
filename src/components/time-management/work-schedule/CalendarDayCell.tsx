@@ -2,7 +2,7 @@
 import React from "react";
 import { format, isValid } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
-import { Briefcase } from "lucide-react";
+import { Briefcase, CheckSquare } from "lucide-react";
 
 interface CalendarDayCellProps {
   day: Date;
@@ -12,6 +12,7 @@ interface CalendarDayCellProps {
   hasShifts?: boolean;
   onClick: () => void;
   onShiftClick: (shift: WorkShift) => void;
+  selectionMode?: "single" | "multiple";
 }
 
 export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
@@ -22,6 +23,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   hasShifts,
   onClick,
   onShiftClick,
+  selectionMode = "single"
 }) => {
   // Safe format function that checks validity
   const safeFormat = (date: Date, formatString: string): string => {
@@ -35,7 +37,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
 
   // Generate CSS classes for the day cell
   const getClassNames = () => {
-    const classes = ["h-20 w-full border rounded-md p-1 cursor-pointer pointer-events-auto"];
+    const classes = ["h-20 w-full border rounded-md p-1 relative cursor-pointer pointer-events-auto"];
     
     if (hasShifts) {
       classes.push("bg-primary/5");
@@ -49,7 +51,11 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
       classes.push("bg-primary/20 border-primary");
     }
     
-    classes.push("hover:bg-accent");
+    if (selectionMode === "multiple") {
+      classes.push("hover:bg-primary/10");
+    } else {
+      classes.push("hover:bg-accent");
+    }
     
     return classes.join(" ");
   };
@@ -74,7 +80,9 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
         
         {/* Show selection indicator for multi-select mode */}
         {isMultiSelected && (
-          <div className="absolute top-1 left-1 h-2 w-2 rounded-full bg-primary"></div>
+          <div className="absolute top-1 left-1">
+            <CheckSquare className="h-4 w-4 text-primary" />
+          </div>
         )}
         
         {shifts.length > 0 && (
