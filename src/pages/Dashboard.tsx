@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useWorkSchedule } from "@/components/time-management/work-schedule/useWorkSchedule";
+import { useWorkSchedule } from "@/components/time-management/work-schedule/hooks/useWorkSchedule";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { useDashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 import { useDashboardNavigation } from "@/components/dashboard/DashboardNavigationHandlers";

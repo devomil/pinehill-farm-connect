@@ -13,7 +13,6 @@ export * from "./SpecificDaysSchedulingBar";
 export * from "./BulkSchedulingBar";
 export * from "./EmployeeShiftDetailsDialog";
 export * from "./ShiftDialog";
-export * from "./hooks/useScheduleEditor";
+export * from "./hooks";
 export * from "./calendarUtils";
 export * from "./scheduleHelpers";
-

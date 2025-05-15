@@ -4,7 +4,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { User } from "@/types";
 import { AdminWorkScheduleEditor } from "./AdminWorkScheduleEditor";
 import { EmployeeScheduleView } from "./EmployeeScheduleView";
-import { useWorkSchedule } from "./useWorkSchedule";
+import { useWorkSchedule } from "./hooks/useWorkSchedule";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { WorkScheduleHeader } from "./WorkScheduleHeader";
