@@ -16,8 +16,16 @@ export function useShiftSubmission(currentUser: User | null) {
     
     try {
       const result = await submitShiftReport(reportData, currentUser);
-      setSubmissionResult(result as unknown as ShiftReport);
-      return result as unknown as ShiftReport;
+      if (result.error) {
+        throw result.error;
+      }
+      
+      if (result.data) {
+        setSubmissionResult(result.data as unknown as ShiftReport);
+        return result.data as unknown as ShiftReport;
+      }
+      
+      return null;
     } catch (error) {
       console.error("Error in useShiftSubmission:", error);
       setSubmitError(error as Error);

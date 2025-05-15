@@ -37,7 +37,7 @@ export function useShiftReportForm() {
       setIsSubmitting(true);
 
       // Use the extracted shiftReportService to submit the report
-      const { data, error } = await submitShiftReport({
+      const result = await submitShiftReport({
         user_id: currentUser.id,
         date: values.date,
         notes: values.notes,
@@ -52,8 +52,8 @@ export function useShiftReportForm() {
         lessons_learned: "",
         shift_summary: ""
       }, currentUser);
-
-      if (error) throw error;
+      
+      if (result.error) throw result.error;
 
       toast.success("Report submitted successfully");
       form.reset({

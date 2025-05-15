@@ -9,7 +9,7 @@ import { notifyAdmin } from "./notificationService";
 export async function submitShiftReport(
   reportData: ShiftReportInput, 
   currentUser: User | null
-): Promise<DBShiftReport> {
+): Promise<{ data: DBShiftReport | null, error: Error | null }> {
   try {
     if (!currentUser) {
       throw new Error("User not authenticated.");
@@ -77,7 +77,7 @@ export async function submitShiftReport(
       variant: 'success'
     });
     
-    return shiftReport;
+    return { data: shiftReport, error: null };
 
   } catch (error: any) {
     console.error("Error in submitShiftReport:", error.message);
@@ -85,6 +85,6 @@ export async function submitShiftReport(
       description: `Failed to submit shift report: ${error.message}`,
       variant: 'destructive'
     });
-    throw error;
+    return { data: null, error };
   }
 }
