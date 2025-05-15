@@ -1,8 +1,9 @@
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { QueryObserverResult } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { debounce } from 'lodash';
 
 interface UseTabNavigationProps {
   activeTab: string;
@@ -24,8 +25,10 @@ export function useTabNavigation({
   lastRefreshTime
 }: UseTabNavigationProps) {
   const navigate = useNavigate();
+  const pendingNavigation = useRef<string | null>(null);
+  const navigationInProgress = useRef<boolean>(false);
 
-  // Handle tab changes and update the URL
+  // Handle tab changes and update the URL with debounce to prevent rapid/concurrent navigations
   const handleTabChange = useCallback((value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
     
@@ -34,9 +37,17 @@ export function useTabNavigation({
       console.log("Tab already active, skipping navigation");
       return;
     }
+
+    // If we're currently navigating, store this as the pending navigation
+    if (navigationInProgress.current) {
+      console.log("Navigation already in progress, marking as pending", value);
+      pendingNavigation.current = value;
+      return;
+    }
     
     // Mark navigation as in progress immediately to prevent flickering
     navigationComplete.current = false;
+    navigationInProgress.current = true;
     
     // Set active tab first for immediate UI feedback
     setActiveTab(value);
@@ -53,7 +64,7 @@ export function useTabNavigation({
     if (location.pathname + location.search !== newPath) {
       console.log("Navigating to:", newPath);
       
-      // Use replace: true for tabs to prevent history buildup
+      // Use replace: true for tabs to prevent history buildup - and to preserve the messages tab
       navigate(newPath, { replace: true });
       
       // Always refresh messages when switching to messages tab
@@ -61,15 +72,21 @@ export function useTabNavigation({
         console.log("Switching to messages tab, refreshing data");
         isRefreshing.current = true;
         
-        toast.info("Loading messages...");
+        // Show a loading toast instead of a separate info toast
+        const loadingToast = toast.loading("Loading messages...");
         
         refreshMessages()
           .then(() => {
-            toast.success("Messages loaded successfully");
+            // Update the loading toast to success
+            toast.success("Messages loaded successfully", {
+              id: loadingToast
+            });
           })
           .catch(err => {
             console.error("Error refreshing messages:", err);
-            toast.error("Failed to load messages. Please try again.");
+            toast.error("Failed to load messages. Please try again.", {
+              id: loadingToast
+            });
           })
           .finally(() => {
             isRefreshing.current = false;
@@ -78,29 +95,85 @@ export function useTabNavigation({
             // Mark navigation as complete after a short delay
             setTimeout(() => {
               navigationComplete.current = true;
+              navigationInProgress.current = false;
               console.log("Navigation complete set to true after refresh");
-            }, 100);
+              
+              // Check if we have a pending navigation and trigger it
+              if (pendingNavigation.current) {
+                const nextTab = pendingNavigation.current;
+                pendingNavigation.current = null;
+                console.log("Processing pending navigation to", nextTab);
+                setTimeout(() => {
+                  handleTabChange(nextTab);
+                }, 100);
+              }
+            }, 300); // Increased delay to ensure everything is ready
           });
       } else {
         // For other tabs, mark as complete more quickly
         setTimeout(() => {
           navigationComplete.current = true;
+          navigationInProgress.current = false;
           console.log("Navigation complete set to true (no refresh needed)");
-        }, 100);
+          
+          // Check if we have a pending navigation
+          if (pendingNavigation.current) {
+            const nextTab = pendingNavigation.current;
+            pendingNavigation.current = null;
+            console.log("Processing pending navigation to", nextTab);
+            setTimeout(() => {
+              handleTabChange(nextTab);
+            }, 100);
+          }
+        }, 200);
       }
     } else {
       // Already on correct path, just mark navigation as complete
       navigationComplete.current = true;
-      console.log("Already on correct path, navigation complete set to true");
       
       // Still refresh if switching to messages tab
       if (value === 'messages') {
-        refreshMessages().catch(err => {
-          console.error("Error refreshing messages on same-path tab change:", err);
-        });
+        refreshMessages()
+          .catch(err => {
+            console.error("Error refreshing messages on same-path tab change:", err);
+          })
+          .finally(() => {
+            navigationInProgress.current = false;
+            
+            // Check if we have a pending navigation
+            if (pendingNavigation.current) {
+              const nextTab = pendingNavigation.current;
+              pendingNavigation.current = null;
+              setTimeout(() => {
+                handleTabChange(nextTab);
+              }, 100);
+            }
+          });
+      } else {
+        navigationInProgress.current = false;
+        
+        // Check if we have a pending navigation
+        if (pendingNavigation.current) {
+          const nextTab = pendingNavigation.current;
+          pendingNavigation.current = null;
+          setTimeout(() => {
+            handleTabChange(nextTab);
+          }, 100);
+        }
       }
     }
   }, [navigate, refreshMessages, activeTab, location.pathname, location.search, setActiveTab, navigationComplete, isRefreshing, lastRefreshTime]);
 
-  return { handleTabChange };
+  // Create a debounced version to prevent rapid tab switching
+  const debouncedTabChange = useCallback(
+    debounce((value: string) => {
+      handleTabChange(value);
+    }, 300, { leading: true, trailing: false }),
+    [handleTabChange]
+  );
+
+  return { 
+    handleTabChange: debouncedTabChange,
+    navigationInProgress
+  };
 }
