@@ -18,7 +18,10 @@ export function useShiftCoverageHandler(currentUser: User | null) {
     shiftEndTime: string
   ) => {
     if (!currentUser) {
-      showToast("error", "You must be logged in to process shift transfers");
+      showToast({ 
+        description: "You must be logged in to process shift transfers", 
+        variant: "destructive" 
+      });
       return false;
     }
 
@@ -26,11 +29,11 @@ export function useShiftCoverageHandler(currentUser: User | null) {
 
     try {
       // Since we don't have actual DB table for work_schedules, we'll use mock data
-      // In a real implementation, we would do:
-      // const { data: requesterScheduleData } = await supabase
+      // In a real implementation with the work_schedules table, you would:
+      // const { data: requesterScheduleData, error: requesterError } = await supabase
       //   .from('work_schedules')
       //   .select('*')
-      //   .eq('employee_id', requesterId)
+      //   .eq('employeeId', requesterId)
       //   .single();
 
       // Mock the requester and receiver schedules
@@ -85,7 +88,10 @@ export function useShiftCoverageHandler(currentUser: User | null) {
         // Update both schedules in database (in real implementation)
         // For demo, we'll just show the toast
         
-        showToast("success", "Shift successfully transferred");
+        showToast({ 
+          description: "Shift successfully transferred", 
+          variant: "success" 
+        });
         
         return true;
       }
@@ -108,12 +114,18 @@ export function useShiftCoverageHandler(currentUser: User | null) {
       // Step 6: Update both schedules in database (in real implementation)
       // For this demo, we'll just show the toast
       
-      showToast("success", "Shift successfully transferred");
+      showToast({ 
+        description: "Shift successfully transferred", 
+        variant: "success" 
+      });
       
       return true;
     } catch (error) {
       console.error("Error transferring shift:", error);
-      showToast("error", "Failed to transfer shift");
+      showToast({ 
+        description: "Failed to transfer shift", 
+        variant: "destructive" 
+      });
       return false;
     } finally {
       setProcessing(false);
