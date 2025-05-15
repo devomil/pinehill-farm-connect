@@ -10,6 +10,7 @@ interface DashboardTimeOffSectionProps {
   dashboardDataLoading: boolean;
   dashboardDataError: Error | null;
   handleRefreshData: () => void;
+  viewAllUrl?: string;
 }
 
 export const DashboardTimeOffSection: React.FC<DashboardTimeOffSectionProps> = ({
@@ -19,39 +20,29 @@ export const DashboardTimeOffSection: React.FC<DashboardTimeOffSectionProps> = (
   dashboardDataLoading,
   dashboardDataError,
   handleRefreshData,
+  viewAllUrl
 }) => {
   return (
-    <>
-      {/* Priority alert for admins - full width */}
-      {isAdmin && pendingTimeOff && (
-        <div className="col-span-full">
-          <AdminTimeOffCard count={pendingTimeOff.length || 0} clickable={true} viewAllUrl="/time?tab=pending-approvals" />
-        </div>
+    <div className="md:col-span-1">
+      {isAdmin ? (
+        <AdminTimeOffCard
+          requests={pendingTimeOff || []}
+          loading={dashboardDataLoading}
+          error={dashboardDataError}
+          onRefresh={handleRefreshData}
+          clickable={true}
+          viewAllUrl={viewAllUrl}
+        />
+      ) : (
+        <TimeOffRequestsCard
+          requests={userTimeOff || []}
+          loading={dashboardDataLoading}
+          error={dashboardDataError}
+          onRefresh={handleRefreshData}
+          clickable={true}
+          viewAllUrl={viewAllUrl}
+        />
       )}
-      
-      {/* Time off requests section */}
-      <div className="md:col-span-2">
-        {isAdmin ? (
-          <TimeOffRequestsCard 
-            requests={pendingTimeOff || []} 
-            loading={dashboardDataLoading}
-            error={dashboardDataError}
-            onRefresh={handleRefreshData}
-            showEmployeeName={true}
-            clickable={true}
-            viewAllUrl="/time?tab=pending-approvals"
-          />
-        ) : (
-          <TimeOffRequestsCard 
-            requests={userTimeOff || []} 
-            loading={dashboardDataLoading}
-            error={dashboardDataError}
-            onRefresh={handleRefreshData}
-            clickable={true}
-            viewAllUrl="/time?tab=my-requests"
-          />
-        )}
-      </div>
-    </>
+    </div>
   );
 };

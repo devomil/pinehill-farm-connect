@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Users, RefreshCw } from "lucide-react";
@@ -136,7 +135,7 @@ export const ShiftCoverageCard: React.FC<ShiftCoverageCardProps> = ({
         {viewAllUrl && (
           <div className="text-center mt-4">
             <Link to={viewAllUrl} onClick={handleButtonClick}>
-              <Button variant="link" size="sm">
+              <Button variant="warning" size="sm" className="bg-yellow-300 hover:bg-yellow-400 text-black font-medium w-full">
                 View All Requests
               </Button>
             </Link>

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage";
+import { ShiftCoverageCard } from "@/components/dashboard/shift-coverage/ShiftCoverageCard";
 import { User } from "@/types";
 
 interface DashboardShiftCoverageSectionProps {
@@ -9,6 +9,7 @@ interface DashboardShiftCoverageSectionProps {
   dashboardDataLoading: boolean;
   dashboardDataError: Error | null;
   handleRefreshData: () => void;
+  viewAllUrl?: string;
 }
 
 export const DashboardShiftCoverageSection: React.FC<DashboardShiftCoverageSectionProps> = ({
@@ -17,17 +18,18 @@ export const DashboardShiftCoverageSection: React.FC<DashboardShiftCoverageSecti
   dashboardDataLoading,
   dashboardDataError,
   handleRefreshData,
+  viewAllUrl
 }) => {
   return (
     <div className="md:col-span-2">
-      <ShiftCoverageCard 
-        messages={shiftCoverageMessages || []} 
+      <ShiftCoverageCard
+        messages={shiftCoverageMessages || []}
         currentUser={currentUser}
         loading={dashboardDataLoading}
         error={dashboardDataError}
         onRefresh={handleRefreshData}
         clickable={true}
-        viewAllUrl="/time?tab=shift-coverage"
+        viewAllUrl={viewAllUrl}
       />
     </div>
   );

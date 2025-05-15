@@ -157,7 +157,7 @@ export const TimeOffRequestsCard: React.FC<TimeOffRequestsCardProps> = ({
         {viewAllUrl && (
           <div className="text-center mt-4">
             <Link to={viewAllUrl} onClick={handleButtonClick}>
-              <Button variant="link" size="sm">
+              <Button variant="warning" size="sm" className="bg-yellow-300 hover:bg-yellow-400 text-black font-medium w-full">
                 View All Requests
               </Button>
             </Link>

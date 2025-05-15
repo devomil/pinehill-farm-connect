@@ -63,6 +63,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           dashboardDataLoading={dashboardDataLoading}
           dashboardDataError={dashboardDataError}
           handleRefreshData={handleRefreshData}
+          viewAllUrl="/time?tab=my-requests"
         />
 
         {/* Calendar Section */}
@@ -82,10 +83,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           isAdmin={isAdmin}
           scheduleData={scheduleData}
           scheduleLoading={scheduleLoading}
+          viewAllUrl="/time?tab=work-schedules"
         />
         
         {/* Training Section */}
-        <DashboardTrainingSection assignedTrainings={assignedTrainings} />
+        <DashboardTrainingSection 
+          assignedTrainings={assignedTrainings}
+          viewAllUrl="/training"
+        />
 
         {/* Shift Coverage Section */}
         {currentUser && (
@@ -95,16 +100,20 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
             dashboardDataLoading={dashboardDataLoading}
             dashboardDataError={dashboardDataError}
             handleRefreshData={handleRefreshData}
+            viewAllUrl="/time?tab=shift-coverage"
           />
         )}
 
         {/* Marketing Section */}
-        <DashboardMarketingSection />
+        <DashboardMarketingSection 
+          viewAllUrl="/marketing"
+        />
 
         {/* Announcements Section */}
         <DashboardAnnouncementsSection
           announcements={announcements}
           isAdmin={isAdmin}
+          viewAllUrl="/communication?tab=announcements"
         />
       </div>
     </div>
