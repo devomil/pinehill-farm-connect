@@ -18,7 +18,7 @@ export const useDashboardNavigation = () => {
   };
 
   const handleCalendarClick = () => {
-    navigate("/calendar");
+    navigate("/time?tab=team-calendar");
   };
 
   const handleAdminTimeOffClick = () => {

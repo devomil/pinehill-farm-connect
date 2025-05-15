@@ -37,10 +37,10 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/time" element={<TimeManagement />} />
-            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
             <Route path="/training" element={<Training />} />
             <Route path="/marketing" element={<Marketing />} />
-            <Route path="/employee" element={<Employee />} />
+            <Route path="/employee" element={<Navigate to="/employees" replace />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/communication" element={<Communication />} />
