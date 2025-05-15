@@ -10,18 +10,10 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { 
-  BarChart3, 
-  Calendar as CalendarIcon, 
-  Home, 
-  Inbox, 
-  Users, 
-  BookOpenCheck,
-  BookOpen,
-  LogOut
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
+import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface SidebarMobileSheetProps {
   open: boolean;
@@ -36,68 +28,11 @@ export const SidebarMobileSheet = ({
 }: SidebarMobileSheetProps) => {
   const { currentUser } = useAuth();
   
-  // Define navigation items with unique IDs
-  const navigationItemsRaw = [
-    {
-      id: "dashboard",
-      to: "/dashboard",
-      icon: <Home className="h-5 w-5 mr-2" />,
-      label: "Dashboard",
-      showIf: true
-    },
-    {
-      id: "employees",
-      to: "/employees",
-      icon: <Users className="h-5 w-5 mr-2" />,
-      label: "Employees",
-      showIf: true
-    },
-    {
-      id: "time",
-      to: "/time",
-      icon: <CalendarIcon className="h-5 w-5 mr-2" />,
-      label: "Time Management",
-      showIf: true
-    },
-    {
-      id: "calendar",
-      to: "/calendar",
-      icon: <CalendarIcon className="h-5 w-5 mr-2" />,
-      label: "Calendar",
-      showIf: true
-    },
-    {
-      id: "communication",
-      to: "/communication",
-      icon: <Inbox className="h-5 w-5 mr-2" />,
-      label: "Communication",
-      showIf: true
-    },
-    {
-      id: "reports",
-      to: "/reports",
-      icon: <BarChart3 className="h-5 w-5 mr-2" />,
-      label: "Reports",
-      showIf: true
-    },
-    {
-      id: "training",
-      to: "/training",
-      icon: <BookOpen className="h-5 w-5 mr-2" />,
-      label: "Training Portal",
-      showIf: true
-    },
-    {
-      id: "admin-training",
-      to: "/admin-training",
-      icon: <BookOpenCheck className="h-5 w-5 mr-2" />,
-      label: "Training Admin",
-      showIf: currentUser?.role === "admin"
-    }
-  ];
-
-  // Filter visible items first, then deduplicate
-  const visibleItems = navigationItemsRaw.filter(item => item.showIf);
+  // Get all nav items and filter based on user role
+  const allNavItems = getAllNavItems();
+  const visibleItems = filterNavItemsByRole(allNavItems, currentUser?.role);
+  
+  // Use our updated hook for path-based deduplication
   const navigationItems = useUniqueRoutes(visibleItems);
 
   return (
@@ -117,7 +52,7 @@ export const SidebarMobileSheet = ({
         <nav className="grid gap-4 py-4">
           {navigationItems.map(item => (
             <Button key={item.id} variant="ghost" className="justify-start font-normal">
-              <Link to={item.to} className="flex items-center">
+              <Link to={item.path} className="flex items-center">
                 {item.icon}
                 {item.label}
               </Link>

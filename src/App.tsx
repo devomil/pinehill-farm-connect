@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Define routes with unique IDs
+  // Define routes with unique IDs and paths
   const appRoutes = [
     { id: "home", path: "/", element: <Navigate to="/login" replace /> },
     { id: "login", path: "/login", element: <Login /> },
@@ -44,12 +44,12 @@ function App() {
     { id: "reports", path: "/reports", element: <Reports /> },
     { id: "communication", path: "/communication", element: <Communication /> },
     
-    // Legacy redirects - ensure these don't create navigation loops
+    // Legacy redirects
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
 
-  // Use our custom hook to ensure uniqueness of routes
+  // Use our updated hook for route deduplication
   const uniqueRoutes = useUniqueRoutes(appRoutes);
 
   return (
@@ -61,7 +61,7 @@ function App() {
             <Routes>
               {uniqueRoutes.map((route) => (
                 <Route 
-                  key={route.id || route.path} 
+                  key={route.id} 
                   path={route.path} 
                   element={route.element} 
                 />

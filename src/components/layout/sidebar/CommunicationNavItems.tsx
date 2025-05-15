@@ -3,13 +3,13 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Megaphone, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
 import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
+import { communicationNavItems } from "@/config/navConfig";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -50,57 +50,54 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       }).length
     : 0;
     
-  const communicationItemsRaw = [
-    {
-      id: "announcements",
-      to: "/communication",
-      icon: <Megaphone className="h-5 w-5 mr-3" />,
-      label: "Announcements",
-      showIf: true,
-      badge: unreadAnnouncementCount > 0 ? (
-        <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
-      ) : null,
-      isActive: pathname === '/communication' && !search.includes('tab=messages')
-    },
-    {
-      id: "messages",
-      to: "/communication?tab=messages",
-      icon: <MessageSquare className="h-5 w-5 mr-3" />,
-      label: "Messages",
-      showIf: true,
-      badge: unreadMessageCount > 0 ? (
-        <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
-      ) : null,
-      isActive: pathname === '/communication' && search.includes('tab=messages')
+  // Create a copy of the communication items with dynamic badges
+  const communicationItemsWithBadges = communicationNavItems.map(item => {
+    if (item.id === "announcements") {
+      return {
+        ...item,
+        badge: unreadAnnouncementCount > 0 ? (
+          <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
+        ) : null,
+        isActive: pathname === '/communication' && !search.includes('tab=messages')
+      };
     }
-  ];
+    if (item.id === "messages") {
+      return {
+        ...item,
+        badge: unreadMessageCount > 0 ? (
+          <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
+        ) : null,
+        isActive: pathname === '/communication' && search.includes('tab=messages')
+      };
+    }
+    return item;
+  });
 
   // Filter visible items first, then deduplicate
-  const visibleItems = communicationItemsRaw.filter(item => item.showIf);
-  const communicationItems = useUniqueRoutes(visibleItems);
+  const uniqueCommunicationItems = useUniqueRoutes(communicationItemsWithBadges);
 
   return (
     <div className="flex flex-col gap-1">
-      {communicationItems.map(item => (
+      {uniqueCommunicationItems.map(item => (
         <Button
           key={item.id}
           variant={item.badge !== null ? "default" : "ghost"}
           className={cn(
             "justify-start font-normal",
-            item.isActive && "bg-accent"
+            (item as any).isActive && "bg-accent"
           )}
           asChild
         >
-          <Link to={item.to} className="flex w-full items-center">
+          <Link to={item.path} className="flex w-full items-center">
             {item.icon}
             <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
             {!collapsed && item.badge}
             {collapsed && item.badge && (
               <Badge 
-                variant={item.to.includes("messages") ? "destructive" : "default"} 
+                variant={item.path.includes("messages") ? "destructive" : "default"} 
                 className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
               >
-                {item.to.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
+                {item.path.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
               </Badge>
             )}
           </Link>
