@@ -27,6 +27,8 @@ export function useTabNavigation({
   const pendingNavigation = useRef<string | null>(null);
   const navigationInProgress = useRef<boolean>(false);
   const debounceTimerRef = useRef<number | null>(null);
+  const errorCountRef = useRef<number>(0);
+  const lastAttemptRef = useRef<number>(Date.now());
 
   // Handle tab changes and update the URL to prevent rapid/concurrent navigations
   const handleTabChange = useCallback((value: string) => {
@@ -43,6 +45,28 @@ export function useTabNavigation({
       console.log("Navigation already in progress, marking as pending", value);
       pendingNavigation.current = value;
       return;
+    }
+    
+    // Throttle if there have been too many attempts in a short time
+    const now = Date.now();
+    if (now - lastAttemptRef.current < 1000) {
+      console.log("Throttling navigation attempt - too many requests");
+      lastAttemptRef.current = now;
+      
+      if (errorCountRef.current > 3) {
+        console.warn("Too many navigation attempts, possibly in a loop");
+        toast.error("Navigation issue detected. Please try again in a moment.");
+        setTimeout(() => {
+          errorCountRef.current = 0;
+        }, 5000);
+        return;
+      }
+      
+      errorCountRef.current++;
+    } else {
+      // Reset error count if enough time has passed
+      errorCountRef.current = 0;
+      lastAttemptRef.current = now;
     }
     
     // Mark navigation as in progress immediately to prevent flickering

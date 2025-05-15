@@ -9,9 +9,9 @@ export function useConversationContext(
   currentUser: User | null,
   unfilteredEmployees: User[]
 ) {
-  // Get filtered messages for the selected employee
+  // Get filtered messages for the selected employee - with null checks
   const filteredMessages = useMemo(() => {
-    if (!selectedEmployee) return [];
+    if (!selectedEmployee || !currentUser) return [];
     
     return processedMessages.filter(
       (message) =>
@@ -20,8 +20,10 @@ export function useConversationContext(
     );
   }, [selectedEmployee, processedMessages, currentUser]);
 
-  // Get conversation partners to show recent conversations
+  // Get conversation partners to show recent conversations - with null checks
   const conversationPartners = useMemo(() => {
+    if (!currentUser || !unfilteredEmployees.length) return [];
+    
     const uniqueIds = new Set<string>();
     const partners: User[] = [];
     
@@ -37,14 +39,17 @@ export function useConversationContext(
     return partners;
   }, [processedMessages, unfilteredEmployees, currentUser]);
 
-  // Create message sender function
+  // Create message sender function - with additional guard clauses
   const createMessageSender = (
     selectedEmployee: User | null, 
     currentUser: User | null, 
     sendMessage: (params: any) => Promise<any>
   ) => {
     return (message: string) => {
-      if (!selectedEmployee || !currentUser) return;
+      if (!selectedEmployee || !currentUser || !message.trim()) {
+        console.log("Cannot send message: missing employee, user, or empty message");
+        return Promise.reject(new Error("Cannot send message"));
+      }
       
       return sendMessage({
         recipientId: selectedEmployee.id,
