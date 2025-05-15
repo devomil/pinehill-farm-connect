@@ -16,6 +16,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   
   const toolsItems = [
     {
+      id: "reports",
       to: "/reports",
       icon: <BarChart3 className="h-5 w-5 mr-3" />,
       label: "Reports",
@@ -23,6 +24,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       badge: null,
     },
     {
+      id: "marketing",
       to: "/marketing",
       icon: <Image className="h-5 w-5 mr-3" />,
       label: "Marketing",
@@ -30,6 +32,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       badge: null,
     },
     {
+      id: "training",
       to: "/training",
       icon: <BookOpen className="h-5 w-5 mr-3" />,
       label: "Training Portal",
@@ -37,6 +40,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       badge: null,
     },
     {
+      id: "admin-training",
       to: "/admin-training",
       icon: <BookOpenCheck className="h-5 w-5 mr-3" />,
       label: "Training Admin",
@@ -50,7 +54,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       {toolsItems.map(item => 
         item.showIf && (
           <Button
-            key={item.to}
+            key={item.id}
             variant="ghost"
             className={cn(
               "justify-start font-normal",

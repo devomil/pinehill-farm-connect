@@ -14,8 +14,10 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
+  // Define main nav items with unique IDs
   const mainNavItems = [
     {
+      id: "dashboard",
       to: "/dashboard",
       icon: <Home className="h-5 w-5 mr-3" />,
       label: "Dashboard",
@@ -23,6 +25,7 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
       badge: null,
     },
     {
+      id: "employees",
       to: "/employees",
       icon: <Users className="h-5 w-5 mr-3" />,
       label: "Employees",
@@ -30,6 +33,7 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
       badge: null,
     },
     {
+      id: "time",
       to: "/time",
       icon: <CalendarIcon className="h-5 w-5 mr-3" />,
       label: "Time Management",
@@ -43,7 +47,7 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
       {mainNavItems.map(item => 
         item.showIf && (
           <Button
-            key={item.to}
+            key={item.id}
             variant="ghost"
             className={cn(
               "justify-start font-normal",

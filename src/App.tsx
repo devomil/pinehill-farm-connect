@@ -16,6 +16,7 @@ import Employees from "@/pages/Employees";
 import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
+import { RouteDebugger } from "@/components/debug/RouteDebugger";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,30 @@ const queryClient = new QueryClient({
   },
 });
 
+// Define routes with unique IDs
+const appRoutes = [
+  { path: "/", element: <Navigate to="/login" replace /> },
+  { path: "/login", element: <Login /> },
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/time", element: <TimeManagement /> },
+  { path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
+  { path: "/training", element: <Training /> },
+  { path: "/marketing", element: <Marketing /> },
+  { path: "/employee", element: <Navigate to="/employees" replace /> },
+  { path: "/employees", element: <Employees /> },
+  { path: "/reports", element: <Reports /> },
+  { path: "/communication", element: <Communication /> },
+  
+  // Legacy redirects - ensure these don't create navigation loops
+  { path: "/communications", element: <Navigate to="/communication" replace /> },
+  { path: "*", element: <Navigate to="/dashboard" replace /> }
+];
+
+// Create a Set to ensure uniqueness of paths
+const uniqueRoutes = Array.from(
+  new Map(appRoutes.map(route => [route.path, route])).values()
+);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -35,22 +60,15 @@ function App() {
           <DebugProvider initialDebugMode={false}>
             <Toaster />
             <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/time" element={<TimeManagement />} />
-              <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/marketing" element={<Marketing />} />
-              <Route path="/employee" element={<Navigate to="/employees" replace />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/communication" element={<Communication />} />
-              
-              {/* Legacy redirects - ensure these don't create navigation loops */}
-              <Route path="/communications" element={<Navigate to="/communication" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {uniqueRoutes.map((route) => (
+                <Route 
+                  key={route.path} 
+                  path={route.path} 
+                  element={route.element} 
+                />
+              ))}
             </Routes>
+            <RouteDebugger />
           </DebugProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -51,6 +51,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
     
   const communicationItems = [
     {
+      id: "announcements",
       to: "/communication",
       icon: <Megaphone className="h-5 w-5 mr-3" />,
       label: "Announcements",
@@ -61,6 +62,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       isActive: pathname === '/communication' && !search.includes('tab=messages')
     },
     {
+      id: "messages",
       to: "/communication?tab=messages",
       icon: <MessageSquare className="h-5 w-5 mr-3" />,
       label: "Messages",
@@ -77,7 +79,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       {communicationItems.map(item => 
         item.showIf && (
           <Button
-            key={item.to}
+            key={item.id}
             variant={item.badge !== null ? "default" : "ghost"}
             className={cn(
               "justify-start font-normal",
