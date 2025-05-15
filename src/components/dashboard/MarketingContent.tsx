@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -119,7 +120,7 @@ export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, 
       {viewAllUrl && (
         <div className="text-center mt-4">
           <Link to={viewAllUrl} onClick={handleButtonClick}>
-            <Button variant="warning" size="sm">
+            <Button variant="warning" size="sm" className="w-full">
               View All Marketing
             </Button>
           </Link>
