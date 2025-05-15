@@ -6,7 +6,7 @@ import { ErrorAlert } from "@/components/time-management/ErrorAlert";
 import { TimeManagementHeader } from "@/components/time-management/TimeManagementHeader";
 import { TimeManagementTabs } from "@/components/time-management/TimeManagementTabs";
 import { TimeManagementProvider, useTimeManagement } from "@/contexts/timeManagement";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { User } from "@/types";
 
 export default function TimeManagement() {
@@ -134,11 +134,17 @@ const TimeManagementContent: React.FC = () => {
     // Prevent rapid refreshes
     const now = Date.now();
     if (now - lastSaveTime < 30000) { // 30 second minimum between refreshes
-      toast.info("Please wait before refreshing again");
+      toast({
+        description: "Please wait before refreshing again",
+        variant: "default"
+      });
       return;
     }
     
-    toast.info("Refreshing time management data...");
+    toast({
+      description: "Refreshing time management data...",
+      variant: "default"
+    });
     setLastSaveTime(now);
     forceRefreshData();
   };

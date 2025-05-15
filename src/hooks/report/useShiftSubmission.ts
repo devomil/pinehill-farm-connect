@@ -1,7 +1,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -141,12 +141,18 @@ export const useShiftSubmission = () => {
         console.warn("No admins found to notify.");
       }
 
-      toast.success('Shift report submitted successfully!');
+      toast({
+        description: 'Shift report submitted successfully!',
+        variant: 'success'
+      });
       return shiftReport;
 
     } catch (error: any) {
       console.error("Error in submitShiftReport:", error.message);
-      toast.error(`Failed to submit shift report: ${error.message}`);
+      toast({
+        description: `Failed to submit shift report: ${error.message}`,
+        variant: 'destructive'
+      });
       throw error;
     } finally {
       setIsSubmitting(false);

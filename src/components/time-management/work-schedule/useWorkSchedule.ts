@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { format, subMonths } from "date-fns";
 import { v4 as uuidv4 } from 'uuid';
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 // This is a mock implementation that would be replaced with actual API calls
 export function useWorkSchedule(employeeId: string | null) {
@@ -55,7 +55,10 @@ export function useWorkSchedule(employeeId: string | null) {
       } catch (err) {
         console.error("Error loading schedule data:", err);
         setError(err instanceof Error ? err : new Error('Failed to fetch schedule'));
-        toast.error("Error loading schedule data");
+        toast({
+          description: "Error loading schedule data",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -67,7 +70,10 @@ export function useWorkSchedule(employeeId: string | null) {
   // Save the schedule
   const saveSchedule = useCallback((schedule: WorkSchedule) => {
     if (!employeeId) {
-      toast.error("No employee selected");
+      toast({
+        description: "No employee selected",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -84,11 +90,17 @@ export function useWorkSchedule(employeeId: string | null) {
         }));
         
         setScheduleData(schedule);
-        toast.success("Schedule saved successfully");
+        toast({
+          description: "Schedule saved successfully",
+          variant: "success"
+        });
       } catch (err) {
         console.error("Error saving schedule:", err);
         setError(err instanceof Error ? err : new Error('Failed to save schedule'));
-        toast.error("Error saving schedule");
+        toast({
+          description: "Error saving schedule",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -98,7 +110,10 @@ export function useWorkSchedule(employeeId: string | null) {
   // Reset the schedule
   const resetSchedule = useCallback(() => {
     if (!employeeId) {
-      toast.error("No employee selected");
+      toast({
+        description: "No employee selected",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -121,11 +136,17 @@ export function useWorkSchedule(employeeId: string | null) {
         }));
         
         setScheduleData(newSchedule);
-        toast.info("Schedule has been reset");
+        toast({
+          description: "Schedule has been reset",
+          variant: "default"
+        });
       } catch (err) {
         console.error("Error resetting schedule:", err);
         setError(err instanceof Error ? err : new Error('Failed to reset schedule'));
-        toast.error("Error resetting schedule");
+        toast({
+          description: "Error resetting schedule",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -135,7 +156,10 @@ export function useWorkSchedule(employeeId: string | null) {
   // Copy from last month
   const copyFromLastMonth = useCallback(() => {
     if (!employeeId) {
-      toast.error("No employee selected");
+      toast({
+        description: "No employee selected",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -179,14 +203,23 @@ export function useWorkSchedule(employeeId: string | null) {
           }));
           
           setScheduleData(newSchedule);
-          toast.success("Schedule copied from last month");
+          toast({
+            description: "Schedule copied from last month",
+            variant: "success"
+          });
         } else {
-          toast.info("No schedule found from last month");
+          toast({
+            description: "No schedule found from last month",
+            variant: "default"
+          });
         }
       } catch (err) {
         console.error("Error copying from last month:", err);
         setError(err instanceof Error ? err : new Error('Failed to copy from last month'));
-        toast.error("Error copying schedule");
+        toast({
+          description: "Error copying schedule",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
