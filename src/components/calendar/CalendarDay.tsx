@@ -3,7 +3,7 @@ import React from "react";
 import { CalendarDayContent } from "./CalendarDayContent";
 import { extractHTMLAttributes } from "./utils/calendarDateUtils";
 import { CalendarEventMap } from "./utils/calendarDateUtils";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 
 interface CalendarDayProps {
   date?: Date;
@@ -19,12 +19,14 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
   const safeHtmlProps = extractHTMLAttributes(props);
   
   // Debug logging
-  if (dayDate) {
+  if (dayDate && isValid(dayDate)) {
     console.log("CalendarDay rendering date:", format(dayDate, "yyyy-MM-dd"));
-  } 
+  } else if (dayDate) {
+    console.error("CalendarDay received invalid date:", dayDate);
+  }
 
-  if (!dayDate) {
-    return <div {...safeHtmlProps} />;
+  if (!dayDate || !isValid(dayDate)) {
+    return <div {...safeHtmlProps} className="border border-dashed border-gray-200 h-full" />;
   }
 
   // The eventsMap should be passed via context or props

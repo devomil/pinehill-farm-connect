@@ -2,6 +2,7 @@
 import React from "react";
 import { format, isValid } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
+import { Briefcase } from "lucide-react";
 
 interface CalendarDayCellProps {
   day: Date;
@@ -63,10 +64,13 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     onShiftClick(shift);
   };
 
+  // Add explicit day label display
+  const dayNumber = safeFormat(day, "d");
+
   return (
     <div className={getClassNames()} onClick={handleClick}>
       <div className="h-full w-full">
-        <div className="text-right text-xs">{safeFormat(day, "d")}</div>
+        <div className="text-right text-xs font-semibold">{dayNumber}</div>
         
         {/* Show selection indicator for multi-select mode */}
         {isMultiSelected && (
@@ -78,10 +82,11 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
             {shifts.map((shift, index) => (
               <div 
                 key={`${shift.id}-${index}`}
-                className="bg-primary/10 text-xs p-1 rounded mt-1 cursor-pointer hover:bg-primary/20"
+                className="bg-primary/10 text-xs p-1 rounded mt-1 cursor-pointer hover:bg-primary/20 flex items-center gap-1"
                 onClick={(e) => handleShiftClick(e, shift)}
               >
-                {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
+                <Briefcase className="h-2 w-2" />
+                <span>{shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}</span>
               </div>
             ))}
           </div>

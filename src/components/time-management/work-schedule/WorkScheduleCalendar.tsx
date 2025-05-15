@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { isValid } from "date-fns";
+import { isValid, format, eachDayOfInterval, startOfMonth, endOfMonth } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarDayCell } from "./CalendarDayCell";
@@ -35,11 +35,21 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   // Ensure current month is valid
   const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
   
+  // Generate days of the month to ensure calendar is populated
+  const daysOfMonth = React.useMemo(() => {
+    if (!isValid(safeCurrentMonth)) return [];
+    return eachDayOfInterval({
+      start: startOfMonth(safeCurrentMonth),
+      end: endOfMonth(safeCurrentMonth)
+    });
+  }, [safeCurrentMonth]);
+  
   // Debug calendar data on mount and when key props change
   useEffect(() => {
     getDebugInfo(safeCurrentMonth, shiftsMap, selectedDate, isDaySelected);
     console.log("WorkScheduleCalendar rendered with selectionMode:", selectionMode);
-  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode]);
+    console.log("Days in month:", daysOfMonth.length, "First day:", format(daysOfMonth[0], "yyyy-MM-dd"));
+  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode, daysOfMonth]);
   
   // Handle previous month click
   const handlePreviousMonth = () => {
@@ -83,6 +93,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
           selected={selectionMode === "single" ? selectedDate : undefined}
           month={safeCurrentMonth}
           onDayClick={handleDayClick}
+          showOutsideDays={true}
           components={{
             Day: ({ day, ...props }: any) => {
               if (!day || !isValid(day)) {

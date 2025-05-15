@@ -1,7 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { isValid } from "date-fns";
+import { isValid, format, eachDayOfInterval, startOfMonth, endOfMonth } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarDayCell } from "./CalendarDayCell";
@@ -30,6 +30,20 @@ export const EmployeeScheduleCalendar: React.FC<EmployeeScheduleCalendarProps> =
   // Ensure current date is valid
   const safeCurrentDate = isValid(currentDate) ? currentDate : new Date();
 
+  // Generate days of the month to ensure calendar is populated
+  const daysOfMonth = React.useMemo(() => {
+    return eachDayOfInterval({
+      start: startOfMonth(safeCurrentDate),
+      end: endOfMonth(safeCurrentDate)
+    });
+  }, [safeCurrentDate]);
+  
+  // Log days for debugging
+  useEffect(() => {
+    console.log(`EmployeeScheduleCalendar: ${daysOfMonth.length} days in month for ${format(safeCurrentDate, "MMMM yyyy")}`);
+    console.log("First day:", format(daysOfMonth[0], "yyyy-MM-dd"), "Last day:", format(daysOfMonth[daysOfMonth.length - 1], "yyyy-MM-dd"));
+  }, [daysOfMonth, safeCurrentDate]);
+
   // Handle day click with validation
   const handleDayClick = (day: Date) => {
     if (isValid(day)) {
@@ -57,10 +71,11 @@ export const EmployeeScheduleCalendar: React.FC<EmployeeScheduleCalendarProps> =
           mode="default"
           month={safeCurrentDate}
           onDayClick={handleDayClick}
+          showOutsideDays={true}
           components={{
             Day: ({ day, ...props }: any) => {
               if (!day || !isValid(day)) {
-                return null;
+                return <div className="border border-dashed border-gray-200 h-9 w-9 p-0" />;
               }
               
               // Get shifts for this day

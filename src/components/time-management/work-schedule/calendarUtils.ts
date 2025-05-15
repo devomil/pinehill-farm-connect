@@ -55,4 +55,19 @@ export const getDebugInfo = (
   console.log("Selected date:", selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None");
   console.log("Shifts count:", shiftsMap.size);
   console.log("Selection mode:", isDaySelected ? "multiple" : "single");
+  
+  // Generate days in month for debug purposes
+  try {
+    const daysInMonth = [];
+    const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      daysInMonth.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
+    }
+    
+    console.log(`Generated ${daysInMonth.length} days for ${format(currentMonth, "MMMM yyyy")}`);
+  } catch (e) {
+    console.error("Error generating debug days:", e);
+  }
 };
