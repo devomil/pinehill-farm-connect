@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { User } from "@/types";
 import { DashboardCalendarSection } from "@/components/dashboard/sections/DashboardCalendarSection";
@@ -87,6 +88,46 @@ const resizableStyles = `
   bottom: 0;
   transform: rotate(45deg);
 }
+
+/* Additional grid constraint styles */
+.grid-dashboard .react-grid-item {
+  transition: all 200ms ease;
+  margin-bottom: 16px !important;
+}
+
+.grid-dashboard .react-grid-placeholder {
+  background: rgba(108, 151, 171, 0.2);
+  border: 2px dashed #6c97ab;
+  transition-duration: 100ms;
+  z-index: 0;
+  border-radius: 0.5rem;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+.grid-dashboard .react-grid-item.react-grid-item--resizing {
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .grid-dashboard .react-grid-item {
+    width: 100% !important;
+    transform: none !important;
+    position: relative !important;
+    left: 0 !important;
+    top: auto !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .grid-dashboard .react-grid-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+  }
+}
 `;
 
 interface DashboardContentProps {
@@ -134,6 +175,7 @@ interface LayoutItem {
   isDraggable?: boolean;
   isResizable?: boolean;
   static?: boolean;
+  isBounded?: boolean;
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -162,7 +204,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   const [showHiddenDialog, setShowHiddenDialog] = useState<boolean>(false);
   const [hasLayoutChanged, setHasLayoutChanged] = useState<boolean>(false);
   
-  // Define default widget heights
+  // Define default widget heights and column spans
   const defaultHeights: Record<string, number> = {
     calendar: 12,
     schedule: 10,
@@ -171,6 +213,16 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     shiftCoverage: 10,
     marketing: 8,
     announcements: 10
+  };
+
+  const columnSpans: Record<string, number> = {
+    calendar: 6,
+    schedule: 6,
+    timeOff: 3,
+    training: 3,
+    shiftCoverage: 6,
+    marketing: 3,
+    announcements: 6
   };
 
   // Get saved widget configuration from localStorage if available
@@ -191,7 +243,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   const initialWidgets: Record<string, { title: string; columnSpan: number; component: React.ReactNode }> = {
     calendar: {
       title: "Calendar",
-      columnSpan: 2,
+      columnSpan: columnSpans.calendar,
       component: (
         <DashboardCalendarSection 
           date={date}
@@ -208,7 +260,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     schedule: {
       title: "Work Schedule",
-      columnSpan: 2,
+      columnSpan: columnSpans.schedule,
       component: (
         <DashboardScheduleSection
           isAdmin={isAdmin}
@@ -220,7 +272,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     timeOff: {
       title: "Time Off",
-      columnSpan: 1,
+      columnSpan: columnSpans.timeOff,
       component: (
         <DashboardTimeOffSection 
           isAdmin={isAdmin}
@@ -235,7 +287,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     training: {
       title: "Training",
-      columnSpan: 1,
+      columnSpan: columnSpans.training,
       component: (
         <DashboardTrainingSection 
           assignedTrainings={assignedTrainings}
@@ -245,7 +297,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     shiftCoverage: {
       title: "Shift Coverage",
-      columnSpan: 2,
+      columnSpan: columnSpans.shiftCoverage,
       component: currentUser ? (
         <DashboardShiftCoverageSection
           shiftCoverageMessages={shiftCoverageMessages}
@@ -259,7 +311,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     marketing: {
       title: "Marketing",
-      columnSpan: 1,
+      columnSpan: columnSpans.marketing,
       component: (
         <DashboardMarketingSection 
           viewAllUrl="/marketing"
@@ -268,7 +320,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     },
     announcements: {
       title: "Announcements",
-      columnSpan: 2,
+      columnSpan: columnSpans.announcements,
       component: (
         <DashboardAnnouncementsSection
           announcements={announcements}
@@ -279,33 +331,63 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     }
   };
 
-  // Generate initial layout from widget config or defaults
+  // Determine max columns available in the grid
+  const maxColumns = 12;
+
+  // Generate initial layout from widget config or defaults with strict grid constraints
   const generateLayout = (): LayoutItem[] => {
-    let y = 0;
+    // Track row positions to avoid overlap
+    const rowPositions: Record<number, number> = {}; // Key is row index, value is next available y position
     const layout: LayoutItem[] = [];
     
-    Object.entries(initialWidgets).forEach(([id, widget], index) => {
+    // Sort widgets by saved y position to maintain vertical ordering
+    const sortedWidgets = Object.entries(initialWidgets)
+      .map(([id, widget]) => {
+        const config = widgetConfig[id];
+        const y = config?.y !== undefined ? config.y : 0;
+        return { id, widget, y };
+      })
+      .sort((a, b) => a.y - b.y);
+    
+    // Process each widget
+    sortedWidgets.forEach(({ id, widget }) => {
       const config = widgetConfig[id];
       const isVisible = config ? config.visible !== false : true;
       
       if (isVisible) {
-        const w = config?.w || widget.columnSpan * 3; // Scale columns to fit in grid-12
-        const h = config?.h || defaultHeights[id] || 8;
+        // Determine column position (x) and width (w)
+        // If no config, place widget at left (0) or right (6) side of the grid alternating
+        const x = config?.x !== undefined ? config.x : (layout.length % 2) * 6;
         
+        // Calculate width in grid units, capped by max columns
+        const w = config?.w !== undefined ? config.w : (columnSpans[id] || 3);
+        
+        // Limit width to max columns
+        const limitedWidth = Math.min(w, maxColumns);
+        
+        // Determine row position to avoid overlap
+        const rowIdx = Math.floor(x / maxColumns);
+        const baseY = rowPositions[rowIdx] || 0;
+        
+        // Get height from config or use default
+        const h = config?.h !== undefined ? config.h : (defaultHeights[id] || 8);
+        
+        // Create layout item with bounds constraints
         layout.push({
           i: id,
-          x: config?.x !== undefined ? config.x : (layout.length % 2) * 6,
-          y: config?.y !== undefined ? config.y : y,
-          w,
+          x,
+          y: baseY,
+          w: limitedWidth,
           h,
           minW: 3,
           minH: 4,
           isDraggable: true,
-          isResizable: true
+          isResizable: true,
+          isBounded: true // Ensure widget stays within grid bounds
         });
         
-        // Increment y for default layout
-        if (layout.length % 2 === 0) y += 10;
+        // Update row position for next widget
+        rowPositions[rowIdx] = baseY + h;
       }
     });
     
@@ -358,8 +440,31 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 
   // Handle layout changes
   const handleLayoutChange = (layout: LayoutItem[]) => {
-    setCurrentLayout(layout);
-    setHasLayoutChanged(true);
+    // Validate if any widgets would overlap
+    let isValid = true;
+    const gridPositions: Record<string, boolean> = {};
+    
+    layout.forEach(item => {
+      // Check each cell position this widget covers
+      for (let x = item.x; x < item.x + item.w; x++) {
+        for (let y = item.y; y < item.y + item.h; y++) {
+          const key = `${x},${y}`;
+          if (gridPositions[key]) {
+            // Found overlap!
+            isValid = false;
+          }
+          gridPositions[key] = true;
+        }
+      }
+    });
+    
+    if (isValid) {
+      setCurrentLayout(layout);
+      setHasLayoutChanged(true);
+    } else {
+      // Could show a warning toast or adjust layout to prevent overlap
+      toast.warning("Widget overlapping detected - please adjust your layout");
+    }
   };
 
   // Toggle widget visibility
@@ -374,17 +479,28 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       setWidgetConfig(newWidgetConfig);
       
       // Add it to the layout
-      const widget = initialWidgets[id];
+      // Find empty space in the grid
+      let bestX = 0;
+      let bestY = 0;
+      
+      // Find maximum Y position currently occupied
+      const maxY = currentLayout.reduce((max, item) => 
+        Math.max(max, item.y + item.h), 0);
+      
+      // Add new widget at the bottom
+      bestY = maxY;
+      
       const newItem: LayoutItem = {
         i: id,
-        x: 0,
-        y: 0,
-        w: widget.columnSpan * 3,
+        x: bestX,
+        y: bestY,
+        w: columnSpans[id] || 3,
         h: defaultHeights[id] || 8,
         minW: 3,
         minH: 4,
         isDraggable: true,
-        isResizable: true
+        isResizable: true,
+        isBounded: true
       };
       
       setCurrentLayout([...currentLayout, newItem]);
@@ -396,7 +512,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
         visible: true,
         x: 0,
         y: 0,
-        w: initialWidgets[id].columnSpan * 3,
+        w: columnSpans[id] || 3,
         h: defaultHeights[id] || 8
       };
       
@@ -448,7 +564,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 
   // Responsive breakpoints
   const breakpoints = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
-  const cols = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
+  const cols = { lg: 12, md: 12, sm: 12, xs: 6, xxs: 2 };
 
   return (
     <>
@@ -619,7 +735,14 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           </CardHeader>
         </Card>
         
-        {/* ... keep existing code (customization mode notification) */}
+        {isCustomizing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-700">
+            <p className="text-sm">
+              Customization mode active - drag widgets by their handles to rearrange, or resize them using the corner handles. 
+              Click "Save Layout" when you're done.
+            </p>
+          </div>
+        )}
         
         {/* Dashboard Grid */}
         <div className="grid-dashboard">
@@ -636,7 +759,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
             isResizable={isCustomizing}
             draggableHandle={`.${dragHandleClass}`}
             compactType="vertical"
+            preventCollision={false} // Enable compact algorithm for auto-adjusting positions
             useCSSTransforms={true}
+            isBounded={true} // Keep widgets within the container
           >
             {currentLayout.map(item => {
               const widgetId = item.i;

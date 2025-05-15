@@ -53,6 +53,33 @@
   padding: 0 3px 3px 0;
 }
 
+/* Custom styles for enforcing grid constraints */
+.grid-dashboard .react-grid-item {
+  margin-bottom: 16px !important;
+  overflow: hidden;
+}
+
+/* Add a subtle transition when the widget is being rearranged */
+.grid-dashboard .react-grid-item.react-draggable-dragging {
+  transition: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  opacity: 0.8;
+}
+
+/* Style the placeholder to better indicate where the widget will go */
+.grid-dashboard .react-grid-placeholder {
+  background: rgba(108, 151, 171, 0.3);
+  border: 2px dashed #6c97ab;
+  border-radius: 8px;
+}
+
+/* Ensure widget content stays within its container */
+.grid-dashboard .react-grid-item > div {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Mobile responsive behavior */
 @media (max-width: 768px) {
   .react-grid-item {
     width: 100% !important;
@@ -60,11 +87,17 @@
     position: relative !important;
     left: 0 !important;
     top: auto !important;
-    margin-bottom: 16px;
+    margin-bottom: 16px !important;
   }
   
   .react-grid-layout {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     height: auto !important;
+  }
+  
+  /* Adjust widget height on mobile for better display */
+  .grid-dashboard .react-grid-item {
+    min-height: 300px !important;
   }
 }
