@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
+import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -49,7 +50,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       }).length
     : 0;
     
-  const communicationItems = [
+  const communicationItemsRaw = [
     {
       id: "announcements",
       to: "/communication",
@@ -74,35 +75,37 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
     }
   ];
 
+  // Filter visible items first, then deduplicate
+  const visibleItems = communicationItemsRaw.filter(item => item.showIf);
+  const communicationItems = useUniqueRoutes(visibleItems);
+
   return (
     <div className="flex flex-col gap-1">
-      {communicationItems.map(item => 
-        item.showIf && (
-          <Button
-            key={item.id}
-            variant={item.badge !== null ? "default" : "ghost"}
-            className={cn(
-              "justify-start font-normal",
-              item.isActive && "bg-accent"
+      {communicationItems.map(item => (
+        <Button
+          key={item.id}
+          variant={item.badge !== null ? "default" : "ghost"}
+          className={cn(
+            "justify-start font-normal",
+            item.isActive && "bg-accent"
+          )}
+          asChild
+        >
+          <Link to={item.to} className="flex w-full items-center">
+            {item.icon}
+            <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+            {!collapsed && item.badge}
+            {collapsed && item.badge && (
+              <Badge 
+                variant={item.to.includes("messages") ? "destructive" : "default"} 
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
+              >
+                {item.to.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
+              </Badge>
             )}
-            asChild
-          >
-            <Link to={item.to} className="flex w-full items-center">
-              {item.icon}
-              <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
-              {!collapsed && item.badge}
-              {collapsed && item.badge && (
-                <Badge 
-                  variant={item.to.includes("messages") ? "destructive" : "default"} 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
-                >
-                  {item.to.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
-                </Badge>
-              )}
-            </Link>
-          </Button>
-        )
-      )}
+          </Link>
+        </Button>
+      ))}
     </div>
   );
 };

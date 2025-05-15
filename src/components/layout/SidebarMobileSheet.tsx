@@ -21,6 +21,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 interface SidebarMobileSheetProps {
   open: boolean;
@@ -36,7 +37,7 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   
   // Define navigation items with unique IDs
-  const navigationItems = [
+  const navigationItemsRaw = [
     {
       id: "dashboard",
       to: "/dashboard",
@@ -95,6 +96,10 @@ export const SidebarMobileSheet = ({
     }
   ];
 
+  // Filter visible items first, then deduplicate
+  const visibleItems = navigationItemsRaw.filter(item => item.showIf);
+  const navigationItems = useUniqueRoutes(visibleItems);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -111,14 +116,12 @@ export const SidebarMobileSheet = ({
         </SheetHeader>
         <nav className="grid gap-4 py-4">
           {navigationItems.map(item => (
-            item.showIf && (
-              <Button key={item.id} variant="ghost" className="justify-start font-normal">
-                <Link to={item.to} className="flex items-center">
-                  {item.icon}
-                  {item.label}
-                </Link>
-              </Button>
-            )
+            <Button key={item.id} variant="ghost" className="justify-start font-normal">
+              <Link to={item.to} className="flex items-center">
+                {item.icon}
+                {item.label}
+              </Link>
+            </Button>
           ))}
           <Button variant="ghost" className="justify-start font-normal" onClick={handleLogout}>
             <LogOut className="h-5 w-5 mr-2" />

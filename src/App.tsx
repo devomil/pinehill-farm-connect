@@ -17,6 +17,7 @@ import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { RouteDebugger } from "@/components/debug/RouteDebugger";
+import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,31 +29,29 @@ const queryClient = new QueryClient({
   },
 });
 
-// Define routes with unique IDs
-const appRoutes = [
-  { path: "/", element: <Navigate to="/login" replace /> },
-  { path: "/login", element: <Login /> },
-  { path: "/dashboard", element: <Dashboard /> },
-  { path: "/time", element: <TimeManagement /> },
-  { path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
-  { path: "/training", element: <Training /> },
-  { path: "/marketing", element: <Marketing /> },
-  { path: "/employee", element: <Navigate to="/employees" replace /> },
-  { path: "/employees", element: <Employees /> },
-  { path: "/reports", element: <Reports /> },
-  { path: "/communication", element: <Communication /> },
-  
-  // Legacy redirects - ensure these don't create navigation loops
-  { path: "/communications", element: <Navigate to="/communication" replace /> },
-  { path: "*", element: <Navigate to="/dashboard" replace /> }
-];
-
-// Create a Set to ensure uniqueness of paths
-const uniqueRoutes = Array.from(
-  new Map(appRoutes.map(route => [route.path, route])).values()
-);
-
 function App() {
+  // Define routes with unique IDs
+  const appRoutes = [
+    { id: "home", path: "/", element: <Navigate to="/login" replace /> },
+    { id: "login", path: "/login", element: <Login /> },
+    { id: "dashboard", path: "/dashboard", element: <Dashboard /> },
+    { id: "time", path: "/time", element: <TimeManagement /> },
+    { id: "calendar", path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
+    { id: "training", path: "/training", element: <Training /> },
+    { id: "marketing", path: "/marketing", element: <Marketing /> },
+    { id: "employee", path: "/employee", element: <Navigate to="/employees" replace /> },
+    { id: "employees", path: "/employees", element: <Employees /> },
+    { id: "reports", path: "/reports", element: <Reports /> },
+    { id: "communication", path: "/communication", element: <Communication /> },
+    
+    // Legacy redirects - ensure these don't create navigation loops
+    { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
+    { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
+  ];
+
+  // Use our custom hook to ensure uniqueness of routes
+  const uniqueRoutes = useUniqueRoutes(appRoutes);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -62,7 +61,7 @@ function App() {
             <Routes>
               {uniqueRoutes.map((route) => (
                 <Route 
-                  key={route.path} 
+                  key={route.id || route.path} 
                   path={route.path} 
                   element={route.element} 
                 />
