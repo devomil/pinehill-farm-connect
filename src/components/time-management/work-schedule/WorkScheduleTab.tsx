@@ -38,6 +38,16 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
     }
   }, [isAdmin, currentUser.id]);
 
+  // Handler for employee selection that enforces restrictions
+  const handleSelectEmployee = (employeeId: string) => {
+    if (isAdmin) {
+      setSelectedEmployee(employeeId);
+    } else {
+      // Non-admins can only see their own schedule
+      setSelectedEmployee(currentUser.id);
+    }
+  };
+
   return (
     <Card className="mt-4">
       <CardHeader className="pb-3">
@@ -46,7 +56,7 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
           isAdmin={isAdmin}
           selectedEmployee={selectedEmployee}
           employees={employees}
-          onSelectEmployee={setSelectedEmployee}
+          onSelectEmployee={handleSelectEmployee}
           onCopyFromLastMonth={copyFromLastMonth}
           loading={loading}
         />

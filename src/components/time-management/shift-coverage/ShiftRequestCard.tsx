@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Communication } from "@/types/communications/communicationTypes";
 import { User } from "@/types";
 import { format } from "date-fns";
+import { useShiftCoverageHandler } from "@/hooks/workSchedule";
+import { toast } from "@/hooks/use-toast";
 
 interface ShiftRequestCardProps {
   message: Communication;
@@ -24,6 +26,7 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
 }) => {
   // Extract shift details if they exist
   const shiftRequest = message.shift_coverage_requests?.[0];
+  const { handleShiftTransfer, processing } = useShiftCoverageHandler(currentUser);
   
   if (!shiftRequest) {
     return (
@@ -39,13 +42,40 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
   const isOriginalEmployee = currentUser.id === shiftRequest.original_employee_id;
   const isCoveringEmployee = currentUser.id === shiftRequest.covering_employee_id;
   
-  const handleAccept = () => {
-    onRespond({
-      communicationId: message.id,
-      shiftRequestId: shiftRequest.id,
-      accept: true,
-      senderId: message.sender_id
-    });
+  const handleAccept = async () => {
+    // First handle the shift transfer between employees
+    if (shiftRequest.original_employee_id && shiftRequest.covering_employee_id) {
+      const success = await handleShiftTransfer(
+        shiftRequest.original_employee_id,
+        shiftRequest.covering_employee_id,
+        shiftRequest.shift_date,
+        shiftRequest.shift_start,
+        shiftRequest.shift_end
+      );
+      
+      if (success) {
+        // Then update the communication status
+        onRespond({
+          communicationId: message.id,
+          shiftRequestId: shiftRequest.id,
+          accept: true,
+          senderId: message.sender_id
+        });
+        
+        toast({
+          description: "Shift successfully transferred",
+          variant: "success"
+        });
+      }
+    } else {
+      // Fallback if we don't have all the data
+      onRespond({
+        communicationId: message.id,
+        shiftRequestId: shiftRequest.id,
+        accept: true,
+        senderId: message.sender_id
+      });
+    }
   };
   
   const handleDecline = () => {
@@ -77,8 +107,8 @@ export const ShiftRequestCard: React.FC<ShiftRequestCardProps> = ({
           
           {isPending && isCoveringEmployee && (
             <div className="flex space-x-2">
-              <Button onClick={handleAccept}>Accept</Button>
-              <Button variant="outline" onClick={handleDecline}>Decline</Button>
+              <Button onClick={handleAccept} disabled={processing}>Accept</Button>
+              <Button variant="outline" onClick={handleDecline} disabled={processing}>Decline</Button>
             </div>
           )}
           

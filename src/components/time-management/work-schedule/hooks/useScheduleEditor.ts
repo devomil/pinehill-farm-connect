@@ -4,7 +4,7 @@ import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { buildShiftsMap, createNewShift } from "../scheduleHelpers";
 import { uuid } from "@/utils/uuid";
 import { useDaySelector } from "@/contexts/timeManagement/hooks";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 export interface UseScheduleEditorProps {
   selectedEmployee: string | null;
@@ -109,12 +109,18 @@ export const useScheduleEditor = ({
   // Handle bulk scheduling (for either bulk mode or specific days)
   const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
     if (!scheduleData || !selectedEmployee) {
-      toast.error("No employee or schedule data available");
+      toast({
+        description: "No employee or schedule data available",
+        variant: "destructive"
+      });
       return;
     }
     
     if (days.length === 0) {
-      toast.error("No days selected for scheduling");
+      toast({
+        description: "No days selected for scheduling",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -152,7 +158,10 @@ export const useScheduleEditor = ({
     
     // Save the updated schedule and show feedback
     onSave(updatedSchedule);
-    toast.success(`Added ${newShifts.length} shifts to the schedule`);
+    toast({
+      description: `Added ${newShifts.length} shifts to the schedule`,
+      variant: "success"
+    });
     
     // Reset bulk mode and selection state
     setBulkMode(null);

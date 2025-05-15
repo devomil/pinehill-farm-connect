@@ -1,5 +1,4 @@
 
-import { useCallback } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
@@ -9,7 +8,7 @@ interface UseScheduleResetProps {
   currentMonth: string;
   setLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
-  setScheduleData: (schedule: WorkSchedule) => void;
+  setScheduleData: (data: WorkSchedule | null) => void;
   updateMockSchedule: (employeeId: string, schedule: WorkSchedule) => void;
 }
 
@@ -22,48 +21,50 @@ export function useScheduleReset({
   updateMockSchedule
 }: UseScheduleResetProps) {
   
-  // Reset the schedule
-  const resetSchedule = useCallback(() => {
+  const resetSchedule = async () => {
     if (!employeeId) {
-      toast({
-        description: "No employee selected",
-        variant: "destructive"
-      });
+      setError(new Error('No employee selected'));
       return;
     }
     
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      try {
-        // Create empty schedule
-        const newSchedule: WorkSchedule = {
-          id: uuidv4(),
-          employeeId,
-          month: currentMonth,
-          shifts: []
-        };
-        
-        updateMockSchedule(employeeId, newSchedule);
-        
-        setScheduleData(newSchedule);
-        toast({
-          description: "Schedule has been reset",
-          variant: "default"
-        });
-      } catch (err) {
-        console.error("Error resetting schedule:", err);
-        setError(err instanceof Error ? err : new Error('Failed to reset schedule'));
-        toast({
-          description: "Error resetting schedule",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-  }, [employeeId, currentMonth, setLoading, setError, setScheduleData, updateMockSchedule]);
-
+    try {
+      // In a real app, this would be an API call to reset the schedule
+      
+      // Create a new empty schedule
+      const newSchedule: WorkSchedule = {
+        id: uuidv4(),
+        employeeId,
+        month: currentMonth,
+        shifts: []
+      };
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update local state
+      setScheduleData(newSchedule);
+      
+      // Update mock store
+      updateMockSchedule(employeeId, newSchedule);
+      
+      // Show success message
+      toast({
+        description: "Schedule reset successfully",
+        variant: "success"
+      });
+    } catch (err) {
+      console.error('Error resetting schedule:', err);
+      setError(err instanceof Error ? err : new Error('Failed to reset schedule'));
+      toast({
+        description: "Failed to reset schedule",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return { resetSchedule };
 }

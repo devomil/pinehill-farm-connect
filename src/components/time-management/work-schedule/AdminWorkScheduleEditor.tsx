@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { WorkScheduleEditorProps } from "@/types/workSchedule";
 import { format } from "date-fns";
 import { CardDescription } from "@/components/ui/card";
@@ -9,6 +9,10 @@ import { BulkSchedulingBar } from "./BulkSchedulingBar";
 import { SpecificDaysSchedulingBar } from "./SpecificDaysSchedulingBar";
 import { ScheduleActionBar } from "./ScheduleActionBar";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
+import { useAdminScheduleTools } from "@/hooks/workSchedule";
+import { AdminSchedulingToolsBar } from "./AdminSchedulingToolsBar";
+import { Button } from "@/components/ui/button";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   selectedEmployee,
@@ -17,6 +21,9 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
   onReset,
   loading
 }) => {
+  const [showAdminTools, setShowAdminTools] = useState(false);
+  const { unfilteredEmployees } = useEmployeeDirectory();
+  
   // Use the schedule editor hook
   const {
     selectedDate,
@@ -43,6 +50,14 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
     getSelectedDayStrings
   } = useScheduleEditor({ selectedEmployee, scheduleData, onSave });
   
+  // Use admin scheduling tools
+  const { 
+    assignWeekdayShifts, 
+    assignWeekendShifts,
+    checkTimeOffConflicts,
+    autoAssignCoverage
+  } = useAdminScheduleTools(scheduleData, onSave);
+  
   if (!selectedEmployee) {
     return (
       <div className="text-center p-8 text-muted-foreground">
@@ -57,15 +72,38 @@ export const AdminWorkScheduleEditor: React.FC<WorkScheduleEditorProps> = ({
         Schedule for {format(currentMonth, 'MMMM yyyy')}
       </CardDescription>
       
-      <ScheduleActionBar
-        bulkMode={bulkMode}
-        selectionMode={selectionMode}
-        loading={loading}
-        selectedCount={selectedCount}
-        onToggleSelectionMode={toggleSelectionMode}
-        onSetBulkMode={setBulkMode}
-        onReset={onReset}
-      />
+      <div className="flex justify-between">
+        <ScheduleActionBar
+          bulkMode={bulkMode}
+          selectionMode={selectionMode}
+          loading={loading}
+          selectedCount={selectedCount}
+          onToggleSelectionMode={toggleSelectionMode}
+          onSetBulkMode={setBulkMode}
+          onReset={onReset}
+        />
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAdminTools(!showAdminTools)}
+        >
+          {showAdminTools ? "Hide Admin Tools" : "Show Admin Tools"}
+        </Button>
+      </div>
+      
+      {showAdminTools && (
+        <AdminSchedulingToolsBar
+          selectedEmployee={selectedEmployee}
+          currentMonth={currentMonth}
+          onAssignWeekday={assignWeekdayShifts}
+          onAssignWeekend={assignWeekendShifts}
+          onCheckConflicts={(shifts) => checkTimeOffConflicts(selectedEmployee, shifts)}
+          onAutoAssignCoverage={autoAssignCoverage}
+          availableEmployees={unfilteredEmployees}
+          scheduleData={scheduleData}
+        />
+      )}
       
       {bulkMode && (
         <BulkSchedulingBar

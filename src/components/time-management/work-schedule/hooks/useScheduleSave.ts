@@ -1,5 +1,4 @@
 
-import { useCallback } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { toast } from "@/hooks/use-toast";
 
@@ -7,7 +6,7 @@ interface UseScheduleSaveProps {
   employeeId: string | null;
   setLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
-  setScheduleData: (schedule: WorkSchedule) => void;
+  setScheduleData: (data: WorkSchedule | null) => void;
   updateMockSchedule: (employeeId: string, schedule: WorkSchedule) => void;
 }
 
@@ -19,42 +18,43 @@ export function useScheduleSave({
   updateMockSchedule
 }: UseScheduleSaveProps) {
   
-  // Save the schedule
-  const saveSchedule = useCallback((schedule: WorkSchedule) => {
+  const saveSchedule = async (schedule: WorkSchedule) => {
     if (!employeeId) {
-      toast({
-        description: "No employee selected",
-        variant: "destructive"
-      });
+      setError(new Error('No employee selected'));
       return;
     }
     
-    console.log("Saving schedule:", schedule);
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      try {
-        // Update mock data store
-        updateMockSchedule(employeeId, schedule);
-        
-        setScheduleData(schedule);
-        toast({
-          description: "Schedule saved successfully",
-          variant: "success"
-        });
-      } catch (err) {
-        console.error("Error saving schedule:", err);
-        setError(err instanceof Error ? err : new Error('Failed to save schedule'));
-        toast({
-          description: "Error saving schedule",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-  }, [employeeId, setLoading, setError, setScheduleData, updateMockSchedule]);
-
+    try {
+      // In a real app, this would be an API call
+      console.log('Saving schedule:', schedule);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update local state
+      setScheduleData(schedule);
+      
+      // Update mock store
+      updateMockSchedule(employeeId, schedule);
+      
+      // Show success message
+      toast({
+        description: "Schedule saved successfully",
+        variant: "success"
+      });
+    } catch (err) {
+      console.error('Error saving schedule:', err);
+      setError(err instanceof Error ? err : new Error('Failed to save schedule'));
+      toast({
+        description: "Failed to save schedule",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return { saveSchedule };
 }
