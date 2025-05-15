@@ -18,10 +18,7 @@ export function useShiftCoverageHandler(currentUser: User | null) {
     shiftEndTime: string
   ) => {
     if (!currentUser) {
-      showToast({ 
-        description: "You must be logged in to process shift transfers", 
-        variant: "destructive" 
-      });
+      showToast("error", "You must be logged in to process shift transfers");
       return false;
     }
 
@@ -88,10 +85,7 @@ export function useShiftCoverageHandler(currentUser: User | null) {
         // Update both schedules in database (in real implementation)
         // For demo, we'll just show the toast
         
-        showToast({ 
-          description: "Shift successfully transferred", 
-          variant: "success" 
-        });
+        showToast("success", "Shift successfully transferred");
         
         return true;
       }
@@ -114,18 +108,12 @@ export function useShiftCoverageHandler(currentUser: User | null) {
       // Step 6: Update both schedules in database (in real implementation)
       // For this demo, we'll just show the toast
       
-      showToast({ 
-        description: "Shift successfully transferred", 
-        variant: "success" 
-      });
+      showToast("success", "Shift successfully transferred");
       
       return true;
     } catch (error) {
       console.error("Error transferring shift:", error);
-      showToast({ 
-        description: "Failed to transfer shift", 
-        variant: "destructive" 
-      });
+      showToast("error", "Failed to transfer shift");
       return false;
     } finally {
       setProcessing(false);

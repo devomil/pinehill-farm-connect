@@ -17,10 +17,7 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
     triggerCoverage: boolean = true
   ) => {
     if (!currentUser) {
-      showToast({ 
-        description: "You must be logged in to update schedules", 
-        variant: "destructive" 
-      });
+      showToast("error", "You must be logged in to update schedules");
       return false;
     }
 
@@ -59,10 +56,7 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
       });
       
       if (overlappingShifts.length === 0) {
-        showToast({ 
-          description: "Time-off approved, no shifts needed adjustment", 
-          variant: "success" 
-        });
+        showToast("success", "Time-off approved, no shifts needed adjustment");
         return true;
       }
 
@@ -81,18 +75,12 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
         console.log("Triggering coverage requests for shifts:", overlappingShifts);
       }
       
-      showToast({ 
-        description: "Time-off approved and schedule updated", 
-        variant: "success" 
-      });
+      showToast("success", "Time-off approved and schedule updated");
       
       return true;
     } catch (error) {
       console.error("Error updating schedule for time-off:", error);
-      showToast({ 
-        description: "Failed to update schedule for approved time-off", 
-        variant: "destructive" 
-      });
+      showToast("error", "Failed to update schedule for approved time-off");
       return false;
     } finally {
       setProcessing(false);
