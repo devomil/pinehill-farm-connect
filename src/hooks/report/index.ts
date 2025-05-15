@@ -1,6 +1,7 @@
 
 // Export types
 export * from './types/shiftReportTypes';
+export * from './types/reportFormTypes';
 
 // Export services
 export * from './services/adminService';

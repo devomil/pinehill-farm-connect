@@ -1,19 +1,15 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { useAssignmentManagement } from "@/hooks/report/useAssignmentManagement";
 import { useShiftNotifications } from "@/hooks/report/useShiftNotifications";
+import { FormValues } from "@/hooks/report/types/reportFormTypes";
+import { submitShiftReport } from "@/hooks/report/services/shiftReportService";
 
-export interface FormValues {
-  date: string;
-  notes: string;
-  priority: 'low' | 'medium' | 'high';
-  assignedTo?: string;
-}
+export { type FormValues } from "@/hooks/report/types/reportFormTypes";
 
 export function useShiftReportForm() {
   const { currentUser } = useAuth();
@@ -40,52 +36,24 @@ export function useShiftReportForm() {
     try {
       setIsSubmitting(true);
 
-      const { data, error } = await supabase
-        .from('shift_reports')
-        .insert({
-          user_id: currentUser.id,
-          date: values.date,
-          notes: values.notes,
-          priority: values.priority,
-          admin_id: values.assignedTo
-        })
-        .select()
-        .single();
+      // Use the extracted shiftReportService to submit the report
+      const { data, error } = await submitShiftReport({
+        user_id: currentUser.id,
+        date: values.date,
+        notes: values.notes,
+        priority: values.priority,
+        assignedTo: values.assignedTo,
+        // Add required fields from ShiftReportInput type
+        shift_start: "",
+        shift_end: "",
+        total_hours: 0,
+        tasks_completed: "",
+        challenges_faced: "",
+        lessons_learned: "",
+        shift_summary: ""
+      }, currentUser);
 
       if (error) throw error;
-
-      // If there is an assigned employee, send them a notification
-      if (values.assignedTo && data) {
-        try {
-          const notifyResult = await supabase.functions.invoke('notify-manager', {
-            body: { 
-              action: 'shift_report_assigned',
-              sender: {
-                id: currentUser.id,
-                name: currentUser.name || currentUser.email?.split('@')[0] || 'Unknown',
-                email: currentUser.email || 'unknown'
-              },
-              data: {
-                reportId: data.id,
-                date: values.date,
-                notes: values.notes.substring(0, 50) + (values.notes.length > 50 ? '...' : ''),
-                priority: values.priority
-              },
-              receiver: {
-                id: values.assignedTo
-              }
-            }
-          });
-          
-          if (!notifyResult.error) {
-            console.log("Notification sent successfully");
-          } else {
-            console.error("Error sending notification:", notifyResult.error);
-          }
-        } catch (notifyError) {
-          console.error("Failed to send notification:", notifyError);
-        }
-      }
 
       toast.success("Report submitted successfully");
       form.reset({
