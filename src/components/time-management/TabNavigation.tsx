@@ -25,17 +25,32 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
       } else if (value === "my-requests") {
         console.log("Refreshing time-off requests due to tab change to my-requests");
         fetchRequests();
+      } else if (value === "team-calendar") {
+        console.log("Refreshing data for team calendar view");
+        forceRefreshData();
       }
     }
   }, [activeTab, setActiveTab, forceRefreshData, fetchRequests]);
 
   return (
     <TabsList className="mb-4">
-      <TabsTrigger value="my-requests" onClick={() => handleTabChange("my-requests")}>My Requests</TabsTrigger>
-      <TabsTrigger value="shift-coverage" onClick={() => handleTabChange("shift-coverage")}>Shift Coverage</TabsTrigger>
-      {isAdmin && <TabsTrigger value="pending-approvals" onClick={() => handleTabChange("pending-approvals")}>Pending Approvals</TabsTrigger>}
-      <TabsTrigger value="team-calendar" onClick={() => handleTabChange("team-calendar")}>Event Calendar</TabsTrigger>
-      <TabsTrigger value="work-schedules" onClick={() => handleTabChange("work-schedules")}>Work Schedules</TabsTrigger>
+      <TabsTrigger value="my-requests" onClick={() => handleTabChange("my-requests")}>
+        My Requests
+      </TabsTrigger>
+      <TabsTrigger value="shift-coverage" onClick={() => handleTabChange("shift-coverage")}>
+        Shift Coverage
+      </TabsTrigger>
+      {isAdmin && (
+        <TabsTrigger value="pending-approvals" onClick={() => handleTabChange("pending-approvals")}>
+          Pending Approvals
+        </TabsTrigger>
+      )}
+      <TabsTrigger value="team-calendar" onClick={() => handleTabChange("team-calendar")}>
+        Calendar
+      </TabsTrigger>
+      <TabsTrigger value="work-schedules" onClick={() => handleTabChange("work-schedules")}>
+        Work Schedules
+      </TabsTrigger>
     </TabsList>
   );
 };

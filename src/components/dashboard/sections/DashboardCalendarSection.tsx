@@ -37,7 +37,7 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
         onPreviousMonth={onPreviousMonth}
         onNextMonth={onNextMonth}
         clickable={true}
-        viewAllUrl="/calendar"
+        viewAllUrl="/time-management"
       />
     </div>
   );
