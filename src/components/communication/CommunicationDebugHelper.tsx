@@ -81,7 +81,7 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
             <div>
               <strong>Tab Switch Count:</strong>{" "}
               <Badge 
-                variant={navigationDebugInfo.switchCount > 3 ? "warning" : "outline"} 
+                variant={navigationDebugInfo.switchCount > 3 ? "secondary" : "outline"} 
                 className="ml-2"
               >
                 {navigationDebugInfo.switchCount}
@@ -90,7 +90,7 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
             <div>
               <strong>Time in Messages Tab:</strong>{" "}
               <Badge 
-                variant={navigationDebugInfo.timeInTab < 2000 ? "warning" : "outline"} 
+                variant={navigationDebugInfo.timeInTab < 2000 ? "secondary" : "outline"} 
                 className="ml-2"
               >
                 {Math.round(navigationDebugInfo.timeInTab / 1000)} seconds
