@@ -29,6 +29,12 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   cols,
   dragHandleClass,
 }) => {
+  // Handle layout changes with collision detection
+  const handleLayoutChange = (newLayout: LayoutItem[]) => {
+    // Process and validate layout before passing up to parent
+    onLayoutChange(newLayout);
+  };
+
   return (
     <div className="grid-dashboard">
       <ResponsiveGridLayout
@@ -37,14 +43,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
         breakpoints={breakpoints}
         cols={cols}
         rowHeight={30}
-        containerPadding={[0, 0]}
-        margin={[16, 16]}
-        onLayoutChange={onLayoutChange}
+        containerPadding={[16, 16]}
+        margin={[20, 20]}
+        onLayoutChange={handleLayoutChange}
         isDraggable={isCustomizing}
         isResizable={isCustomizing}
         draggableHandle={`.${dragHandleClass}`}
         compactType="vertical"
-        preventCollision={false}
+        preventCollision={true}
         useCSSTransforms={true}
         isBounded={true}
       >

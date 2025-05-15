@@ -1,4 +1,6 @@
 
+import React from "react";
+
 export interface WidgetDefinition {
   id: string;
   title: string;
@@ -25,4 +27,21 @@ export interface LayoutItem {
 export interface GridConfig {
   breakpoints: { lg: number; md: number; sm: number; xs: number; xxs: number };
   cols: { lg: number; md: number; sm: number; xs: number; xxs: number };
+}
+
+export interface WidgetConfig {
+  visible: boolean;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface EmptyStateProps {
+  message: string;
+  icon?: React.ReactNode;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }

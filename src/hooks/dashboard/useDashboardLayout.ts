@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { LayoutItem } from "@/types/dashboard"; // We'll create this type definition
+import { LayoutItem } from "@/types/dashboard";
 
 /**
  * Custom hook to manage dashboard layout and widget configuration
@@ -29,10 +29,12 @@ export function useDashboardLayout(
   // Store widget configuration
   const [widgetConfig, setWidgetConfig] = useState<Record<string, { visible: boolean; x: number; y: number; w: number; h: number }>>(() => getSavedWidgetConfig());
   
-  // Generate initial layout from widget config or defaults with strict grid constraints
+  // Generate initial layout from widget config or defaults
   const generateLayout = (): LayoutItem[] => {
-    // Track row positions to avoid overlap
-    const rowPositions: Record<number, number> = {}; // Key is row index, value is next available y position
+    // Track occupied space to prevent overlaps
+    const occupiedSpaces: Record<string, boolean> = {};
+    
+    // Start with an empty layout
     const layout: LayoutItem[] = [];
     
     // Sort widgets by saved y position to maintain vertical ordering
@@ -50,39 +52,103 @@ export function useDashboardLayout(
       const isVisible = config ? config.visible !== false : true;
       
       if (isVisible) {
-        // Determine column position (x) and width (w)
-        // If no config, place widget at left (0) or right (6) side of the grid alternating
-        const x = config?.x !== undefined ? config.x : (layout.length % 2) * 6;
-        
-        // Calculate width in grid units, capped by max columns
-        const w = config?.w !== undefined ? config.w : (widget.columnSpan * 3);
-        
-        // Limit width to max columns (12)
-        const limitedWidth = Math.min(w, 12);
-        
-        // Determine row position to avoid overlap
-        const rowIdx = Math.floor(x / 12);
-        const baseY = rowPositions[rowIdx] || 0;
+        // Calculate width based on column span
+        const colSpan = widget.columnSpan;
+        const w = config?.w !== undefined ? config.w : Math.min(colSpan * 3, 12);
         
         // Get height from config or use default
         const h = config?.h !== undefined ? config.h : (defaultHeights[id] || 8);
         
-        // Create layout item with bounds constraints
-        layout.push({
-          i: id,
-          x,
-          y: baseY,
-          w: limitedWidth,
-          h,
-          minW: 3,
-          minH: 4,
-          isDraggable: true,
-          isResizable: true,
-          isBounded: true // Ensure widget stays within grid bounds
-        });
+        // If we have a saved position, try to use it
+        if (config?.x !== undefined && config?.y !== undefined) {
+          // Check if the position would cause overlap
+          let validPosition = true;
+          const x = config.x;
+          const y = config.y;
+          
+          // Check each cell the widget would occupy
+          for (let i = x; i < x + w; i++) {
+            for (let j = y; j < y + h; j++) {
+              const posKey = `${i},${j}`;
+              if (occupiedSpaces[posKey]) {
+                validPosition = false;
+                break;
+              }
+            }
+            if (!validPosition) break;
+          }
+          
+          if (validPosition) {
+            // Mark this space as occupied
+            for (let i = x; i < x + w; i++) {
+              for (let j = y; j < y + h; j++) {
+                occupiedSpaces[`${i},${j}`] = true;
+              }
+            }
+            
+            // Add to layout
+            layout.push({
+              i: id,
+              x,
+              y,
+              w,
+              h,
+              minW: 3,
+              minH: 4,
+              isDraggable: true,
+              isResizable: true,
+              isBounded: true
+            });
+            
+            return;
+          }
+          // If position would cause overlap, fall through to auto-placement
+        }
         
-        // Update row position for next widget
-        rowPositions[rowIdx] = baseY + h;
+        // Auto placement logic - find first available space
+        let placed = false;
+        
+        // Try to place in the first available row
+        for (let y = 0; y < 1000 && !placed; y++) { // Limit to prevent infinite loop
+          for (let x = 0; x <= 12 - w && !placed; x++) {
+            // Check if this position is free
+            let positionFree = true;
+            
+            // Check each cell
+            for (let i = x; i < x + w && positionFree; i++) {
+              for (let j = y; j < y + h && positionFree; j++) {
+                if (occupiedSpaces[`${i},${j}`]) {
+                  positionFree = false;
+                }
+              }
+            }
+            
+            if (positionFree) {
+              // Mark this space as occupied
+              for (let i = x; i < x + w; i++) {
+                for (let j = y; j < y + h; j++) {
+                  occupiedSpaces[`${i},${j}`] = true;
+                }
+              }
+              
+              // Add to layout
+              layout.push({
+                i: id,
+                x,
+                y,
+                w,
+                h,
+                minW: 3,
+                minH: 4,
+                isDraggable: true,
+                isResizable: true,
+                isBounded: true
+              });
+              
+              placed = true;
+            }
+          }
+        }
       }
     });
     
