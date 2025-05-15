@@ -18,12 +18,10 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
   // Extract only valid HTML attributes for the div
   const safeHtmlProps = extractHTMLAttributes(props);
   
-  // Debugging: Log the day date to verify it's being passed correctly
+  // Debug logging
   if (dayDate) {
     console.log("CalendarDay rendering date:", format(dayDate, "yyyy-MM-dd"));
-  } else {
-    console.log("CalendarDay: Missing date");
-  }
+  } 
 
   if (!dayDate) {
     return <div {...safeHtmlProps} />;
@@ -35,8 +33,10 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
   return (
     <div className="relative h-full">
       <div {...safeHtmlProps}>
-        {/* Make sure the day number is visible */}
-        <div className="text-sm font-medium relative z-10">{format(dayDate, "d")}</div>
+        {/* Day number is shown with higher z-index to ensure visibility */}
+        <div className="text-sm font-medium relative z-10">
+          {format(dayDate, "d")}
+        </div>
       </div>
       <CalendarDayContent day={dayDate} eventsMap={eventsMap} />
     </div>

@@ -1,20 +1,14 @@
+
 import React, { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import CommunicationPage from "@/components/communication/CommunicationPage";
+import { useLocation, Navigate } from "react-router-dom";
 
 export default function Communications() {
   const location = useLocation();
   
   useEffect(() => {
-    console.log("Communications legacy page loaded, current location:", location);
+    console.log("Communications legacy page loaded, redirecting to /communication");
   }, [location]);
   
-  // This is now just a wrapper for the new CommunicationPage
-  // Keeping this file for backward compatibility with existing routes
-  return (
-    <DashboardLayout>
-      <CommunicationPage />
-    </DashboardLayout>
-  );
+  // Automatically redirect to the new route
+  return <Navigate to="/communication" replace />;
 }

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { getDateKey } from "./utils/calendarDateUtils";
 import { CalendarEventMap } from "./utils/calendarDateUtils";
 import { format } from "date-fns";
-import { Clock, Calendar as CalendarIcon, User } from "lucide-react";
+import { Clock, Calendar as CalendarIcon, User, Briefcase } from "lucide-react";
 
 interface CalendarDayContentProps {
   day: Date;

@@ -101,7 +101,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ currentUser }) =
         <CalendarLegend />
         
         <div className="text-center mt-4">
-          <Link to="/time-management">
+          <Link to="/time">
             <Button variant="link" size="sm">
               View Full Calendar
             </Button>
