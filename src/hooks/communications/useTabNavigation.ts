@@ -3,7 +3,6 @@ import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { QueryObserverResult } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { debounce } from 'lodash';
 
 interface UseTabNavigationProps {
   activeTab: string;
@@ -27,8 +26,9 @@ export function useTabNavigation({
   const navigate = useNavigate();
   const pendingNavigation = useRef<string | null>(null);
   const navigationInProgress = useRef<boolean>(false);
+  const debounceTimerRef = useRef<number | null>(null);
 
-  // Handle tab changes and update the URL with debounce to prevent rapid/concurrent navigations
+  // Handle tab changes and update the URL to prevent rapid/concurrent navigations
   const handleTabChange = useCallback((value: string) => {
     console.log(`Tab changing from ${activeTab} to ${value}`);
     
@@ -164,11 +164,20 @@ export function useTabNavigation({
     }
   }, [navigate, refreshMessages, activeTab, location.pathname, location.search, setActiveTab, navigationComplete, isRefreshing, lastRefreshTime]);
 
-  // Create a debounced version to prevent rapid tab switching
+  // Create our own simple debounce function instead of depending on lodash
   const debouncedTabChange = useCallback(
-    debounce((value: string) => {
-      handleTabChange(value);
-    }, 300, { leading: true, trailing: false }),
+    (value: string) => {
+      // Clear any existing timeout
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      // Set a new timeout
+      debounceTimerRef.current = window.setTimeout(() => {
+        handleTabChange(value);
+        debounceTimerRef.current = null;
+      }, 300) as unknown as number;
+    }, 
     [handleTabChange]
   );
 

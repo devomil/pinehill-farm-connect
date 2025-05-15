@@ -10,6 +10,12 @@ interface CommunicationDebugHelperProps {
   unreadMessages?: any[];
   onTabChange?: (tab: string) => void;
   onRefresh?: () => void;
+  navigationInProgress?: boolean;
+  messageTabInfo?: {
+    currentUrl: string;
+    tabParam: string | null;
+    mountedAt: number;
+  };
 }
 
 export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> = ({
@@ -17,7 +23,9 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
   activeTab,
   unreadMessages = [],
   onTabChange,
-  onRefresh
+  onRefresh,
+  navigationInProgress = false,
+  messageTabInfo
 }) => {
   const location = useLocation();
 
@@ -46,11 +54,38 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
           <Badge className="ml-2">{activeTab}</Badge>
         </div>
         <div>
+          <strong>Navigation In Progress:</strong>{" "}
+          <Badge variant={navigationInProgress ? "secondary" : "outline"} className="ml-2">
+            {navigationInProgress ? "Yes" : "No"}
+          </Badge>
+        </div>
+        <div>
           <strong>Unread Messages:</strong>{" "}
           <Badge variant={unreadMessages.length > 0 ? "destructive" : "outline"} className="ml-2">
             {unreadMessages.length}
           </Badge>
         </div>
+        
+        {/* Message tab mounting info */}
+        {messageTabInfo && (
+          <>
+            <div className="mt-2 pt-2 border-t">
+              <strong>Message Tab Debug:</strong>
+            </div>
+            <div>
+              <strong>Tab Param:</strong>{" "}
+              <Badge variant="outline" className="ml-2 font-mono">
+                {messageTabInfo.tabParam || "(none)"}
+              </Badge>
+            </div>
+            <div>
+              <strong>Mounted At:</strong>{" "}
+              <Badge variant="outline" className="ml-2">
+                {new Date(messageTabInfo.mountedAt).toLocaleTimeString()}
+              </Badge>
+            </div>
+          </>
+        )}
         
         {/* Debug buttons */}
         <div className="flex gap-2 mt-2">
