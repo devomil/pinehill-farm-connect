@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { TimeOffRequest } from "@/types/timeManagement";
-import { toast } from "@/hooks/use-toast";
+import { showToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
 import { isWithinInterval, parseISO } from "date-fns";
+import { v4 as uuidv4 } from 'uuid';
 
 export function useTimeOffScheduleUpdater(currentUser: User | null) {
   const [processing, setProcessing] = useState(false);
@@ -16,10 +17,7 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
     triggerCoverage: boolean = true
   ) => {
     if (!currentUser) {
-      toast({
-        description: "You must be logged in to update schedules",
-        variant: "destructive"
-      });
+      showToast("error", "You must be logged in to update schedules");
       return false;
     }
 
@@ -33,14 +31,16 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
       const employeeId = timeOffRequest.user_id;
       
       // Step 1: Fetch employee's schedule
-      const { data: scheduleData } = await supabase
-        .from('work_schedules')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .single();
+      // Since we don't have an actual work_schedules table, we'll use mock data
+      // In a real implementation, we would do:
+      // const { data: scheduleData } = await supabase
+      //   .from('work_schedules')
+      //   .select('*')
+      //   .eq('employee_id', employeeId)
+      //   .single();
         
       // If no schedule exists, create mock data for demo
-      const employeeSchedule: WorkSchedule = scheduleData || {
+      const employeeSchedule: WorkSchedule = {
         id: `mock-${employeeId}`,
         employeeId: employeeId,
         month: new Date().toISOString().substring(0, 7), // YYYY-MM
@@ -57,10 +57,7 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
       });
       
       if (overlappingShifts.length === 0) {
-        toast({
-          description: "Time-off approved, no shifts needed adjustment",
-          variant: "success"
-        });
+        showToast("success", "Time-off approved, no shifts needed adjustment");
         return true;
       }
 
@@ -79,18 +76,12 @@ export function useTimeOffScheduleUpdater(currentUser: User | null) {
         console.log("Triggering coverage requests for shifts:", overlappingShifts);
       }
       
-      toast({
-        description: "Time-off approved and schedule updated",
-        variant: "success"
-      });
+      showToast("success", "Time-off approved and schedule updated");
       
       return true;
     } catch (error) {
       console.error("Error updating schedule for time-off:", error);
-      toast({
-        description: "Failed to update schedule for approved time-off",
-        variant: "destructive"
-      });
+      showToast("error", "Failed to update schedule for approved time-off");
       return false;
     } finally {
       setProcessing(false);

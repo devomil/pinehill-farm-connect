@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
-import { toast } from "@/hooks/use-toast";
+import { showToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export function useShiftCoverageHandler(currentUser: User | null) {
   const [processing, setProcessing] = useState(false);
@@ -17,38 +18,30 @@ export function useShiftCoverageHandler(currentUser: User | null) {
     shiftEndTime: string
   ) => {
     if (!currentUser) {
-      toast({
-        description: "You must be logged in to process shift transfers",
-        variant: "destructive"
-      });
+      showToast("error", "You must be logged in to process shift transfers");
       return false;
     }
 
     setProcessing(true);
 
     try {
-      // Step 1: Fetch both employees' schedules
-      const { data: requesterScheduleData } = await supabase
-        .from('work_schedules')
-        .select('*')
-        .eq('employee_id', requesterId)
-        .single();
+      // Since we don't have actual DB table for work_schedules, we'll use mock data
+      // In a real implementation, we would do:
+      // const { data: requesterScheduleData } = await supabase
+      //   .from('work_schedules')
+      //   .select('*')
+      //   .eq('employee_id', requesterId)
+      //   .single();
 
-      const { data: receiverScheduleData } = await supabase
-        .from('work_schedules')
-        .select('*')
-        .eq('employee_id', receiverId)
-        .single();
-
-      // If no schedules exist, create mock data for demo
-      const requesterSchedule: WorkSchedule = requesterScheduleData || {
+      // Mock the requester and receiver schedules
+      const requesterSchedule: WorkSchedule = {
         id: `mock-${requesterId}`,
         employeeId: requesterId,
         month: shiftDate.substring(0, 7), // YYYY-MM
         shifts: []
       };
       
-      const receiverSchedule: WorkSchedule = receiverScheduleData || {
+      const receiverSchedule: WorkSchedule = {
         id: `mock-${receiverId}`,
         employeeId: receiverId,
         month: shiftDate.substring(0, 7), // YYYY-MM
@@ -92,10 +85,7 @@ export function useShiftCoverageHandler(currentUser: User | null) {
         // Update both schedules in database (in real implementation)
         // For demo, we'll just show the toast
         
-        toast({
-          description: "Shift successfully transferred",
-          variant: "success"
-        });
+        showToast("success", "Shift successfully transferred");
         
         return true;
       }
@@ -108,7 +98,7 @@ export function useShiftCoverageHandler(currentUser: User | null) {
       // Step 4: Create new shift for receiver with the same details but new ID
       const transferredShift: WorkShift = {
         ...shiftToTransfer,
-        id: `transfer-${Date.now()}`,
+        id: `transfer-${uuidv4()}`,
         employeeId: receiverId
       };
       
@@ -118,18 +108,12 @@ export function useShiftCoverageHandler(currentUser: User | null) {
       // Step 6: Update both schedules in database (in real implementation)
       // For this demo, we'll just show the toast
       
-      toast({
-        description: "Shift successfully transferred",
-        variant: "success"
-      });
+      showToast("success", "Shift successfully transferred");
       
       return true;
     } catch (error) {
       console.error("Error transferring shift:", error);
-      toast({
-        description: "Failed to transfer shift",
-        variant: "destructive"
-      });
+      showToast("error", "Failed to transfer shift");
       return false;
     } finally {
       setProcessing(false);
