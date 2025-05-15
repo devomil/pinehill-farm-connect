@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface NavigationWarningProps {
   hasLoopDetected: boolean;
@@ -13,26 +13,28 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
   hasLoopDetected,
   attemptRecovery
 }) => {
-  if (!hasLoopDetected) return null;
-  
+  if (!hasLoopDetected) {
+    return null;
+  }
+
   return (
-    <>
-      <div className="flex justify-between mb-4">
-        <div className="flex gap-2">
-          <NavigationRecoveryButton 
-            onRecover={attemptRecovery} 
-            loopDetected={true}
-          />
-        </div>
-      </div>
-      
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="text-sm">
-          Navigation loop detected in the Messages tab. Use the "Fix Navigation Loop" button above 
-          or add "?recovery=true" to the URL.
-        </AlertDescription>
-      </Alert>
-    </>
+    <Alert variant="destructive" className="mb-4">
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Navigation Issue Detected</AlertTitle>
+      <AlertDescription className="space-y-2">
+        <p>
+          We've detected an issue that's preventing you from staying on the Messages tab.
+          This is a known issue that can occur in certain conditions.
+        </p>
+        <Button 
+          onClick={attemptRecovery} 
+          size="sm" 
+          variant="outline" 
+          className="bg-white"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" /> Fix Navigation Issue
+        </Button>
+      </AlertDescription>
+    </Alert>
   );
 };

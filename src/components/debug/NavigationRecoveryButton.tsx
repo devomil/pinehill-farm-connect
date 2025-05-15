@@ -13,7 +13,11 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
     <Button 
       variant="destructive"
       size="sm" 
-      onClick={onRecover}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onRecover();
+      }}
       className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}
       title={loopDetected ? "Fix navigation loop detected in Messages tab" : "Reset navigation state"}
     >

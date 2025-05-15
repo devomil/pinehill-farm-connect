@@ -5,6 +5,7 @@ import { EmployeeCommunications } from "../communications/EmployeeCommunications
 import { User } from "@/types";
 import { toast } from "sonner";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
+import { useLocation } from "react-router-dom";
 
 interface CommunicationContentProps {
   activeTab: string;
@@ -22,6 +23,10 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
 }) => {
   const [errorState, setErrorState] = useState<{tab: string, count: number} | null>(null);
   const refreshMessages = useRefreshMessages();
+  const location = useLocation();
+  
+  // Check if we're in recovery mode - in this case we need special handling
+  const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
   
   // Reset error state when tab changes
   useEffect(() => {
@@ -55,7 +60,29 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     });
   };
   
-  // Only render the component for the active tab to avoid unnecessary data fetching
+  // Always render both components in recovery mode, but hide the inactive one
+  // This prevents unmounting which can cause the navigation loop
+  if (isRecoveryMode) {
+    return (
+      <div>
+        <div style={{ display: activeTab === "announcements" ? "block" : "none" }}>
+          <AnnouncementManager 
+            currentUser={currentUser}
+            allEmployees={unfilteredEmployees || []}
+            isAdmin={isAdmin}
+          />
+        </div>
+        
+        <div style={{ display: activeTab === "messages" ? "block" : "none" }}>
+          <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
+            <EmployeeCommunications />
+          </React.Suspense>
+        </div>
+      </div>
+    );
+  }
+  
+  // Regular render mode - only render the active component
   return (
     <>
       {activeTab === "announcements" && (
