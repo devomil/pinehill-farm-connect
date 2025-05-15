@@ -2,10 +2,16 @@
 import React from "react";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 
-export const DashboardMarketingSection: React.FC = () => {
+interface DashboardMarketingSectionProps {
+  viewAllUrl?: string;
+}
+
+export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps> = ({
+  viewAllUrl
+}) => {
   return (
-    <div className="md:col-span-2">
-      <MarketingContent viewAllUrl="/marketing" onViewAllClick={() => {}} />
+    <div className="md:col-span-1">
+      <MarketingContent clickable={true} viewAllUrl={viewAllUrl} />
     </div>
   );
 };
