@@ -27,17 +27,18 @@ export const DashboardTrainingSection: React.FC<DashboardTrainingSectionProps> =
   return (
     <>
       <div className="col-span-full">
-        <TrainingCard 
-          trainings={assignedTrainings || []} 
-          clickable={true} 
-          viewAllUrl={viewAllUrl}
-          emptyState={
-            <TrainingEmptyState 
-              isAdmin={isAdmin}
-              onAddTraining={isAdmin ? handleAddTraining : undefined}
-            />
-          }
-        />
+        {hasTrainings ? (
+          <TrainingCard 
+            trainings={assignedTrainings || []} 
+            clickable={true} 
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <TrainingEmptyState 
+            isAdmin={isAdmin}
+            onAddTraining={isAdmin ? handleAddTraining : undefined}
+          />
+        )}
       </div>
       {hasTrainings && (
         <div className="col-span-full">

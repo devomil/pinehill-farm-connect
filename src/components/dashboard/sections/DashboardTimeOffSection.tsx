@@ -30,28 +30,37 @@ export const DashboardTimeOffSection: React.FC<DashboardTimeOffSectionProps> = (
     navigate("/time?tab=my-requests&action=new");
   };
   
+  const hasPendingTimeOff = pendingTimeOff && pendingTimeOff.length > 0;
+  const hasUserTimeOff = userTimeOff && userTimeOff.length > 0;
+  
   return (
     <div className="md:col-span-2">
       {isAdmin ? (
-        <AdminTimeOffCard
-          timeOffRequests={pendingTimeOff || []}
-          loading={dashboardDataLoading}
-          error={dashboardDataError}
-          onRefresh={handleRefreshData}
-          clickable={true}
-          viewAllUrl={viewAllUrl}
-          emptyState={<TimeOffEmptyState isAdmin={true} />}
-        />
+        hasPendingTimeOff ? (
+          <AdminTimeOffCard
+            requests={pendingTimeOff || []}
+            loading={dashboardDataLoading}
+            error={dashboardDataError}
+            onRefresh={handleRefreshData}
+            clickable={true}
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <TimeOffEmptyState isAdmin={true} />
+        )
       ) : (
-        <TimeOffRequestsCard
-          timeOffRequests={userTimeOff || []}
-          loading={dashboardDataLoading}
-          error={dashboardDataError}
-          onRefresh={handleRefreshData}
-          clickable={true} 
-          viewAllUrl={viewAllUrl}
-          emptyState={<TimeOffEmptyState onNewRequest={handleNewRequest} />}
-        />
+        hasUserTimeOff ? (
+          <TimeOffRequestsCard
+            requests={userTimeOff || []}
+            loading={dashboardDataLoading}
+            error={dashboardDataError}
+            onRefresh={handleRefreshData}
+            clickable={true} 
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <TimeOffEmptyState onNewRequest={handleNewRequest} />
+        )
       )}
     </div>
   );

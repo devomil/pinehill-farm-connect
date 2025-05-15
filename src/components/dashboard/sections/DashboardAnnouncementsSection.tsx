@@ -27,17 +27,18 @@ export const DashboardAnnouncementsSection: React.FC<DashboardAnnouncementsSecti
   return (
     <>
       <div className="md:col-span-2">
-        <AnnouncementsCard 
-          announcements={announcements || []} 
-          clickable={true} 
-          viewAllUrl={viewAllUrl}
-          emptyState={
-            <AnnouncementsEmptyState 
-              isAdmin={isAdmin} 
-              onCreateAnnouncement={isAdmin ? handleCreateAnnouncement : undefined} 
-            />
-          }
-        />
+        {hasAnnouncements ? (
+          <AnnouncementsCard 
+            announcements={announcements || []} 
+            clickable={true} 
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <AnnouncementsEmptyState 
+            isAdmin={isAdmin} 
+            onCreateAnnouncement={isAdmin ? handleCreateAnnouncement : undefined} 
+          />
+        )}
       </div>
       {isAdmin && hasAnnouncements && (
         <div className="md:col-span-2">

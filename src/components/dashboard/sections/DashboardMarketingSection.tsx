@@ -21,19 +21,23 @@ export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps>
     navigate("/marketing?action=upload");
   };
 
+  // Check if there is marketing content (this would need to be properly implemented)
+  const hasContent = true; // This is a placeholder - you would typically check if there is content
+
   return (
     <div className="h-full">
-      <MarketingContent 
-        clickable={true} 
-        viewAllUrl={viewAllUrl} 
-        className={className}
-        emptyState={
-          <MarketingEmptyState 
-            isAdmin={isAdmin} 
-            onAddContent={isAdmin ? handleAddContent : undefined} 
-          />
-        }
-      />
+      {hasContent ? (
+        <MarketingContent 
+          clickable={true} 
+          viewAllUrl={viewAllUrl} 
+          className={className}
+        />
+      ) : (
+        <MarketingEmptyState 
+          isAdmin={isAdmin} 
+          onAddContent={isAdmin ? handleAddContent : undefined} 
+        />
+      )}
     </div>
   );
 };

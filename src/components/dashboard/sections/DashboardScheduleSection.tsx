@@ -24,22 +24,30 @@ export const DashboardScheduleSection: React.FC<DashboardScheduleSectionProps> =
     navigate("/time?tab=work-schedules");
   };
   
+  const hasSchedule = scheduleData && Object.keys(scheduleData).length > 0;
+  
   return (
     <div className="md:col-span-2">
       {isAdmin ? (
-        <AdminEmployeeScheduleCard 
-          clickable={true} 
-          viewAllUrl={viewAllUrl} 
-          emptyState={<ScheduleEmptyState isAdmin={true} onManageSchedule={handleManageSchedule} />}
-        />
+        hasSchedule ? (
+          <AdminEmployeeScheduleCard 
+            clickable={true} 
+            viewAllUrl={viewAllUrl} 
+          />
+        ) : (
+          <ScheduleEmptyState isAdmin={true} onManageSchedule={handleManageSchedule} />
+        )
       ) : (
-        <EmployeeScheduleCard 
-          schedule={scheduleData}
-          loading={scheduleLoading}
-          clickable={true}
-          viewAllUrl={viewAllUrl}
-          emptyState={<ScheduleEmptyState />}
-        />
+        hasSchedule ? (
+          <EmployeeScheduleCard 
+            schedule={scheduleData}
+            loading={scheduleLoading}
+            clickable={true}
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <ScheduleEmptyState />
+        )
       )}
     </div>
   );

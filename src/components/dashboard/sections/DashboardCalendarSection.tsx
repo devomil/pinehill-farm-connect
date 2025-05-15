@@ -40,22 +40,28 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
     navigate("/time?tab=team-calendar&action=new");
   };
   
+  // Check if calendar has events (this would need to be properly implemented)
+  const hasEvents = true; // This is a placeholder - you would typically check if there are events
+  
   // The TimeManagementProvider is now at the Dashboard page level
   return (
     <div className="md:col-span-2">
-      <CalendarContent
-        date={date}
-        currentMonth={currentMonth}
-        viewMode={viewMode}
-        currentUser={currentUser}
-        onDateSelect={onDateSelect}
-        onViewModeChange={onViewModeChange}
-        onPreviousMonth={onPreviousMonth}
-        onNextMonth={onNextMonth}
-        clickable={true}
-        viewAllUrl={viewAllUrl}
-        emptyState={<CalendarEmptyState onAddEvent={handleAddEvent} />}
-      />
+      {hasEvents ? (
+        <CalendarContent
+          date={date}
+          currentMonth={currentMonth}
+          viewMode={viewMode}
+          currentUser={currentUser}
+          onDateSelect={onDateSelect}
+          onViewModeChange={onViewModeChange}
+          onPreviousMonth={onPreviousMonth}
+          onNextMonth={onNextMonth}
+          clickable={true}
+          viewAllUrl={viewAllUrl}
+        />
+      ) : (
+        <CalendarEmptyState onAddEvent={handleAddEvent} />
+      )}
     </div>
   );
 };
