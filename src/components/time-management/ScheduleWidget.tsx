@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,15 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ currentUser }) =
     timeOffRequests || []
   );
   
+  // Debug: Log the widget mount and its state
+  useEffect(() => {
+    console.log("ScheduleWidget - mounted with:", {
+      currentMonth: format(currentMonth, "MMMM yyyy"),
+      selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None",
+      eventsCount: calendarEvents?.size || 0
+    });
+  }, [currentMonth, selectedDate, calendarEvents]);
+  
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
   };
@@ -38,6 +47,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ currentUser }) =
   };
   
   const handleDaySelect = (date: Date | undefined) => {
+    console.log("ScheduleWidget - Day selected:", date?.toISOString());
     setSelectedDate(date);
   };
 
@@ -69,21 +79,23 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ currentUser }) =
         </div>
       </CardHeader>
       <CardContent>
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleDaySelect}
-          month={currentMonth}
-          className="rounded-md border"
-          components={{
-            Day: (props) => (
-              <CalendarDay 
-                {...props} 
-                eventsMap={calendarEvents}
-              />
-            )
-          }}
-        />
+        <div className="border rounded-md">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDaySelect}
+            month={currentMonth}
+            className="rounded-md border pointer-events-auto"
+            components={{
+              Day: (props) => (
+                <CalendarDay 
+                  {...props} 
+                  eventsMap={calendarEvents}
+                />
+              )
+            }}
+          />
+        </div>
         
         <div className="text-center mt-4">
           <Link to="/time-management">

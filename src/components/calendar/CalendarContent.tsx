@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { CalendarDay } from "./CalendarDay";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
+import { eachDayOfInterval, startOfMonth, endOfMonth, format } from "date-fns";
 
 interface CalendarContentProps {
   date: Date;
@@ -48,6 +49,18 @@ export function CalendarContent({
     includeDeclinedRequests,
     timeOffRequests
   );
+
+  // Debug: Log the current month and date to verify
+  useEffect(() => {
+    console.log("CalendarContent: Current month", format(currentMonth, "MMMM yyyy"));
+    console.log("CalendarContent: Selected date", date ? format(date, "yyyy-MM-dd") : "None");
+    
+    // Calculate and log days in the current month to verify they're generated
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const days = eachDayOfInterval({ start, end });
+    console.log(`CalendarContent: Month has ${days.length} days`);
+  }, [currentMonth, date]);
 
   const handleButtonClick = (e: React.MouseEvent) => {
     // Stop propagation to prevent parent click handlers from firing
@@ -91,21 +104,23 @@ export function CalendarContent({
           />
           
           <TabsContent value="month" className="mt-0">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={onDateSelect}
-              month={currentMonth}
-              className="rounded-md border"
-              components={{
-                Day: (props) => (
-                  <CalendarDay 
-                    {...props} 
-                    eventsMap={calendarEvents}
-                  />
-                )
-              }}
-            />
+            <div className="border rounded-md p-3 pointer-events-auto">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={onDateSelect}
+                month={currentMonth}
+                className="rounded-md"
+                components={{
+                  Day: (props) => (
+                    <CalendarDay 
+                      {...props} 
+                      eventsMap={calendarEvents}
+                    />
+                  )
+                }}
+              />
+            </div>
           </TabsContent>
           
           <TabsContent value="team" className="mt-0">

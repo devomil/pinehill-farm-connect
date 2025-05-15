@@ -24,6 +24,13 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   onPreviousMonth,
   onNextMonth,
 }) => {
+  // Debug log the current props
+  console.log("DashboardCalendarSection - props:", {
+    date: date?.toISOString(),
+    currentMonth: currentMonth?.toISOString(),
+    viewMode
+  });
+  
   // The TimeManagementProvider is now at the Dashboard page level
   return (
     <div className="md:col-span-2">

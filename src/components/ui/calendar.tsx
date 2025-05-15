@@ -14,6 +14,16 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Debug: Log calendar props to verify initialization
+  React.useEffect(() => {
+    console.log("Calendar component initialized", {
+      month: props.month ? props.month.toISOString() : 'Not set',
+      mode: props.mode,
+      selected: props.selected ? 'Date selected' : 'No date selected',
+      hasComponents: !!props.components
+    });
+  }, [props.month, props.mode, props.selected, props.components]);
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -55,6 +65,7 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        ...props.components,
       }}
       {...props}
     />
