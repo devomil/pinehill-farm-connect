@@ -16,6 +16,11 @@ interface CommunicationDebugHelperProps {
     tabParam: string | null;
     mountedAt: number;
   };
+  navigationDebugInfo?: {
+    switchCount: number;
+    timeInTab: number;
+    loopDetected: boolean;
+  };
 }
 
 export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> = ({
@@ -25,7 +30,8 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
   onTabChange,
   onRefresh,
   navigationInProgress = false,
-  messageTabInfo
+  messageTabInfo,
+  navigationDebugInfo
 }) => {
   const location = useLocation();
 
@@ -65,6 +71,42 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
             {unreadMessages.length}
           </Badge>
         </div>
+        
+        {/* Navigation stability metrics */}
+        {navigationDebugInfo && (
+          <>
+            <div className="mt-2 pt-2 border-t">
+              <strong>Navigation Stability:</strong>
+            </div>
+            <div>
+              <strong>Tab Switch Count:</strong>{" "}
+              <Badge 
+                variant={navigationDebugInfo.switchCount > 3 ? "warning" : "outline"} 
+                className="ml-2"
+              >
+                {navigationDebugInfo.switchCount}
+              </Badge>
+            </div>
+            <div>
+              <strong>Time in Messages Tab:</strong>{" "}
+              <Badge 
+                variant={navigationDebugInfo.timeInTab < 2000 ? "warning" : "outline"} 
+                className="ml-2"
+              >
+                {Math.round(navigationDebugInfo.timeInTab / 1000)} seconds
+              </Badge>
+            </div>
+            <div>
+              <strong>Loop Detected:</strong>{" "}
+              <Badge 
+                variant={navigationDebugInfo.loopDetected ? "destructive" : "outline"} 
+                className="ml-2"
+              >
+                {navigationDebugInfo.loopDetected ? "Yes" : "No"}
+              </Badge>
+            </div>
+          </>
+        )}
         
         {/* Message tab mounting info */}
         {messageTabInfo && (
@@ -115,4 +157,4 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
       </CardContent>
     </Card>
   );
-};
+}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,8 @@ interface MessageDebuggerProps {
     activeTab?: string;
     navigationInProgress?: boolean;
     navigationComplete?: boolean;
+    loopDetected?: boolean;
+    tabSwitchCount?: number;
   };
   error?: any;
 }
@@ -73,8 +74,17 @@ export function MessageDebugger({
     issues.push(`Error detected: ${error.message || JSON.stringify(error)}`);
   }
   
+  // Check for navigation issues
   if (navigationState?.navigationInProgress && !navigationState?.navigationComplete) {
     issues.push("Navigation in progress but not complete - possible navigation loop");
+  }
+  
+  if (navigationState?.loopDetected) {
+    issues.push("Navigation loop detected - frequent tab changes occurring");
+  }
+  
+  if (navigationState?.tabSwitchCount && navigationState.tabSwitchCount > 3) {
+    issues.push(`Excessive tab switching (${navigationState.tabSwitchCount} changes) - may indicate UI instability`);
   }
   
   return (
@@ -136,6 +146,12 @@ export function MessageDebugger({
               Navigation: {navigationState.navigationInProgress ? 'In Progress' : 'Complete'}
             </Badge>
           )}
+
+          {navigationState?.loopDetected && (
+            <Badge variant="destructive">
+              Loop Detected
+            </Badge>
+          )}
         </div>
         
         <Accordion type="single" collapsible className="w-full">
@@ -183,6 +199,27 @@ export function MessageDebugger({
             </AccordionItem>
           )}
         </Accordion>
+        
+        {navigationState && navigationState.loopDetected && (
+          <div className="border-t pt-2 mt-2 bg-destructive/10 p-2 rounded">
+            <div className="text-xs font-medium mb-2 text-destructive">Navigation Loop Detected</div>
+            <p className="text-[10px] mb-2">
+              A navigation loop has been detected, which is preventing you from staying on the messages tab.
+              This may be caused by rapid state changes, URL parameter conflicts, or error recovery logic.
+            </p>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              className="text-xs h-7 w-full"
+              onClick={() => {
+                debug.log('Navigation recovery requested', { timestamp: new Date().toISOString() });
+                window.location.href = '/communication?tab=messages&recovery=true';
+              }}
+            >
+              Attempt Recovery
+            </Button>
+          </div>
+        )}
         
         {/* Debug actions section */}
         <div className="border-t pt-2 mt-2">
