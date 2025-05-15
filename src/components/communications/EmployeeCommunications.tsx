@@ -79,6 +79,9 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
           currentUser={currentUser}
           isLoading={loading}
           error={error}
+          navigationState={{
+            activeTab: new URLSearchParams(location.search).get('tab') || '',
+          }}
         />
         <EmployeeCommunicationError
           error={error}
@@ -94,18 +97,16 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     return (
       <>
         <RouteDebugger />
-        {showDebugInfo && (
-          <MessageDebugger 
-            selectedEmployee={selectedEmployee}
-            messages={processedMessages || []}
-            filteredMessages={filteredMessages || []}
-            currentUser={currentUser}
-            isLoading={loading}
-            navigationState={{
-              activeTab: new URLSearchParams(location.search).get('tab') || '',
-            }}
-          />
-        )}
+        <MessageDebugger 
+          selectedEmployee={selectedEmployee}
+          messages={processedMessages || []}
+          filteredMessages={filteredMessages || []}
+          currentUser={currentUser}
+          isLoading={loading}
+          navigationState={{
+            activeTab: new URLSearchParams(location.search).get('tab') || '',
+          }}
+        />
         <EmployeeCommunicationMobile
           selectedEmployee={selectedEmployee}
           processedMessages={processedMessages}
@@ -130,18 +131,16 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   return (
     <>
       <RouteDebugger />
-      {showDebugInfo && (
-        <MessageDebugger 
-          selectedEmployee={selectedEmployee}
-          messages={processedMessages || []}
-          filteredMessages={filteredMessages || []}
-          currentUser={currentUser}
-          isLoading={loading}
-          navigationState={{
-            activeTab: new URLSearchParams(location.search).get('tab') || '',
-          }}
-        />
-      )}
+      <MessageDebugger 
+        selectedEmployee={selectedEmployee}
+        messages={processedMessages || []}
+        filteredMessages={filteredMessages || []}
+        currentUser={currentUser}
+        isLoading={loading}
+        navigationState={{
+          activeTab: new URLSearchParams(location.search).get('tab') || '',
+        }}
+      />
       <EmployeeCommunicationDesktop
         selectedEmployee={selectedEmployee}
         processedMessages={processedMessages}

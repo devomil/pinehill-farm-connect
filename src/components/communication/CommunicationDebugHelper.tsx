@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,13 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
 }) => {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
+  
+  // Auto-expand when there are navigation issues
+  useEffect(() => {
+    if (navigationDebugInfo?.loopDetected && !expanded) {
+      setExpanded(true);
+    }
+  }, [navigationDebugInfo?.loopDetected, expanded]);
 
   if (!showDebug) return null;
 
@@ -57,7 +64,7 @@ export const CommunicationDebugHelper: React.FC<CommunicationDebugHelperProps> =
     <Card className="mt-4 bg-muted/30">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center justify-between">
-          <span>Communication Navigation Debug</span>
+          <span>{hasNavigationIssues ? "⚠️ Communication Navigation Issues Detected" : "Communication Navigation Debug"}</span>
           <Button 
             variant="ghost" 
             size="sm" 

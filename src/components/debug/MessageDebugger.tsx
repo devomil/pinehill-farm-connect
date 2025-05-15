@@ -39,25 +39,35 @@ export function MessageDebugger({
   const debug = useDebug('MessageDebugger', { trackRenders: true });
   const [autoExpanded, setAutoExpanded] = useState(false);
   
-  // Auto-expand when navigation issues are detected
+  // Auto-expand when navigation issues are detected or on first view
   useEffect(() => {
-    if (navigationState?.loopDetected && !expanded && !autoExpanded) {
+    // Auto-expand when navigation issues are detected
+    if ((navigationState?.loopDetected || error) && !expanded && !autoExpanded) {
       setExpanded(true);
       setAutoExpanded(true);
-      debug.info('Automatically expanded debugger due to navigation loop');
+      debug.info('Automatically expanded debugger due to navigation issue or error');
     }
-  }, [navigationState?.loopDetected, expanded, autoExpanded, debug]);
+    
+    // Auto-expand on messages tab to make it more visible
+    if (navigationState?.activeTab === 'messages' && !expanded && !autoExpanded) {
+      setExpanded(true);
+      setAutoExpanded(true);
+      debug.info('Automatically expanded debugger on messages tab');
+    }
+  }, [navigationState?.loopDetected, navigationState?.activeTab, error, expanded, autoExpanded, debug]);
   
   if (!expanded) {
     return (
       <Button 
-        variant={navigationState?.loopDetected ? "destructive" : "ghost"}
+        variant={navigationState?.loopDetected || error ? "destructive" : navigationState?.activeTab === 'messages' ? "default" : "ghost"}
         size="sm"
         onClick={() => setExpanded(true)}
-        className="text-xs flex gap-1 items-center"
+        className="text-xs flex gap-1 items-center mb-2"
       >
-        {navigationState?.loopDetected ? <AlertCircle className="h-3 w-3" /> : <Bug className="h-3 w-3" />}
-        {navigationState?.loopDetected ? "Navigation Issue Detected - Click to Debug" : "Show Message Debugger"}
+        {navigationState?.loopDetected || error ? <AlertCircle className="h-3 w-3" /> : <Bug className="h-3 w-3" />}
+        {navigationState?.loopDetected ? "Navigation Issue Detected - Click to Debug" : 
+         error ? "Error Detected - Click to Debug" :
+         navigationState?.activeTab === 'messages' ? "View Message Diagnostics" : "Show Message Debugger"}
       </Button>
     );
   }
@@ -104,7 +114,10 @@ export function MessageDebugger({
     <Card className="mb-4 mt-2 border-dashed border-yellow-500/50 bg-yellow-50/10">
       <CardHeader className="py-2">
         <CardTitle className="text-sm flex items-center justify-between">
-          <span>{navigationState?.loopDetected ? "⚠️ Navigation Issue Detected" : "Messages Debug Information"}</span>
+          <span>{navigationState?.loopDetected ? "⚠️ Navigation Issue Detected" : 
+                error ? "⚠️ Debug Information (Error Detected)" :
+                navigationState?.activeTab === 'messages' ? "Direct Messages Diagnostics" : 
+                "Messages Debug Information"}</span>
           <Button 
             variant="ghost" 
             size="sm"
@@ -125,6 +138,17 @@ export function MessageDebugger({
                   <li key={index}>{issue}</li>
                 ))}
               </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {navigationState?.activeTab === 'messages' && !issues.length && (
+          <Alert variant="default" className="py-2 mb-2 bg-green-50">
+            <AlertTitle className="text-xs flex items-center gap-1">
+              <Bug className="h-3 w-3" /> Messages Tab Loaded Successfully
+            </AlertTitle>
+            <AlertDescription className="text-xs">
+              Direct Messages tab appears to be functioning correctly. No navigation issues detected.
             </AlertDescription>
           </Alert>
         )}
@@ -192,6 +216,12 @@ export function MessageDebugger({
           {navigationState?.loopDetected && (
             <Badge variant="destructive">
               Loop Detected
+            </Badge>
+          )}
+          
+          {navigationState?.activeTab === 'messages' && (
+            <Badge variant="secondary">
+              Active Tab: Messages
             </Badge>
           )}
         </div>
@@ -301,6 +331,25 @@ export function MessageDebugger({
             >
               <RefreshCw className="h-3 w-3" /> Perform Full Recovery
             </Button>
+          </div>
+        )}
+        
+        {navigationState?.activeTab === 'messages' && !navigationState?.loopDetected && (
+          <div className="border-t pt-2 mt-2 bg-blue-50/50 p-2 rounded">
+            <div className="text-xs font-medium mb-2">Direct Messages Status</div>
+            <p className="text-[10px] mb-2">
+              You are currently viewing the Direct Messages tab. This diagnostic panel shows information about
+              the current state of messages and navigation.
+            </p>
+            <div className="space-y-1 mb-2">
+              <div><strong>URL:</strong> {window.location.href}</div>
+              <div><strong>Tab parameter:</strong> {new URLSearchParams(window.location.search).get('tab') || "(none)"}</div>
+              {navigationState?.tabSwitchCount && (
+                <div><strong>Tab switches:</strong> {navigationState.tabSwitchCount}</div>
+              )}
+              <div><strong>Message count:</strong> {messageCount}</div>
+              <div><strong>Loading state:</strong> {isLoading ? "Loading" : "Complete"}</div>
+            </div>
           </div>
         )}
         
