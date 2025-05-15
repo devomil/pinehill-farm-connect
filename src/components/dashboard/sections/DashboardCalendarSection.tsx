@@ -12,6 +12,7 @@ interface DashboardCalendarSectionProps {
   onViewModeChange: (value: "month" | "team") => void;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
+  viewAllUrl?: string; // Added the missing prop
 }
 
 export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> = ({
@@ -23,6 +24,7 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   onViewModeChange,
   onPreviousMonth,
   onNextMonth,
+  viewAllUrl,
 }) => {
   // Debug log the current props
   console.log("DashboardCalendarSection - props:", {
@@ -44,7 +46,7 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
         onPreviousMonth={onPreviousMonth}
         onNextMonth={onNextMonth}
         clickable={true}
-        viewAllUrl="/time-management"
+        viewAllUrl={viewAllUrl}
       />
     </div>
   );
