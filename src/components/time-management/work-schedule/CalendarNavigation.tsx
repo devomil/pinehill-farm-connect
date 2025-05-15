@@ -27,7 +27,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
         </h3>
         
         {selectionMode === "multiple" && selectedCount > 0 && (
-          <div className="ml-4 flex items-center text-sm text-primary">
+          <div className="ml-4 flex items-center text-sm font-medium text-primary">
             <CheckSquare className="h-4 w-4 mr-1" />
             <span>{selectedCount} {selectedCount === 1 ? 'day' : 'days'} selected</span>
           </div>

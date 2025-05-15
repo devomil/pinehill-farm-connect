@@ -48,7 +48,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     }
     
     if (isMultiSelected) {
-      classes.push("bg-primary/20 border-primary");
+      classes.push("bg-primary/20 border-primary-500 ring-1 ring-primary");
     }
     
     if (selectionMode === "multiple") {

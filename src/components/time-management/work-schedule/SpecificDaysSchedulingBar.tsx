@@ -32,7 +32,7 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
   const monthLabel = format(currentMonth, "MMMM yyyy");
   
   return (
-    <Card className="p-4 mb-4 bg-accent/20">
+    <Card className="p-4 mb-4 bg-accent/20 border border-primary/20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <div className="flex items-center">
@@ -49,6 +49,7 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
               onClick={onClearSelection}
               className="flex items-center"
             >
+              <X className="h-4 w-4 mr-1" />
               Clear Selection
             </Button>
           )}
