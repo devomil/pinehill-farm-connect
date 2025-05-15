@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useDaySelector } from "@/contexts/timeManagement/hooks";
-import { UseScheduleEditorProps } from "./types";
+import { UseScheduleEditorProps, ScheduleEditorState } from "./types";
 import { useShiftEditor } from "./useShiftEditor";
 import { useBulkScheduler } from "./useBulkScheduler";
 import { useCalendarDates } from "./useCalendarDates";
@@ -74,6 +74,8 @@ export const useScheduleEditor = ({
   };
 
   return {
+    selectedEmployee, // Added to expose in the hook return value
+    scheduleData, // Added to expose in the hook return value
     selectedDate,
     setSelectedDate,
     currentMonth,
