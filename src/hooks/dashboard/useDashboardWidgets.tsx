@@ -112,6 +112,7 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
         <DashboardTrainingSection 
           assignedTrainings={props.assignedTrainings}
           viewAllUrl="/training"
+          isAdmin={props.isAdmin}
         />
       )
     },
@@ -133,6 +134,7 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
       component: (
         <DashboardMarketingSection 
           viewAllUrl="/marketing"
+          isAdmin={props.isAdmin}
         />
       )
     },

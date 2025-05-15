@@ -2,6 +2,8 @@
 import React from "react";
 import { CalendarContent } from "@/components/calendar/CalendarContent";
 import { User } from "@/types";
+import { CalendarEmptyState } from "../empty-states";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardCalendarSectionProps {
   date: Date;
@@ -12,7 +14,7 @@ interface DashboardCalendarSectionProps {
   onViewModeChange: (value: "month" | "team") => void;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
-  viewAllUrl?: string; // Added the missing prop
+  viewAllUrl?: string;
 }
 
 export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> = ({
@@ -26,12 +28,17 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   onNextMonth,
   viewAllUrl,
 }) => {
+  const navigate = useNavigate();
   // Debug log the current props
   console.log("DashboardCalendarSection - props:", {
     date: date?.toISOString(),
     currentMonth: currentMonth?.toISOString(),
     viewMode
   });
+  
+  const handleAddEvent = () => {
+    navigate("/time?tab=team-calendar&action=new");
+  };
   
   // The TimeManagementProvider is now at the Dashboard page level
   return (
@@ -47,6 +54,7 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
         onNextMonth={onNextMonth}
         clickable={true}
         viewAllUrl={viewAllUrl}
+        emptyState={<CalendarEmptyState onAddEvent={handleAddEvent} />}
       />
     </div>
   );

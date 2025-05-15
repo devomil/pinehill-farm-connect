@@ -11,6 +11,7 @@ interface DashboardWidgetProps {
   className?: string;
   children: React.ReactNode;
   dragHandleClass?: string;
+  emptyState?: React.ReactNode;
 }
 
 export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
@@ -20,6 +21,7 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   className = "",
   children,
   dragHandleClass,
+  emptyState,
 }) => {
   // Check if widget has content
   const hasContent = React.Children.count(children) > 0;
@@ -53,11 +55,13 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
         {hasContent ? (
           children
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
-            <div className="text-4xl mb-2">📊</div>
-            <p className="text-center">No data available for this widget.</p>
-            <p className="text-sm text-center mt-1">Content will appear here when available.</p>
-          </div>
+          emptyState || (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
+              <div className="text-4xl mb-2">📊</div>
+              <p className="text-center">No data available for this widget.</p>
+              <p className="text-sm text-center mt-1">Content will appear here when available.</p>
+            </div>
+          )
         )}
       </CardContent>
     </Card>

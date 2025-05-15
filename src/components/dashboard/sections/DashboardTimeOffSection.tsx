@@ -2,6 +2,8 @@
 import React from "react";
 import { AdminTimeOffCard } from "@/components/dashboard/AdminTimeOffCard";
 import { TimeOffRequestsCard } from "@/components/dashboard/TimeOffRequestsCard";
+import { TimeOffEmptyState } from "../empty-states";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardTimeOffSectionProps {
   isAdmin: boolean;
@@ -22,25 +24,33 @@ export const DashboardTimeOffSection: React.FC<DashboardTimeOffSectionProps> = (
   handleRefreshData,
   viewAllUrl
 }) => {
+  const navigate = useNavigate();
+  
+  const handleNewRequest = () => {
+    navigate("/time?tab=my-requests&action=new");
+  };
+  
   return (
-    <div className="md:col-span-1">
+    <div className="md:col-span-2">
       {isAdmin ? (
         <AdminTimeOffCard
-          requests={pendingTimeOff || []}
+          timeOffRequests={pendingTimeOff || []}
           loading={dashboardDataLoading}
           error={dashboardDataError}
           onRefresh={handleRefreshData}
           clickable={true}
           viewAllUrl={viewAllUrl}
+          emptyState={<TimeOffEmptyState isAdmin={true} />}
         />
       ) : (
         <TimeOffRequestsCard
-          requests={userTimeOff || []}
+          timeOffRequests={userTimeOff || []}
           loading={dashboardDataLoading}
           error={dashboardDataError}
           onRefresh={handleRefreshData}
-          clickable={true}
+          clickable={true} 
           viewAllUrl={viewAllUrl}
+          emptyState={<TimeOffEmptyState onNewRequest={handleNewRequest} />}
         />
       )}
     </div>
