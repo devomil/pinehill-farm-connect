@@ -12,6 +12,7 @@ interface DashboardWidgetProps {
   children: React.ReactNode;
   dragHandleClass?: string;
   emptyState?: React.ReactNode;
+  onResize?: (size: { width: number, height: number }) => void;
 }
 
 export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
@@ -22,6 +23,7 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
   children,
   dragHandleClass,
   emptyState,
+  onResize,
 }) => {
   // Check if widget has content
   const hasContent = React.Children.count(children) > 0;
@@ -39,16 +41,18 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
             </div>
             <span className="font-medium text-blue-700">{title}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onRemove}
-            className="h-8 w-8 p-0"
-            title="Hide widget"
-          >
-            <EyeOff className="h-4 w-4" />
-            <span className="sr-only">Remove {title}</span>
-          </Button>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              className="h-8 w-8 p-0 ml-2"
+              title="Hide widget"
+            >
+              <EyeOff className="h-4 w-4" />
+              <span className="sr-only">Remove {title}</span>
+            </Button>
+          </div>
         </div>
       )}
       <CardContent className={`flex-1 ${isCustomizing ? 'pt-3' : 'pt-6'} overflow-auto`}>

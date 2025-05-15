@@ -3,6 +3,7 @@ import React from "react";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { MarketingEmptyState } from "../empty-states";
 import { useNavigate } from "react-router-dom";
+import { ResizablePanel } from "@/components/ui/resizable";
 
 interface DashboardMarketingSectionProps {
   viewAllUrl?: string;
@@ -24,8 +25,22 @@ export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps>
   // Check if there is marketing content (this would need to be properly implemented)
   const hasContent = true; // This is a placeholder - you would typically check if there is content
 
+  // Save resize state to localStorage
+  const handleResize = (size: number) => {
+    localStorage.setItem('dashboard-marketing-size', size.toString());
+  };
+
+  // Get saved size from localStorage or use default
+  const defaultSize = parseInt(localStorage.getItem('dashboard-marketing-size') || '100');
+
   return (
-    <div className="h-full">
+    <ResizablePanel 
+      defaultSize={defaultSize} 
+      onResize={handleResize}
+      className="h-full rounded-lg overflow-hidden" 
+      minSize={30}
+      maxSize={100}
+    >
       {hasContent ? (
         <MarketingContent 
           clickable={true} 
@@ -38,6 +53,6 @@ export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps>
           onAddContent={isAdmin ? handleAddContent : undefined} 
         />
       )}
-    </div>
+    </ResizablePanel>
   );
 };

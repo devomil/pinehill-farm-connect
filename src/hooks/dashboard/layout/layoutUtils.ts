@@ -108,3 +108,52 @@ export function validateLayout(layout: LayoutItem[]): boolean {
   
   return true;
 }
+
+/**
+ * Save widget sizes to localStorage
+ */
+export function saveWidgetSizes(widgetSizes: Record<string, { width: number, height: number }>): void {
+  try {
+    localStorage.setItem('dashboard-widget-sizes', JSON.stringify(widgetSizes));
+  } catch (error) {
+    console.error("Failed to save widget sizes:", error);
+  }
+}
+
+/**
+ * Load widget sizes from localStorage
+ */
+export function loadWidgetSizes(): Record<string, { width: number, height: number }> {
+  try {
+    const saved = localStorage.getItem('dashboard-widget-sizes');
+    return saved ? JSON.parse(saved) : {};
+  } catch (error) {
+    console.error("Failed to load widget sizes:", error);
+    return {};
+  }
+}
+
+/**
+ * Apply size constraints to widget dimensions
+ */
+export function applySizeConstraints(
+  width: number,
+  height: number,
+  minWidth: number,
+  minHeight: number,
+  maxWidth?: number,
+  maxHeight?: number
+): { width: number, height: number } {
+  let constrainedWidth = Math.max(width, minWidth);
+  let constrainedHeight = Math.max(height, minHeight);
+  
+  if (maxWidth !== undefined) {
+    constrainedWidth = Math.min(constrainedWidth, maxWidth);
+  }
+  
+  if (maxHeight !== undefined) {
+    constrainedHeight = Math.min(constrainedHeight, maxHeight);
+  }
+  
+  return { width: constrainedWidth, height: constrainedHeight };
+}

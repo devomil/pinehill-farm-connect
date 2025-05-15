@@ -6,6 +6,10 @@ export interface WidgetDefinition {
   title: string;
   columnSpan: number;
   component: React.ReactNode;
+  minHeight?: number;
+  minWidth?: number;
+  maxHeight?: number;
+  maxWidth?: number;
 }
 
 export interface LayoutItem {
@@ -35,6 +39,10 @@ export interface WidgetConfig {
   y: number;
   w: number;
   h: number;
+  minW?: number;
+  minH?: number;
+  maxW?: number; 
+  maxH?: number;
 }
 
 export interface EmptyStateProps {
@@ -44,4 +52,12 @@ export interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+}
+
+export interface ResizableWidgetProps {
+  id: string;
+  width: number;
+  height: number;
+  onResize?: (id: string, size: { width: number; height: number }) => void;
+  children: React.ReactNode;
 }
