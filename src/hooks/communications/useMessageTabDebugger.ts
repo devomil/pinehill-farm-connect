@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { createDebugContext } from '@/utils/debugUtils';
@@ -14,6 +14,10 @@ export function useMessageTabDebugger(isActive: boolean) {
   const lastQueryParams = useRef<URLSearchParams | null>(null);
   const mountTime = useRef<number>(Date.now());
   const lastError = useRef<Error | null>(null);
+  const [tabMetrics, setTabMetrics] = useState({
+    avgMountTime: 0,
+    hasEverMounted: false,
+  });
   
   // Reset error state
   const resetError = useCallback(() => {
@@ -35,12 +39,19 @@ export function useMessageTabDebugger(isActive: boolean) {
         url: location.pathname + location.search,
         timestamp: new Date().toISOString()
       });
+      
+      // Update metrics
+      setTabMetrics(prev => ({
+        ...prev,
+        hasEverMounted: true
+      }));
 
       // Parse URL parameters
       const urlParams = new URLSearchParams(location.search);
       const tabParam = urlParams.get('tab');
+      const isRecoveryMode = urlParams.get('recovery') === 'true';
       
-      debug.info(`Current tab param: "${tabParam}"`, {
+      debug.info(`Current tab param: "${tabParam}", recovery mode: ${isRecoveryMode}`, {
         fullUrl: location.pathname + location.search
       });
       
@@ -65,10 +76,11 @@ export function useMessageTabDebugger(isActive: boolean) {
       if (mountCount.current > 3) {
         debug.warn(`Messages tab mounted ${mountCount.current} times, potential navigation loop`);
         
-        if (mountCount.current > 5) {
+        if (mountCount.current > 5 && !isRecoveryMode) {
           // This is a serious problem, we should try to recover
-          toast.error("Navigation issue detected. Please refresh the page if problems persist.", {
-            id: 'message-tab-recovery',
+          toast.error("Navigation issue detected", {
+            id: 'message-tab-recovery-needed',
+            description: "Try the recovery button to fix this issue",
             duration: 5000
           });
         }
@@ -89,9 +101,20 @@ export function useMessageTabDebugger(isActive: boolean) {
           timestamp: new Date().toISOString()
         });
         
+        // Update the average mount time metric
+        setTabMetrics(prev => ({
+          ...prev,
+          avgMountTime: prev.avgMountTime === 0 
+            ? duration 
+            : (prev.avgMountTime * 0.7 + duration * 0.3) // weighted average
+        }));
+        
         // Alert if component unmounted very quickly
         if (duration < 500) {
-          debug.warn(`Messages tab unmounted suspiciously quickly (${duration}ms)`);
+          debug.warn(`Messages tab unmounted suspiciously quickly (${duration}ms)`, {
+            navigationCount: mountCount.current,
+            path: location.pathname + location.search
+          });
         }
       } catch (error) {
         console.error("Error in message tab debugger cleanup:", error);
@@ -105,7 +128,9 @@ export function useMessageTabDebugger(isActive: boolean) {
       currentUrl: location.pathname + location.search,
       tabParam: new URLSearchParams(location.search).get('tab'),
       mountedAt: mountTime.current,
-      errorState: lastError.current ? 'error' : 'ok'
+      errorState: lastError.current ? 'error' : 'ok',
+      avgTimeInTab: Math.round(tabMetrics.avgMountTime),
+      hasEverMounted: tabMetrics.hasEverMounted
     },
     resetError
   };

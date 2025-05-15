@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { DebugButton } from "@/components/debug/DebugButton";
 import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
 import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const CommunicationPage: React.FC = () => {
   // Setup component debugging
@@ -67,7 +69,8 @@ const CommunicationPage: React.FC = () => {
     employeeCount: unfilteredEmployees?.length,
     isAdmin,
     navigationInProgress: navigationInProgress?.current,
-    navLoopDetected: navigationDebugger.hasLoopDetected
+    navLoopDetected: navigationDebugger.hasLoopDetected,
+    timeInMessagesTab: navigationDebugger.timeInMessagesTab
   });
 
   // Effect to sync the URL with the active tab on mount and location changes
@@ -80,6 +83,11 @@ const CommunicationPage: React.FC = () => {
       // In recovery mode, we ensure navigation is marked as complete
       navigationComplete.current = true;
       debug.info("Running in navigation recovery mode");
+      
+      // Force debug mode on in recovery
+      if (!showDebugInfo) {
+        setShowDebugInfo(true);
+      }
       
       // Clear recovery parameter but maintain tab parameter
       if (urlParams.has('recovery')) {
@@ -113,7 +121,18 @@ const CommunicationPage: React.FC = () => {
         });
       }
     }
-  }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, navigationInProgress]);
+  }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, navigationInProgress, showDebugInfo, setShowDebugInfo]);
+  
+  // Automatically show debug info when loop detected
+  useEffect(() => {
+    if (navigationDebugger.hasLoopDetected && !showDebugInfo) {
+      setShowDebugInfo(true);
+      toast.error("Navigation issue detected", {
+        description: "Debug information has been enabled",
+        duration: 5000
+      });
+    }
+  }, [navigationDebugger.hasLoopDetected, showDebugInfo, setShowDebugInfo]);
   
   return (
     <DebugProvider>
@@ -132,11 +151,29 @@ const CommunicationPage: React.FC = () => {
             <div className="flex gap-2">
               {/* Show recovery button if navigation loop detected */}
               {navigationDebugger.hasLoopDetected && (
-                <NavigationRecoveryButton onRecover={navigationDebugger.attemptRecovery} />
+                <NavigationRecoveryButton 
+                  onRecover={navigationDebugger.attemptRecovery} 
+                  loopDetected={true}
+                />
               )}
             </div>
-            <DebugButton variant="outline" className="text-xs" />
+            <DebugButton 
+              variant="outline" 
+              className="text-xs"
+              onClick={() => setShowDebugInfo(!showDebugInfo)} 
+            />
           </div>
+          
+          {/* Show navigation warning when issues are detected */}
+          {navigationDebugger.hasLoopDetected && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Navigation loop detected in the Messages tab. Use the "Fix Navigation Loop" button above 
+                or add "?recovery=true" to the URL.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <ErrorBoundary componentName="CommunicationTabs">
             <CommunicationTabs 
@@ -155,9 +192,10 @@ const CommunicationPage: React.FC = () => {
             />
           </ErrorBoundary>
           
-          {showDebugInfo && (
+          {/* Always show debug helper in loop detection mode, otherwise respect user setting */}
+          {(showDebugInfo || navigationDebugger.hasLoopDetected) && (
             <CommunicationDebugHelper
-              showDebug={showDebugInfo}
+              showDebug={true}
               activeTab={activeTab}
               unreadMessages={unreadMessages || []}
               onTabChange={handleTabChange}

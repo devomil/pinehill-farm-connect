@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -7,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useDebug } from '@/hooks/useDebug';
 import { User } from '@/types';
 import { Communication } from '@/types/communications/communicationTypes';
+import { AlertCircle, Bug, RefreshCw } from 'lucide-react';
 
 interface MessageDebuggerProps {
   selectedEmployee: User | null;
@@ -35,16 +37,27 @@ export function MessageDebugger({
 }: MessageDebuggerProps) {
   const [expanded, setExpanded] = useState(false);
   const debug = useDebug('MessageDebugger', { trackRenders: true });
+  const [autoExpanded, setAutoExpanded] = useState(false);
+  
+  // Auto-expand when navigation issues are detected
+  useEffect(() => {
+    if (navigationState?.loopDetected && !expanded && !autoExpanded) {
+      setExpanded(true);
+      setAutoExpanded(true);
+      debug.info('Automatically expanded debugger due to navigation loop');
+    }
+  }, [navigationState?.loopDetected, expanded, autoExpanded, debug]);
   
   if (!expanded) {
     return (
       <Button 
-        variant="ghost" 
+        variant={navigationState?.loopDetected ? "destructive" : "ghost"}
         size="sm"
         onClick={() => setExpanded(true)}
-        className="text-xs"
+        className="text-xs flex gap-1 items-center"
       >
-        Show Message Debugger
+        {navigationState?.loopDetected ? <AlertCircle className="h-3 w-3" /> : <Bug className="h-3 w-3" />}
+        {navigationState?.loopDetected ? "Navigation Issue Detected - Click to Debug" : "Show Message Debugger"}
       </Button>
     );
   }
@@ -91,7 +104,7 @@ export function MessageDebugger({
     <Card className="mb-4 mt-2 border-dashed border-yellow-500/50 bg-yellow-50/10">
       <CardHeader className="py-2">
         <CardTitle className="text-sm flex items-center justify-between">
-          <span>Messages Debug Information</span>
+          <span>{navigationState?.loopDetected ? "⚠️ Navigation Issue Detected" : "Messages Debug Information"}</span>
           <Button 
             variant="ghost" 
             size="sm"
@@ -112,6 +125,35 @@ export function MessageDebugger({
                   <li key={index}>{issue}</li>
                 ))}
               </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {navigationState?.loopDetected && (
+          <Alert variant="destructive" className="py-2 mb-2">
+            <AlertTitle className="text-xs flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" /> Navigation Loop Detected
+            </AlertTitle>
+            <AlertDescription className="text-xs space-y-1">
+              <p>The app is rapidly switching between tabs, preventing you from staying on the messages tab.</p>
+              <ol className="list-decimal pl-4 mt-1">
+                <li>Try using the "Fix Navigation Loop" button</li>
+                <li>Manually add "?recovery=true" to the URL</li>
+                <li>Clear browser cache and reload</li>
+              </ol>
+              <div className="mt-2">
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => {
+                    debug.info('Manual recovery requested', { timestamp: new Date().toISOString() });
+                    window.location.href = '/communication?tab=messages&recovery=true';
+                  }}
+                >
+                  Attempt Recovery
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -189,7 +231,7 @@ export function MessageDebugger({
           )}
           
           {navigationState && (
-            <AccordionItem value="navigation-state">
+            <AccordionItem value="navigation-state" defaultValue="navigation-state">
               <AccordionTrigger className="text-xs py-1">Navigation State</AccordionTrigger>
               <AccordionContent>
                 <pre className="text-[10px] bg-muted p-2 rounded overflow-x-auto max-h-32">
@@ -198,25 +240,66 @@ export function MessageDebugger({
               </AccordionContent>
             </AccordionItem>
           )}
+
+          <AccordionItem value="url-breakdown">
+            <AccordionTrigger className="text-xs py-1">URL Analysis</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1">
+                <div>
+                  <strong>Current Path:</strong> {window.location.pathname}
+                </div>
+                <div>
+                  <strong>Search Params:</strong> {window.location.search || "(none)"}
+                </div>
+                <div>
+                  <strong>Tab Parameter:</strong> {new URLSearchParams(window.location.search).get('tab') || "(none)"}
+                </div>
+                <div>
+                  <strong>Recovery Mode:</strong> {new URLSearchParams(window.location.search).get('recovery') === 'true' ? "Yes" : "No"}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="possible-solutions">
+            <AccordionTrigger className="text-xs py-1">Troubleshooting Steps</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1">
+                <p className="font-medium">If you're getting kicked out of messages tab:</p>
+                <ol className="list-decimal pl-4">
+                  <li>Use the "Fix Navigation Loop" button in the navigation bar</li>
+                  <li>Try adding "?recovery=true" to your URL</li>
+                  <li>Clear localStorage and browser cache</li>
+                  <li>Try a different browser</li>
+                  <li>Check console for specific errors</li>
+                </ol>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
         
         {navigationState && navigationState.loopDetected && (
           <div className="border-t pt-2 mt-2 bg-destructive/10 p-2 rounded">
-            <div className="text-xs font-medium mb-2 text-destructive">Navigation Loop Detected</div>
+            <div className="text-xs font-medium mb-2 text-destructive">Navigation Loop Detailed Diagnostics</div>
             <p className="text-[10px] mb-2">
               A navigation loop has been detected, which is preventing you from staying on the messages tab.
               This may be caused by rapid state changes, URL parameter conflicts, or error recovery logic.
             </p>
+            <div className="space-y-1 mb-2">
+              <div><strong>URL:</strong> {window.location.href}</div>
+              <div><strong>Tab parameter:</strong> {new URLSearchParams(window.location.search).get('tab') || "(none)"}</div>
+              <div><strong>Tab switches:</strong> {navigationState.tabSwitchCount || 0}</div>
+            </div>
             <Button 
               variant="destructive" 
               size="sm"
-              className="text-xs h-7 w-full"
+              className="text-xs h-7 w-full flex items-center gap-1"
               onClick={() => {
                 debug.log('Navigation recovery requested', { timestamp: new Date().toISOString() });
                 window.location.href = '/communication?tab=messages&recovery=true';
               }}
             >
-              Attempt Recovery
+              <RefreshCw className="h-3 w-3" /> Perform Full Recovery
             </Button>
           </div>
         )}
@@ -234,7 +317,7 @@ export function MessageDebugger({
                 window.location.reload();
               }}
             >
-              Force Refresh
+              <RefreshCw className="h-3 w-3 mr-1" /> Force Refresh
             </Button>
             
             <Button 
@@ -247,6 +330,18 @@ export function MessageDebugger({
               }}
             >
               Reset Navigation
+            </Button>
+            
+            <Button 
+              variant="destructive" 
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => {
+                debug.log('Recovery mode requested', { timestamp: new Date().toISOString() });
+                window.location.href = '/communication?tab=messages&recovery=true';
+              }}
+            >
+              Enter Recovery Mode
             </Button>
             
             <Button 
