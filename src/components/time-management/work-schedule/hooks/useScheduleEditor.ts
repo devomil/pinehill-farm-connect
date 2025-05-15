@@ -1,29 +1,43 @@
 
-import { useState, useEffect, useMemo } from "react";
-import { WorkSchedule, WorkShift } from "@/types/workSchedule";
-import { buildShiftsMap, createNewShift } from "../scheduleHelpers";
-import { uuid } from "@/utils/uuid";
+import { useState, useEffect } from "react";
 import { useDaySelector } from "@/contexts/timeManagement/hooks";
-import { toast } from "@/hooks/use-toast";
-
-export interface UseScheduleEditorProps {
-  selectedEmployee: string | null;
-  scheduleData: WorkSchedule | null;
-  onSave: (schedule: WorkSchedule) => void;
-}
+import { UseScheduleEditorProps } from "./types";
+import { useShiftEditor } from "./useShiftEditor";
+import { useBulkScheduler } from "./useBulkScheduler";
+import { useCalendarDates } from "./useCalendarDates";
 
 export const useScheduleEditor = ({ 
   selectedEmployee, 
   scheduleData,
   onSave 
 }: UseScheduleEditorProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [editingShift, setEditingShift] = useState<WorkShift | null>(null);
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
-  const [bulkMode, setBulkMode] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<"single" | "multiple">("single");
+  
+  // Use the component hooks
+  const {
+    selectedDate,
+    setSelectedDate,
+    currentMonth, 
+    setCurrentMonth,
+    shiftsMap
+  } = useCalendarDates(scheduleData);
+  
+  const {
+    editingShift,
+    isEditMode,
+    isDialogOpen,
+    setIsDialogOpen,
+    handleAddShift,
+    handleEditShift,
+    handleSaveShift,
+    handleDeleteShift
+  } = useShiftEditor(selectedEmployee, scheduleData, onSave);
+  
+  const {
+    bulkMode,
+    setBulkMode,
+    handleBulkSchedule
+  } = useBulkScheduler(selectedEmployee, scheduleData, onSave);
   
   // Use the day selector hook for multiple day selection
   const { 
@@ -38,136 +52,11 @@ export const useScheduleEditor = ({
   // If employee changes or schedule data changes, reset editing state
   useEffect(() => {
     setSelectedDate(undefined);
-    setEditingShift(null);
-    setIsEditMode(false);
     setIsDialogOpen(false);
     setBulkMode(null);
     setSelectionMode("single");
     clearSelectedDays();
   }, [selectedEmployee, scheduleData?.id, clearSelectedDays]);
-  
-  // Create map of dates to shifts
-  const shiftsMap = useMemo(() => {
-    return buildShiftsMap(scheduleData);
-  }, [scheduleData]);
-  
-  // Handle adding a new shift
-  const handleAddShift = () => {
-    if (!selectedEmployee || !selectedDate) return;
-    
-    const newShift = createNewShift(selectedEmployee, selectedDate);
-    setEditingShift(newShift);
-    setIsEditMode(false);
-    setIsDialogOpen(true);
-  };
-  
-  // Handle editing an existing shift
-  const handleEditShift = (shift: WorkShift) => {
-    setEditingShift(shift);
-    setIsEditMode(true);
-    setIsDialogOpen(true);
-  };
-  
-  // Handle saving a shift (new or edited)
-  const handleSaveShift = (shift: WorkShift) => {
-    if (!scheduleData || !selectedEmployee) return;
-    
-    let updatedShifts;
-    
-    if (isEditMode) {
-      // Update existing shift
-      updatedShifts = scheduleData.shifts.map(s => 
-        s.id === shift.id ? shift : s
-      );
-    } else {
-      // Add new shift
-      updatedShifts = [...scheduleData.shifts, shift];
-    }
-    
-    const updatedSchedule = {
-      ...scheduleData,
-      shifts: updatedShifts,
-    };
-    
-    onSave(updatedSchedule);
-    setIsDialogOpen(false);
-  };
-  
-  // Handle deleting a shift
-  const handleDeleteShift = (shiftId: string) => {
-    if (!scheduleData) return;
-    
-    const updatedSchedule = {
-      ...scheduleData,
-      shifts: scheduleData.shifts.filter(s => s.id !== shiftId),
-    };
-    
-    onSave(updatedSchedule);
-    setIsDialogOpen(false);
-  };
-  
-  // Handle bulk scheduling (for either bulk mode or specific days)
-  const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
-    if (!scheduleData || !selectedEmployee) {
-      toast({
-        description: "No employee or schedule data available",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (days.length === 0) {
-      toast({
-        description: "No days selected for scheduling",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    console.log(`Bulk scheduling for ${days.length} days, employee: ${selectedEmployee}`);
-    console.log("Days to schedule:", days);
-    
-    // Create new shifts for the selected days
-    const newShifts = days.map(day => {
-      const [year, month, dayOfMonth] = day.split('-').map(Number);
-      const shiftDate = new Date(year, month - 1, dayOfMonth);
-      
-      return {
-        id: uuid(),
-        employeeId: selectedEmployee,
-        date: day,
-        startTime,
-        endTime,
-        isRecurring: false,
-      };
-    });
-    
-    console.log(`Created ${newShifts.length} new shifts`);
-    
-    // Remove any existing shifts on these days
-    const existingShiftsFiltered = scheduleData.shifts.filter(
-      shift => !days.includes(shift.date)
-    );
-    
-    const updatedSchedule = {
-      ...scheduleData,
-      shifts: [...existingShiftsFiltered, ...newShifts],
-    };
-    
-    console.log("Saving updated schedule with new shifts:", updatedSchedule);
-    
-    // Save the updated schedule and show feedback
-    onSave(updatedSchedule);
-    toast({
-      description: `Added ${newShifts.length} shifts to the schedule`,
-      variant: "success"
-    });
-    
-    // Reset bulk mode and selection state
-    setBulkMode(null);
-    setSelectionMode("single");
-    clearSelectedDays();
-  };
   
   // Toggle selection mode for specific days
   const toggleSelectionMode = () => {
@@ -178,7 +67,12 @@ export const useScheduleEditor = ({
       clearSelectedDays();
     }
   };
-  
+
+  // Wrapper to handle add shift with current selected date
+  const handleAddShiftFromCalendar = () => {
+    handleAddShift(selectedDate);
+  };
+
   return {
     selectedDate,
     setSelectedDate,
@@ -193,7 +87,7 @@ export const useScheduleEditor = ({
     selectionMode,
     selectedCount,
     shiftsMap,
-    handleAddShift,
+    handleAddShift: handleAddShiftFromCalendar,
     handleEditShift,
     handleSaveShift,
     handleDeleteShift,
