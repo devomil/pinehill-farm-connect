@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { QueryObserverResult } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface UseTabNavigationProps {
   activeTab: string;
@@ -55,13 +56,21 @@ export function useTabNavigation({
       // Use replace: true for tabs to prevent history buildup
       navigate(newPath, { replace: true });
       
-      // Only refresh if it's been more than 2 seconds since last refresh
-      const now = Date.now();
-      if (now - lastRefreshTime.current > 2000 && !isRefreshing.current) {
-        console.log("Refreshing messages on tab change");
+      // Always refresh messages when switching to messages tab
+      if (value === 'messages') {
+        console.log("Switching to messages tab, refreshing data");
         isRefreshing.current = true;
         
+        toast.info("Loading messages...");
+        
         refreshMessages()
+          .then(() => {
+            toast.success("Messages loaded successfully");
+          })
+          .catch(err => {
+            console.error("Error refreshing messages:", err);
+            toast.error("Failed to load messages. Please try again.");
+          })
           .finally(() => {
             isRefreshing.current = false;
             lastRefreshTime.current = Date.now();
@@ -73,7 +82,7 @@ export function useTabNavigation({
             }, 100);
           });
       } else {
-        // Mark navigation as complete after a short delay if not refreshing
+        // For other tabs, mark as complete more quickly
         setTimeout(() => {
           navigationComplete.current = true;
           console.log("Navigation complete set to true (no refresh needed)");
@@ -83,6 +92,13 @@ export function useTabNavigation({
       // Already on correct path, just mark navigation as complete
       navigationComplete.current = true;
       console.log("Already on correct path, navigation complete set to true");
+      
+      // Still refresh if switching to messages tab
+      if (value === 'messages') {
+        refreshMessages().catch(err => {
+          console.error("Error refreshing messages on same-path tab change:", err);
+        });
+      }
     }
   }, [navigate, refreshMessages, activeTab, location.pathname, location.search, setActiveTab, navigationComplete, isRefreshing, lastRefreshTime]);
 

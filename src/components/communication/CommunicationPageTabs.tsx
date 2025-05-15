@@ -32,6 +32,9 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
         msg.read_at === null)
     : [];
     
+  // Count unread messages total
+  const unreadCount = filteredUnreadMessages.length;
+    
   // Group unread messages by sender for better visibility
   const uniqueSenders = filteredUnreadMessages.length > 0
     ? [...new Set(filteredUnreadMessages.map(msg => msg.sender_id))]
@@ -65,19 +68,19 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
   }, [activeTab, onTabChange]);
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6" defaultValue={activeTab}>
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
       <TabsList className="mb-4">
         <TabsTrigger value="announcements" data-testid="announcements-tab">
           Company Announcements
         </TabsTrigger>
         <TabsTrigger value="messages" data-testid="messages-tab" className="relative">
           Direct Messages
-          {filteredUnreadMessages.length > 0 && (
+          {unreadCount > 0 && (
             <div className="ml-2 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-xs flex items-center">
               <MessageCircle className="h-3 w-3 mr-1" />
-              {filteredUnreadMessages.length}
+              {unreadCount}
               {uniqueSenders.length > 0 && (
-                <span className="ml-1 text-xs">
+                <span className="ml-1 text-xs hidden md:inline-block">
                   {uniqueSenders.length === 1 
                     ? " from 1 person" 
                     : ` from ${uniqueSenders.length} people`}
@@ -89,7 +92,7 @@ export const CommunicationTabs = memo<CommunicationTabsProps>(({
       </TabsList>
       
       {/* Show sender names preview if there are unread messages */}
-      {activeTab === "messages" && filteredUnreadMessages.length > 0 && senderNamesPreview && (
+      {activeTab === "messages" && unreadCount > 0 && senderNamesPreview && (
         <div className="mb-4 text-sm text-primary flex items-center">
           <MessageCircle className="h-4 w-4 mr-2" />
           <span>New messages {senderNamesPreview}</span>

@@ -32,7 +32,15 @@ export function useCommunicationPageData() {
     console.log(`Initial tab set to ${initialTab} based on URL: ${location.search}`);
     
     setActiveTab(initialTab);
-  }, []);
+    
+    // Force a message refresh when opening the messages tab
+    if (initialTab === 'messages') {
+      console.log('Initial tab is messages, refreshing message data');
+      setTimeout(() => {
+        refreshMessages();
+      }, 100); // Small delay to ensure component is mounted
+    }
+  }, [location.search, refreshMessages]);
 
   // Handle announcement creation (for admin users)
   const handleAnnouncementCreate = async () => {
