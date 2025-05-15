@@ -8,20 +8,28 @@ interface DebugButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
+  onClick?: () => void; // Add the onClick prop
 }
 
 export function DebugButton({
   variant = 'outline',
   size = 'sm',
   className = '',
+  onClick
 }: DebugButtonProps) {
   const { toggleDebugPanel, showDebugPanel } = useDebugContext();
+
+  // Handle click event, combining the toggleDebugPanel and any custom onClick
+  const handleClick = () => {
+    toggleDebugPanel();
+    if (onClick) onClick();
+  };
 
   return (
     <Button
       variant={variant}
       size={size}
-      onClick={toggleDebugPanel}
+      onClick={handleClick}
       className={className}
       title="Toggle Debug Panel (Ctrl+Shift+D)"
     >

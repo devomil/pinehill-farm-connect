@@ -15,6 +15,7 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
       size="sm" 
       onClick={onRecover}
       className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}
+      title={loopDetected ? "Fix navigation loop detected in Messages tab" : "Reset navigation state"}
     >
       {loopDetected ? (
         <AlertCircle className="h-3 w-3" />
