@@ -3,16 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { RotateCcw, Save, Eye } from "lucide-react";
-
-interface DashboardControlsProps {
-  isCustomizing: boolean;
-  hasLayoutChanged: boolean;
-  onToggleCustomization: () => void;
-  onCancel: () => void;
-  onReset: () => void;
-  onSave: () => void;
-  onOpenWidgetManager: () => void;
-}
+import { DashboardControlsProps } from "./types/dashboardTypes";
 
 export const DashboardControls: React.FC<DashboardControlsProps> = ({
   isCustomizing,

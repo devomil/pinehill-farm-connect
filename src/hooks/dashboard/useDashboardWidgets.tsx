@@ -7,31 +7,9 @@ import { DashboardShiftCoverageSection } from "@/components/dashboard/sections/D
 import { DashboardAnnouncementsSection } from "@/components/dashboard/sections/DashboardAnnouncementsSection";
 import { DashboardTrainingSection } from "@/components/dashboard/sections/DashboardTrainingSection";
 import { DashboardMarketingSection } from "@/components/dashboard/sections/DashboardMarketingSection";
-import { User } from "@/types/index";
+import { UseWidgetHookProps, WidgetHookResult } from "@/components/dashboard/types/dashboardTypes";
 
-interface UseDashboardWidgetsProps {
-  isAdmin: boolean;
-  pendingTimeOff: any[] | null;
-  userTimeOff: any[] | null;
-  shiftCoverageMessages: any[] | null;
-  announcements: any[] | null;
-  assignedTrainings: any[] | null;
-  currentUser: User;
-  scheduleData: any;
-  scheduleLoading: boolean;
-  date: Date;
-  currentMonth: Date;
-  viewMode: "month" | "team";
-  dashboardDataLoading: boolean;
-  dashboardDataError: Error | null;
-  handleRefreshData: () => void;
-  onDateSelect: (date: Date | undefined) => void;
-  onViewModeChange: (value: "month" | "team") => void;
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
-}
-
-export function useDashboardWidgets(props: UseDashboardWidgetsProps) {
+export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult {
   // Default heights for widgets
   const defaultHeights: Record<string, number> = {
     calendar: 12,

@@ -5,16 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EyeOff, Plus } from "lucide-react";
-import { LayoutItem } from "@/types/dashboard";
-
-interface WidgetManagerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  currentLayout: LayoutItem[];
-  hiddenWidgets: string[];
-  toggleWidgetVisibility: (id: string) => void;
-  widgetDefinitions: Record<string, { title: string; columnSpan: number }>;
-}
+import { WidgetManagerDialogProps } from "./types/dashboardTypes";
 
 export const WidgetManagerDialog: React.FC<WidgetManagerDialogProps> = ({
   open,

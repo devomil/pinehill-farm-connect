@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { LayoutItem } from "@/types/dashboard";
+import { DashboardLayoutHookResult } from "@/components/dashboard/types/dashboardTypes";
 
 /**
  * Custom hook to manage dashboard layout and widget configuration
@@ -9,7 +10,7 @@ import { LayoutItem } from "@/types/dashboard";
 export function useDashboardLayout(
   initialWidgetDefinitions: Record<string, { title: string; columnSpan: number }>,
   defaultHeights: Record<string, number>
-) {
+): DashboardLayoutHookResult {
   // Get saved widget configuration from localStorage if available
   const getSavedWidgetConfig = (): Record<string, { visible: boolean; x: number; y: number; w: number; h: number }> => {
     try {

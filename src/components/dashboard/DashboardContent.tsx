@@ -1,33 +1,11 @@
 
 import React from "react";
-import { User } from "@/types/index";
 import { DashboardControls } from "@/components/dashboard/DashboardControls";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { WidgetManagerDialog } from "@/components/dashboard/WidgetManagerDialog";
 import { useDashboardWidgets } from "@/hooks/dashboard/useDashboardWidgets";
 import { useDashboardLayout } from "@/hooks/dashboard/useDashboardLayout";
-
-interface DashboardContentProps {
-  isAdmin: boolean;
-  pendingTimeOff: any[] | null;
-  userTimeOff: any[] | null;
-  shiftCoverageMessages: any[] | null;
-  announcements: any[] | null;
-  assignedTrainings: any[] | null;
-  currentUser: User;
-  scheduleData: any;
-  scheduleLoading: boolean;
-  date: Date;
-  currentMonth: Date;
-  viewMode: "month" | "team";
-  dashboardDataLoading: boolean;
-  dashboardDataError: Error | null;
-  handleRefreshData: () => void;
-  onDateSelect: (date: Date | undefined) => void;
-  onViewModeChange: (value: "month" | "team") => void;
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
-}
+import { DashboardContentProps } from "./types/dashboardTypes";
 
 export const DashboardContent: React.FC<DashboardContentProps> = (props) => {
   // Get widget definitions and configurations
