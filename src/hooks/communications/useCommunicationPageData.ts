@@ -1,167 +1,73 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCommunications } from "@/hooks/useCommunications";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { QueryObserverResult } from "@tanstack/react-query";
+import { useAnnouncementStats } from "@/hooks/announcement/useAnnouncementStats";
 
 export function useCommunicationPageData() {
   const { currentUser } = useAuth();
-  
-  // State for debug panel
-  const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false);
-  
-  // Get location to parse URL parameters
   const location = useLocation();
-  
-  // Track initial render to prevent premature tab changes
-  const initialRender = useRef<boolean>(true);
-  
-  // Parse URL parameters for active tab on initial load
-  const urlParams = new URLSearchParams(location.search);
-  const tabParam = urlParams.get('tab');
-  const initialTab = tabParam === 'messages' ? "messages" : "announcements";
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
-  
-  // Get unread messages for the badge counter
+  const [activeTab, setActiveTab] = useState<string>("");
+  const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false);
   const { unreadMessages, refreshMessages } = useCommunications();
-  const { unfilteredEmployees, refetch: refetchEmployees } = useEmployeeDirectory();
-  const { refetchData } = useDashboardData();
-  
-  // Determine if the current user is an admin
-  const isAdmin = currentUser?.role === 'admin';
-  
-  // Use refs to track refresh timers and prevent duplicate refreshes
-  const initialDataLoaded = useRef<boolean>(false);
-  const lastRefreshTime = useRef<number>(Date.now());
-  const refreshTimeoutRef = useRef<number | null>(null);
-  const isPageMounted = useRef<boolean>(false);
+  const { unfilteredEmployees } = useEmployeeDirectory();
+  const navigationComplete = useRef<boolean>(true);
   const isRefreshing = useRef<boolean>(false);
-  const navigationComplete = useRef<boolean>(true); // Start as true
-
-  // Sync the component with the URL on initial render and subsequent changes
-  useEffect(() => {
-    // Log current location for debugging
-    console.log("useCommunicationPageData - location change:", location.pathname, location.search);
-    
-    // Skip if navigation is in progress
-    if (!navigationComplete.current) {
-      console.log("Navigation in progress, skipping URL sync");
-      return;
-    }
-    
-    // Parse URL parameters
-    const urlParams = new URLSearchParams(location.search);
-    const tabParam = urlParams.get('tab');
-    const newTab = tabParam === 'messages' ? "messages" : "announcements";
-    
-    // Only update state if necessary
-    if (newTab !== activeTab) {
-      console.log(`Syncing tab from URL: ${newTab} (current: ${activeTab})`);
-      setActiveTab(newTab);
-    }
-  }, [location, activeTab]);
-
-  // Initial data load - only once when component is mounted
-  useEffect(() => {
-    console.log("CommunicationPage mounting effect");
-    isPageMounted.current = true;
-    initialRender.current = false;
-    
-    if (!initialDataLoaded.current && currentUser) {
-      console.log("CommunicationPage mounted, initial data load");
-      isRefreshing.current = true;
-      
-      // Use Promise.all to load data in parallel
-      Promise.all([
-        refreshMessages(),
-        refetchEmployees()
-      ]).then(() => {
-        if (isPageMounted.current) {
-          initialDataLoaded.current = true;
-          console.log("Initial communication data loaded");
-          lastRefreshTime.current = Date.now();
-        }
-      }).catch(err => {
-        console.error("Error loading initial communication data:", err);
-      }).finally(() => {
-        isRefreshing.current = false;
-      });
-    }
-    
-    // Clear any previous refresh timeouts when unmounting
-    return () => {
-      isPageMounted.current = false;
-      isRefreshing.current = false;
-      if (refreshTimeoutRef.current !== null) {
-        clearTimeout(refreshTimeoutRef.current);
-        refreshTimeoutRef.current = null;
-      }
-    };
-  }, [refreshMessages, refetchEmployees, currentUser]);
+  const lastRefreshTime = useRef<number>(Date.now());
+  const { stats, refetch: refreshAnnouncementStats } = useAnnouncementStats();
   
-  // Handle announcement creation
-  const handleAnnouncementCreate = () => {
-    console.log("Announcement created, refreshing data");
-    toast.success("Announcement created successfully");
+  // Check if user is admin for permissions
+  const isAdmin = currentUser?.role === 'admin' || false;
+  
+  // Set initial tab based on URL or default to announcements
+  useEffect(() => {
+    // Get tab from URL query params
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
     
-    // Prevent concurrent refreshes
-    if (!isRefreshing.current) {
-      isRefreshing.current = true;
-      setTimeout(() => {
-        if (isPageMounted.current) {
-          refreshMessages().finally(() => {
-            isRefreshing.current = false;
-            lastRefreshTime.current = Date.now();
-          });
-        }
-      }, 1000);
-    }
+    // Set default tab if none is specified, but don't trigger navigation
+    const initialTab = tabParam === 'messages' ? 'messages' : 'announcements';
+    console.log(`Initial tab set to ${initialTab} based on URL: ${location.search}`);
+    
+    setActiveTab(initialTab);
+  }, []);
+
+  // Handle announcement creation (for admin users)
+  const handleAnnouncementCreate = async () => {
+    console.log("Creating new announcement");
+    // Just refresh data after creation
+    await refreshAnnouncementStats();
   };
   
-  // Handle manual refresh of data - explicitly requested by user
-  const handleManualRefresh = () => {
-    console.log("Manual refresh requested");
+  // Manual refresh handler for debug purposes
+  const handleManualRefresh = async () => {
+    console.log("Manual refresh triggered");
     
-    // Prevent multiple concurrent refreshes
+    // Prevent multiple refreshes in quick succession
     if (isRefreshing.current) {
-      toast.info("Refresh already in progress...");
+      console.log("Refresh already in progress, skipping");
       return;
     }
     
-    // Prevent refreshes that happen too quickly
-    const now = Date.now();
-    if (now - lastRefreshTime.current < 3000) {
-      toast.info("Please wait a moment before refreshing again");
-      return;
-    }
-    
-    if (refreshTimeoutRef.current !== null) {
-      clearTimeout(refreshTimeoutRef.current);
-    }
-    
-    toast.info("Refreshing data...");
     isRefreshing.current = true;
     
-    // Use Promise.all to load all data in parallel
-    Promise.all([
-      refreshMessages(),
-      refetchEmployees(),
-      refetchData()
-    ]).then(() => {
-      if (isPageMounted.current) {
-        toast.success("Data refreshed successfully");
-        lastRefreshTime.current = Date.now();
+    try {
+      // Refresh messages first to update unread count badges
+      await refreshMessages();
+      
+      // Then refresh announcements stats if needed
+      if (activeTab === 'announcements' && isAdmin) {
+        await refreshAnnouncementStats();
       }
-    }).catch(err => {
-      console.error("Error refreshing communication data:", err);
-      toast.error("Failed to refresh data");
-    }).finally(() => {
+      
+      lastRefreshTime.current = Date.now();
+    } catch (err) {
+      console.error("Error during manual refresh:", err);
+    } finally {
       isRefreshing.current = false;
-    });
+    }
   };
 
   return {

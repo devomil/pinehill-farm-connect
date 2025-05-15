@@ -58,6 +58,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       badge: unreadAnnouncementCount > 0 ? (
         <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
       ) : null,
+      isActive: pathname === '/communication' && !search.includes('tab=messages')
     },
     {
       to: "/communication?tab=messages",
@@ -67,6 +68,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
       badge: unreadMessageCount > 0 ? (
         <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
       ) : null,
+      isActive: pathname === '/communication' && search.includes('tab=messages')
     }
   ];
 
@@ -79,9 +81,7 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
             variant={item.badge !== null ? "default" : "ghost"}
             className={cn(
               "justify-start font-normal",
-              ((pathname === '/communication' && !search && item.to === '/communication') ||
-               (pathname === '/communication' && search.includes('tab=messages') && item.to.includes('messages'))) 
-              && "bg-accent"
+              item.isActive && "bg-accent"
             )}
             asChild
           >

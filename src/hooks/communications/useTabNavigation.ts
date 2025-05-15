@@ -52,9 +52,8 @@ export function useTabNavigation({
     if (location.pathname + location.search !== newPath) {
       console.log("Navigating to:", newPath);
       
-      // Use replace: false to create a proper history entry
-      // This helps ensure the navigation sticks
-      navigate(newPath, { replace: false });
+      // Use replace: true for tabs to prevent history buildup
+      navigate(newPath, { replace: true });
       
       // Only refresh if it's been more than 2 seconds since last refresh
       const now = Date.now();
@@ -62,19 +61,17 @@ export function useTabNavigation({
         console.log("Refreshing messages on tab change");
         isRefreshing.current = true;
         
-        setTimeout(() => {
-          refreshMessages()
-            .finally(() => {
-              isRefreshing.current = false;
-              lastRefreshTime.current = Date.now();
-              
-              // Mark navigation as complete after a short delay
-              setTimeout(() => {
-                navigationComplete.current = true;
-                console.log("Navigation complete set to true after refresh");
-              }, 100);
-            });
-        }, 100);
+        refreshMessages()
+          .finally(() => {
+            isRefreshing.current = false;
+            lastRefreshTime.current = Date.now();
+            
+            // Mark navigation as complete after a short delay
+            setTimeout(() => {
+              navigationComplete.current = true;
+              console.log("Navigation complete set to true after refresh");
+            }, 100);
+          });
       } else {
         // Mark navigation as complete after a short delay if not refreshing
         setTimeout(() => {

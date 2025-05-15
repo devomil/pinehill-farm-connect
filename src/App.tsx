@@ -45,7 +45,7 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/communication" element={<Communication />} />
             
-            {/* Legacy redirects */}
+            {/* Legacy redirects - ensure these don't create navigation loops */}
             <Route path="/communications" element={<Navigate to="/communication" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

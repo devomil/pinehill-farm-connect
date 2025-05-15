@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -67,14 +68,14 @@ export const CommunicationIndicators: React.FC = () => {
   // Handle navigation to communication pages with debug logging
   const handleAnnouncementsClick = () => {
     console.log("Navigating to announcements tab");
-    navigate("/communication", { replace: false });
+    // Use replace: true to avoid creating excessive history entries
+    navigate("/communication", { replace: true });
   };
   
   const handleMessagesClick = () => {
     console.log("Navigating to messages tab");
-    // Use explicit path with search parameter to ensure proper navigation
-    // CRITICAL: Use replace: false to create a proper history entry
-    navigate("/communication?tab=messages", { replace: false });
+    // Use replace: true for consistent behavior with TabNavigation
+    navigate("/communication?tab=messages", { replace: true });
     
     // Force immediate refresh when clicking on messages, but with a delay
     setTimeout(() => {
