@@ -1,23 +1,20 @@
 
 import React, { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { CommunicationTabs } from "./CommunicationPageTabs";
-import { CommunicationHeader } from "./CommunicationHeader";
 import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
-import { CommunicationContent } from "./CommunicationContent";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
 import { useTabNavigation } from "@/hooks/communications/useTabNavigation";
 import { useDebug } from "@/hooks/useDebug";
 import { useMessageTabDebugger } from "@/hooks/communications/useMessageTabDebugger";
 import { useNavigationDebugger } from "@/hooks/communications/useNavigationDebugger";
-import ErrorBoundary from "@/components/debug/ErrorBoundary";
+import { useNavigationRecovery } from "@/hooks/communications/useNavigationRecovery";
+import { ErrorBoundary } from "@/components/debug/ErrorBoundary";
 import { DebugProvider } from "@/components/debug/DebugProvider";
-import { toast } from "sonner";
-import { DebugButton } from "@/components/debug/DebugButton";
 import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
-import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { CommunicationPageHeader } from "./CommunicationPageHeader";
+import { CommunicationPageContent } from "./CommunicationPageContent";
+import { NavigationWarning } from "./NavigationWarning";
+import { RouteDebugger } from "@/components/debug/RouteDebugger";
+import { toast } from "sonner";
 
 const CommunicationPage: React.FC = () => {
   // Setup component debugging
@@ -61,6 +58,17 @@ const CommunicationPage: React.FC = () => {
   // Connect the message tab debugger - it will only be active when on the messages tab
   const messageDebugger = useMessageTabDebugger(activeTab === 'messages');
 
+  // Use the navigation recovery hook to handle URL parameters and recovery
+  useNavigationRecovery({
+    activeTab,
+    setActiveTab,
+    navigationComplete,
+    refreshMessages,
+    navigationInProgress,
+    showDebugInfo,
+    setShowDebugInfo
+  });
+
   // Log component renders - using our debugging system
   debug.info("CommunicationPage rendering", {
     activeTab, 
@@ -72,59 +80,9 @@ const CommunicationPage: React.FC = () => {
     navLoopDetected: navigationDebugger.hasLoopDetected,
     timeInMessagesTab: navigationDebugger.timeInMessagesTab
   });
-
-  // Effect to sync the URL with the active tab on mount and location changes
-  useEffect(() => {
-    // Check for recovery parameter in URL - this helps break navigation loops
-    const urlParams = new URLSearchParams(location.search);
-    const isRecoveryMode = urlParams.get('recovery') === 'true';
-    
-    if (isRecoveryMode) {
-      // In recovery mode, we ensure navigation is marked as complete
-      navigationComplete.current = true;
-      debug.info("Running in navigation recovery mode");
-      
-      // Force debug mode on in recovery
-      if (!showDebugInfo) {
-        setShowDebugInfo(true);
-      }
-      
-      // Clear recovery parameter but maintain tab parameter
-      if (urlParams.has('recovery')) {
-        urlParams.delete('recovery');
-        const newSearch = urlParams.toString() ? `?${urlParams.toString()}` : '';
-        window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
-      }
-      return;
-    }
-    
-    // Only run this effect if navigation is complete to prevent loops
-    if (!navigationComplete.current) {
-      debug.info("Skipping URL sync, navigation in progress");
-      return;
-    }
-    
-    // Parse URL parameters and update active tab if needed
-    const tabParam = urlParams.get('tab');
-    const newTab = tabParam === 'messages' ? "messages" : "announcements";
-    
-    if (newTab !== activeTab) {
-      debug.info("Syncing tab from URL", { urlTab: newTab, currentTab: activeTab });
-      setActiveTab(newTab);
-      
-      // If switching to messages tab via direct URL, ensure messages are refreshed
-      if (newTab === 'messages' && !navigationInProgress?.current) {
-        debug.info("Direct URL navigation to messages tab, refreshing data");
-        refreshMessages().catch(err => {
-          console.error("Error refreshing messages during URL sync:", err);
-          toast.error("Failed to load messages");
-        });
-      }
-    }
-  }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, navigationInProgress, showDebugInfo, setShowDebugInfo]);
   
   // Automatically show debug info when loop detected
-  useEffect(() => {
+  React.useEffect(() => {
     if (navigationDebugger.hasLoopDetected && !showDebugInfo) {
       setShowDebugInfo(true);
       toast.error("Navigation issue detected", {
@@ -138,59 +96,30 @@ const CommunicationPage: React.FC = () => {
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
         <div className="container mx-auto py-6 max-w-6xl">
-          <CommunicationHeader 
+          <CommunicationPageHeader 
             isAdmin={isAdmin}
-            allEmployees={unfilteredEmployees || []}
+            unfilteredEmployees={unfilteredEmployees || []}
             onAnnouncementCreate={handleAnnouncementCreate}
             onManualRefresh={handleManualRefresh}
             showDebugInfo={showDebugInfo}
             setShowDebugInfo={setShowDebugInfo}
           />
           
-          <div className="flex justify-between mb-4">
-            <div className="flex gap-2">
-              {/* Show recovery button if navigation loop detected */}
-              {navigationDebugger.hasLoopDetected && (
-                <NavigationRecoveryButton 
-                  onRecover={navigationDebugger.attemptRecovery} 
-                  loopDetected={true}
-                />
-              )}
-            </div>
-            <DebugButton 
-              variant="outline" 
-              className="text-xs"
-              onClick={() => setShowDebugInfo(!showDebugInfo)} 
-            />
-          </div>
+          <NavigationWarning 
+            hasLoopDetected={navigationDebugger.hasLoopDetected}
+            attemptRecovery={navigationDebugger.attemptRecovery}
+          />
           
-          {/* Show navigation warning when issues are detected */}
-          {navigationDebugger.hasLoopDetected && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Navigation loop detected in the Messages tab. Use the "Fix Navigation Loop" button above 
-                or add "?recovery=true" to the URL.
-              </AlertDescription>
-            </Alert>
-          )}
+          <RouteDebugger />
           
-          <ErrorBoundary componentName="CommunicationTabs">
-            <CommunicationTabs 
-              activeTab={activeTab} 
-              onTabChange={handleTabChange} 
-              unreadMessages={unreadMessages}
-            />
-          </ErrorBoundary>
-          
-          <ErrorBoundary componentName="CommunicationContent">
-            <CommunicationContent
-              activeTab={activeTab}
-              currentUser={currentUser}
-              unfilteredEmployees={unfilteredEmployees || []}
-              isAdmin={isAdmin}
-            />
-          </ErrorBoundary>
+          <CommunicationPageContent
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            unreadMessages={unreadMessages || []}
+            currentUser={currentUser}
+            unfilteredEmployees={unfilteredEmployees || []}
+            isAdmin={isAdmin}
+          />
           
           {/* Always show debug helper in loop detection mode, otherwise respect user setting */}
           {(showDebugInfo || navigationDebugger.hasLoopDetected) && (

@@ -1,40 +1,22 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonProps } from '@/components/ui/button';
 import { Bug } from 'lucide-react';
-import { useDebugContext } from './DebugProvider';
 
-interface DebugButtonProps {
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
-  className?: string;
-  onClick?: () => void; // Add the onClick prop
+export interface DebugButtonProps extends ButtonProps {
+  onClick?: () => void;
 }
 
-export function DebugButton({
-  variant = 'outline',
-  size = 'sm',
-  className = '',
-  onClick
-}: DebugButtonProps) {
-  const { toggleDebugPanel, showDebugPanel } = useDebugContext();
-
-  // Handle click event, combining the toggleDebugPanel and any custom onClick
-  const handleClick = () => {
-    toggleDebugPanel();
-    if (onClick) onClick();
-  };
-
+export function DebugButton({ onClick, ...props }: DebugButtonProps) {
   return (
-    <Button
-      variant={variant}
-      size={size}
-      onClick={handleClick}
-      className={className}
-      title="Toggle Debug Panel (Ctrl+Shift+D)"
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={onClick}
+      {...props}
     >
-      <Bug className="h-4 w-4 mr-2" />
-      {showDebugPanel ? 'Hide Debug' : 'Debug'}
+      <Bug className="h-3 w-3 mr-1" />
+      Debug
     </Button>
   );
 }
