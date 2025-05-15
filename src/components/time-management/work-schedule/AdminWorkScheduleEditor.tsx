@@ -4,7 +4,6 @@ import { WorkScheduleEditorProps } from "@/types/workSchedule";
 import { format } from "date-fns";
 import { CardDescription } from "@/components/ui/card";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
-import { AdminSchedulingTools } from "./AdminSchedulingTools";
 import { ScheduleEditorContent } from "./ScheduleEditorContent";
 import { NoEmployeeSelected } from "./NoEmployeeSelected";
 
