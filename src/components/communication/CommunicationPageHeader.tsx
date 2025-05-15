@@ -7,7 +7,7 @@ import { User } from "@/types";
 interface CommunicationPageHeaderProps {
   isAdmin: boolean;
   unfilteredEmployees: User[];
-  onAnnouncementCreate: (formData: any) => void; // Updated type to accept formData parameter
+  onAnnouncementCreate: (formData: any) => void;
   onManualRefresh: () => void;
   showDebugInfo: boolean;
   setShowDebugInfo: React.Dispatch<React.SetStateAction<boolean>>;

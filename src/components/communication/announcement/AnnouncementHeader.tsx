@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 interface AnnouncementHeaderProps {
   isAdmin: boolean;
   allEmployees: User[];
-  onAnnouncementCreate: () => void;
+  onAnnouncementCreate: (formData: any) => void; // Updated to accept formData
   loading?: boolean;
 }
 

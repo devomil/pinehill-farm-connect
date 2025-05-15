@@ -13,7 +13,7 @@ import { NewAnnouncementForm } from "@/components/communication/announcement/New
 
 export interface AdminAnnouncementDialogProps {
   allEmployees: User[];
-  onCreate: () => void;
+  onCreate: (formData: any) => void; // Updated to accept formData
   open?: boolean;
   onClose?: () => void;
 }
@@ -37,8 +37,8 @@ export const AdminAnnouncementDialog: React.FC<AdminAnnouncementDialogProps> = (
     }
   };
 
-  const handleCreate = () => {
-    onCreate();
+  const handleCreate = (formData: any) => { // Updated to accept and pass formData
+    onCreate(formData);
     handleOpenChange(false);
   };
 

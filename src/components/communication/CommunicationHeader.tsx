@@ -15,7 +15,7 @@ import { DebugButton } from "@/components/debug/DebugButton";
 interface CommunicationHeaderProps {
   isAdmin: boolean;
   allEmployees: User[];
-  onAnnouncementCreate: (formData: any) => void; // Updated type to accept formData parameter
+  onAnnouncementCreate: (formData: any) => void; // Updated to accept formData
   onManualRefresh: () => void;
   showDebugInfo: boolean;
   setShowDebugInfo: (show: boolean) => void;

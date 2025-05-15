@@ -5,7 +5,7 @@ import { AdminAnnouncementForm } from "@/components/communication/AdminAnnouncem
 
 interface NewAnnouncementFormProps {
   allEmployees: User[];
-  onSubmitSuccess: () => void;
+  onSubmitSuccess: (formData: any) => void; // Updated to accept formData
   initialData?: Announcement;
 }
 
