@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -11,9 +10,10 @@ import { getContentTypeIcon } from "@/components/marketing/components/ContentRen
 interface MarketingContentProps {
   viewAllUrl?: string;
   onViewAllClick?: () => void;
+  clickable?: boolean;
 }
 
-export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, onViewAllClick }) => {
+export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, onViewAllClick, clickable = false }) => {
   const handleButtonClick = (e: React.MouseEvent) => {
     // Stop propagation to prevent parent click handlers from firing
     e.stopPropagation();
@@ -119,7 +119,7 @@ export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, 
       {viewAllUrl && (
         <div className="text-center mt-4">
           <Link to={viewAllUrl} onClick={handleButtonClick}>
-            <Button variant="link" size="sm">
+            <Button variant="warning" size="sm">
               View All Marketing
             </Button>
           </Link>
