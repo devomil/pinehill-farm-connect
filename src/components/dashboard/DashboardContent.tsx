@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { User } from "@/types";
 import { DashboardCalendarSection } from "@/components/dashboard/sections/DashboardCalendarSection";
 import { DashboardScheduleSection } from "@/components/dashboard/sections/DashboardScheduleSection";
@@ -8,13 +8,19 @@ import { DashboardShiftCoverageSection } from "@/components/dashboard/sections/D
 import { DashboardAnnouncementsSection } from "@/components/dashboard/sections/DashboardAnnouncementsSection";
 import { DashboardTrainingSection } from "@/components/dashboard/sections/DashboardTrainingSection";
 import { DashboardMarketingSection } from "@/components/dashboard/sections/DashboardMarketingSection";
+import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowUpDown, EyeOff, Eye, GripVertical, X } from "lucide-react";
+import { Eye, Plus, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
-import { DialogClose } from "@radix-ui/react-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Responsive, WidthProvider } from "react-grid-layout";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface DashboardContentProps {
   isAdmin: boolean;
@@ -38,14 +44,29 @@ interface DashboardContentProps {
   onNextMonth: () => void;
 }
 
-// Widget configuration interface
-interface WidgetConfig {
+// Widget definition interface
+interface WidgetDefinition {
   id: string;
   title: string;
-  visible: boolean;
   columnSpan: number;
   order: number;
   component: React.ReactNode;
+}
+
+// Layout item interface for react-grid-layout
+interface LayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  maxW?: number;
+  minH?: number;
+  maxH?: number;
+  isDraggable?: boolean;
+  isResizable?: boolean;
+  static?: boolean;
 }
 
 export const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -71,9 +92,22 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
 }) => {
   // State for customization mode
   const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
+  const [showHiddenDialog, setShowHiddenDialog] = useState<boolean>(false);
+  const [hasLayoutChanged, setHasLayoutChanged] = useState<boolean>(false);
   
+  // Define default widget heights
+  const defaultHeights: Record<string, number> = {
+    calendar: 12,
+    schedule: 10,
+    timeOff: 10,
+    training: 8,
+    shiftCoverage: 10,
+    marketing: 8,
+    announcements: 10
+  };
+
   // Get saved widget configuration from localStorage if available
-  const getSavedWidgetConfig = (): Record<string, { visible: boolean; order: number; columnSpan: number }> => {
+  const getSavedWidgetConfig = (): Record<string, { visible: boolean; x: number; y: number; w: number; h: number }> => {
     try {
       const saved = localStorage.getItem('dashboardWidgetConfig');
       return saved ? JSON.parse(saved) : {};
@@ -84,7 +118,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
   };
 
   // Store widget configuration
-  const [widgetConfig, setWidgetConfig] = useState<Record<string, { visible: boolean; order: number; columnSpan: number }>>(() => getSavedWidgetConfig());
+  const [widgetConfig, setWidgetConfig] = useState<Record<string, { visible: boolean; x: number; y: number; w: number; h: number }>>(() => getSavedWidgetConfig());
 
   // Initial widget definitions
   const initialWidgets: Record<string, { title: string; columnSpan: number; component: React.ReactNode }> = {
@@ -178,123 +212,176 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
     }
   };
 
-  // Create widgets array
-  const getWidgets = (): WidgetConfig[] => {
-    return Object.entries(initialWidgets).map(([id, widget]) => {
-      const config = widgetConfig[id] || { visible: true, order: 0, columnSpan: widget.columnSpan };
+  // Generate initial layout from widget config or defaults
+  const generateLayout = (): LayoutItem[] => {
+    let y = 0;
+    const layout: LayoutItem[] = [];
+    
+    Object.entries(initialWidgets).forEach(([id, widget], index) => {
+      const config = widgetConfig[id];
+      const isVisible = config ? config.visible !== false : true;
       
-      return {
-        id,
-        title: widget.title,
-        visible: config.visible !== false, // Default to true if not specified
-        columnSpan: config.columnSpan || widget.columnSpan,
-        order: config.order || 0,
-        component: widget.component
-      };
-    }).sort((a, b) => a.order - b.order);
+      if (isVisible) {
+        const w = config?.w || widget.columnSpan * 3; // Scale columns to fit in grid-12
+        const h = config?.h || defaultHeights[id] || 8;
+        
+        layout.push({
+          i: id,
+          x: config?.x !== undefined ? config.x : (layout.length % 2) * 6,
+          y: config?.y !== undefined ? config.y : y,
+          w,
+          h,
+          minW: 3,
+          minH: 4,
+          isDraggable: true,
+          isResizable: true
+        });
+        
+        // Increment y for default layout
+        if (layout.length % 2 === 0) y += 10;
+      }
+    });
+    
+    return layout;
   };
 
-  const [widgets, setWidgets] = useState<WidgetConfig[]>(getWidgets());
+  const [currentLayout, setCurrentLayout] = useState<LayoutItem[]>(generateLayout);
   const [hiddenWidgets, setHiddenWidgets] = useState<string[]>([]);
-
+  
   // Update hidden widgets list
   useEffect(() => {
-    const hidden = widgets.filter(widget => !widget.visible).map(widget => widget.id);
+    const hidden = Object.entries(widgetConfig)
+      .filter(([_, config]) => !config.visible)
+      .map(([id]) => id);
     setHiddenWidgets(hidden);
-  }, [widgets]);
+  }, [widgetConfig]);
 
   // Save the widget configuration to localStorage
-  useEffect(() => {
+  const saveLayout = () => {
     try {
-      const config: Record<string, { visible: boolean; order: number; columnSpan: number }> = {};
-      widgets.forEach(widget => {
-        config[widget.id] = {
-          visible: widget.visible,
-          order: widget.order,
-          columnSpan: widget.columnSpan
+      const config: Record<string, { visible: boolean; x: number; y: number; w: number; h: number }> = {};
+      
+      // Process visible widgets from current layout
+      currentLayout.forEach(item => {
+        config[item.i] = {
+          visible: true,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h
         };
       });
+      
+      // Add hidden widgets
+      Object.entries(widgetConfig)
+        .filter(([_, cfg]) => !cfg.visible)
+        .forEach(([id, cfg]) => {
+          config[id] = { ...cfg, visible: false };
+        });
+      
       localStorage.setItem('dashboardWidgetConfig', JSON.stringify(config));
       setWidgetConfig(config);
+      setHasLayoutChanged(false);
+      toast.success("Dashboard layout saved");
     } catch (e) {
       console.error("Failed to save dashboard config:", e);
+      toast.error("Failed to save layout");
     }
-  }, [widgets]);
+  };
+
+  // Handle layout changes
+  const handleLayoutChange = (layout: LayoutItem[]) => {
+    setCurrentLayout(layout);
+    setHasLayoutChanged(true);
+  };
 
   // Toggle widget visibility
   const toggleWidgetVisibility = (id: string) => {
-    setWidgets(prev => 
-      prev.map(widget => 
-        widget.id === id 
-          ? { ...widget, visible: !widget.visible } 
-          : widget
-      )
-    );
-    toast.success(`${widgets.find(w => w.id === id)?.visible ? "Hidden" : "Showed"} ${widgets.find(w => w.id === id)?.title} widget`);
-  };
-
-  // Move widget up in order
-  const moveWidgetUp = (id: string) => {
-    setWidgets(prev => {
-      const index = prev.findIndex(widget => widget.id === id);
-      if (index <= 0) return prev;
+    if (widgetConfig[id]?.visible === false) {
+      // Show the widget
+      const newWidgetConfig = { ...widgetConfig };
+      newWidgetConfig[id] = { 
+        ...newWidgetConfig[id],
+        visible: true 
+      };
+      setWidgetConfig(newWidgetConfig);
       
-      const newWidgets = [...prev];
+      // Add it to the layout
+      const widget = initialWidgets[id];
+      const newItem: LayoutItem = {
+        i: id,
+        x: 0,
+        y: 0,
+        w: widget.columnSpan * 3,
+        h: defaultHeights[id] || 8,
+        minW: 3,
+        minH: 4,
+        isDraggable: true,
+        isResizable: true
+      };
       
-      // Swap orders
-      const tempOrder = newWidgets[index].order;
-      newWidgets[index].order = newWidgets[index - 1].order;
-      newWidgets[index - 1].order = tempOrder;
-      
-      // Re-sort based on new orders
-      return [...newWidgets].sort((a, b) => a.order - b.order);
-    });
-  };
-
-  // Move widget down in order
-  const moveWidgetDown = (id: string) => {
-    setWidgets(prev => {
-      const index = prev.findIndex(widget => widget.id === id);
-      if (index >= prev.length - 1) return prev;
-      
-      const newWidgets = [...prev];
-      
-      // Swap orders
-      const tempOrder = newWidgets[index].order;
-      newWidgets[index].order = newWidgets[index + 1].order;
-      newWidgets[index + 1].order = tempOrder;
-      
-      // Re-sort based on new orders
-      return [...newWidgets].sort((a, b) => a.order - b.order);
-    });
-  };
-
-  // Toggle customization mode
-  const toggleCustomizationMode = () => {
-    setIsCustomizing(prev => !prev);
-    if (isCustomizing) {
-      toast.success("Dashboard layout saved");
+      setCurrentLayout([...currentLayout, newItem]);
+      toast.success(`Added ${initialWidgets[id].title} to dashboard`);
     } else {
-      toast.info("Customization mode active - drag widgets to rearrange");
+      // Hide the widget
+      const newWidgetConfig = { ...widgetConfig };
+      const currentWidgetConfig = newWidgetConfig[id] || { 
+        visible: true,
+        x: 0,
+        y: 0,
+        w: initialWidgets[id].columnSpan * 3,
+        h: defaultHeights[id] || 8
+      };
+      
+      // Store position before hiding
+      newWidgetConfig[id] = { 
+        ...currentWidgetConfig,
+        visible: false 
+      };
+      
+      setWidgetConfig(newWidgetConfig);
+      setCurrentLayout(currentLayout.filter(item => item.i !== id));
+      toast.success(`Removed ${initialWidgets[id].title} from dashboard`);
     }
+    
+    setHasLayoutChanged(true);
   };
 
   // Reset to default layout
   const resetLayout = () => {
-    const defaultLayout = Object.entries(initialWidgets).map(([id, widget], index) => ({
-      id,
-      title: widget.title,
-      visible: true,
-      columnSpan: widget.columnSpan,
-      order: index,
-      component: widget.component
-    }));
-    
-    setWidgets(defaultLayout);
     localStorage.removeItem('dashboardWidgetConfig');
+    setWidgetConfig({});
+    setCurrentLayout(generateLayout());
     toast.success("Dashboard reset to default layout");
-    setIsCustomizing(false);
+    setHasLayoutChanged(false);
   };
+  
+  // Toggle customization mode
+  const toggleCustomizationMode = () => {
+    if (isCustomizing && hasLayoutChanged) {
+      // Prompt to save changes
+      saveLayout();
+    }
+    setIsCustomizing(prev => !prev);
+    if (!isCustomizing) {
+      toast.info("Customization mode active - drag widgets to rearrange or resize");
+    }
+  };
+  
+  // Cancel customization without saving
+  const cancelCustomization = () => {
+    setCurrentLayout(generateLayout());
+    setHasLayoutChanged(false);
+    setIsCustomizing(false);
+    toast.info("Changes canceled");
+  };
+
+  // Draggable handle class for grid layout
+  const dragHandleClass = "drag-handle";
+
+  // Responsive breakpoints
+  const breakpoints = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
+  const cols = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
 
   return (
     <div className="space-y-6">
@@ -304,20 +391,57 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Dashboard</CardTitle>
-              <CardDescription>Customize your dashboard layout</CardDescription>
+              <CardDescription>Your personalized dashboard</CardDescription>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button
-                variant={isCustomizing ? "accent" : "outline"}
-                onClick={toggleCustomizationMode}
-                className="flex items-center gap-1"
-              >
-                {isCustomizing ? "Save Layout" : "Customize Layout"}
-              </Button>
-              <Dialog>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              {isCustomizing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelCustomization}
+                    disabled={!hasLayoutChanged}
+                    className="flex items-center gap-1"
+                  >
+                    Cancel
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetLayout}
+                    className="flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    Reset
+                  </Button>
+                  
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    onClick={saveLayout}
+                    disabled={!hasLayoutChanged}
+                    className="flex items-center gap-1"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save Layout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleCustomizationMode}
+                  className="flex items-center gap-1"
+                >
+                  Customize Layout
+                </Button>
+              )}
+              
+              <Dialog open={showHiddenDialog} onOpenChange={setShowHiddenDialog}>
                 <DialogTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" size="sm">
                     <Eye className="mr-1 h-4 w-4" />
                     Manage Widgets
                   </Button>
@@ -331,53 +455,81 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
                   </DialogHeader>
                   
                   <div className="grid gap-4 py-4">
-                    <Tabs defaultValue="visible" className="w-full">
-                      <TabsList className="grid grid-cols-2 mb-4">
-                        <TabsTrigger value="visible">Visible ({widgets.filter(w => w.visible).length})</TabsTrigger>
-                        <TabsTrigger value="hidden">Hidden ({widgets.filter(w => !w.visible).length})</TabsTrigger>
+                    <Tabs defaultValue="visible">
+                      <TabsList className="grid grid-cols-2 w-full">
+                        <TabsTrigger value="visible">
+                          Visible ({currentLayout.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="hidden">
+                          Hidden ({Object.keys(initialWidgets).length - currentLayout.length})
+                        </TabsTrigger>
                       </TabsList>
                       
-                      <TabsContent value="visible">
+                      <TabsContent value="visible" className="h-[320px] overflow-y-auto">
                         <div className="space-y-2">
-                          {widgets.filter(widget => widget.visible).map(widget => (
-                            <div key={widget.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                              <div className="flex items-center">
-                                <GripVertical className="h-4 w-4 mr-2 text-gray-400" />
-                                <span>{widget.title}</span>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleWidgetVisibility(widget.id)}
-                              >
-                                <EyeOff className="h-4 w-4" />
-                                <span className="sr-only">Hide {widget.title}</span>
-                              </Button>
+                          {currentLayout.length > 0 ? (
+                            currentLayout.map(item => {
+                              const widget = initialWidgets[item.i];
+                              return (
+                                <div key={item.i} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                  <span className="font-medium">{widget.title}</span>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => toggleWidgetVisibility(item.i)}
+                                        >
+                                          <EyeOff className="h-4 w-4" />
+                                          <span className="sr-only">Hide {widget.title}</span>
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Hide from dashboard</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="text-center p-4 text-gray-500">
+                              No visible widgets
                             </div>
-                          ))}
+                          )}
                         </div>
                       </TabsContent>
                       
-                      <TabsContent value="hidden">
+                      <TabsContent value="hidden" className="h-[320px] overflow-y-auto">
                         <div className="space-y-2">
-                          {widgets.filter(widget => !widget.visible).length > 0 ? (
-                            widgets.filter(widget => !widget.visible).map(widget => (
-                              <div key={widget.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                                <span>{widget.title}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleWidgetVisibility(widget.id)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  <span className="sr-only">Show {widget.title}</span>
-                                </Button>
+                          {hiddenWidgets.length > 0 ? (
+                            hiddenWidgets.map(id => (
+                              <div key={id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                <span className="font-medium">{initialWidgets[id].title}</span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => toggleWidgetVisibility(id)}
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                        <span className="sr-only">Show {initialWidgets[id].title}</span>
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Add to dashboard</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </div>
                             ))
                           ) : (
-                            <p className="text-center text-gray-500 py-4">
+                            <div className="text-center p-4 text-gray-500">
                               No hidden widgets
-                            </p>
+                            </div>
                           )}
                         </div>
                       </TabsContent>
@@ -385,12 +537,9 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
                   </div>
                   
                   <DialogFooter>
-                    <Button variant="outline" onClick={resetLayout}>
-                      Reset Layout
+                    <Button onClick={() => setShowHiddenDialog(false)} variant="accent">
+                      Done
                     </Button>
-                    <DialogClose asChild>
-                      <Button variant="accent">Done</Button>
-                    </DialogClose>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -401,80 +550,78 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({
       
       {isCustomizing && (
         <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h3 className="font-medium text-blue-700">Customization Mode</h3>
-              <p className="text-sm text-blue-600">Rearrange your widgets by dragging them to your preferred position</p>
+              <p className="text-sm text-blue-600">
+                {hasLayoutChanged 
+                  ? "Drag to reposition widgets • Resize using the bottom-right corner"
+                  : "Drag widgets to reposition • Resize using the bottom-right corner"
+                }
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={resetLayout}>
-                Reset Layout
-              </Button>
-              <Button variant="accent" size="sm" onClick={toggleCustomizationMode}>
-                Save Changes
-              </Button>
+              {hasLayoutChanged && (
+                <>
+                  <Button variant="outline" size="sm" onClick={cancelCustomization}>
+                    Cancel
+                  </Button>
+                  <Button variant="accent" size="sm" onClick={saveLayout}>
+                    Save Changes
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
       
       {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {widgets
-          .filter(widget => widget.visible)
-          .map(widget => (
-            <div 
-              key={widget.id}
-              className={`${
-                widget.columnSpan === 2 ? "md:col-span-2" : "md:col-span-1"
-              } ${isCustomizing ? "cursor-move" : ""}`}
-            >
-              {isCustomizing ? (
-                <div className="relative group bg-white p-4 rounded-lg border-2 border-dashed border-blue-300 min-h-[100px]">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <GripVertical className="h-5 w-5 mr-2 text-blue-500" />
-                      <h3 className="font-medium">{widget.title}</h3>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => moveWidgetUp(widget.id)}
-                        className="h-8 w-8 p-1"
-                      >
-                        <ArrowUpDown className="h-4 w-4 rotate-90" />
-                        <span className="sr-only">Move {widget.title} up</span>
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => toggleWidgetVisibility(widget.id)}
-                        className="h-8 w-8 p-1"
-                      >
-                        <EyeOff className="h-4 w-4" />
-                        <span className="sr-only">Hide {widget.title}</span>
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="py-4 text-center text-sm text-gray-500">
-                    {widget.title} Widget
-                  </div>
-                </div>
-              ) : (
-                widget.component
-              )}
-            </div>
-          ))}
+      <div className="grid-dashboard">
+        <ResponsiveGridLayout
+          className="layout"
+          layouts={{ lg: currentLayout, md: currentLayout, sm: currentLayout, xs: currentLayout, xxs: currentLayout }}
+          breakpoints={breakpoints}
+          cols={cols}
+          rowHeight={30}
+          containerPadding={[0, 0]}
+          margin={[16, 16]}
+          onLayoutChange={handleLayoutChange}
+          isDraggable={isCustomizing}
+          isResizable={isCustomizing}
+          draggableHandle={`.${dragHandleClass}`}
+          compactType="vertical"
+          useCSSTransforms={true}
+        >
+          {currentLayout.map(item => {
+            const widgetId = item.i;
+            const widget = initialWidgets[widgetId];
+            
+            if (!widget) return null;
+            
+            return (
+              <div key={widgetId} className="h-full">
+                <DashboardWidget
+                  title={widget.title}
+                  isCustomizing={isCustomizing}
+                  onRemove={() => toggleWidgetVisibility(widgetId)}
+                  dragHandleClass={dragHandleClass}
+                  className="h-full"
+                >
+                  {widget.component}
+                </DashboardWidget>
+              </div>
+            );
+          })}
+        </ResponsiveGridLayout>
       </div>
       
       {/* Hidden Widgets Indicator */}
       {hiddenWidgets.length > 0 && !isCustomizing && (
         <Button 
-          variant="outline" 
+          variant="outline"
+          onClick={() => setShowHiddenDialog(true)}
           className="mt-4"
-          onClick={() => document.querySelector('[data-dialog-trigger="true"]')?.dispatchEvent(new MouseEvent('click'))}
         >
           <Eye className="mr-2 h-4 w-4" />
           {hiddenWidgets.length} hidden widget{hiddenWidgets.length !== 1 ? 's' : ''}

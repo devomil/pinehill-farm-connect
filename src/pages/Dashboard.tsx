@@ -9,6 +9,7 @@ import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { useDashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 import { useDashboardNavigation } from "@/components/dashboard/DashboardNavigationHandlers";
 import { TimeManagementProvider } from "@/contexts/timeManagement";
+import "@/components/dashboard/DashboardGrid.css";
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
