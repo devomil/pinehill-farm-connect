@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { User } from "@/types";
 import { EmployeeDropdownSelect } from "./EmployeeDropdownSelect";
 import { EmployeeConversationView } from "./EmployeeConversationView";
@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmployeeCommunicationsHeader } from "./EmployeeCommunicationsHeader";
 import { EmployeeCommunicationDebug } from "./EmployeeCommunicationDebug";
+import { useConversationContext } from "@/hooks/communications/useConversationContext";
 
 interface EmployeeCommunicationMobileProps {
   selectedEmployee: User | null;
@@ -42,44 +43,17 @@ export function EmployeeCommunicationMobile({
   currentUser,
   unreadMessages = []
 }: EmployeeCommunicationMobileProps) {
-  const [searchQuery, setSearchQuery] = React.useState("");
-
-  // Get filtered messages for the selected employee
-  const filteredMessages = selectedEmployee
-    ? processedMessages.filter(
-        (message) =>
-          (message.sender_id === selectedEmployee.id && message.recipient_id === currentUser?.id) ||
-          (message.recipient_id === selectedEmployee.id && message.sender_id === currentUser?.id)
-      )
-    : [];
-      
-  // Get conversation partners to show recent conversations
-  const conversationPartners = React.useMemo(() => {
-    const uniqueIds = new Set<string>();
-    const partners: User[] = [];
-    
-    processedMessages.forEach(message => {
-      const otherId = message.sender_id === currentUser?.id ? message.recipient_id : message.sender_id;
-      if (!uniqueIds.has(otherId)) {
-        uniqueIds.add(otherId);
-        const partner = unfilteredEmployees.find(emp => emp.id === otherId);
-        if (partner) partners.push(partner);
-      }
-    });
-    
-    return partners;
-  }, [processedMessages, unfilteredEmployees, currentUser]);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const { filteredMessages, conversationPartners, createMessageSender } = useConversationContext(
+    selectedEmployee,
+    processedMessages,
+    currentUser,
+    unfilteredEmployees
+  );
 
   // Handle sending message to selected employee
-  const handleSendMessage = (message: string) => {
-    if (!selectedEmployee || !currentUser) return;
-    
-    return sendMessage({
-      recipientId: selectedEmployee.id,
-      message,
-      type: "general",
-    });
-  };
+  const handleSendMessage = createMessageSender(selectedEmployee, currentUser, sendMessage);
 
   // Clear selected employee
   const handleBack = () => {
