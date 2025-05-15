@@ -14,20 +14,26 @@ export interface NavItem {
   section?: 'main' | 'communication' | 'tools'; // To categorize nav items
 }
 
+// Factory function to create icons
+const createIcon = (Icon: React.FC<any>) => {
+  return ({ className = "h-5 w-5 mr-3" }: { className?: string }) => 
+    <Icon className={className} />;
+};
+
 // Main navigation items
 export const mainNavItems: NavItem[] = [
   {
     id: "dashboard",
     path: "/dashboard",
     label: "Dashboard",
-    icon: <Home className="h-5 w-5 mr-3" />,
+    icon: createIcon(Home)({ className: "h-5 w-5 mr-3" }),
     section: 'main',
   },
   {
     id: "employees",
     path: "/employees",
     label: "Employees",
-    icon: <Users className="h-5 w-5 mr-3" />,
+    icon: createIcon(Users)({ className: "h-5 w-5 mr-3" }),
     section: 'main',
     role: "admin",
   },
@@ -35,7 +41,7 @@ export const mainNavItems: NavItem[] = [
     id: "time",
     path: "/time",
     label: "Time Management",
-    icon: <CalendarIcon className="h-5 w-5 mr-3" />,
+    icon: createIcon(CalendarIcon)({ className: "h-5 w-5 mr-3" }),
     section: 'main',
   },
 ];
@@ -46,14 +52,14 @@ export const communicationNavItems: NavItem[] = [
     id: "announcements",
     path: "/communication",
     label: "Announcements",
-    icon: <Megaphone className="h-5 w-5 mr-3" />,
+    icon: createIcon(Megaphone)({ className: "h-5 w-5 mr-3" }),
     section: 'communication',
   },
   {
     id: "messages",
     path: "/communication?tab=messages",
     label: "Messages",
-    icon: <MessageSquare className="h-5 w-5 mr-3" />,
+    icon: createIcon(MessageSquare)({ className: "h-5 w-5 mr-3" }),
     section: 'communication',
   }
 ];
@@ -64,28 +70,28 @@ export const toolsNavItems: NavItem[] = [
     id: "reports",
     path: "/reports",
     label: "Reports",
-    icon: <BarChart3 className="h-5 w-5 mr-3" />,
+    icon: createIcon(BarChart3)({ className: "h-5 w-5 mr-3" }),
     section: 'tools',
   },
   {
     id: "marketing",
     path: "/marketing",
     label: "Marketing",
-    icon: <Image className="h-5 w-5 mr-3" />,
+    icon: createIcon(Image)({ className: "h-5 w-5 mr-3" }),
     section: 'tools',
   },
   {
     id: "training",
     path: "/training",
     label: "Training Portal",
-    icon: <BookOpen className="h-5 w-5 mr-3" />,
+    icon: createIcon(BookOpen)({ className: "h-5 w-5 mr-3" }),
     section: 'tools',
   },
   {
     id: "admin-training",
     path: "/admin-training",
     label: "Training Admin",
-    icon: <BookOpenCheck className="h-5 w-5 mr-3" />,
+    icon: createIcon(BookOpenCheck)({ className: "h-5 w-5 mr-3" }),
     section: 'tools',
     role: "admin",
   }
