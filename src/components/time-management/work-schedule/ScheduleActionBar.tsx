@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CheckSquare } from "lucide-react";
+import { PlusCircle, CalendarDays, Clock, Loader2, RefreshCw, X, Check } from "lucide-react";
 
 interface ScheduleActionBarProps {
   bulkMode: string | null;
@@ -23,45 +23,58 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
   onReset
 }) => {
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         variant="outline"
         size="sm"
-        onClick={() => onSetBulkMode("weekdays")}
+        onClick={() => onSetBulkMode("weekday")}
         disabled={loading || selectionMode === "multiple"}
       >
+        <CalendarDays className="h-4 w-4 mr-1" />
         Add Weekday Shifts
       </Button>
+      
       <Button
         variant="outline"
         size="sm"
         onClick={() => onSetBulkMode("weekend")}
         disabled={loading || selectionMode === "multiple"}
       >
+        <CalendarDays className="h-4 w-4 mr-1" />
         Add Weekend Shifts
       </Button>
+
       <Button
-        variant={selectionMode === "multiple" ? "default" : "outline"}
+        variant={selectionMode === "multiple" ? "secondary" : "outline"}
         size="sm"
         onClick={onToggleSelectionMode}
-        disabled={loading || bulkMode !== null}
-        className="flex items-center gap-1"
+        disabled={loading}
+        className="flex items-center"
       >
         {selectionMode === "multiple" ? (
           <>
-            <CheckSquare className="h-4 w-4" /> 
-            {selectedCount > 0 ? `${selectedCount} Day${selectedCount !== 1 ? 's' : ''} Selected` : 'Done Selecting'}
+            <Check className="h-4 w-4 mr-1" />
+            {selectedCount > 0 ? `${selectedCount} Days Selected` : "Select Specific Days"}
           </>
         ) : (
-          'Select Specific Days'
+          <>
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Select Specific Days
+          </>
         )}
       </Button>
+      
       <Button
-        variant="outline" 
+        variant="outline"
         size="sm"
         onClick={onReset}
         disabled={loading}
       >
+        {loading ? (
+          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+        ) : (
+          <RefreshCw className="h-4 w-4 mr-1" />
+        )}
         Reset Schedule
       </Button>
     </div>

@@ -1,8 +1,8 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, SquareCheck } from "lucide-react";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, CheckSquare } from "lucide-react";
 
 interface CalendarNavigationProps {
   currentMonth: Date;
@@ -19,42 +19,29 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   selectionMode,
   selectedCount = 0
 }) => {
-  const monthLabel = format(currentMonth, "MMMM yyyy");
-  
   return (
     <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onPreviousMonth}
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
+      <div className="flex items-center">
+        <h3 className="text-lg font-medium">
+          {format(currentMonth, "MMMM yyyy")}
+        </h3>
         
-        <h3 className="font-medium">{monthLabel}</h3>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onNextMonth}
-          aria-label="Next month"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+        {selectionMode === "multiple" && selectedCount > 0 && (
+          <div className="ml-4 flex items-center text-sm text-primary">
+            <CheckSquare className="h-4 w-4 mr-1" />
+            <span>{selectedCount} {selectedCount === 1 ? 'day' : 'days'} selected</span>
+          </div>
+        )}
       </div>
       
-      {selectionMode === "multiple" && (
-        <div className="flex items-center text-sm text-muted-foreground">
-          <SquareCheck className="h-4 w-4 mr-1" />
-          <span>
-            {selectedCount > 0
-              ? `${selectedCount} ${selectedCount === 1 ? 'day' : 'days'} selected`
-              : 'Selection mode'}
-          </span>
-        </div>
-      )}
+      <div className="flex items-center gap-1">
+        <Button variant="outline" size="icon" onClick={onPreviousMonth}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="icon" onClick={onNextMonth}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
