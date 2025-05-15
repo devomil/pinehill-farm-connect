@@ -1,0 +1,186 @@
+
+import React from "react";
+import { DashboardCalendarSection } from "@/components/dashboard/sections/DashboardCalendarSection";
+import { DashboardScheduleSection } from "@/components/dashboard/sections/DashboardScheduleSection";
+import { DashboardTimeOffSection } from "@/components/dashboard/sections/DashboardTimeOffSection";
+import { DashboardShiftCoverageSection } from "@/components/dashboard/sections/DashboardShiftCoverageSection";
+import { DashboardAnnouncementsSection } from "@/components/dashboard/sections/DashboardAnnouncementsSection";
+import { DashboardTrainingSection } from "@/components/dashboard/sections/DashboardTrainingSection";
+import { DashboardMarketingSection } from "@/components/dashboard/sections/DashboardMarketingSection";
+import { User } from "@/types/index";
+
+interface UseDashboardWidgetsProps {
+  isAdmin: boolean;
+  pendingTimeOff: any[] | null;
+  userTimeOff: any[] | null;
+  shiftCoverageMessages: any[] | null;
+  announcements: any[] | null;
+  assignedTrainings: any[] | null;
+  currentUser: User;
+  scheduleData: any;
+  scheduleLoading: boolean;
+  date: Date;
+  currentMonth: Date;
+  viewMode: "month" | "team";
+  dashboardDataLoading: boolean;
+  dashboardDataError: Error | null;
+  handleRefreshData: () => void;
+  onDateSelect: (date: Date | undefined) => void;
+  onViewModeChange: (value: "month" | "team") => void;
+  onPreviousMonth: () => void;
+  onNextMonth: () => void;
+}
+
+export function useDashboardWidgets(props: UseDashboardWidgetsProps) {
+  // Default heights for widgets
+  const defaultHeights: Record<string, number> = {
+    calendar: 12,
+    schedule: 10,
+    timeOff: 10,
+    training: 8,
+    shiftCoverage: 10,
+    marketing: 8,
+    announcements: 10
+  };
+
+  const columnSpans: Record<string, number> = {
+    calendar: 6,
+    schedule: 6,
+    timeOff: 3,
+    training: 3,
+    shiftCoverage: 6,
+    marketing: 3,
+    announcements: 6
+  };
+
+  // Define widget definitions and components
+  const initialWidgetDefinitions: Record<string, { title: string; columnSpan: number }> = {
+    calendar: {
+      title: "Calendar",
+      columnSpan: columnSpans.calendar
+    },
+    schedule: {
+      title: "Work Schedule",
+      columnSpan: columnSpans.schedule
+    },
+    timeOff: {
+      title: "Time Off",
+      columnSpan: columnSpans.timeOff
+    },
+    training: {
+      title: "Training",
+      columnSpan: columnSpans.training
+    },
+    shiftCoverage: {
+      title: "Shift Coverage",
+      columnSpan: columnSpans.shiftCoverage
+    },
+    marketing: {
+      title: "Marketing",
+      columnSpan: columnSpans.marketing
+    },
+    announcements: {
+      title: "Announcements",
+      columnSpan: columnSpans.announcements
+    }
+  };
+
+  // Widget components
+  const widgetComponents: Record<string, { title: string; component: React.ReactNode }> = {
+    calendar: {
+      title: "Calendar",
+      component: (
+        <DashboardCalendarSection 
+          date={props.date}
+          currentMonth={props.currentMonth}
+          viewMode={props.viewMode}
+          currentUser={props.currentUser}
+          onDateSelect={props.onDateSelect}
+          onViewModeChange={props.onViewModeChange}
+          onPreviousMonth={props.onPreviousMonth}
+          onNextMonth={props.onNextMonth}
+          viewAllUrl="/time?tab=team-calendar"
+        />
+      )
+    },
+    schedule: {
+      title: "Work Schedule",
+      component: (
+        <DashboardScheduleSection
+          isAdmin={props.isAdmin}
+          scheduleData={props.scheduleData}
+          scheduleLoading={props.scheduleLoading}
+          viewAllUrl="/time?tab=work-schedules"
+        />
+      )
+    },
+    timeOff: {
+      title: "Time Off",
+      component: (
+        <DashboardTimeOffSection 
+          isAdmin={props.isAdmin}
+          pendingTimeOff={props.pendingTimeOff}
+          userTimeOff={props.userTimeOff}
+          dashboardDataLoading={props.dashboardDataLoading}
+          dashboardDataError={props.dashboardDataError}
+          handleRefreshData={props.handleRefreshData}
+          viewAllUrl="/time?tab=my-requests"
+        />
+      )
+    },
+    training: {
+      title: "Training",
+      component: (
+        <DashboardTrainingSection 
+          assignedTrainings={props.assignedTrainings}
+          viewAllUrl="/training"
+        />
+      )
+    },
+    shiftCoverage: {
+      title: "Shift Coverage",
+      component: props.currentUser ? (
+        <DashboardShiftCoverageSection
+          shiftCoverageMessages={props.shiftCoverageMessages}
+          currentUser={props.currentUser}
+          dashboardDataLoading={props.dashboardDataLoading}
+          dashboardDataError={props.dashboardDataError}
+          handleRefreshData={props.handleRefreshData}
+          viewAllUrl="/time?tab=shift-coverage"
+        />
+      ) : null
+    },
+    marketing: {
+      title: "Marketing",
+      component: (
+        <DashboardMarketingSection 
+          viewAllUrl="/marketing"
+        />
+      )
+    },
+    announcements: {
+      title: "Announcements",
+      component: (
+        <DashboardAnnouncementsSection
+          announcements={props.announcements}
+          isAdmin={props.isAdmin}
+          viewAllUrl="/communication?tab=announcements"
+        />
+      )
+    }
+  };
+
+  // Grid configuration
+  const gridConfig = {
+    breakpoints: { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 },
+    cols: { lg: 12, md: 12, sm: 12, xs: 6, xxs: 2 }
+  };
+
+  return {
+    defaultHeights,
+    columnSpans,
+    initialWidgetDefinitions,
+    widgetComponents,
+    gridConfig
+  };
+}
