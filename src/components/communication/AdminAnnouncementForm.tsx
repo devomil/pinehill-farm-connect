@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import { AnnouncementAttachments } from "./AnnouncementAttachments";
 
 interface AdminAnnouncementFormProps {
   allEmployees: User[];
-  onCreate: () => void;
+  onCreate: (formData: any) => void; // Updated to accept formData
   closeDialog: () => void;
   initialData?: Announcement;
 }
@@ -40,10 +41,10 @@ export const AdminAnnouncementForm: React.FC<AdminAnnouncementFormProps> = ({
     setSelectedUserIds,
     attachments,
     setAttachments,
-    requiresAcknowledgment,
-    setRequiresAcknowledgment,
     loading,
-    handleCreate
+    handleCreate,
+    requiresAcknowledgment,
+    setRequiresAcknowledgment
   } = useAnnouncementForm({
     allEmployees,
     onCreate,

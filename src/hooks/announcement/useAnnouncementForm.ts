@@ -5,7 +5,7 @@ import { useAnnouncementSubmit } from "./useAnnouncementSubmit";
 
 interface UseAnnouncementFormProps {
   allEmployees: User[];
-  onCreate: () => void;
+  onCreate: (formData: any) => void; // Updated to accept formData
   closeDialog: () => void;
   currentUser: User | null;
   initialData?: Announcement;
@@ -37,6 +37,17 @@ export const useAnnouncementForm = ({
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const formData = {
+      title,
+      content,
+      priority,
+      hasQuiz,
+      targetType,
+      attachments: attachments.map(f => ({ name: f.name, size: f.size, type: f.type })),
+      requiresAcknowledgment,
+      selectedUserIds
+    };
+
     const success = await handleSubmit(
       {
         title,
@@ -55,7 +66,7 @@ export const useAnnouncementForm = ({
     if (success) {
       closeDialog();
       setTimeout(() => {
-        onCreate();
+        onCreate(formData); // Pass the formData to onCreate
       }, 500);
       resetForm();
     }

@@ -7,7 +7,7 @@ import { validateUuid } from "@/utils/validators";
 
 interface UseAnnouncementSubmitProps {
   currentUser: User | null;
-  onCreate: () => void;
+  onCreate: (formData: any) => void; // Updated to accept formData
   closeDialog: () => void;
   initialData?: Announcement;
 }
