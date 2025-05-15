@@ -12,11 +12,17 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
     const routeMap = new Map<string, T>();
     
     // Normalize paths by removing query parameters
-    const normalizePath = (path: string): string => path.split('?')[0];
+    const normalizePath = (path: string): string => {
+      // Handle undefined paths
+      if (!path) return '/';
+      
+      // Remove query parameters and trailing slashes
+      return path.split('?')[0].replace(/\/+$/, '') || '/';
+    };
     
-    // Process routes to keep only unique paths (most recent definition wins)
+    // Process routes to keep only unique normalized paths (most recent definition wins)
     routes.forEach(route => {
-      // Determine the path to use as key, normalizing it
+      // Determine the path to use as key
       const pathToUse = route.path || route.to || '/';
       const normalizedPath = normalizePath(pathToUse);
       

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,7 +10,6 @@ import TimeManagement from "@/pages/TimeManagement";
 import Calendar from "@/pages/Calendar";
 import Training from "@/pages/Training";
 import Marketing from "@/pages/Marketing";
-import Employee from "@/pages/Employee";
 import Employees from "@/pages/Employees";
 import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
@@ -39,12 +37,12 @@ function App() {
     { id: "calendar", path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
     { id: "training", path: "/training", element: <Training /> },
     { id: "marketing", path: "/marketing", element: <Marketing /> },
-    { id: "employee", path: "/employee", element: <Navigate to="/employees" replace /> },
     { id: "employees", path: "/employees", element: <Employees /> },
     { id: "reports", path: "/reports", element: <Reports /> },
     { id: "communication", path: "/communication", element: <Communication /> },
     
-    // Legacy redirects
+    // Legacy redirects - keep these at the end so they don't override active routes
+    { id: "employee-legacy", path: "/employee", element: <Navigate to="/employees" replace /> },
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
