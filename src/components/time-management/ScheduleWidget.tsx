@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { format, addMonths, subMonths } from "date-fns";
 import { CalendarNavigation } from "@/components/calendar/CalendarNavigation";
 import { CalendarDay } from "@/components/calendar/CalendarDay";
+import { CalendarLegend } from "@/components/calendar/CalendarLegend";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";
@@ -96,6 +97,8 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ currentUser }) =
             }}
           />
         </div>
+        
+        <CalendarLegend />
         
         <div className="text-center mt-4">
           <Link to="/time-management">

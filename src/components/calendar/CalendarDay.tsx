@@ -36,7 +36,7 @@ export const CalendarDay: React.FC<CalendarDayProps> = ({
     <div className="relative h-full">
       <div {...safeHtmlProps}>
         {/* Make sure the day number is visible */}
-        <div className="text-sm font-medium">{format(dayDate, "d")}</div>
+        <div className="text-sm font-medium relative z-10">{format(dayDate, "d")}</div>
       </div>
       <CalendarDayContent day={dayDate} eventsMap={eventsMap} />
     </div>

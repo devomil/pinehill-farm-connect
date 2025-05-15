@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import { useTimeManagement } from "@/contexts/timeManagement";
 import { CalendarDay } from "./CalendarDay";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { eachDayOfInterval, startOfMonth, endOfMonth, format } from "date-fns";
+import { CalendarLegend } from "./CalendarLegend";
 
 interface CalendarContentProps {
   date: Date;
@@ -127,6 +127,8 @@ export function CalendarContent({
             <TeamCalendar currentUser={currentUser} />
           </TabsContent>
         </Tabs>
+        
+        <CalendarLegend />
         
         {viewAllUrl && (
           <div className="text-center mt-4">
