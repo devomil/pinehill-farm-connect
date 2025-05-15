@@ -7,7 +7,7 @@ import { useDebug } from "@/hooks/useDebug";
 import { useMessageTabDebugger } from "@/hooks/communications/useMessageTabDebugger";
 import { useNavigationDebugger } from "@/hooks/communications/useNavigationDebugger";
 import { useNavigationRecovery } from "@/hooks/communications/useNavigationRecovery";
-import { ErrorBoundary } from "@/components/debug/ErrorBoundary";
+import ErrorBoundary from "@/components/debug/ErrorBoundary";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
 import { CommunicationPageHeader } from "./CommunicationPageHeader";
@@ -50,7 +50,10 @@ const CommunicationPage: React.FC = () => {
     setActiveTab,
     location,
     navigationComplete,
-    refreshMessages,
+    refreshMessages: async () => {
+      await refreshMessages();
+      return Promise.resolve();
+    },
     isRefreshing,
     lastRefreshTime
   });
@@ -63,7 +66,10 @@ const CommunicationPage: React.FC = () => {
     activeTab,
     setActiveTab,
     navigationComplete,
-    refreshMessages,
+    refreshMessages: async () => {
+      await refreshMessages();
+      return Promise.resolve();
+    },
     navigationInProgress,
     showDebugInfo,
     setShowDebugInfo

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ErrorBoundary } from "@/components/debug/ErrorBoundary";
+import ErrorBoundary from "@/components/debug/ErrorBoundary";
 import { CommunicationTabs } from "./CommunicationPageTabs";
 import { CommunicationContent } from "./CommunicationContent";
 import { User } from "@/types";
