@@ -3,7 +3,7 @@ import React from "react";
 import { MarketingContent } from "@/components/dashboard/MarketingContent";
 import { MarketingEmptyState } from "../empty-states";
 import { useNavigate } from "react-router-dom";
-import { ResizablePanel } from "@/components/ui/resizable";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 interface DashboardMarketingSectionProps {
   viewAllUrl?: string;
@@ -26,33 +26,38 @@ export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps>
   const hasContent = true; // This is a placeholder - you would typically check if there is content
 
   // Save resize state to localStorage
-  const handleResize = (size: number) => {
-    localStorage.setItem('dashboard-marketing-size', size.toString());
+  const handleResize = (sizes: number[]) => {
+    localStorage.setItem('dashboard-marketing-size', sizes[0].toString());
   };
 
   // Get saved size from localStorage or use default
   const defaultSize = parseInt(localStorage.getItem('dashboard-marketing-size') || '100');
 
   return (
-    <ResizablePanel 
-      defaultSize={defaultSize} 
-      onResize={handleResize}
-      className="h-full rounded-lg overflow-hidden" 
-      minSize={30}
-      maxSize={100}
+    <ResizablePanelGroup 
+      direction="horizontal"
+      onLayout={handleResize}
+      className="h-full rounded-lg overflow-hidden"
     >
-      {hasContent ? (
-        <MarketingContent 
-          clickable={true} 
-          viewAllUrl={viewAllUrl} 
-          className={className}
-        />
-      ) : (
-        <MarketingEmptyState 
-          isAdmin={isAdmin} 
-          onAddContent={isAdmin ? handleAddContent : undefined} 
-        />
-      )}
-    </ResizablePanel>
+      <ResizablePanel 
+        defaultSize={defaultSize}
+        className="h-full rounded-lg overflow-hidden" 
+        minSize={30}
+        maxSize={100}
+      >
+        {hasContent ? (
+          <MarketingContent 
+            clickable={true} 
+            viewAllUrl={viewAllUrl} 
+            className={className}
+          />
+        ) : (
+          <MarketingEmptyState 
+            isAdmin={isAdmin} 
+            onAddContent={isAdmin ? handleAddContent : undefined} 
+          />
+        )}
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 };
