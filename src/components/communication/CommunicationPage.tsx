@@ -13,6 +13,7 @@ import ErrorBoundary from "@/components/debug/ErrorBoundary";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 import { toast } from "sonner";
 import { DebugButton } from "@/components/debug/DebugButton";
+import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
 
 const CommunicationPage: React.FC = () => {
   // Setup component debugging
@@ -136,6 +137,9 @@ const CommunicationPage: React.FC = () => {
               messageTabInfo={messageDebugger.debugInfo}
             />
           )}
+          
+          {/* Global diagnostics panel */}
+          <DiagnosticsPanel />
         </div>
       </ErrorBoundary>
     </DebugProvider>

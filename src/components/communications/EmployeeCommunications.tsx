@@ -6,6 +6,10 @@ import { EmployeeCommunicationError } from "./EmployeeCommunicationError";
 import { EmployeeCommunicationMobile } from "./EmployeeCommunicationMobile";
 import { EmployeeCommunicationDesktop } from "./EmployeeCommunicationDesktop";
 import { useEmployeeCommunicationsData } from "@/hooks/communications/useEmployeeCommunications.hooks";
+import { useDebug } from "@/hooks/useDebug";
+import { MessageDebugger } from "@/components/debug/MessageDebugger";
+import { RouteDebugger } from "@/components/debug/RouteDebugger";
+import { useLocation } from "react-router-dom";
 
 interface EmployeeCommunicationsProps {
   selectedEmployee?: User | null;
@@ -21,6 +25,11 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
   retryCount = 0
 }) => {
   const { isMobileView } = useResponsiveLayout();
+  const location = useLocation();
+  const debug = useDebug('EmployeeCommunications', {
+    trackRenders: true,
+    logStateChanges: true
+  });
   
   // Use our custom hook to handle all the data logic
   const {
@@ -37,29 +46,103 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
     employeesLoading,
     messagesLoading,
     currentUser,
-    unreadMessages
+    unreadMessages,
+    filteredMessages
   } = useEmployeeCommunicationsData(
     propSelectedEmployee, 
     propSetSelectedEmployee,
     propsOnRefresh,
     retryCount
   );
+  
+  // Log initial component state
+  debug.log('EmployeeCommunications rendering', {
+    isMobileView,
+    hasSelectedEmployee: !!selectedEmployee,
+    employeesLoading,
+    messagesLoading,
+    messagesCount: processedMessages?.length,
+    filteredCount: filteredMessages?.length,
+    hasError: !!error,
+    currentUrl: location.pathname + location.search
+  });
 
   // Show error message if there's an issue
   if (error && !loading) {
     return (
-      <EmployeeCommunicationError
-        error={error}
-        retryCount={retryCount}
-        onRefresh={handleRefresh}
-      />
+      <>
+        <RouteDebugger />
+        <MessageDebugger 
+          selectedEmployee={selectedEmployee}
+          messages={processedMessages || []}
+          filteredMessages={filteredMessages || []}
+          currentUser={currentUser}
+          isLoading={loading}
+          error={error}
+        />
+        <EmployeeCommunicationError
+          error={error}
+          retryCount={retryCount}
+          onRefresh={handleRefresh}
+        />
+      </>
     );
   }
 
   // For mobile layout, show either conversations list or specific conversation
   if (isMobileView) {
     return (
-      <EmployeeCommunicationMobile
+      <>
+        <RouteDebugger />
+        {showDebugInfo && (
+          <MessageDebugger 
+            selectedEmployee={selectedEmployee}
+            messages={processedMessages || []}
+            filteredMessages={filteredMessages || []}
+            currentUser={currentUser}
+            isLoading={loading}
+            navigationState={{
+              activeTab: new URLSearchParams(location.search).get('tab') || '',
+            }}
+          />
+        )}
+        <EmployeeCommunicationMobile
+          selectedEmployee={selectedEmployee}
+          processedMessages={processedMessages}
+          loading={loading}
+          unfilteredEmployees={unfilteredEmployees}
+          showDebugInfo={showDebugInfo}
+          setShowDebugInfo={setShowDebugInfo}
+          handleSelectEmployee={handleSelectEmployee}
+          sendMessage={sendMessage}
+          handleRefresh={handleRefresh}
+          error={error}
+          employeesLoading={employeesLoading}
+          messagesLoading={messagesLoading}
+          currentUser={currentUser}
+          unreadMessages={unreadMessages}
+        />
+      </>
+    );
+  }
+
+  // For desktop layout, show both conversations list and selected conversation
+  return (
+    <>
+      <RouteDebugger />
+      {showDebugInfo && (
+        <MessageDebugger 
+          selectedEmployee={selectedEmployee}
+          messages={processedMessages || []}
+          filteredMessages={filteredMessages || []}
+          currentUser={currentUser}
+          isLoading={loading}
+          navigationState={{
+            activeTab: new URLSearchParams(location.search).get('tab') || '',
+          }}
+        />
+      )}
+      <EmployeeCommunicationDesktop
         selectedEmployee={selectedEmployee}
         processedMessages={processedMessages}
         loading={loading}
@@ -75,26 +158,6 @@ export const EmployeeCommunications: React.FC<EmployeeCommunicationsProps> = ({
         currentUser={currentUser}
         unreadMessages={unreadMessages}
       />
-    );
-  }
-
-  // For desktop layout, show both conversations list and selected conversation
-  return (
-    <EmployeeCommunicationDesktop
-      selectedEmployee={selectedEmployee}
-      processedMessages={processedMessages}
-      loading={loading}
-      unfilteredEmployees={unfilteredEmployees}
-      showDebugInfo={showDebugInfo}
-      setShowDebugInfo={setShowDebugInfo}
-      handleSelectEmployee={handleSelectEmployee}
-      sendMessage={sendMessage}
-      handleRefresh={handleRefresh}
-      error={error}
-      employeesLoading={employeesLoading}
-      messagesLoading={messagesLoading}
-      currentUser={currentUser}
-      unreadMessages={unreadMessages}
-    />
+    </>
   );
 };

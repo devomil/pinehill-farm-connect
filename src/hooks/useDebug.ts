@@ -1,122 +1,93 @@
 
 import { useEffect, useRef } from 'react';
-import { createDebugContext, trackRender, DebugLevel } from '@/utils/debugUtils';
+import { useDebugContext } from '@/contexts/DebugContext';
+import { createDebugContext } from '@/utils/debugUtils';
 
 interface UseDebugOptions {
   trackRenders?: boolean;
-  level?: DebugLevel;
-  logProps?: boolean;
   logStateChanges?: boolean;
   traceLifecycle?: boolean;
+  initialData?: Record<string, any>;
 }
 
 /**
- * Hook for component-level debugging
- * @param componentName The name of the component
- * @param options Debug options
- * @returns Debug context object
+ * Custom hook for component debugging
+ * 
+ * @param componentName The name of the component being debugged
+ * @param options Debugging options
+ * @returns Debug utilities and component information
  */
 export function useDebug(componentName: string, options: UseDebugOptions = {}) {
   const {
-    trackRenders = true,
-    level,
-    logProps = false,
+    trackRenders = false,
     logStateChanges = false,
-    traceLifecycle = false
+    traceLifecycle = false,
+    initialData = {}
   } = options;
 
+  const { debugMode, debugComponents, debugLog } = useDebugContext();
+  const shouldDebug = debugMode && (debugComponents[componentName] || debugComponents['*']);
+  const renderCount = useRef(0);
   const debugContext = createDebugContext(componentName);
-  const renderCount = useRef<number>(0);
-  const propsRef = useRef<any>(null);
-  
-  // Set custom debug level if provided
-  useEffect(() => {
-    if (level !== undefined) {
-      debugContext.setDebugLevel(level);
-    }
-  }, [level]);
+  const prevPropsRef = useRef<Record<string, any>>(initialData);
 
-  // Track component mount/unmount
+  // Track component renders
   useEffect(() => {
-    if (traceLifecycle) {
-      debugContext.debug('Component mounted');
-      
-      return () => {
-        debugContext.debug('Component unmounted');
-      };
-    }
-  }, [traceLifecycle]);
-  
-  // Track render count
-  if (trackRenders) {
-    renderCount.current = trackRender(componentName);
-  }
-
-  // Return debug utilities bound to this component
-  return {
-    ...debugContext,
-    renderCount: renderCount.current,
+    if (!shouldDebug || !trackRenders) return;
     
-    // Log changes to props or state
-    logChanges: (name: string, oldValue: any, newValue: any) => {
-      if (logStateChanges) {
-        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-          debugContext.debug(`${name} changed:`, { 
-            old: oldValue, 
-            new: newValue,
-            diff: getDiff(oldValue, newValue)
-          });
-        }
+    renderCount.current += 1;
+    debugLog(componentName, `Component rendered ${renderCount.current} times`, { renderCount: renderCount.current });
+    
+    // Return cleanup
+    return () => {
+      if (traceLifecycle) {
+        debugLog(componentName, 'Component unmounted', { renderCount: renderCount.current });
+      }
+    };
+  }, [shouldDebug, trackRenders, componentName, debugLog, traceLifecycle]);
+
+  // Log component mount
+  useEffect(() => {
+    if (!shouldDebug || !traceLifecycle) return;
+    
+    debugLog(componentName, 'Component mounted', { timestamp: new Date().toISOString() });
+    
+    return () => {
+      debugLog(componentName, 'Component will unmount', { timestamp: new Date().toISOString() });
+    };
+  }, [shouldDebug, traceLifecycle, componentName, debugLog]);
+
+  /**
+   * Track state changes in the component
+   * @param newState The new state object 
+   * @param stateName Optional name for the state being tracked
+   */
+  const trackStateChange = (newState: any, stateName = 'state') => {
+    if (!shouldDebug || !logStateChanges) return;
+    
+    const prevState = prevPropsRef.current[stateName];
+    debugLog(componentName, `${stateName} changed`, { 
+      previous: prevState,
+      current: newState,
+      diff: JSON.stringify(prevState) !== JSON.stringify(newState)
+    });
+    
+    // Update the ref with new state
+    prevPropsRef.current = {
+      ...prevPropsRef.current,
+      [stateName]: newState
+    };
+  };
+
+  return {
+    enabled: shouldDebug,
+    renderCount: renderCount.current,
+    trackStateChange,
+    log: (message: string, data?: any) => {
+      if (shouldDebug) {
+        debugLog(componentName, message, data);
       }
     },
-    
-    // Track props changes
-    trackProps: (props: any) => {
-      if (logProps && propsRef.current) {
-        const prevProps = propsRef.current;
-        const changedProps: Record<string, {previous: any, current: any}> = {};
-        
-        Object.keys({ ...prevProps, ...props }).forEach(key => {
-          if (prevProps[key] !== props[key]) {
-            changedProps[key] = {
-              previous: prevProps[key],
-              current: props[key]
-            };
-          }
-        });
-        
-        if (Object.keys(changedProps).length > 0) {
-          debugContext.debug('Props changed:', changedProps);
-        }
-      }
-      
-      propsRef.current = { ...props };
-    }
+    ...debugContext // Include all the debug utilities from debugUtils
   };
-}
-
-// Helper function to compute a simple diff between objects
-function getDiff(objA: any, objB: any): any {
-  if (typeof objA !== 'object' || typeof objB !== 'object' || !objA || !objB) {
-    return { from: objA, to: objB };
-  }
-  
-  const diff: Record<string, any> = {};
-  
-  // Check keys in objA
-  Object.keys(objA).forEach(key => {
-    // If key doesn't exist in objB or values are different
-    if (!(key in objB) || objA[key] !== objB[key]) {
-      diff[key] = { from: objA[key], to: key in objB ? objB[key] : '<<REMOVED>>' };
-    }
-  });
-  
-  // Check for new keys in objB
-  Object.keys(objB).forEach(key => {
-    if (!(key in objA) && !(key in diff)) {
-      diff[key] = { from: '<<ADDED>>', to: objB[key] };
-    }
-  });
-  
-  return diff;
 }
