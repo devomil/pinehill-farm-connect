@@ -7,9 +7,10 @@ import { Navigate } from "react-router-dom";
 interface DashboardLayoutProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  extraHeaderControls?: React.ReactNode;
 }
 
-export function DashboardLayout({ children, requireAdmin = false }: DashboardLayoutProps) {
+export function DashboardLayout({ children, requireAdmin = false, extraHeaderControls }: DashboardLayoutProps) {
   const { currentUser, isAuthenticated } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -25,6 +26,11 @@ export function DashboardLayout({ children, requireAdmin = false }: DashboardLay
     <div className="flex h-screen bg-gray-50">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <main className="flex-1 overflow-y-auto p-6 relative">
+        {extraHeaderControls && (
+          <div className="absolute top-4 right-6 z-10">
+            {extraHeaderControls}
+          </div>
+        )}
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
