@@ -20,7 +20,7 @@ export const useCalendarEvents = (
   const filteredTimeOffRequests = useMemo(() => {
     return includeDeclinedRequests 
       ? timeOffRequests 
-      : timeOffRequests.filter(req => req.status !== 'declined');
+      : timeOffRequests.filter(req => req.status !== 'rejected');
   }, [timeOffRequests, includeDeclinedRequests]);
 
   // Process all calendar events into a map
