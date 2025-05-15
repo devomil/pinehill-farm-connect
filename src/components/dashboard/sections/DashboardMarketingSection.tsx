@@ -4,14 +4,20 @@ import { MarketingContent } from "@/components/dashboard/MarketingContent";
 
 interface DashboardMarketingSectionProps {
   viewAllUrl?: string;
+  className?: string;
 }
 
 export const DashboardMarketingSection: React.FC<DashboardMarketingSectionProps> = ({
-  viewAllUrl
+  viewAllUrl,
+  className
 }) => {
   return (
-    <div className="md:col-span-1">
-      <MarketingContent clickable={true} viewAllUrl={viewAllUrl} />
+    <div className="h-full">
+      <MarketingContent 
+        clickable={true} 
+        viewAllUrl={viewAllUrl} 
+        className={className}
+      />
     </div>
   );
 };

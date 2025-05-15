@@ -22,7 +22,7 @@ export function DashboardLayout({ children, requireAdmin = false }: DashboardLay
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <main className="flex-1 overflow-y-auto p-6 relative">
         <div className="max-w-7xl mx-auto">

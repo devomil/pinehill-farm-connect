@@ -12,9 +12,15 @@ interface MarketingContentProps {
   viewAllUrl?: string;
   onViewAllClick?: () => void;
   clickable?: boolean;
+  className?: string;
 }
 
-export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, onViewAllClick, clickable = false }) => {
+export const MarketingContent: React.FC<MarketingContentProps> = ({ 
+  viewAllUrl, 
+  onViewAllClick, 
+  clickable = false,
+  className 
+}) => {
   const handleButtonClick = (e: React.MouseEvent) => {
     // Stop propagation to prevent parent click handlers from firing
     e.stopPropagation();
@@ -82,7 +88,7 @@ export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, 
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-4 h-full">
+    <div className={`bg-white shadow rounded-lg p-4 h-full ${className}`}>
       <h2 className="font-medium text-lg mb-2">Latest Marketing</h2>
       
       {isLoading ? (
@@ -120,7 +126,7 @@ export const MarketingContent: React.FC<MarketingContentProps> = ({ viewAllUrl, 
       {viewAllUrl && (
         <div className="text-center mt-4">
           <Link to={viewAllUrl} onClick={handleButtonClick}>
-            <Button variant="warning" size="sm" className="w-full">
+            <Button variant="accent" size="sm" className="w-full">
               View All Marketing
             </Button>
           </Link>
