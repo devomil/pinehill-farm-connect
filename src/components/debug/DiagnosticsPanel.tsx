@@ -22,6 +22,28 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useLocation } from 'react-router-dom';
 
+// Interface to safely type performance.memory
+interface MemoryInfo {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+// Helper to safely access performance.memory
+const getMemoryUsage = (): string => {
+  try {
+    // Cast performance to any to check for memory property
+    const perf = performance as any;
+    if (perf && perf.memory) {
+      const memory = perf.memory as MemoryInfo;
+      return `${Math.round(memory.usedJSHeapSize / (1024 * 1024))} MB`;
+    }
+  } catch (e) {
+    // Silent fail
+  }
+  return 'Not available';
+};
+
 export function DiagnosticsPanel() {
   const { 
     debugMode, 
@@ -262,9 +284,7 @@ export function DiagnosticsPanel() {
                     <div className="flex justify-between border-b border-border/20 py-1">
                       <span className="font-medium">Memory Usage:</span>
                       <span className="text-muted-foreground">
-                        {performance.memory ? 
-                          `${Math.round(performance.memory.usedJSHeapSize / (1024 * 1024))} MB` : 
-                          'Not available'}
+                        {getMemoryUsage()}
                       </span>
                     </div>
                   </div>

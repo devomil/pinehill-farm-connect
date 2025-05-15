@@ -6,6 +6,9 @@ import { useProcessMessages } from "@/hooks/communications/useProcessMessages";
 import { toast } from "sonner";
 import { createDebugContext } from "@/utils/debugUtils";
 import { User } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { useConversation } from "@/hooks/communications/useConversation";
+import { Communication } from "@/types/communications/communicationTypes";
 
 export function useEmployeeCommunicationsData(
   selectedEmployeeProp?: User | null,
@@ -40,6 +43,9 @@ export function useEmployeeCommunicationsData(
   const processedMessages = useProcessMessages(messages, currentUser);
   const loading = employeesLoading || messagesLoading;
   const error = employeeError || messagesError;
+
+  // Get filtered messages for the current conversation
+  const { filteredMessages } = useConversation(selectedEmployee, processedMessages || []);
 
   // Sync with prop if changed externally
   useEffect(() => {
@@ -163,6 +169,7 @@ export function useEmployeeCommunicationsData(
   return {
     selectedEmployee,
     processedMessages,
+    filteredMessages, // Now explicitly returning filteredMessages
     loading,
     unfilteredEmployees: unfilteredEmployees || [],
     showDebugInfo,
@@ -177,6 +184,3 @@ export function useEmployeeCommunicationsData(
     unreadMessages: unreadMessages || []
   };
 }
-
-// Missing import at the top
-import { useAuth } from "@/contexts/AuthContext";

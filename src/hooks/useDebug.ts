@@ -8,6 +8,7 @@ interface UseDebugOptions {
   logStateChanges?: boolean;
   traceLifecycle?: boolean;
   initialData?: Record<string, any>;
+  logProps?: boolean;  // Added missing option
 }
 
 /**
@@ -22,7 +23,8 @@ export function useDebug(componentName: string, options: UseDebugOptions = {}) {
     trackRenders = false,
     logStateChanges = false,
     traceLifecycle = false,
-    initialData = {}
+    initialData = {},
+    logProps = false  // Added with default value
   } = options;
 
   const { debugMode, debugComponents, debugLog } = useDebugContext();
@@ -79,10 +81,18 @@ export function useDebug(componentName: string, options: UseDebugOptions = {}) {
     };
   };
 
+  // Add function to track props if logProps is enabled
+  const logComponentProps = (props: Record<string, any>) => {
+    if (!shouldDebug || !logProps) return;
+    
+    debugLog(componentName, 'Component props', props);
+  };
+
   return {
     enabled: shouldDebug,
     renderCount: renderCount.current,
     trackStateChange,
+    logComponentProps,
     log: (message: string, data?: any) => {
       if (shouldDebug) {
         debugLog(componentName, message, data);

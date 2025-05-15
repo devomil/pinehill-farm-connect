@@ -39,7 +39,8 @@ export function useConversationContext(
       firstMessage: filtered[0] ? {
         sender: filtered[0].sender_id,
         recipient: filtered[0].recipient_id,
-        content: filtered[0].content?.substring(0, 20) + '...'
+        // Check if message has content property, use message property as fallback
+        preview: filtered[0].message ? filtered[0].message.substring(0, 20) + '...' : 'No content'
       } : 'none'
     });
     
