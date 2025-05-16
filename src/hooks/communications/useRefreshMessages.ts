@@ -19,17 +19,48 @@ export function useRefreshMessages() {
   const refetchEmployees = employeeDirectory?.refetch;
   
   const dashboard = useDashboardData();
-  const refreshDashboardData = dashboard?.refetchData;
+  const refreshDashboardData = dashboard?.refreshDashboardData;
+  
+  // Track last refresh time to prevent excessive refreshes
+  const lastRefreshTimestamp = React.useRef<number>(Date.now());
+  const isRefreshing = React.useRef<boolean>(false);
   
   // Combined refresh function that ensures all message-related data is up-to-date
   const refresh = useCallback(async () => {
+    console.log("useRefreshMessages: Checking refresh threshold");
+    
+    // Implement throttling - prevent refreshes within 10 seconds of each other
+    const now = Date.now();
+    const refreshThreshold = 10000; // 10 seconds
+    
+    if (isRefreshing.current) {
+      console.log("useRefreshMessages: Refresh already in progress, skipping");
+      return false;
+    }
+    
+    if (now - lastRefreshTimestamp.current < refreshThreshold) {
+      console.log(`useRefreshMessages: Skipping refresh, last refresh was ${(now - lastRefreshTimestamp.current)/1000}s ago`);
+      return false;
+    }
+    
     console.log("useRefreshMessages: Refreshing all message data");
+    isRefreshing.current = true;
+    lastRefreshTimestamp.current = now;
     
     try {
       // Create an array of promises to run in parallel, filtering out undefined functions
       const refreshPromises = [
         refreshMessages && refreshMessages(),
-        refetchEmployees && refetchEmployees(),
+        // Only conditionally refresh employee directory to reduce frequency
+        refetchEmployees && (() => {
+          console.log("Conditionally refreshing employee directory");
+          // Add random chance to further reduce refresh frequency (50% chance)
+          if (Math.random() > 0.5) {
+            console.log("Employee directory refresh skipped based on probability");
+            return Promise.resolve();
+          }
+          return refetchEmployees();
+        })(),
         refreshDashboardData && refreshDashboardData()
       ].filter(Boolean); // Filter out undefined values
       
@@ -48,6 +79,11 @@ export function useRefreshMessages() {
       console.error("useRefreshMessages: Error refreshing message data", error);
       toast.error("Failed to refresh message data");
       return false;
+    } finally {
+      // Only reset refreshing flag after a short delay to prevent rapid consecutive refreshes
+      setTimeout(() => {
+        isRefreshing.current = false;
+      }, 5000); // 5 second cooldown period
     }
   }, [refreshMessages, refetchEmployees, refreshDashboardData]);
   

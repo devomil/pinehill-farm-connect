@@ -16,16 +16,37 @@ export function useMessageRefreshManager(
   const refreshInProgress = useRef<boolean>(false);
   const refreshDebounceTimer = useRef<number | null>(null);
   const refreshCount = useRef<number>(0);
-  const MAX_REFRESHES_PER_SESSION = 100; // Limit total refreshes per session
+  const MAX_REFRESHES_PER_SESSION = 40; // Reduced from 100 to 40
+  const FORCED_COOLDOWN_TIME = 60000; // 1 minute forced cooldown after MAX_REFRESHES reached
+
+  // Track when we hit refresh limit
+  const refreshLimitHitTime = useRef<number | null>(null);
 
   const refreshMessages = useCallback(() => {
-    // Guard against too many refreshes
-    if (refreshCount.current > MAX_REFRESHES_PER_SESSION) {
-      console.warn("Maximum refresh count reached for this session");
-      return Promise.resolve();
+    const now = Date.now();
+    
+    // If we've hit refresh limit, enforce a long cooldown period
+    if (refreshLimitHitTime.current !== null) {
+      const timeSinceLimitHit = now - refreshLimitHitTime.current;
+      if (timeSinceLimitHit < FORCED_COOLDOWN_TIME) {
+        console.log(`Refresh limit reached. Enforcing cooldown: ${Math.round((FORCED_COOLDOWN_TIME - timeSinceLimitHit)/1000)}s remaining`);
+        return Promise.resolve();
+      } else {
+        // Reset after cooldown period
+        console.log("Refresh cooldown period complete, resetting counter");
+        refreshCount.current = 0;
+        refreshLimitHitTime.current = null;
+      }
     }
     
-    const now = Date.now();
+    // Check refresh count
+    if (refreshCount.current >= MAX_REFRESHES_PER_SESSION) {
+      if (refreshLimitHitTime.current === null) {
+        console.warn(`Maximum refresh count (${MAX_REFRESHES_PER_SESSION}) reached for this session. Enforcing cooldown.`);
+        refreshLimitHitTime.current = now;
+      }
+      return Promise.resolve();
+    }
     
     // Clear any existing debounce timer
     if (refreshDebounceTimer.current !== null) {
@@ -35,7 +56,7 @@ export function useMessageRefreshManager(
     
     // Much longer refresh intervals to reduce database load
     const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 30000 : 60000; // 30s for admins, 60s for others - greatly increased
+    const minRefreshInterval = isAdmin ? 90000 : 120000; // 1.5min for admins, 2min for others - greatly increased
     
     if (refreshInProgress.current) {
       console.log("Communications refresh skipped - already in progress");
@@ -59,7 +80,7 @@ export function useMessageRefreshManager(
             .finally(() => {
               setTimeout(() => {
                 refreshInProgress.current = false;
-              }, 2000);
+              }, 5000); // 5 second cooldown
             });
         }, minRefreshInterval - (now - lastRefreshTime.current)) as unknown as number;
       });

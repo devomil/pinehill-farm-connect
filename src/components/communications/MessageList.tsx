@@ -39,6 +39,8 @@ export function MessageList({
   const initialLoadRef = useRef<boolean>(false);
   const messageHashRef = useRef<string>("");
   const componentMountedAt = useRef(Date.now());
+  const refreshAttemptCount = useRef(0);
+  const MAX_AUTO_REFRESHES = 5; // Limit auto refreshes
   
   // Compute a hash of the messages to detect real changes
   const messagesHash = useMemo(() => {
@@ -111,16 +113,30 @@ export function MessageList({
       const initialTimer = setTimeout(() => {
         refreshMessages();
         initialLoadRef.current = true;
-      }, 1000);
+      }, 1500);
       
       return () => clearTimeout(initialTimer);
     }
     
-    // Set up refresh interval with much longer timing
-    const interval = window.setInterval(() => {
-      console.log("Auto-refreshing message list");
+    // Set up refresh interval with much longer timing and limited refreshes
+    const refreshHandler = () => {
+      // Don't refresh if we've hit the limit
+      if (refreshAttemptCount.current >= MAX_AUTO_REFRESHES) {
+        console.log(`Auto-refresh limit reached (${MAX_AUTO_REFRESHES}), stopping automatic refreshes`);
+        if (refreshIntervalRef.current !== null) {
+          clearInterval(refreshIntervalRef.current);
+          refreshIntervalRef.current = null;
+        }
+        return;
+      }
+      
+      console.log(`Auto-refreshing message list (${refreshAttemptCount.current + 1}/${MAX_AUTO_REFRESHES})`);
+      refreshAttemptCount.current++;
       refreshMessages();
-    }, isAdmin ? 180000 : 300000); // Every 3-5 minutes
+    };
+    
+    // Much longer intervals to prevent excessive refreshes
+    const interval = window.setInterval(refreshHandler, isAdmin ? 240000 : 300000); // Every 4-5 minutes
     
     refreshIntervalRef.current = interval as unknown as number;
     
