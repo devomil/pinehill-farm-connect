@@ -13,3 +13,6 @@ export * from './utils/notificationUtils';
 export * from './services/messageSendingService';
 export * from './useEmployeeCommunications.hooks';
 export * from './useConversationContext';
+// Export navigation hooks
+export * from './useTabNavigation';
+export * from './navigation';
