@@ -28,7 +28,9 @@ export const useDaySelector = (currentMonth?: Date) => {
   // Check if a day is selected
   const isDaySelected = useCallback((date: Date) => {
     const dateKey = date.toISOString().split('T')[0];
-    return selectedDays.has(dateKey);
+    const isSelected = selectedDays.has(dateKey);
+    console.log(`Checking if day ${dateKey} is selected: ${isSelected}`);
+    return isSelected;
   }, [selectedDays]);
 
   // Get selected count
