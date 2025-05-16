@@ -3,15 +3,13 @@ import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { X, Calendar as CalendarIcon, CheckSquare } from "lucide-react";
 
 interface SpecificDaysSchedulingBarProps {
   selectedDays: string[];
   currentMonth: Date;
-  onSchedule: (days: string[], startTime: string, endTime: string) => void;
+  onSchedule: (mode: string, startTime: string, endTime: string, days: string[]) => void;
   onCancel: () => void;
-  onClearSelection?: () => void;
+  onClearSelection: () => void;
 }
 
 export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps> = ({
@@ -25,79 +23,88 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
   const [endTime, setEndTime] = useState("17:00");
   
   const handleSchedule = () => {
-    if (selectedDays.length === 0) return;
-    console.log("Scheduling for days:", selectedDays);
-    onSchedule(selectedDays, startTime, endTime);
+    if (selectedDays.length === 0) {
+      return;
+    }
+    onSchedule("specific", startTime, endTime, selectedDays);
   };
   
-  const monthLabel = format(currentMonth, "MMMM yyyy");
-
-  // Log selected days whenever they change
-  React.useEffect(() => {
-    console.log("SpecificDaysSchedulingBar - Selected days:", selectedDays);
-  }, [selectedDays]);
+  // Format days for display
+  const formatSelectedDays = () => {
+    if (selectedDays.length === 0) {
+      return "No days selected";
+    } else if (selectedDays.length <= 3) {
+      return selectedDays.join(", ");
+    } else {
+      return `${selectedDays.length} days selected`;
+    }
+  };
   
   return (
-    <Card className="p-4 mb-4 bg-accent/20 border border-primary/20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <div className="flex items-center">
-            <CalendarIcon className="h-5 w-5 mr-2 text-primary" />
-            <span className="font-medium">
-              {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'} selected in {monthLabel}
-            </span>
-          </div>
-          
-          {selectedDays.length > 0 && onClearSelection && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onClearSelection}
-              className="flex items-center"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Clear Selection
-            </Button>
-          )}
+    <Card className="p-4 mb-4 bg-orange-50 border-orange-300">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-orange-900">Scheduling for Specific Days</h3>
+        <div className="text-sm text-orange-700">
+          {formatSelectedDays()}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <label htmlFor="start-time" className="text-sm font-medium whitespace-nowrap">
+            Start Time:
+          </label>
+          <Input
+            id="start-time"
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="flex-1"
+          />
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-24 pointer-events-auto"
-            />
-            <span>to</span>
-            <Input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-24 pointer-events-auto"
-            />
-          </div>
-          
+          <label htmlFor="end-time" className="text-sm font-medium whitespace-nowrap">
+            End Time:
+          </label>
+          <Input
+            id="end-time"
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className="flex-1"
+          />
+        </div>
+        
+        <div className="flex justify-end gap-2">
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={onClearSelection}
+          >
+            Clear Selection
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
           <Button 
             variant="default" 
-            className="ml-2 pointer-events-auto"
-            disabled={selectedDays.length === 0}
+            size="sm"
             onClick={handleSchedule}
+            disabled={selectedDays.length === 0}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
           >
-            <CheckSquare className="h-4 w-4 mr-2" />
-            Assign Shifts
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onCancel}
-            aria-label="Cancel"
-            className="pointer-events-auto"
-          >
-            <X className="h-4 w-4" />
+            Schedule Selected Days
           </Button>
         </div>
+      </div>
+      
+      <div className="text-sm text-orange-700 bg-orange-100 p-2 rounded-md">
+        <strong>Tip:</strong> Click on calendar days above to select them. You can select multiple days for scheduling.
       </div>
     </Card>
   );

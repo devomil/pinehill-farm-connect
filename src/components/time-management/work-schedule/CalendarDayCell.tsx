@@ -58,7 +58,8 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
         "h-12 w-12 p-0 rounded-md flex flex-col items-center relative cursor-pointer",
         outside && "opacity-50",
         disabled && "opacity-30 cursor-not-allowed",
-        isSelected && "bg-primary/20 border-2 border-primary",
+        isSelected && selectionMode === "single" && "bg-primary/20 border-2 border-primary",
+        isSelected && selectionMode === "multiple" && "bg-orange-200 border-2 border-orange-500",
         !isSelected && hasShifts && "bg-blue-50",
         today && !isSelected && "bg-accent/50"
       )}
@@ -74,7 +75,8 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     >
       <span className={cn(
         "text-sm font-medium mt-1",
-        isSelected && "text-primary font-bold"
+        isSelected && selectionMode === "single" && "text-primary font-bold",
+        isSelected && selectionMode === "multiple" && "text-orange-900 font-bold"
       )}>
         {dayNumber}
       </span>

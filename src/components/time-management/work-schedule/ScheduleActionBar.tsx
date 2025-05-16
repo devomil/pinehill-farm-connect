@@ -49,12 +49,12 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
         size="sm"
         onClick={onToggleSelectionMode}
         disabled={loading}
-        className="flex items-center"
+        className={`flex items-center ${selectionMode === "multiple" ? "bg-orange-200 hover:bg-orange-300 text-orange-900 border-orange-500" : ""}`}
       >
         {selectionMode === "multiple" ? (
           <>
             <Check className="h-4 w-4 mr-1" />
-            {selectedCount > 0 ? `${selectedCount} Days Selected` : "Select Specific Days"}
+            {selectedCount > 0 ? `${selectedCount} Days Selected` : "Select Days (Click Calendar)"}
           </>
         ) : (
           <>

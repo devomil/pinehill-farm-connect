@@ -36,7 +36,6 @@ export const useDaySelector = (currentMonth?: Date) => {
     
     const dateKey = date.toISOString().split('T')[0];
     const isSelected = selectedDays.has(dateKey);
-    console.log(`Checking if day ${dateKey} is selected: ${isSelected}`);
     return isSelected;
   }, [selectedDays]);
 

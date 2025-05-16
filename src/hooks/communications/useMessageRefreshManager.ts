@@ -16,8 +16,8 @@ export function useMessageRefreshManager(
   const refreshInProgress = useRef<boolean>(false);
   const refreshDebounceTimer = useRef<number | null>(null);
   const refreshCount = useRef<number>(0);
-  const MAX_REFRESHES_PER_SESSION = 40; // Reduced from 100 to 40
-  const FORCED_COOLDOWN_TIME = 60000; // 1 minute forced cooldown after MAX_REFRESHES reached
+  const MAX_REFRESHES_PER_SESSION = 20; // Reduced from 40 to 20
+  const FORCED_COOLDOWN_TIME = 180000; // 3 minutes forced cooldown after MAX_REFRESHES reached
 
   // Track when we hit refresh limit
   const refreshLimitHitTime = useRef<number | null>(null);
@@ -56,7 +56,7 @@ export function useMessageRefreshManager(
     
     // Much longer refresh intervals to reduce database load
     const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 90000 : 120000; // 1.5min for admins, 2min for others - greatly increased
+    const minRefreshInterval = isAdmin ? 180000 : 240000; // 3min for admins, 4min for others - greatly increased
     
     if (refreshInProgress.current) {
       console.log("Communications refresh skipped - already in progress");
@@ -96,7 +96,7 @@ export function useMessageRefreshManager(
       // Much longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, isAdmin ? 5000 : 10000); // 5-10s cooldown periods
+      }, isAdmin ? 15000 : 30000); // 15-30s cooldown periods
     });
   }, [refetch, currentUser, MAX_REFRESHES_PER_SESSION]);
 

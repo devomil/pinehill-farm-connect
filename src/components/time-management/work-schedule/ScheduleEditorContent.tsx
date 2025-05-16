@@ -8,6 +8,8 @@ import { ScheduleActionBar } from "./ScheduleActionBar";
 import { AdminSchedulingTools } from "./AdminSchedulingTools";
 import { Button } from "@/components/ui/button";
 import { ScheduleEditorState } from "./hooks/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
 
 interface ScheduleEditorContentProps {
   editorState: ReturnType<typeof import("./hooks/useScheduleEditor").useScheduleEditor>;
@@ -70,6 +72,16 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
         </Button>
       </div>
       
+      {selectionMode === "multiple" && (
+        <Alert variant="default" className="mb-4 bg-orange-50 border-orange-300">
+          <InfoCircledIcon className="h-4 w-4 text-orange-500" />
+          <AlertTitle className="text-orange-800">Multi-Select Mode Active</AlertTitle>
+          <AlertDescription className="text-orange-700">
+            Click on calendar days below to select them for scheduling. You can select multiple days.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {showAdminTools && (
         <AdminSchedulingTools
           selectedEmployee={editorState.selectedEmployee}

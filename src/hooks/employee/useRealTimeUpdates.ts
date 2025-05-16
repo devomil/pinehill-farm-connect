@@ -10,7 +10,7 @@ export function useRealTimeUpdates(onDataChange: () => void) {
   const lastUpdateTime = useRef<number>(Date.now());
   const updateThrottleTimer = useRef<number | null>(null);
   const pendingUpdateCount = useRef<number>(0);
-  const THROTTLE_TIME = 60000; // 1 minute throttle time
+  const THROTTLE_TIME = 300000; // 5 minutes throttle time - greatly increased from 60s
 
   // Memoize and throttle the callback to prevent excessive refreshes
   const throttledOnDataChange = useCallback(() => {
