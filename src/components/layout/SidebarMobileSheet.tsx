@@ -38,8 +38,8 @@ export const SidebarMobileSheet = ({
     // For items with query params, use the base path as key
     const basePath = item.path.split('?')[0];
     
-    // Explicitly skip any "/communications" plural path
-    if (basePath === "/communications") {
+    // Explicitly skip any "/communications" plural path and "/calendar" path
+    if (basePath === "/communications" || basePath === "/calendar") {
       return;
     }
     

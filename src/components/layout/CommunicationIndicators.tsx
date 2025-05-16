@@ -72,13 +72,13 @@ export const CommunicationIndicators: React.FC = () => {
   const handleAnnouncementsClick = () => {
     console.log("Navigating to announcements tab");
     // Use replace: true to avoid creating excessive history entries
-    navigate(announcementItem?.path || "/communication", { replace: true });
+    navigate("/communication", { replace: true });
   };
   
   const handleMessagesClick = () => {
     console.log("Navigating to messages tab");
     // Use replace: true for consistent behavior with TabNavigation
-    navigate(messagesItem?.path || "/communication?tab=messages", { replace: true });
+    navigate("/communication?tab=messages", { replace: true });
     
     // Force immediate refresh when clicking on messages, but with a delay
     setTimeout(() => {

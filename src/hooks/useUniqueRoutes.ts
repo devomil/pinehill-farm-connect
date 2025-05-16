@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 
 /**
@@ -27,6 +28,11 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
       // Determine the path to use as key
       const pathToUse = route.path || route.to || '/';
       const normalizedPath = normalizePath(pathToUse);
+      
+      // Skip deprecated routes
+      if (normalizedPath === '/communications' || normalizedPath === '/calendar') {
+        return;
+      }
       
       // Only add if not already in the map, or if this is a "primary" route 
       // (routes with simple path are preferred over longer ones with the same base)

@@ -21,6 +21,12 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   const uniqueItemsMap = new Map();
   visibleItems.forEach(item => {
     const basePath = item.path.split('?')[0];
+    
+    // Explicitly skip any "/communications" plural path and "/calendar" path
+    if (basePath === "/communications" || basePath === "/calendar") {
+      return;
+    }
+    
     if (!uniqueItemsMap.has(basePath)) {
       uniqueItemsMap.set(basePath, item);
     }
