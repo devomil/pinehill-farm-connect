@@ -65,6 +65,36 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     }
   };
   
+  // Create a common Day component renderer for both calendar modes
+  const DayComponent = (props: any) => {
+    const date = props.date;
+    const dateKey = format(date, 'yyyy-MM-dd');
+    const shifts = shiftsMap.get(dateKey) || [];
+    const isSelected = selectionMode === "multiple" && isDaySelected ? 
+      isDaySelected(date) : 
+      selectedDate ? isEqual(date, selectedDate) : false;
+    
+    return (
+      <CalendarDayCell
+        {...props}
+        shifts={shifts}
+        isSelected={isSelected}
+        selectionMode={selectionMode}
+        onShiftClick={onShiftClick}
+        onSelect={() => {
+          // In multiple selection mode
+          if (selectionMode === "multiple" && onDayToggle) {
+            onDayToggle(date);
+          } 
+          // In single selection mode
+          else {
+            handleDateSelect(date);
+          }
+        }}
+      />
+    );
+  };
+  
   return (
     <Card className="mb-6">
       <div className="p-4">
@@ -88,43 +118,29 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         </div>
         
         <div className="border rounded-md">
-          <Calendar
-            mode={selectionMode === "single" ? "single" : "multiple"}
-            selected={selectionMode === "single" ? selectedDate : highlightedDates}
-            onSelect={handleDateSelect}
-            month={currentMonth}
-            className="rounded-md border"
-            components={{
-              Day: (props) => {
-                const date = props.date;
-                const dateKey = format(date, 'yyyy-MM-dd');
-                const shifts = shiftsMap.get(dateKey) || [];
-                const isSelected = selectionMode === "multiple" && isDaySelected ? 
-                  isDaySelected(date) : 
-                  selectedDate ? isEqual(date, selectedDate) : false;
-                
-                return (
-                  <CalendarDayCell
-                    {...props}
-                    shifts={shifts}
-                    isSelected={isSelected}
-                    selectionMode={selectionMode}
-                    onShiftClick={onShiftClick}
-                    onSelect={() => {
-                      // In multiple selection mode
-                      if (selectionMode === "multiple" && onDayToggle) {
-                        onDayToggle(date);
-                      } 
-                      // In single selection mode
-                      else {
-                        handleDateSelect(date);
-                      }
-                    }}
-                  />
-                );
-              }
-            }}
-          />
+          {selectionMode === "single" ? (
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              month={currentMonth}
+              className="rounded-md border"
+              components={{
+                Day: DayComponent
+              }}
+            />
+          ) : (
+            <Calendar
+              mode="multiple"
+              selected={highlightedDates}
+              onSelect={handleDateSelect}
+              month={currentMonth}
+              className="rounded-md border"
+              components={{
+                Day: DayComponent
+              }}
+            />
+          )}
         </div>
       </div>
     </Card>
