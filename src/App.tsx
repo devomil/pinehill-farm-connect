@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -82,6 +81,9 @@ function App() {
 // Helper function to filter out duplicate routes and prefer primary routes
 function filterDuplicateRoutes(routes) {
   const uniqueRoutesMap = new Map();
+  // List of deprecated paths to explicitly filter out from navigation
+  // We keep them in the router for redirection but don't show them in UI
+  const deprecatedPaths = ['/communications', '/calendar'];
   
   // Process routes in order, so primary routes come first and redirects come later
   routes.forEach(route => {

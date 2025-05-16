@@ -17,13 +17,17 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
   // Filter items based on user role
   const visibleItems = filterNavItemsByRole(mainNavItems, currentUser?.role);
   
+  // List of deprecated paths to explicitly filter out
+  const deprecatedPaths = ['/communications', '/calendar'];
+  
   // Deduplicate navigation items by path
   const uniqueItemsMap = new Map();
   visibleItems.forEach(item => {
     const basePath = item.path.split('?')[0];
     
-    // Explicitly skip any "/communications" plural path and "/calendar" path
-    if (basePath === "/communications" || basePath === "/calendar") {
+    // Skip any deprecated paths
+    if (deprecatedPaths.includes(basePath)) {
+      console.log(`Skipping deprecated MainNavItems route: ${basePath}`);
       return;
     }
     

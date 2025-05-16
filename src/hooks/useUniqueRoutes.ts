@@ -13,6 +13,9 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
     // Create a map to store unique routes
     const routeMap = new Map<string, T>();
     
+    // List of deprecated paths that should be excluded
+    const deprecatedPaths = ['/communications', '/calendar'];
+    
     // Normalize paths by removing query parameters
     const normalizePath = (path: string): string => {
       // Handle undefined paths
@@ -29,8 +32,9 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
       const pathToUse = route.path || route.to || '/';
       const normalizedPath = normalizePath(pathToUse);
       
-      // Skip deprecated routes
-      if (normalizedPath === '/communications' || normalizedPath === '/calendar') {
+      // Skip deprecated routes - explicit check
+      if (deprecatedPaths.includes(normalizedPath)) {
+        console.log(`Skipping deprecated route: ${normalizedPath}`);
         return;
       }
       

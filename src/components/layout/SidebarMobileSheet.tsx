@@ -31,6 +31,9 @@ export const SidebarMobileSheet = ({
   const allNavItems = getAllNavItems();
   const visibleItems = filterNavItemsByRole(allNavItems, currentUser?.role);
   
+  // List of deprecated paths to explicitly filter out
+  const deprecatedPaths = ['/communications', '/calendar'];
+  
   // Manually ensure no duplicate paths by creating a map with path as key
   const uniqueItemsMap = new Map();
   
@@ -38,8 +41,9 @@ export const SidebarMobileSheet = ({
     // For items with query params, use the base path as key
     const basePath = item.path.split('?')[0];
     
-    // Explicitly skip any "/communications" plural path and "/calendar" path
-    if (basePath === "/communications" || basePath === "/calendar") {
+    // Skip any deprecated paths
+    if (deprecatedPaths.includes(basePath)) {
+      console.log(`Skipping deprecated mobile navigation route: ${basePath}`);
       return;
     }
     
