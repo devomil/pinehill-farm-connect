@@ -61,7 +61,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     
     return (
       <CalendarDayCell
-        {...props}
+        date={date}
         shifts={shifts}
         isSelected={isSelected}
         selectionMode={selectionMode}
@@ -107,28 +107,38 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         </div>
         
         <div className="border rounded-md">
-          <Calendar
-            mode={selectionMode === "single" ? "single" : "multiple"}
-            selected={selectionMode === "single" ? selectedDate : highlightedDates}
-            onSelect={selectionMode === "single" 
-              ? (date) => {
-                  console.log("Single date selected:", date);
-                  setSelectedDate(date);
-                  if (onDateSelected && date) {
-                    onDateSelected(date);
-                  }
+          {selectionMode === "single" ? (
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => {
+                console.log("Single date selected:", date);
+                setSelectedDate(date);
+                if (onDateSelected && date) {
+                  onDateSelected(date);
                 }
-              : () => {
-                  console.log("Multiple selection mode - using custom handler");
-                  // Multiple selection is handled by the custom day component
-                }
-            }
-            month={currentMonth}
-            className="rounded-md border pointer-events-auto"
-            components={{
-              Day: DayComponent
-            }}
-          />
+              }}
+              month={currentMonth}
+              className="rounded-md border pointer-events-auto"
+              components={{
+                Day: DayComponent
+              }}
+            />
+          ) : (
+            <Calendar
+              mode="multiple"
+              selected={highlightedDates}
+              onSelect={() => {
+                console.log("Multiple selection mode - using custom handler");
+                // Multiple selection is handled by the custom day component
+              }}
+              month={currentMonth}
+              className="rounded-md border pointer-events-auto"
+              components={{
+                Day: DayComponent
+              }}
+            />
+          )}
         </div>
       </div>
     </Card>

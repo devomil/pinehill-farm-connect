@@ -5,6 +5,7 @@ import { UseScheduleEditorProps, ScheduleEditorState } from "./types";
 import { useShiftEditor } from "./useShiftEditor";
 import { useBulkScheduler } from "./useBulkScheduler";
 import { useCalendarDates } from "./useCalendarDates";
+import { format } from "date-fns";
 
 export const useScheduleEditor = ({ 
   selectedEmployee, 
