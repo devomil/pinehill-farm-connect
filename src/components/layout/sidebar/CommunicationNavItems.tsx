@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 import { communicationNavItems } from "@/config/navConfig";
 
 interface NavItemProps {
@@ -73,12 +72,9 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
     return item;
   });
 
-  // Filter visible items first, then deduplicate
-  const uniqueCommunicationItems = useUniqueRoutes(communicationItemsWithBadges);
-
   return (
     <div className="flex flex-col gap-1">
-      {uniqueCommunicationItems.map(item => (
+      {communicationItemsWithBadges.map(item => (
         <Button
           key={item.id}
           variant={item.badge !== null ? "default" : "ghost"}

@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface SidebarMobileSheetProps {
@@ -32,8 +31,22 @@ export const SidebarMobileSheet = ({
   const allNavItems = getAllNavItems();
   const visibleItems = filterNavItemsByRole(allNavItems, currentUser?.role);
   
-  // Use our updated hook for path-based deduplication
-  const navigationItems = useUniqueRoutes(visibleItems);
+  // Manually ensure no duplicate paths by creating a map with path as key
+  const uniqueItemsMap = new Map();
+  
+  visibleItems.forEach(item => {
+    // For items with query params, use the base path as key
+    const basePath = item.path.split('?')[0];
+    
+    // Only add an item if its base path isn't already in the map
+    // or if we're adding an item with query params and prefer it
+    if (!uniqueItemsMap.has(basePath) || item.path.includes('?')) {
+      uniqueItemsMap.set(basePath, item);
+    }
+  });
+  
+  // Convert the map back to an array
+  const navigationItems = Array.from(uniqueItemsMap.values());
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
