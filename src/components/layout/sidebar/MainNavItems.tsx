@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 import { mainNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface NavItemProps {
@@ -15,9 +14,19 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
-  // Filter items based on user role, then deduplicate
+  // Filter items based on user role
   const visibleItems = filterNavItemsByRole(mainNavItems, currentUser?.role);
-  const uniqueNavItems = useUniqueRoutes(visibleItems);
+  
+  // Deduplicate navigation items by path
+  const uniqueItemsMap = new Map();
+  visibleItems.forEach(item => {
+    const basePath = item.path.split('?')[0];
+    if (!uniqueItemsMap.has(basePath)) {
+      uniqueItemsMap.set(basePath, item);
+    }
+  });
+  
+  const uniqueNavItems = Array.from(uniqueItemsMap.values());
 
   return (
     <div className="flex flex-col gap-1">

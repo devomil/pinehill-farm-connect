@@ -17,7 +17,6 @@ import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { RouteDebugger } from "@/components/debug/RouteDebugger";
 import Index from "@/pages/Index";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,8 +52,8 @@ function App() {
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
   
-  // Use our utility hook to ensure unique routes
-  const uniqueRoutes = useUniqueRoutes(appRoutes);
+  // Filter out duplicate routes based on path before using them
+  const uniqueRoutes = filterDuplicateRoutes(appRoutes);
   
   // For debugging - log all routes that will be rendered
   console.log("Rendering routes:", uniqueRoutes.map(r => ({ id: r.id, path: r.path })));
@@ -80,6 +79,24 @@ function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+// Helper function to filter out duplicate routes and prefer primary routes
+function filterDuplicateRoutes(routes) {
+  const uniqueRoutesMap = new Map();
+  
+  // Process routes in order, so primary routes come first and redirects come later
+  routes.forEach(route => {
+    // For routes with query params, use the base path as the key
+    const basePath = route.path.split('?')[0];
+    
+    // Only add if this path doesn't exist yet
+    if (!uniqueRoutesMap.has(basePath)) {
+      uniqueRoutesMap.set(basePath, route);
+    }
+  });
+  
+  return Array.from(uniqueRoutesMap.values());
 }
 
 export default App;

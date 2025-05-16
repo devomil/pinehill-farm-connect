@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 import { toolsNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface NavItemProps {
@@ -15,20 +14,29 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
-  // Filter items based on user role, then deduplicate
+  // Filter items based on user role
   const visibleItems = filterNavItemsByRole(toolsNavItems, currentUser?.role);
-  const uniqueToolsItems = useUniqueRoutes(visibleItems);
+  
+  // Deduplicate items by path
+  const uniqueItemsMap = new Map();
+  visibleItems.forEach(item => {
+    const basePath = item.path.split('?')[0];
+    if (!uniqueItemsMap.has(basePath)) {
+      uniqueItemsMap.set(basePath, item);
+    }
+  });
+  
+  const uniqueNavItems = Array.from(uniqueItemsMap.values());
 
   return (
     <div className="flex flex-col gap-1">
-      {uniqueToolsItems.map(item => (
+      {uniqueNavItems.map(item => (
         <Button
           key={item.id}
           variant="ghost"
           className={cn(
             "justify-start font-normal",
-            pathname === item.path ? "bg-accent" :
-            (pathname.includes("/training") && pathname !== "/admin-training" && item.path === "/training") ? "bg-accent" : ""
+            pathname === item.path && "bg-accent"
           )}
           asChild
         >
@@ -41,4 +49,4 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
       ))}
     </div>
   );
-};
+}
