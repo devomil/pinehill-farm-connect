@@ -1,6 +1,6 @@
 
 import { useCallback } from "react";
-import { useNavigationStateManager } from "./useNavigationStateManager";
+import { useNavigationStateManager } from "./navigation/useNavigationStateManager";
 import { useTabRefresh } from "./useTabRefresh";
 import { createDebugContext } from "@/utils/debugUtils";
 import { createDebouncedFunction } from "./utils/navigationUtils";

@@ -4,8 +4,13 @@ import { QueryObserverResult } from "@tanstack/react-query";
 export interface NavigationState {
   navigationComplete: React.MutableRefObject<boolean>;
   navigationInProgress: React.MutableRefObject<boolean>;
+}
+
+export interface PendingNavigationState {
   pendingNavigation: React.MutableRefObject<string | null>;
 }
+
+export interface CompleteNavigationState extends NavigationState, PendingNavigationState {}
 
 export interface UseTabNavigationProps {
   activeTab: string;

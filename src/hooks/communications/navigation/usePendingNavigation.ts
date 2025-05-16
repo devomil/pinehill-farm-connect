@@ -1,11 +1,15 @@
 
 import { useRef, useCallback } from "react";
 import { createDebugContext } from "@/utils/debugUtils";
+import { PendingNavigationState } from "./types";
 
 /**
  * Hook to manage pending navigation requests
  */
-export function usePendingNavigation() {
+export function usePendingNavigation(): PendingNavigationState & {
+  setPendingNavigation: (tab: string | null) => void;
+  hasPendingNavigation: () => boolean;
+} {
   const debug = createDebugContext('PendingNavigation');
   const pendingNavigation = useRef<string | null>(null);
 
