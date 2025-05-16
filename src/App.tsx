@@ -46,37 +46,14 @@ function App() {
     
     // Legacy redirects - these will redirect old URLs to the new ones
     // These MUST come after the primary routes to ensure they don't override
-    { id: "employee-legacy", path: "/employee", element: <Navigate to="/employees" replace /> },
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
     
     // Catch-all route
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
-
-  // Create a map to ensure only one route per normalized path
-  const routePathMap = new Map();
   
-  // First pass: identify all base paths (without query params)
-  appRoutes.forEach(route => {
-    const basePath = route.path.split('?')[0];
-    
-    // Only add non-legacy routes to the map on first pass
-    if (!route.id.includes('legacy') && !routePathMap.has(basePath)) {
-      routePathMap.set(basePath, route);
-    }
-  });
-  
-  // Second pass: add legacy routes only if no primary route exists for that path
-  appRoutes.forEach(route => {
-    const basePath = route.path.split('?')[0];
-    
-    if (!routePathMap.has(basePath)) {
-      routePathMap.set(basePath, route);
-    }
-  });
-  
-  // Create final array of unique routes
-  const uniqueRoutes = Array.from(routePathMap.values());
+  // Use our utility hook to ensure unique routes
+  const uniqueRoutes = useUniqueRoutes(appRoutes);
   
   // For debugging - log all routes that will be rendered
   console.log("Rendering routes:", uniqueRoutes.map(r => ({ id: r.id, path: r.path })));

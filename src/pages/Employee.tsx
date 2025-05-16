@@ -1,18 +1,10 @@
 
 import React from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Navigate } from "react-router-dom";
 
+// This component redirects from the legacy /employee route to the new /employees route
 const Employee = () => {
-  return (
-    <DashboardLayout>
-      <div className="container mx-auto py-6">
-        <h1 className="text-2xl font-bold mb-4">Employee Management</h1>
-        <div className="bg-white rounded-md shadow p-6">
-          <p>Employee management content will be displayed here.</p>
-        </div>
-      </div>
-    </DashboardLayout>
-  );
+  return <Navigate to="/employees" replace />;
 };
 
 export default Employee;
