@@ -1,18 +1,66 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import CommunicationPage from "@/components/communication/CommunicationPage";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
 import { useNavigationDebugger } from "@/hooks/communications/useNavigationDebugger";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 const Communication = () => {
   const navigationDebugger = useNavigationDebugger();
   const location = useLocation();
+  const navigate = useNavigate();
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
   
-  // Show the recovery button if there's a loop detected or we're in recovery mode
+  // Check for direct URL navigation issues
+  useEffect(() => {
+    // If no tab parameter is provided, default to announcements tab
+    const urlParams = new URLSearchParams(location.search);
+    if (!urlParams.has('tab')) {
+      console.log("No tab parameter found, defaulting to announcements");
+      navigate('/communication?tab=announcements', { replace: true });
+    }
+  }, [location.search, navigate]);
+  
+  // Show recovery button if there's a loop detected or we're in recovery mode
   const showRecoveryButton = navigationDebugger.hasLoopDetected || isRecoveryMode;
+  
+  // Render a fallback UI if we're experiencing extreme navigation issues
+  if (navigationDebugger.tabSwitchCount > 10 && !isRecoveryMode) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto my-8">
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Navigation Loop Detected</AlertTitle>
+            <AlertDescription className="space-y-4">
+              <p>
+                We've detected a severe navigation issue that's preventing you from viewing the Messages tab.
+                Please try one of the recovery options below:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  onClick={() => window.location.href = '/communication?tab=announcements'}
+                  variant="outline"
+                >
+                  View Announcements Tab
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/communication?tab=messages&recovery=true'}
+                  variant="default"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" /> Enable Recovery Mode
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout

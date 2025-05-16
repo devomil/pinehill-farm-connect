@@ -6,6 +6,8 @@ import { User } from "@/types";
 import { toast } from "sonner";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 import { useLocation } from "react-router-dom";
+import { NavigationWarning } from "./NavigationWarning";
+import { useNavigationDebugger } from "@/hooks/communications/useNavigationDebugger";
 
 interface CommunicationContentProps {
   activeTab: string;
@@ -24,6 +26,7 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   const [errorState, setErrorState] = useState<{tab: string, count: number} | null>(null);
   const refreshMessages = useRefreshMessages();
   const location = useLocation();
+  const navigationDebugger = useNavigationDebugger();
   
   // Check if we're in recovery mode - in this case we need special handling
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
@@ -35,6 +38,21 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
       setErrorState(null);
     }
   }, [activeTab, errorState]);
+  
+  // Add stabilization effect for recovery mode
+  useEffect(() => {
+    if (isRecoveryMode && activeTab === 'messages') {
+      // In recovery mode, we need to ensure the component stays mounted
+      console.log("Running in messages recovery mode - stabilizing component");
+      
+      // Force a data refresh when in recovery mode
+      const timer = setTimeout(() => {
+        refreshMessages();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isRecoveryMode, activeTab, refreshMessages]);
   
   // Error handler for tab components
   const handleTabError = (tab: string, error: Error) => {
@@ -60,46 +78,66 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     });
   };
   
-  // Always render both components in recovery mode, but hide the inactive one
-  // This prevents unmounting which can cause the navigation loop
-  if (isRecoveryMode) {
+  // Show warning if navigation loop is detected
+  if (navigationDebugger.hasLoopDetected && activeTab === 'messages') {
     return (
-      <div>
-        <div style={{ display: activeTab === "announcements" ? "block" : "none" }}>
+      <div className="space-y-4">
+        <NavigationWarning 
+          hasLoopDetected={navigationDebugger.hasLoopDetected}
+          attemptRecovery={navigationDebugger.attemptRecovery}
+        />
+        
+        {/* Render the actual content after the warning */}
+        {renderTabContent()}
+      </div>
+    );
+  }
+  
+  return renderTabContent();
+  
+  // Helper function to render the appropriate tab content
+  function renderTabContent() {
+    // Always render both components in recovery mode, but hide the inactive one
+    // This prevents unmounting which can cause the navigation loop
+    if (isRecoveryMode) {
+      return (
+        <div>
+          <div style={{ display: activeTab === "announcements" ? "block" : "none" }}>
+            <AnnouncementManager 
+              currentUser={currentUser}
+              allEmployees={unfilteredEmployees || []}
+              isAdmin={isAdmin}
+            />
+          </div>
+          
+          <div style={{ display: activeTab === "messages" ? "block" : "none" }}>
+            <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
+              <EmployeeCommunications />
+            </React.Suspense>
+          </div>
+        </div>
+      );
+    }
+    
+    // Regular render mode - only render the active component
+    return (
+      <>
+        {activeTab === "announcements" && (
           <AnnouncementManager 
             currentUser={currentUser}
             allEmployees={unfilteredEmployees || []}
             isAdmin={isAdmin}
           />
-        </div>
+        )}
         
-        <div style={{ display: activeTab === "messages" ? "block" : "none" }}>
+        {activeTab === "messages" && (
           <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
             <EmployeeCommunications />
           </React.Suspense>
-        </div>
-      </div>
+        )}
+      </>
     );
   }
-  
-  // Regular render mode - only render the active component
-  return (
-    <>
-      {activeTab === "announcements" && (
-        <AnnouncementManager 
-          currentUser={currentUser}
-          allEmployees={unfilteredEmployees || []}
-          isAdmin={isAdmin}
-        />
-      )}
-      
-      {activeTab === "messages" && (
-        <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
-          <EmployeeCommunications />
-        </React.Suspense>
-      )}
-    </>
-  );
 });
 
 CommunicationContent.displayName = "CommunicationContent";

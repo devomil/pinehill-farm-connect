@@ -26,14 +26,26 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
           We've detected an issue that's preventing you from staying on the Messages tab.
           This is a known issue that can occur in certain conditions.
         </p>
-        <Button 
-          onClick={attemptRecovery} 
-          size="sm" 
-          variant="outline" 
-          className="bg-white"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Fix Navigation Issue
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          <Button 
+            onClick={attemptRecovery} 
+            size="sm" 
+            variant="outline" 
+            className="bg-white"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Fix Navigation Issue
+          </Button>
+          <Button
+            onClick={() => {
+              // Force a full recovery by directly setting the URL with the recovery parameter
+              window.location.href = '/communication?tab=messages&recovery=true';
+            }}
+            size="sm"
+            variant="default"
+          >
+            Force Full Recovery
+          </Button>
+        </div>
       </AlertDescription>
     </Alert>
   );
