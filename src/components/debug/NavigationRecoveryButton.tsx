@@ -21,6 +21,9 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
               e.preventDefault();
               e.stopPropagation();
               
+              // Set a flag in session storage to help with recovery
+              window.sessionStorage.setItem('communication_recovery', 'true');
+              
               // Add current timestamp to avoid caching issues
               const timestamp = Date.now();
               
@@ -33,16 +36,22 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
                 currentUrl.searchParams.set('recovery', 'true');
                 currentUrl.searchParams.set('ts', timestamp.toString());
                 
-                // Use history.replaceState to avoid triggering navigation events
-                window.history.replaceState({}, '', currentUrl.toString());
-                
-                // After a short delay, force a clean reload if needed
-                setTimeout(() => {
-                  if (document.location.pathname.includes('communication')) {
-                    // Only reload if still on the communication page
-                    window.location.reload();
-                  }
-                }, 300);
+                try {
+                  // Use history.replaceState to avoid triggering navigation events
+                  window.history.replaceState({}, '', currentUrl.toString());
+                  
+                  // After a short delay, force a clean reload if needed
+                  setTimeout(() => {
+                    if (document.location.pathname.includes('communication')) {
+                      // Only reload if still on the communication page
+                      window.location.reload();
+                    }
+                  }, 300);
+                } catch (err) {
+                  console.error('Failed to update history:', err);
+                  // Fallback: direct navigation as a last resort
+                  window.location.href = currentUrl.toString();
+                }
               }
             }}
             className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}

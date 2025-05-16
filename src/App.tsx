@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,7 +16,6 @@ import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { RouteDebugger } from "@/components/debug/RouteDebugger";
-import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,7 +28,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Define routes with unique IDs and paths
+  // Define routes with unique IDs and paths 
+  // IMPORTANT: No duplicate routes, each must have a unique ID
   const appRoutes = [
     { id: "home", path: "/", element: <Navigate to="/login" replace /> },
     { id: "login", path: "/login", element: <Login /> },
@@ -47,8 +48,10 @@ function App() {
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
 
-  // Use our updated hook for route deduplication
-  const uniqueRoutes = useUniqueRoutes(appRoutes);
+  // Filter out duplicate routes by path - take the first occurrence
+  const uniqueRoutes = appRoutes.filter((route, index, self) => 
+    index === self.findIndex((r) => r.path === route.path)
+  );
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -16,7 +16,6 @@ interface CommunicationContentProps {
   isAdmin: boolean;
 }
 
-// Use React.memo to prevent unnecessary re-renders when props don't change
 export const CommunicationContent = React.memo<CommunicationContentProps>(({
   activeTab,
   currentUser,
@@ -30,12 +29,14 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   const mountRef = useRef(Date.now());
   const renderCountRef = useRef(0);
   const stableContentRef = useRef(false);
+  const [stableComponentMounted, setStableComponentMounted] = useState(false);
   
   // Increment render count for debugging
   renderCountRef.current++;
   
   // Check if we're in recovery mode - in this case we need special handling
-  const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
+  const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true' ||
+                        window.sessionStorage.getItem('communication_recovery') === 'true';
   
   // Log mount and unmount events
   useEffect(() => {
@@ -44,7 +45,18 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     // When mounted, mark as stable after a short delay
     const stabilizeTimer = setTimeout(() => {
       stableContentRef.current = true;
+      setStableComponentMounted(true);
       console.log("Content component stabilized");
+      
+      // Clear recovery flag from session storage after successful mount
+      if (isRecoveryMode && activeTab === 'messages') {
+        setTimeout(() => {
+          if (document.location.pathname.includes('communication')) {
+            window.sessionStorage.removeItem('communication_recovery');
+            console.log("Recovery flag cleared from session storage");
+          }
+        }, 1000);
+      }
     }, 500);
     
     return () => {
@@ -105,70 +117,69 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     });
   };
   
-  // Show warning if navigation loop is detected
-  if (navigationDebugger.hasLoopDetected && activeTab === 'messages') {
+  // Determine if warning should be shown
+  const showNavigationWarning = navigationDebugger.hasLoopDetected && activeTab === 'messages';
+  
+  // Special case for new 'both' rendering mode that prevents unmounting of components
+  // THIS IS THE KEY CHANGE: Always render both components, but only show the active one
+  // This prevents the unmounting/remounting cycle that causes the navigation loop
+  if (isRecoveryMode || navigationDebugger.hasLoopDetected || stableComponentMounted) {
     return (
       <div className="space-y-4">
-        <NavigationWarning 
-          hasLoopDetected={navigationDebugger.hasLoopDetected}
-          attemptRecovery={navigationDebugger.attemptRecovery}
-        />
+        {showNavigationWarning && (
+          <NavigationWarning 
+            hasLoopDetected={navigationDebugger.hasLoopDetected}
+            attemptRecovery={navigationDebugger.attemptRecovery}
+          />
+        )}
         
-        {/* Render the actual content after the warning */}
-        {renderTabContent()}
-      </div>
-    );
-  }
-  
-  return renderTabContent();
-  
-  // Helper function to render the appropriate tab content
-  function renderTabContent() {
-    // IMPORTANT: Always render both components in recovery mode, but hide the inactive one
-    // This prevents unmounting which can cause the navigation loop
-    if (isRecoveryMode || navigationDebugger.hasLoopDetected) {
-      return (
-        <div>
-          <div className={activeTab === "announcements" ? "block" : "hidden"}>
-            <AnnouncementManager 
-              currentUser={currentUser}
-              allEmployees={unfilteredEmployees || []}
-              isAdmin={isAdmin}
-            />
-          </div>
-          
-          <div className={activeTab === "messages" ? "block" : "hidden"}>
-            <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
-              <EmployeeCommunications 
-                retryCount={errorState?.tab === "messages" ? errorState.count : 0} 
-              />
-            </React.Suspense>
-          </div>
-        </div>
-      );
-    }
-    
-    // Regular render mode - only render the active component
-    return (
-      <>
-        {activeTab === "announcements" && (
+        {/* Render both components but only show the active one */}
+        <div className={activeTab === "announcements" ? "block" : "hidden"}>
           <AnnouncementManager 
             currentUser={currentUser}
             allEmployees={unfilteredEmployees || []}
             isAdmin={isAdmin}
           />
-        )}
+        </div>
         
-        {activeTab === "messages" && (
+        <div className={activeTab === "messages" ? "block" : "hidden"}>
           <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
             <EmployeeCommunications 
               retryCount={errorState?.tab === "messages" ? errorState.count : 0} 
             />
           </React.Suspense>
-        )}
-      </>
+        </div>
+      </div>
     );
   }
+  
+  // Regular rendering mode
+  return (
+    <>
+      {showNavigationWarning && (
+        <NavigationWarning 
+          hasLoopDetected={navigationDebugger.hasLoopDetected}
+          attemptRecovery={navigationDebugger.attemptRecovery}
+        />
+      )}
+      
+      {activeTab === "announcements" && (
+        <AnnouncementManager 
+          currentUser={currentUser}
+          allEmployees={unfilteredEmployees || []}
+          isAdmin={isAdmin}
+        />
+      )}
+      
+      {activeTab === "messages" && (
+        <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
+          <EmployeeCommunications 
+            retryCount={errorState?.tab === "messages" ? errorState.count : 0} 
+          />
+        </React.Suspense>
+      )}
+    </>
+  );
 });
 
 CommunicationContent.displayName = "CommunicationContent";

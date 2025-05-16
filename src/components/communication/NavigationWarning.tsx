@@ -23,8 +23,8 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
       <AlertTitle>Navigation Issue Detected</AlertTitle>
       <AlertDescription className="space-y-2">
         <p>
-          We've detected an issue with the Direct Messages tab that's causing unexpected navigation.
-          This could be due to a component loading conflict or browser state issues.
+          There's an issue with the Direct Messages tab navigation. This could be happening because
+          of route conflicts or state management issues.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button 
@@ -41,9 +41,9 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
           </Button>
           <Button
             onClick={() => {
-              // Force a full recovery by directly setting the URL with the recovery parameter
-              // Add current timestamp to avoid caching issues
-              const recoveryUrl = '/communication?tab=messages&recovery=true&ts=' + Date.now();
+              // Forced recovery with special flag
+              window.sessionStorage.setItem('communication_recovery', 'true');
+              const recoveryUrl = `/communication?tab=messages&recovery=true&ts=${Date.now()}`;
               window.location.href = recoveryUrl;
             }}
             size="sm"
