@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -28,9 +29,10 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Define routes with unique IDs and paths 
-  // Each route must have a unique ID and path
+  // Define routes with unique IDs and paths
+  // Primary routes first, followed by legacy redirects
   const appRoutes = [
+    // Primary routes - these are the canonical routes users should use
     { id: "index", path: "/", element: <Index /> },
     { id: "login", path: "/login", element: <Login /> },
     { id: "dashboard", path: "/dashboard", element: <Dashboard /> },
@@ -43,25 +45,41 @@ function App() {
     { id: "communication", path: "/communication", element: <Communication /> },
     
     // Legacy redirects - these will redirect old URLs to the new ones
+    // These MUST come after the primary routes to ensure they don't override
     { id: "employee-legacy", path: "/employee", element: <Navigate to="/employees" replace /> },
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
+    
+    // Catch-all route
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
 
-  // Create a map to ensure only one route per path
-  // This will take the first occurrence of each path
-  const routeMap = new Map();
+  // Create a map to ensure only one route per normalized path
+  const routePathMap = new Map();
   
-  // Process each route, only keeping the first one for each path
+  // First pass: identify all base paths (without query params)
   appRoutes.forEach(route => {
-    const normalizedPath = route.path.split('?')[0]; // Remove query parameters for matching
-    if (!routeMap.has(normalizedPath)) {
-      routeMap.set(normalizedPath, route);
+    const basePath = route.path.split('?')[0];
+    
+    // Only add non-legacy routes to the map on first pass
+    if (!route.id.includes('legacy') && !routePathMap.has(basePath)) {
+      routePathMap.set(basePath, route);
     }
   });
   
-  // Convert the map back to an array of unique routes
-  const uniqueRoutes = Array.from(routeMap.values());
+  // Second pass: add legacy routes only if no primary route exists for that path
+  appRoutes.forEach(route => {
+    const basePath = route.path.split('?')[0];
+    
+    if (!routePathMap.has(basePath)) {
+      routePathMap.set(basePath, route);
+    }
+  });
+  
+  // Create final array of unique routes
+  const uniqueRoutes = Array.from(routePathMap.values());
+  
+  // For debugging - log all routes that will be rendered
+  console.log("Rendering routes:", uniqueRoutes.map(r => ({ id: r.id, path: r.path })));
 
   return (
     <QueryClientProvider client={queryClient}>

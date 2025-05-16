@@ -13,6 +13,36 @@ interface NavigationRecoveryButtonProps {
 export function NavigationRecoveryButton({ onRecover, loopDetected = false }: NavigationRecoveryButtonProps) {
   const navigate = useNavigate();
 
+  // Function to perform a thorough navigation recovery
+  const performFullRecovery = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Clear all navigation state
+    window.sessionStorage.removeItem('communication_recovery');
+    localStorage.removeItem('last_communication_tab');
+    
+    // Set fresh recovery flag
+    window.sessionStorage.setItem('communication_recovery', 'true');
+    
+    // Add current timestamp to avoid caching issues
+    const timestamp = Date.now();
+    
+    // Execute recovery function
+    onRecover();
+    
+    // If there's a detected loop, perform a more thorough recovery
+    if (loopDetected) {
+      // First navigate to announcements tab to reset state
+      navigate('/communication?tab=announcements&reset=true', { replace: true });
+      
+      // After a short delay, allow navigation back to messages tab with recovery mode
+      setTimeout(() => {
+        navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
+      }, 500);
+    }
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -20,33 +50,7 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
           <Button 
             variant={loopDetected ? "destructive" : "outline"}
             size="sm" 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              // Clear any existing recovery flags
-              window.sessionStorage.removeItem('communication_recovery');
-              
-              // Set fresh recovery flag
-              window.sessionStorage.setItem('communication_recovery', 'true');
-              
-              // Add current timestamp to avoid caching issues
-              const timestamp = Date.now();
-              
-              // Execute recovery function
-              onRecover();
-              
-              // If there's a detected loop, perform a more thorough recovery
-              if (loopDetected) {
-                // First navigate to announcements tab to reset state
-                navigate('/communication?tab=announcements&reset=true', { replace: true });
-                
-                // After a short delay, allow navigation back to messages tab with recovery mode
-                setTimeout(() => {
-                  navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
-                }, 500);
-              }
-            }}
+            onClick={performFullRecovery}
             className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}
           >
             {loopDetected ? (

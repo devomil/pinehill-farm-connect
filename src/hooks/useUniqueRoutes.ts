@@ -9,6 +9,7 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
   routes: T[]
 ): T[] {
   return useMemo(() => {
+    // Create a map to store unique routes
     const routeMap = new Map<string, T>();
     
     // Normalize paths by removing query parameters
@@ -16,18 +17,23 @@ export function useUniqueRoutes<T extends { path?: string; to?: string; id?: str
       // Handle undefined paths
       if (!path) return '/';
       
-      // Remove query parameters and trailing slashes
+      // Remove query parameters and trailing slashes for matching
       return path.split('?')[0].replace(/\/+$/, '') || '/';
     };
     
-    // Process routes to keep only unique normalized paths (most recent definition wins)
+    // Process routes to keep only unique normalized paths
+    // Preserve the canonical route (usually the one with the shorter path)
     routes.forEach(route => {
       // Determine the path to use as key
       const pathToUse = route.path || route.to || '/';
       const normalizedPath = normalizePath(pathToUse);
       
-      // Store in map (overwriting any previous route with same normalized path)
-      routeMap.set(normalizedPath, route);
+      // Only add if not already in the map, or if this is a "primary" route 
+      // (routes with simple path are preferred over longer ones with the same base)
+      if (!routeMap.has(normalizedPath) || 
+          (route.id && !route.id.includes('legacy') && routeMap.get(normalizedPath)?.id?.includes('legacy'))) {
+        routeMap.set(normalizedPath, route);
+      }
     });
     
     // Convert back to array
