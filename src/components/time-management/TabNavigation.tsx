@@ -2,6 +2,7 @@
 import React, { useCallback } from "react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimeManagement } from "@/contexts/timeManagement";
+import { useLocation } from "react-router-dom";
 
 interface TabNavigationProps {
   isAdmin: boolean;
@@ -9,6 +10,18 @@ interface TabNavigationProps {
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
   const { activeTab, setActiveTab, forceRefreshData, fetchRequests } = useTimeManagement();
+  const location = useLocation();
+
+  // Handle URL query parameters for direct navigation
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get('tab');
+    
+    if (tabFromUrl && activeTab !== tabFromUrl) {
+      console.log(`Setting tab from URL: ${tabFromUrl}`);
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search, setActiveTab, activeTab]);
 
   // Memoize tab change handler to prevent recreation on every render
   const handleTabChange = useCallback((value: string) => {

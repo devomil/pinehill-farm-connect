@@ -8,7 +8,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import TimeManagement from "@/pages/TimeManagement";
-import Calendar from "@/pages/Calendar";
 import Training from "@/pages/Training";
 import Marketing from "@/pages/Marketing";
 import Employees from "@/pages/Employees";
@@ -37,7 +36,6 @@ function App() {
     { id: "login", path: "/login", element: <Login /> },
     { id: "dashboard", path: "/dashboard", element: <Dashboard /> },
     { id: "time", path: "/time", element: <TimeManagement /> },
-    { id: "calendar", path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
     { id: "training", path: "/training", element: <Training /> },
     { id: "marketing", path: "/marketing", element: <Marketing /> },
     { id: "employees", path: "/employees", element: <Employees /> },
@@ -45,7 +43,7 @@ function App() {
     { id: "communication", path: "/communication", element: <Communication /> },
     
     // Legacy redirects - these will redirect old URLs to the new ones
-    // These MUST come after the primary routes to ensure they don't override
+    { id: "calendar-legacy", path: "/calendar", element: <Navigate to="/time?tab=team-calendar" replace /> },
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
     
     // Catch-all route
