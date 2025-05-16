@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const Communication = () => {
   const navigationDebugger = useNavigationDebugger();
@@ -16,6 +17,15 @@ const Communication = () => {
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
   const [stabilized, setStabilized] = useState(false);
   const initialNavigationComplete = useRef(false);
+  const mountTime = useRef(Date.now());
+  
+  // Create a log entry when the page mounts
+  useEffect(() => {
+    console.log(`Communication page mounted at ${new Date(mountTime.current).toISOString()}`);
+    return () => {
+      console.log(`Communication page unmounting after ${Date.now() - mountTime.current}ms`);
+    };
+  }, []);
   
   // Check for direct URL navigation issues
   useEffect(() => {
@@ -25,6 +35,7 @@ const Communication = () => {
     const urlParams = new URLSearchParams(location.search);
     if (!urlParams.has('tab')) {
       console.log("No tab parameter found, defaulting to announcements");
+      // Use replace to avoid adding to history
       navigate('/communication?tab=announcements', { replace: true });
     }
     
@@ -39,7 +50,7 @@ const Communication = () => {
       
       // Force a clean state when in recovery mode
       const cleanParams = new URLSearchParams(location.search);
-      const currentTab = cleanParams.get('tab') || 'messages';
+      const currentTab = cleanParams.get('tab') || 'announcements'; // Default to announcements if no tab
       
       // Use a timestamp to avoid caching issues
       const timestamp = Date.now();
@@ -49,6 +60,11 @@ const Communication = () => {
       
       // Replace current navigation state to prevent history buildup
       navigate(`/communication?${cleanParams.toString()}`, { replace: true });
+      
+      // Show a toast to inform the user
+      toast.success("Communication page stabilized", {
+        description: "Navigation has been reset to prevent issues"
+      });
     }
   }, [isRecoveryMode, stabilized, location.search, navigate]);
   
@@ -81,6 +97,10 @@ const Communication = () => {
                 <Button 
                   onClick={() => {
                     const timestamp = Date.now();
+                    // Clear any session storage flags that might be causing issues
+                    window.sessionStorage.removeItem('communication_recovery');
+                    // Then set fresh recovery flag
+                    window.sessionStorage.setItem('communication_recovery', 'true');
                     navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
                   }}
                   variant="default"

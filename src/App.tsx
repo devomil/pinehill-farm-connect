@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,6 +15,7 @@ import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { RouteDebugger } from "@/components/debug/RouteDebugger";
+import Index from "@/pages/Index";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,9 +29,9 @@ const queryClient = new QueryClient({
 
 function App() {
   // Define routes with unique IDs and paths 
-  // IMPORTANT: No duplicate routes, each must have a unique ID
+  // Each route must have a unique ID and path
   const appRoutes = [
-    { id: "home", path: "/", element: <Navigate to="/login" replace /> },
+    { id: "index", path: "/", element: <Index /> },
     { id: "login", path: "/login", element: <Login /> },
     { id: "dashboard", path: "/dashboard", element: <Dashboard /> },
     { id: "time", path: "/time", element: <TimeManagement /> },
@@ -42,16 +42,26 @@ function App() {
     { id: "reports", path: "/reports", element: <Reports /> },
     { id: "communication", path: "/communication", element: <Communication /> },
     
-    // Legacy redirects - keep these at the end so they don't override active routes
+    // Legacy redirects - these will redirect old URLs to the new ones
     { id: "employee-legacy", path: "/employee", element: <Navigate to="/employees" replace /> },
     { id: "communications-legacy", path: "/communications", element: <Navigate to="/communication" replace /> },
     { id: "not-found", path: "*", element: <Navigate to="/dashboard" replace /> }
   ];
 
-  // Filter out duplicate routes by path - take the first occurrence
-  const uniqueRoutes = appRoutes.filter((route, index, self) => 
-    index === self.findIndex((r) => r.path === route.path)
-  );
+  // Create a map to ensure only one route per path
+  // This will take the first occurrence of each path
+  const routeMap = new Map();
+  
+  // Process each route, only keeping the first one for each path
+  appRoutes.forEach(route => {
+    const normalizedPath = route.path.split('?')[0]; // Remove query parameters for matching
+    if (!routeMap.has(normalizedPath)) {
+      routeMap.set(normalizedPath, route);
+    }
+  });
+  
+  // Convert the map back to an array of unique routes
+  const uniqueRoutes = Array.from(routeMap.values());
 
   return (
     <QueryClientProvider client={queryClient}>

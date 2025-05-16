@@ -23,8 +23,8 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
       <AlertTitle>Navigation Issue Detected</AlertTitle>
       <AlertDescription className="space-y-2">
         <p>
-          There's an issue with the Direct Messages tab navigation. This could be happening because
-          of route conflicts or state management issues.
+          There's an issue with the Direct Messages tab navigation. The system will try to
+          automatically stabilize the interface.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button 
@@ -41,9 +41,16 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
           </Button>
           <Button
             onClick={() => {
-              // Forced recovery with special flag
+              // Clear any lingering state first
+              window.sessionStorage.removeItem('communication_recovery');
+              
+              // Set fresh recovery flag
               window.sessionStorage.setItem('communication_recovery', 'true');
+              
+              // Generate a unique recovery URL with timestamp
               const recoveryUrl = `/communication?tab=messages&recovery=true&ts=${Date.now()}`;
+              
+              // Force a clean navigation
               window.location.href = recoveryUrl;
             }}
             size="sm"

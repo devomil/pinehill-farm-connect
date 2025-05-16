@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Bug } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate } from 'react-router-dom';
 
 interface NavigationRecoveryButtonProps {
   onRecover: () => void;
@@ -10,6 +11,8 @@ interface NavigationRecoveryButtonProps {
 }
 
 export function NavigationRecoveryButton({ onRecover, loopDetected = false }: NavigationRecoveryButtonProps) {
+  const navigate = useNavigate();
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -21,7 +24,10 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
               e.preventDefault();
               e.stopPropagation();
               
-              // Set a flag in session storage to help with recovery
+              // Clear any existing recovery flags
+              window.sessionStorage.removeItem('communication_recovery');
+              
+              // Set fresh recovery flag
               window.sessionStorage.setItem('communication_recovery', 'true');
               
               // Add current timestamp to avoid caching issues
@@ -30,28 +36,15 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
               // Execute recovery function
               onRecover();
               
-              // If loop detected, also add a recovery parameter to URL
+              // If there's a detected loop, perform a more thorough recovery
               if (loopDetected) {
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('recovery', 'true');
-                currentUrl.searchParams.set('ts', timestamp.toString());
+                // First navigate to announcements tab to reset state
+                navigate('/communication?tab=announcements&reset=true', { replace: true });
                 
-                try {
-                  // Use history.replaceState to avoid triggering navigation events
-                  window.history.replaceState({}, '', currentUrl.toString());
-                  
-                  // After a short delay, force a clean reload if needed
-                  setTimeout(() => {
-                    if (document.location.pathname.includes('communication')) {
-                      // Only reload if still on the communication page
-                      window.location.reload();
-                    }
-                  }, 300);
-                } catch (err) {
-                  console.error('Failed to update history:', err);
-                  // Fallback: direct navigation as a last resort
-                  window.location.href = currentUrl.toString();
-                }
+                // After a short delay, allow navigation back to messages tab with recovery mode
+                setTimeout(() => {
+                  navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
+                }, 500);
               }
             }}
             className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}
