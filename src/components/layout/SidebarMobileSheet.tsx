@@ -38,6 +38,11 @@ export const SidebarMobileSheet = ({
     // For items with query params, use the base path as key
     const basePath = item.path.split('?')[0];
     
+    // Explicitly skip any "/communications" plural path
+    if (basePath === "/communications") {
+      return;
+    }
+    
     // Only add an item if its base path isn't already in the map
     // or if we're adding an item with query params and prefer it
     if (!uniqueItemsMap.has(basePath) || item.path.includes('?')) {
