@@ -23,12 +23,16 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
       <AlertTitle>Navigation Issue Detected</AlertTitle>
       <AlertDescription className="space-y-2">
         <p>
-          We've detected an issue that's preventing you from staying on the Messages tab.
-          This could be due to data loading conflicts or browser caching issues.
+          We've detected an issue with the Direct Messages tab that's causing unexpected navigation.
+          This could be due to a component loading conflict or browser state issues.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button 
-            onClick={attemptRecovery} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              attemptRecovery();
+            }} 
             size="sm" 
             variant="outline" 
             className="bg-white"
@@ -38,6 +42,7 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
           <Button
             onClick={() => {
               // Force a full recovery by directly setting the URL with the recovery parameter
+              // Add current timestamp to avoid caching issues
               const recoveryUrl = '/communication?tab=messages&recovery=true&ts=' + Date.now();
               window.location.href = recoveryUrl;
             }}

@@ -38,6 +38,7 @@ export function MessageList({
   const refreshIntervalRef = useRef<number | null>(null);
   const initialLoadRef = useRef<boolean>(false);
   const messageHashRef = useRef<string>("");
+  const componentMountedAt = useRef(Date.now());
   
   // Compute a hash of the messages to detect real changes
   const messagesHash = useMemo(() => {
@@ -50,8 +51,6 @@ export function MessageList({
     if (messageHashRef.current === messagesHash && messageHashRef.current !== "") {
       return groupedMessagesRef.current;
     }
-    
-    console.log("Recomputing grouped messages");
     
     // Sort messages by time, newest first
     const sortedMessages = [...messages].sort(
@@ -97,6 +96,8 @@ export function MessageList({
   
   // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
+    console.log(`MessageList component mounted at ${new Date().toISOString()}`);
+    
     // Clear any existing interval when component re-renders
     if (refreshIntervalRef.current !== null) {
       clearInterval(refreshIntervalRef.current);
@@ -105,19 +106,26 @@ export function MessageList({
     // Initial load only once
     if (!initialLoadRef.current) {
       console.log("Initial message list data load");
-      refreshMessages();
-      initialLoadRef.current = true;
+      
+      // Delay initial refresh to ensure component is fully mounted
+      const initialTimer = setTimeout(() => {
+        refreshMessages();
+        initialLoadRef.current = true;
+      }, 1000);
+      
+      return () => clearTimeout(initialTimer);
     }
     
     // Set up refresh interval with much longer timing
     const interval = window.setInterval(() => {
       console.log("Auto-refreshing message list");
       refreshMessages();
-    }, isAdmin ? 180000 : 300000); // Every 3-5 minutes instead - drastically reduced frequency
+    }, isAdmin ? 180000 : 300000); // Every 3-5 minutes
     
     refreshIntervalRef.current = interval as unknown as number;
     
     return () => {
+      console.log(`MessageList component unmounting after ${Date.now() - componentMountedAt.current}ms`);
       if (refreshIntervalRef.current !== null) {
         clearInterval(refreshIntervalRef.current);
       }

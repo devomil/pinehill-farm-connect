@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import CommunicationPage from "@/components/communication/CommunicationPage";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
@@ -15,15 +15,20 @@ const Communication = () => {
   const navigate = useNavigate();
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
   const [stabilized, setStabilized] = useState(false);
+  const initialNavigationComplete = useRef(false);
   
   // Check for direct URL navigation issues
   useEffect(() => {
+    if (initialNavigationComplete.current) return;
+    
     // If no tab parameter is provided, default to announcements tab
     const urlParams = new URLSearchParams(location.search);
     if (!urlParams.has('tab')) {
       console.log("No tab parameter found, defaulting to announcements");
       navigate('/communication?tab=announcements', { replace: true });
     }
+    
+    initialNavigationComplete.current = true;
   }, [location.search, navigate]);
 
   // Helper effect to ensure the recovery mode is properly initialized
@@ -34,17 +39,27 @@ const Communication = () => {
       
       // Force a clean state when in recovery mode
       const cleanParams = new URLSearchParams(location.search);
-      cleanParams.set('tab', cleanParams.get('tab') || 'messages');
+      const currentTab = cleanParams.get('tab') || 'messages';
+      
+      // Use a timestamp to avoid caching issues
+      const timestamp = Date.now();
+      cleanParams.set('tab', currentTab);
       cleanParams.set('recovery', 'true');
+      cleanParams.set('ts', timestamp.toString());
+      
+      // Replace current navigation state to prevent history buildup
       navigate(`/communication?${cleanParams.toString()}`, { replace: true });
     }
   }, [isRecoveryMode, stabilized, location.search, navigate]);
+  
+  // Check if we're on messages tab
+  const isOnMessagesTab = new URLSearchParams(location.search).get('tab') === 'messages';
   
   // Show recovery button if there's a loop detected or we're in recovery mode
   const showRecoveryButton = navigationDebugger.hasLoopDetected || isRecoveryMode;
   
   // Render a fallback UI if we're experiencing extreme navigation issues
-  if (navigationDebugger.tabSwitchCount > 10 && !isRecoveryMode) {
+  if (navigationDebugger.tabSwitchCount > 10 && !isRecoveryMode && isOnMessagesTab) {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto my-8">
@@ -58,7 +73,7 @@ const Communication = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
-                  onClick={() => window.location.href = '/communication?tab=announcements'}
+                  onClick={() => navigate('/communication?tab=announcements', { replace: true })}
                   variant="outline"
                 >
                   View Announcements Tab
@@ -66,7 +81,7 @@ const Communication = () => {
                 <Button 
                   onClick={() => {
                     const timestamp = Date.now();
-                    window.location.href = `/communication?tab=messages&recovery=true&ts=${timestamp}`;
+                    navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
                   }}
                   variant="default"
                 >

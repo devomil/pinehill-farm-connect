@@ -29,6 +29,7 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   const navigationDebugger = useNavigationDebugger();
   const mountRef = useRef(Date.now());
   const renderCountRef = useRef(0);
+  const stableContentRef = useRef(false);
   
   // Increment render count for debugging
   renderCountRef.current++;
@@ -40,8 +41,15 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   useEffect(() => {
     console.log(`CommunicationContent mounted, activeTab: ${activeTab}, isRecoveryMode: ${isRecoveryMode}, renderCount: ${renderCountRef.current}`);
     
+    // When mounted, mark as stable after a short delay
+    const stabilizeTimer = setTimeout(() => {
+      stableContentRef.current = true;
+      console.log("Content component stabilized");
+    }, 500);
+    
     return () => {
       console.log(`CommunicationContent unmounting, activeTab was: ${activeTab}, isRecoveryMode: ${isRecoveryMode}, lived for: ${Date.now() - mountRef.current}ms`);
+      clearTimeout(stabilizeTimer);
     };
   }, [activeTab, isRecoveryMode]);
   
@@ -53,7 +61,7 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     }
   }, [activeTab, errorState]);
   
-  // Add stabilization effect for recovery mode
+  // Add stabilization effect for recovery mode - CRITICAL part
   useEffect(() => {
     if (isRecoveryMode && activeTab === 'messages') {
       // In recovery mode, we need to ensure the component stays mounted
@@ -62,7 +70,12 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
       // Force a data refresh when in recovery mode
       const timer = setTimeout(() => {
         refreshMessages();
-      }, 500);
+        
+        // After refresh, show success toast
+        toast.success("Messages tab stabilized", {
+          description: "You can now use the messages tab normally"
+        });
+      }, 300);
       
       return () => clearTimeout(timer);
     }
@@ -111,9 +124,9 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   
   // Helper function to render the appropriate tab content
   function renderTabContent() {
-    // Always render both components in recovery mode, but hide the inactive one
+    // IMPORTANT: Always render both components in recovery mode, but hide the inactive one
     // This prevents unmounting which can cause the navigation loop
-    if (isRecoveryMode) {
+    if (isRecoveryMode || navigationDebugger.hasLoopDetected) {
       return (
         <div>
           <div className={activeTab === "announcements" ? "block" : "hidden"}>

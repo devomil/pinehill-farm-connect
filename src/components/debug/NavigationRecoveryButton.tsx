@@ -24,6 +24,7 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
               // Add current timestamp to avoid caching issues
               const timestamp = Date.now();
               
+              // Execute recovery function
               onRecover();
               
               // If loop detected, also add a recovery parameter to URL
@@ -31,7 +32,17 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('recovery', 'true');
                 currentUrl.searchParams.set('ts', timestamp.toString());
+                
+                // Use history.replaceState to avoid triggering navigation events
                 window.history.replaceState({}, '', currentUrl.toString());
+                
+                // After a short delay, force a clean reload if needed
+                setTimeout(() => {
+                  if (document.location.pathname.includes('communication')) {
+                    // Only reload if still on the communication page
+                    window.location.reload();
+                  }
+                }, 300);
               }
             }}
             className={`flex items-center gap-1 text-xs ${loopDetected ? 'animate-pulse' : ''}`}
