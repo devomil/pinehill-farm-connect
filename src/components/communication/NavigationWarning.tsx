@@ -2,7 +2,7 @@
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 
 interface NavigationWarningProps {
   hasLoopDetected: boolean;
@@ -24,7 +24,7 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
       <AlertDescription className="space-y-2">
         <p>
           We've detected an issue that's preventing you from staying on the Messages tab.
-          This is a known issue that can occur in certain conditions.
+          This could be due to data loading conflicts or browser caching issues.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button 
@@ -38,12 +38,13 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
           <Button
             onClick={() => {
               // Force a full recovery by directly setting the URL with the recovery parameter
-              window.location.href = '/communication?tab=messages&recovery=true';
+              const recoveryUrl = '/communication?tab=messages&recovery=true&ts=' + Date.now();
+              window.location.href = recoveryUrl;
             }}
             size="sm"
             variant="default"
           >
-            Force Full Recovery
+            <ArrowRight className="mr-2 h-4 w-4" /> Force Full Recovery
           </Button>
         </div>
       </AlertDescription>

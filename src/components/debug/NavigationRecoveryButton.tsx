@@ -15,17 +15,22 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
-            variant="destructive"
+            variant={loopDetected ? "destructive" : "outline"}
             size="sm" 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              
+              // Add current timestamp to avoid caching issues
+              const timestamp = Date.now();
+              
               onRecover();
               
               // If loop detected, also add a recovery parameter to URL
               if (loopDetected) {
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('recovery', 'true');
+                currentUrl.searchParams.set('ts', timestamp.toString());
                 window.history.replaceState({}, '', currentUrl.toString());
               }
             }}

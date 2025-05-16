@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CommunicationPage from "@/components/communication/CommunicationPage";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { NavigationRecoveryButton } from "@/components/debug/NavigationRecoveryButton";
@@ -14,6 +14,7 @@ const Communication = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
+  const [stabilized, setStabilized] = useState(false);
   
   // Check for direct URL navigation issues
   useEffect(() => {
@@ -24,6 +25,20 @@ const Communication = () => {
       navigate('/communication?tab=announcements', { replace: true });
     }
   }, [location.search, navigate]);
+
+  // Helper effect to ensure the recovery mode is properly initialized
+  useEffect(() => {
+    if (isRecoveryMode && !stabilized) {
+      console.log("Entering recovery mode, stabilizing navigation");
+      setStabilized(true);
+      
+      // Force a clean state when in recovery mode
+      const cleanParams = new URLSearchParams(location.search);
+      cleanParams.set('tab', cleanParams.get('tab') || 'messages');
+      cleanParams.set('recovery', 'true');
+      navigate(`/communication?${cleanParams.toString()}`, { replace: true });
+    }
+  }, [isRecoveryMode, stabilized, location.search, navigate]);
   
   // Show recovery button if there's a loop detected or we're in recovery mode
   const showRecoveryButton = navigationDebugger.hasLoopDetected || isRecoveryMode;
@@ -49,7 +64,10 @@ const Communication = () => {
                   View Announcements Tab
                 </Button>
                 <Button 
-                  onClick={() => window.location.href = '/communication?tab=messages&recovery=true'}
+                  onClick={() => {
+                    const timestamp = Date.now();
+                    window.location.href = `/communication?tab=messages&recovery=true&ts=${timestamp}`;
+                  }}
                   variant="default"
                 >
                   <RefreshCw className="mr-2 h-4 w-4" /> Enable Recovery Mode

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { AnnouncementManager } from "./announcement/AnnouncementManager";
 import { EmployeeCommunications } from "../communications/EmployeeCommunications";
 import { User } from "@/types";
@@ -27,9 +27,23 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   const refreshMessages = useRefreshMessages();
   const location = useLocation();
   const navigationDebugger = useNavigationDebugger();
+  const mountRef = useRef(Date.now());
+  const renderCountRef = useRef(0);
+  
+  // Increment render count for debugging
+  renderCountRef.current++;
   
   // Check if we're in recovery mode - in this case we need special handling
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
+  
+  // Log mount and unmount events
+  useEffect(() => {
+    console.log(`CommunicationContent mounted, activeTab: ${activeTab}, isRecoveryMode: ${isRecoveryMode}, renderCount: ${renderCountRef.current}`);
+    
+    return () => {
+      console.log(`CommunicationContent unmounting, activeTab was: ${activeTab}, isRecoveryMode: ${isRecoveryMode}, lived for: ${Date.now() - mountRef.current}ms`);
+    };
+  }, [activeTab, isRecoveryMode]);
   
   // Reset error state when tab changes
   useEffect(() => {
@@ -102,7 +116,7 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
     if (isRecoveryMode) {
       return (
         <div>
-          <div style={{ display: activeTab === "announcements" ? "block" : "none" }}>
+          <div className={activeTab === "announcements" ? "block" : "hidden"}>
             <AnnouncementManager 
               currentUser={currentUser}
               allEmployees={unfilteredEmployees || []}
@@ -110,9 +124,11 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
             />
           </div>
           
-          <div style={{ display: activeTab === "messages" ? "block" : "none" }}>
+          <div className={activeTab === "messages" ? "block" : "hidden"}>
             <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
-              <EmployeeCommunications />
+              <EmployeeCommunications 
+                retryCount={errorState?.tab === "messages" ? errorState.count : 0} 
+              />
             </React.Suspense>
           </div>
         </div>
@@ -132,7 +148,9 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
         
         {activeTab === "messages" && (
           <React.Suspense fallback={<div className="p-4 text-center">Loading messages...</div>}>
-            <EmployeeCommunications />
+            <EmployeeCommunications 
+              retryCount={errorState?.tab === "messages" ? errorState.count : 0} 
+            />
           </React.Suspense>
         )}
       </>
