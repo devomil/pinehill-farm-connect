@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useCommunications } from '@/hooks/useCommunications';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -19,11 +19,11 @@ export function useRefreshMessages() {
   const refetchEmployees = employeeDirectory?.refetch;
   
   const dashboard = useDashboardData();
-  const refreshDashboardData = dashboard?.refreshDashboardData;
+  const handleRefreshData = dashboard?.handleRefreshData; // Using handleRefreshData instead of refreshDashboardData
   
   // Track last refresh time to prevent excessive refreshes
-  const lastRefreshTimestamp = React.useRef<number>(Date.now());
-  const isRefreshing = React.useRef<boolean>(false);
+  const lastRefreshTimestamp = useRef<number>(Date.now());
+  const isRefreshing = useRef<boolean>(false);
   
   // Combined refresh function that ensures all message-related data is up-to-date
   const refresh = useCallback(async () => {
@@ -61,7 +61,7 @@ export function useRefreshMessages() {
           }
           return refetchEmployees();
         })(),
-        refreshDashboardData && refreshDashboardData()
+        handleRefreshData && handleRefreshData() // Using handleRefreshData instead of refreshDashboardData
       ].filter(Boolean); // Filter out undefined values
       
       // If there are no valid refresh functions, show a warning
@@ -85,7 +85,7 @@ export function useRefreshMessages() {
         isRefreshing.current = false;
       }, 5000); // 5 second cooldown period
     }
-  }, [refreshMessages, refetchEmployees, refreshDashboardData]);
+  }, [refreshMessages, refetchEmployees, handleRefreshData]); // Updated dependency array
   
   return refresh;
 }
