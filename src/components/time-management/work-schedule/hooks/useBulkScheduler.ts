@@ -12,7 +12,7 @@ export function useBulkScheduler(
   const [bulkMode, setBulkMode] = useState<string | null>(null);
   
   // Handle bulk scheduling (for either bulk mode or specific days)
-  const handleBulkSchedule = (days: string[], startTime: string, endTime: string) => {
+  const handleBulkSchedule = (mode: string, startTime: string, endTime: string, days: string[]) => {
     if (!scheduleData || !selectedEmployee) {
       toast({
         description: "No employee or schedule data available",

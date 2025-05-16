@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 interface SpecificDaysSchedulingBarProps {
   selectedDays: string[];
   currentMonth: Date;
-  onSchedule: (mode: string, startTime: string, endTime: string, days: string[]) => void;
+  onSchedule: (startTime: string, endTime: string, days: string[]) => void;
   onCancel: () => void;
   onClearSelection: () => void;
 }
@@ -26,7 +26,7 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
     if (selectedDays.length === 0) {
       return;
     }
-    onSchedule("specific", startTime, endTime, selectedDays);
+    onSchedule(startTime, endTime, selectedDays);
   };
   
   // Format days for display
