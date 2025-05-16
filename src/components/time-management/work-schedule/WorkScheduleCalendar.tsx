@@ -48,27 +48,11 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     setHighlightedDates(dates);
   }, [shiftsMap]);
   
-  // Handle date selection for single mode
-  const handleSingleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    if (onDateSelected && date) {
-      onDateSelected(date);
-    }
-  };
-  
-  // Handle date selection for multiple mode
-  const handleMultipleDateSelect = (dates: Date[] | undefined) => {
-    // In multiple selection mode, we don't change the selected dates directly
-    // Instead we just log for debugging purposes
-    console.log("Multiple date selection triggered with dates:", dates);
-    
-    // We don't actually use this function for our custom day selection
-    // Our custom day selection is handled via the DayComponent onSelect callback
-  };
-  
-  // Create a common Day component renderer for both calendar modes
+  // Common Day component renderer for both calendar modes
   const DayComponent = (props: any) => {
     const date = props.date;
+    if (!date) return null;
+
     const dateKey = format(date, 'yyyy-MM-dd');
     const shifts = shiftsMap.get(dateKey) || [];
     const isSelected = selectionMode === "multiple" && isDaySelected ? 
@@ -83,13 +67,17 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         selectionMode={selectionMode}
         onShiftClick={onShiftClick}
         onSelect={() => {
+          console.log(`Calendar day selected: ${format(date, 'yyyy-MM-dd')}, mode: ${selectionMode}`);
           // In multiple selection mode
           if (selectionMode === "multiple" && onDayToggle) {
             onDayToggle(date);
           } 
           // In single selection mode
-          else {
-            handleSingleDateSelect(date);
+          else if (selectionMode === "single") {
+            setSelectedDate(date);
+            if (onDateSelected) {
+              onDateSelected(date);
+            }
           }
         }}
       />
@@ -119,29 +107,28 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         </div>
         
         <div className="border rounded-md">
-          {selectionMode === "single" ? (
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleSingleDateSelect}
-              month={currentMonth}
-              className="rounded-md border"
-              components={{
-                Day: DayComponent
-              }}
-            />
-          ) : (
-            <Calendar
-              mode="multiple"
-              selected={highlightedDates}
-              onSelect={handleMultipleDateSelect}
-              month={currentMonth}
-              className="rounded-md border"
-              components={{
-                Day: DayComponent
-              }}
-            />
-          )}
+          <Calendar
+            mode={selectionMode === "single" ? "single" : "multiple"}
+            selected={selectionMode === "single" ? selectedDate : highlightedDates}
+            onSelect={selectionMode === "single" 
+              ? (date) => {
+                  console.log("Single date selected:", date);
+                  setSelectedDate(date);
+                  if (onDateSelected && date) {
+                    onDateSelected(date);
+                  }
+                }
+              : () => {
+                  console.log("Multiple selection mode - using custom handler");
+                  // Multiple selection is handled by the custom day component
+                }
+            }
+            month={currentMonth}
+            className="rounded-md border pointer-events-auto"
+            components={{
+              Day: DayComponent
+            }}
+          />
         </div>
       </div>
     </Card>

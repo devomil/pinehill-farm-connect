@@ -56,26 +56,31 @@ export const useScheduleEditor = ({
     setBulkMode(null);
     setSelectionMode("single");
     clearSelectedDays();
-  }, [selectedEmployee, scheduleData?.id, clearSelectedDays]);
+  }, [selectedEmployee, scheduleData?.id, clearSelectedDays, setSelectedDate, setIsDialogOpen, setBulkMode]);
   
   // Toggle selection mode for specific days
   const toggleSelectionMode = () => {
     if (selectionMode === "single") {
+      console.log("Switching to multiple selection mode");
       setSelectionMode("multiple");
+      // Clear any single date selection when switching to multiple mode
+      setSelectedDate(undefined);
     } else {
+      console.log("Switching to single selection mode");
       setSelectionMode("single");
       clearSelectedDays();
     }
   };
 
   // Wrapper to handle add shift with current selected date
-  const handleAddShiftFromCalendar = () => {
-    handleAddShift(selectedDate);
+  const handleAddShiftFromCalendar = (date?: Date) => {
+    console.log(`Adding shift for date: ${date ? format(date, 'yyyy-MM-dd') : 'undefined'}`);
+    handleAddShift(date || selectedDate);
   };
 
   return {
-    selectedEmployee, // Added to expose in the hook return value
-    scheduleData, // Added to expose in the hook return value
+    selectedEmployee, 
+    scheduleData,
     selectedDate,
     setSelectedDate,
     currentMonth,

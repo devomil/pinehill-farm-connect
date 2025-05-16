@@ -10,6 +10,11 @@ export const useDaySelector = (currentMonth?: Date) => {
 
   // Toggle a day's selection status
   const toggleDay = useCallback((date: Date) => {
+    if (!date) {
+      console.error("Cannot toggle undefined date");
+      return;
+    }
+    
     const dateKey = date.toISOString().split('T')[0];
     
     setSelectedDays(prev => {
@@ -27,6 +32,8 @@ export const useDaySelector = (currentMonth?: Date) => {
 
   // Check if a day is selected
   const isDaySelected = useCallback((date: Date) => {
+    if (!date) return false;
+    
     const dateKey = date.toISOString().split('T')[0];
     const isSelected = selectedDays.has(dateKey);
     console.log(`Checking if day ${dateKey} is selected: ${isSelected}`);
