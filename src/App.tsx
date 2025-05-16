@@ -17,6 +17,7 @@ import Communication from "@/pages/Communication";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { RouteDebugger } from "@/components/debug/RouteDebugger";
 import Index from "@/pages/Index";
+import { useUniqueRoutes } from "@/hooks/useUniqueRoutes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
