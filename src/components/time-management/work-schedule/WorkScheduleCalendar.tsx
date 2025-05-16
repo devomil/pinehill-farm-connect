@@ -1,11 +1,11 @@
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { isValid, format, eachDayOfInterval, startOfMonth, endOfMonth } from "date-fns";
+import { Card } from "@/components/ui/card";
 import { WorkShift } from "@/types/workSchedule";
 import { CalendarNavigation } from "./CalendarNavigation";
+import { format, isEqual } from "date-fns";
 import { CalendarDayCell } from "./CalendarDayCell";
-import { safeFormat, isDateSelected, getShiftsForDay, getDebugInfo } from "./calendarUtils";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -13,8 +13,8 @@ interface WorkScheduleCalendarProps {
   shiftsMap: Map<string, WorkShift[]>;
   selectedDate: Date | undefined;
   setSelectedDate: (date: Date | undefined) => void;
-  onDateSelected: () => void;
-  onShiftClick: (shift: WorkShift) => void;
+  onDateSelected?: (date: Date | undefined) => void;
+  onShiftClick?: (shift: WorkShift) => void;
   selectionMode?: "single" | "multiple";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
@@ -34,107 +34,99 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   onDayToggle,
   selectedCount = 0
 }) => {
-  // Ensure current month is valid
-  const safeCurrentMonth = isValid(currentMonth) ? currentMonth : new Date();
+  const [highlightedDates, setHighlightedDates] = useState<Date[]>([]);
   
-  // Generate days of the month to ensure calendar is populated
-  const daysOfMonth = React.useMemo(() => {
-    if (!isValid(safeCurrentMonth)) return [];
-    return eachDayOfInterval({
-      start: startOfMonth(safeCurrentMonth),
-      end: endOfMonth(safeCurrentMonth)
-    });
-  }, [safeCurrentMonth]);
-  
-  // Debug calendar data on mount and when key props change
+  // Format dates from shiftsMap to be displayed
   useEffect(() => {
-    getDebugInfo(safeCurrentMonth, shiftsMap, selectedDate, isDaySelected);
-    console.log("WorkScheduleCalendar rendered with selectionMode:", selectionMode);
-    console.log("Days in month:", daysOfMonth.length, "First day:", format(daysOfMonth[0], "yyyy-MM-dd"));
-    console.log("Selected count:", selectedCount);
-  }, [safeCurrentMonth, shiftsMap, selectedDate, isDaySelected, selectionMode, daysOfMonth, selectedCount]);
+    const dates: Date[] = [];
+    shiftsMap.forEach((shifts, dateStr) => {
+      if (shifts.length > 0) {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        dates.push(new Date(year, month - 1, day));
+      }
+    });
+    setHighlightedDates(dates);
+  }, [shiftsMap]);
   
-  // Handle previous month click
-  const handlePreviousMonth = () => {
-    const prevMonth = new Date(safeCurrentMonth);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    setCurrentMonth(prevMonth);
-  };
-  
-  // Handle next month click
-  const handleNextMonth = () => {
-    const nextMonth = new Date(safeCurrentMonth);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    setCurrentMonth(nextMonth);
-  };
-  
-  // Handle day click - depends on selection mode
-  const handleDayClick = (day: Date | undefined) => {
-    if (!day || !isValid(day)) return;
+  // Handle date selection based on mode
+  const handleDateSelect = (date: Date | undefined) => {
+    // In multiple selection mode, toggle day selection
+    if (selectionMode === "multiple" && onDayToggle && date) {
+      onDayToggle(date);
+      return;
+    }
     
-    if (selectionMode === "multiple" && onDayToggle) {
-      console.log("Toggle day selection for:", safeFormat(day, "yyyy-MM-dd"));
-      onDayToggle(day);
-    } else {
-      console.log("Set selected date to:", safeFormat(day, "yyyy-MM-dd"));
-      setSelectedDate(day);
-      onDateSelected();
+    // In single selection mode, update selected date
+    if (selectionMode === "single") {
+      setSelectedDate(date);
+      if (onDateSelected && date) {
+        onDateSelected(date);
+      }
     }
   };
-
+  
   return (
-    <>
-      <CalendarNavigation 
-        currentMonth={safeCurrentMonth}
-        onPreviousMonth={handlePreviousMonth}
-        onNextMonth={handleNextMonth}
-        selectionMode={selectionMode}
-        selectedCount={selectedCount}
-      />
-      
-      <div className="border rounded-lg p-2">
-        <Calendar
-          mode="default"
-          selected={selectionMode === "single" ? selectedDate : undefined}
-          month={safeCurrentMonth}
-          onDayClick={handleDayClick}
-          showOutsideDays={true}
-          components={{
-            Day: ({ day, ...props }: any) => {
-              if (!day || !isValid(day)) {
-                console.warn("Invalid day in calendar:", day);
-                return null;
+    <Card className="mb-6">
+      <div className="p-4">
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">
+            Work Schedule {format(currentMonth, "MMMM yyyy")}
+          </h2>
+          <CalendarNavigation
+            currentMonth={currentMonth}
+            onPreviousMonth={() => {
+              const newDate = new Date(currentMonth);
+              newDate.setMonth(currentMonth.getMonth() - 1);
+              setCurrentMonth(newDate);
+            }}
+            onNextMonth={() => {
+              const newDate = new Date(currentMonth);
+              newDate.setMonth(currentMonth.getMonth() + 1);
+              setCurrentMonth(newDate);
+            }}
+          />
+        </div>
+        
+        <div className="border rounded-md">
+          <Calendar
+            mode={selectionMode === "single" ? "single" : "multiple"}
+            selected={selectionMode === "single" ? selectedDate : highlightedDates}
+            onSelect={handleDateSelect}
+            month={currentMonth}
+            className="rounded-md border"
+            components={{
+              Day: (props) => {
+                const date = props.date;
+                const dateKey = format(date, 'yyyy-MM-dd');
+                const shifts = shiftsMap.get(dateKey) || [];
+                const isSelected = selectionMode === "multiple" && isDaySelected ? 
+                  isDaySelected(date) : 
+                  selectedDate ? isEqual(date, selectedDate) : false;
+                
+                return (
+                  <CalendarDayCell
+                    {...props}
+                    shifts={shifts}
+                    isSelected={isSelected}
+                    selectionMode={selectionMode}
+                    onShiftClick={onShiftClick}
+                    onSelect={() => {
+                      // In multiple selection mode
+                      if (selectionMode === "multiple" && onDayToggle) {
+                        onDayToggle(date);
+                      } 
+                      // In single selection mode
+                      else {
+                        handleDateSelect(date);
+                      }
+                    }}
+                  />
+                );
               }
-              
-              // Get shifts for this day
-              const shifts = getShiftsForDay(day, shiftsMap);
-              const hasShifts = shifts.length > 0;
-              
-              // Check if this day is selected in single or multiple mode
-              const { isSingleSelected, isMultiSelected } = isDateSelected(
-                day, 
-                selectedDate,
-                isDaySelected
-              );
-              
-              return (
-                <CalendarDayCell
-                  {...props}
-                  day={day}
-                  shifts={shifts}
-                  isSingleSelected={isSingleSelected}
-                  isMultiSelected={isMultiSelected}
-                  hasShifts={hasShifts}
-                  onClick={() => handleDayClick(day)}
-                  onShiftClick={onShiftClick}
-                  selectionMode={selectionMode}
-                />
-              );
-            },
-          }}
-          className="w-full pointer-events-auto"
-        />
+            }}
+          />
+        </div>
       </div>
-    </>
+    </Card>
   );
 };

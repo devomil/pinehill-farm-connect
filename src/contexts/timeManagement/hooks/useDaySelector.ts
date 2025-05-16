@@ -17,11 +17,14 @@ export const useDaySelector = (currentMonth?: Date) => {
       if (newMap.has(dateKey)) {
         newMap.delete(dateKey);
       } else {
-        newMap.set(dateKey, date);
+        newMap.set(dateKey, new Date(date));
       }
       return newMap;
     });
-  }, []);
+    
+    // Log toggle action to verify functionality
+    console.log(`Toggled day ${dateKey}, now ${selectedDays.has(dateKey) ? 'unselected' : 'selected'}`);
+  }, [selectedDays]);
 
   // Check if a day is selected
   const isDaySelected = useCallback((date: Date) => {
@@ -45,6 +48,7 @@ export const useDaySelector = (currentMonth?: Date) => {
   // Clear all selected days
   const clearSelectedDays = useCallback(() => {
     setSelectedDays(new Map());
+    console.log("Cleared all selected days");
   }, []);
 
   return {

@@ -26,10 +26,16 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
   
   const handleSchedule = () => {
     if (selectedDays.length === 0) return;
+    console.log("Scheduling for days:", selectedDays);
     onSchedule(selectedDays, startTime, endTime);
   };
   
   const monthLabel = format(currentMonth, "MMMM yyyy");
+
+  // Log selected days whenever they change
+  React.useEffect(() => {
+    console.log("SpecificDaysSchedulingBar - Selected days:", selectedDays);
+  }, [selectedDays]);
   
   return (
     <Card className="p-4 mb-4 bg-accent/20 border border-primary/20">
@@ -61,20 +67,20 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-24"
+              className="w-24 pointer-events-auto"
             />
             <span>to</span>
             <Input
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-24"
+              className="w-24 pointer-events-auto"
             />
           </div>
           
           <Button 
             variant="default" 
-            className="ml-2"
+            className="ml-2 pointer-events-auto"
             disabled={selectedDays.length === 0}
             onClick={handleSchedule}
           >
@@ -84,9 +90,10 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
           
           <Button 
             variant="ghost" 
-            size="icon" 
+            size="icon"
             onClick={onCancel}
             aria-label="Cancel"
+            className="pointer-events-auto"
           >
             <X className="h-4 w-4" />
           </Button>
