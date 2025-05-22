@@ -86,8 +86,11 @@ export function useRefreshMessages() {
           if (result !== undefined && result !== null) {
             // Only check for 'then' property if result is an object
             if (typeof result === 'object') {
-              const hasThenFunction = 'then' in result && 
-                                      typeof result.then === 'function';
+              // Need to fix the TypeScript error by not accessing properties when result could be null
+              const hasThenFunction = 
+                result !== null && 
+                'then' in result && 
+                typeof result.then === 'function';
               
               if (hasThenFunction) {
                 refreshPromises.push(result);
