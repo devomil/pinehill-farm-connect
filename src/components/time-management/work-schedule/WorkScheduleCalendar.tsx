@@ -125,7 +125,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         <CardContent className="p-0">
           <CalendarNavigation
             currentMonth={currentMonth}
-            onPrevMonth={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
+            onPreviousMonth={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
             onNextMonth={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
           />
           
@@ -149,10 +149,10 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
                 <CalendarDayCell
                   key={i}
                   date={day}
-                  currentMonth={currentMonth}
                   shifts={shiftsForDay}
                   isSelected={selectionMode === "single" ? selectedDate ? isSameDay(day, selectedDate) : false : false}
-                  isHighlighted={selectionMode === "multiple" && isDaySelected ? isDaySelected(day) : false}
+                  outside={!isSameMonth(day, currentMonth)}
+                  today={isSameDay(day, new Date())}
                   onClick={() => handleDayClick(day)}
                   onShiftClick={(shift) => handleShiftClick(day, shift)}
                 />

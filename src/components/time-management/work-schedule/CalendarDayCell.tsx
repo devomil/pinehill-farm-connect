@@ -10,7 +10,7 @@ interface CalendarDayCellProps {
   isSelected?: boolean;
   selectionMode?: "single" | "multiple" | "range";
   onShiftClick?: (shift: WorkShift) => void;
-  onSelect?: () => void;
+  onClick?: () => void;
   outside?: boolean;
   disabled?: boolean;
   today?: boolean;
@@ -22,7 +22,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   isSelected,
   selectionMode = "single",
   onShiftClick,
-  onSelect,
+  onClick,
   outside = false,
   disabled = false,
   today = false
@@ -33,10 +33,10 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   const handleClick = () => {
     if (disabled) return;
     
-    console.log(`Day clicked: ${format(date, 'yyyy-MM-dd')}, calling onSelect handler`);
+    console.log(`Day clicked: ${format(date, 'yyyy-MM-dd')}, calling onClick handler`);
     
-    if (onSelect) {
-      onSelect();
+    if (onClick) {
+      onClick();
     }
   };
   
