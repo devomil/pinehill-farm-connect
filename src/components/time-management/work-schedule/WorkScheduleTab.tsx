@@ -12,6 +12,8 @@ import { WorkScheduleError } from "./WorkScheduleError";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamCalendar } from "../TeamCalendar";
 import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
+import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
+import { toast } from "sonner";
 
 interface WorkScheduleTabProps {
   isAdmin: boolean;
@@ -23,6 +25,7 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(
     isAdmin ? null : currentUser.id
   );
+  
   const {
     scheduleData,
     loading,
@@ -31,6 +34,9 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
     resetSchedule,
     copyFromLastMonth
   } = useWorkSchedule(selectedEmployee);
+  
+  // Also fetch all employee shifts to ensure we have data
+  const { shiftsMap: allEmployeeShiftsMap } = useAllEmployeeShifts();
   
   const currentMonthLabel = format(new Date(), "MMMM yyyy");
   const [viewMode, setViewMode] = useState<"work-schedules" | "company-events">("work-schedules");
@@ -71,6 +77,18 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
     return map;
   }, [scheduleData]);
 
+  // Use the combined shiftsMap for display if we're in admin view with no employee selected
+  const displayShiftsMap = (isAdmin && !selectedEmployee) ? allEmployeeShiftsMap : shiftsMap;
+
+  // Log the number of shifts we're showing for debugging
+  useEffect(() => {
+    let totalShifts = 0;
+    displayShiftsMap?.forEach(shifts => {
+      totalShifts += shifts.length;
+    });
+    console.log(`WorkScheduleTab: Displaying ${totalShifts} total shifts across ${displayShiftsMap?.size || 0} days`);
+  }, [displayShiftsMap]);
+
   return (
     <Card className="mt-4">
       <CardHeader className="pb-3">
@@ -108,7 +126,7 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
               <WorkScheduleCalendar 
                 currentMonth={currentMonth}
                 setCurrentMonth={setCurrentMonth}
-                shiftsMap={shiftsMap}
+                shiftsMap={displayShiftsMap}
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
                 isAdminView={isAdmin}

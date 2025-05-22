@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamCalendar } from "./TeamCalendar";
+import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
 
 interface ScheduleWidgetProps {
   currentUser?: User;
@@ -36,8 +37,11 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const { currentUser: authUser } = useAuth();
   const isAdmin = authUser?.role === "admin";
   
+  // Always fetch shifts regardless of allEmployeeShifts prop to ensure we have data
+  const { shiftsMap: fetchedShiftsMap } = useAllEmployeeShifts();
+  
   // Use our calendar events hook to get all calendar items
-  const { shiftsMap } = useCalendarEvents(
+  const { shiftsMap: userShiftsMap } = useCalendarEvents(
     currentUser,
     currentMonth,
     includeDeclinedRequests,
@@ -45,7 +49,18 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   );
   
   // Choose which shifts data to use - prefer all employee shifts if provided (for admin view)
-  const displayShiftsMap = allEmployeeShifts || shiftsMap;
+  // Fall back to fetched shifts map if allEmployeeShifts is not provided
+  // This ensures we always have data to display
+  const displayShiftsMap = allEmployeeShifts || fetchedShiftsMap || userShiftsMap;
+  
+  useEffect(() => {
+    // Log the amount of shifts we're showing
+    let totalShifts = 0;
+    displayShiftsMap?.forEach(shifts => {
+      totalShifts += shifts.length;
+    });
+    console.log(`ScheduleWidget: Displaying ${totalShifts} total shifts across ${displayShiftsMap?.size || 0} days`);
+  }, [displayShiftsMap]);
 
   return (
     <Card className={cn("mt-4 relative group", className, isCustomizing ? "border-2 border-dashed border-blue-300" : "")}>
@@ -110,4 +125,4 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
       </CardContent>
     </Card>
   );
-};
+}

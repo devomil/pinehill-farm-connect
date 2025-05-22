@@ -17,14 +17,11 @@ export function useAllEmployeeShifts() {
   useEffect(() => {
     // We'll clear the data once when this hook is first used
     if (employees && employees.length > 0) {
-      const shouldClearData = Object.keys(globalMockScheduleStore).length === 0 || 
-                             !sessionStorage.getItem('mockDataInitialized');
-      
-      if (shouldClearData) {
-        console.log("Initializing fresh mock data for all employees");
-        clearAllMockData();
-        sessionStorage.setItem('mockDataInitialized', 'true');
-      }
+      // Always clear and recreate mock data when the time management view loads
+      // This ensures we have consistent data across dashboard and time management
+      console.log("Initializing fresh mock data for all employees");
+      clearAllMockData();
+      sessionStorage.setItem('mockDataInitialized', 'true');
     }
   }, [employees]);
 
@@ -47,63 +44,59 @@ export function useAllEmployeeShifts() {
         }
       });
       
-      // If no shifts exist in the global store, create some sample data
-      // This helps populate the view when first accessing it
-      if (mockShifts.length === 0) {
-        // Create mock shifts for each employee
-        employees.forEach(employee => {
-          // Generate 3-5 random shifts for each employee
-          const shiftsCount = 3 + Math.floor(Math.random() * 3);
-          
-          for (let i = 0; i < shiftsCount; i++) {
-            // Random day of month between 1-28
-            const day = 1 + Math.floor(Math.random() * 28);
-            const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
-            
-            // Random shift times - make them realistic working hours
-            const startOptions = [8, 9, 10, 11, 12, 13, 14];
-            const durationOptions = [4, 6, 8, 9]; // shift lengths in hours
-            
-            const startHour = startOptions[Math.floor(Math.random() * startOptions.length)];
-            const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
-            const endHour = startHour + duration;
-            
-            const startTime = `${startHour.toString().padStart(2, '0')}:00:00`;
-            const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
-            
-            const shift = {
-              id: `${employee.id}-${date}-${i}`,
-              employeeId: employee.id,
-              date,
-              startTime,
-              endTime,
-              isRecurring: false,
-              notes: `Shift ${i+1} for ${employee.name}`
-            };
-            
-            mockShifts.push(shift);
-            
-            // Add this shift to the employee's schedule in the global store
-            if (!globalMockScheduleStore[employee.id]) {
-              globalMockScheduleStore[employee.id] = {
-                id: employee.id,
-                employeeId: employee.id,
-                month: currentMonth,
-                shifts: []
-              };
-            }
-            
-            // Make sure we don't add duplicates
-            if (!globalMockScheduleStore[employee.id].shifts.some(s => s.id === shift.id)) {
-              globalMockScheduleStore[employee.id].shifts.push(shift);
-            }
-          }
-        });
+      // Always create mock shifts for each employee to ensure we always have data to display
+      // This ensures the time management view always has data
+      employees.forEach(employee => {
+        // Generate 3-5 random shifts for each employee
+        const shiftsCount = 3 + Math.floor(Math.random() * 3);
         
-        console.log("Created sample shifts for global store:", mockShifts.length);
-      } else {
-        console.log("Using existing shifts from global store:", mockShifts.length);
-      }
+        for (let i = 0; i < shiftsCount; i++) {
+          // Random day of month between 1-28
+          const day = 1 + Math.floor(Math.random() * 28);
+          const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
+          
+          // Random shift times - make them realistic working hours
+          const startOptions = [8, 9, 10, 11, 12, 13, 14];
+          const durationOptions = [4, 6, 8, 9]; // shift lengths in hours
+          
+          const startHour = startOptions[Math.floor(Math.random() * startOptions.length)];
+          const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
+          const endHour = startHour + duration;
+          
+          const startTime = `${startHour.toString().padStart(2, '0')}:00:00`;
+          const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
+          
+          const shift = {
+            id: `${employee.id}-${date}-${i}`,
+            employeeId: employee.id,
+            date,
+            startTime,
+            endTime,
+            isRecurring: false,
+            notes: `Shift ${i+1} for ${employee.name}`
+          };
+          
+          mockShifts.push(shift);
+          
+          // Add this shift to the employee's schedule in the global store
+          if (!globalMockScheduleStore[employee.id]) {
+            globalMockScheduleStore[employee.id] = {
+              id: employee.id,
+              employeeId: employee.id,
+              month: currentMonth,
+              shifts: []
+            };
+          }
+          
+          // Make sure we don't add duplicates
+          if (!globalMockScheduleStore[employee.id].shifts.some(s => s.id === shift.id)) {
+            globalMockScheduleStore[employee.id].shifts.push(shift);
+          }
+        }
+      });
+      
+      console.log("Created sample shifts for global store:", mockShifts.length);
+      console.log("Global store now contains schedules for:", Object.keys(globalMockScheduleStore).length, "employees");
       
       setAllShifts(mockShifts);
       
