@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -21,6 +20,11 @@ export function useMessageTabDebugger(isActive: boolean) {
     hasEverMounted: false,
   });
   
+  // Track if we've seen too many mounts in a short period
+  const recentMounts = useRef<number[]>([]);
+  const MAX_MOUNTS_BEFORE_WARNING = 5;
+  const MOUNT_WINDOW_MS = 5000; // 5 seconds
+  
   // Reset error state
   const resetError = useCallback(() => {
     if (lastError.current) {
@@ -35,6 +39,31 @@ export function useMessageTabDebugger(isActive: boolean) {
     if (!isActive) return;
     
     try {
+      // Track recent mounts for better loop detection
+      const now = Date.now();
+      recentMounts.current.push(now);
+      
+      // Keep only mounts within our detection window
+      recentMounts.current = recentMounts.current.filter(
+        time => now - time < MOUNT_WINDOW_MS
+      );
+      
+      // Check if we're mounting too frequently
+      if (recentMounts.current.length >= MAX_MOUNTS_BEFORE_WARNING) {
+        debug.warn(`MessageTab remounted ${recentMounts.current.length} times in ${MOUNT_WINDOW_MS/1000}s - possible navigation loop`);
+        
+        // Attempt to break potential loop by adding recovery flag to sessionStorage
+        if (recentMounts.current.length >= MAX_MOUNTS_BEFORE_WARNING + 2) {
+          if (!window.sessionStorage.getItem('message_tab_recovery_needed')) {
+            window.sessionStorage.setItem('message_tab_recovery_needed', 'true');
+            toast.error("Navigation issue detected", { 
+              id: "navigation-loop-error",
+              description: "Try using the recovery button to resolve this"
+            });
+          }
+        }
+      }
+      
       // Only count mounts after initial render has settled
       if (initialMountCompleted.current) {
         mountCount.current += 1;
@@ -43,7 +72,7 @@ export function useMessageTabDebugger(isActive: boolean) {
         console.log("Initial mount of message tab completed");
       }
       
-      mountTime.current = Date.now();
+      mountTime.current = now;
       
       debug.info(`Messages tab mounted (count: ${mountCount.current})`, {
         url: location.pathname + location.search,
@@ -87,19 +116,12 @@ export function useMessageTabDebugger(isActive: boolean) {
         lastDirectoryRefresh.current = Date.now();
       }
       
-      // Show toast only if we have excessive mounts in short succession
-      // but not in recovery mode to avoid bothering the user
-      if (mountCount.current > 10 && !isRecoveryMode) {
-        debug.warn(`Messages tab mounted ${mountCount.current} times, potential navigation loop`);
-        
-        if (mountCount.current > 20 && !isRecoveryMode) {
-          // This is a serious problem, we should try to recover
-          toast.error("Navigation issue detected", {
-            id: 'message-tab-recovery-needed',
-            description: "Try the recovery button to fix this issue",
-            duration: 5000
-          });
-        }
+      // Clear recovery flag if in recovery mode and mount is stable
+      if (isRecoveryMode && mountCount.current === 1) {
+        setTimeout(() => {
+          window.sessionStorage.removeItem('message_tab_recovery_needed');
+          debug.info("Cleared recovery flag after successful recovery");
+        }, 3000);
       }
     } catch (error) {
       // Capture any errors during the mount effect
@@ -129,7 +151,7 @@ export function useMessageTabDebugger(isActive: boolean) {
         }));
         
         // Alert if component unmounted very quickly
-        if (duration < 500 && mountCount.current > 3) {
+        if (duration < 300 && mountCount.current > 3) {
           debug.warn(`Messages tab unmounted suspiciously quickly (${duration}ms)`, {
             navigationCount: mountCount.current,
             path: location.pathname + location.search
@@ -150,8 +172,10 @@ export function useMessageTabDebugger(isActive: boolean) {
       errorState: lastError.current ? 'error' : 'ok',
       lastDirectoryRefresh: lastDirectoryRefresh.current,
       avgTimeInTab: Math.round(tabMetrics.avgMountTime),
-      hasEverMounted: tabMetrics.hasEverMounted
+      hasEverMounted: tabMetrics.hasEverMounted,
+      recentMountCount: recentMounts.current.length
     },
-    resetError
+    resetError,
+    isLoopDetected: recentMounts.current.length >= MAX_MOUNTS_BEFORE_WARNING
   };
 }

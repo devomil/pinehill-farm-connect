@@ -36,16 +36,49 @@ export function useNavigationRecovery({
   const hasRefreshedData = useRef(false);
   // Track the number of navigation recovery attempts
   const recoveryAttempts = useRef(0);
+  // Last URL we synchronized with
+  const lastSyncedUrl = useRef<string>("");
+  
+  // Check if there's a stored recovery flag
+  const needsRecovery = useRef<boolean>(
+    window.sessionStorage.getItem('message_tab_recovery_needed') === 'true'
+  );
 
   // Effect to sync the URL with the active tab on mount and location changes
   useEffect(() => {
+    const currentUrl = location.pathname + location.search;
+    
+    // Avoid processing the same URL multiple times
+    if (lastSyncedUrl.current === currentUrl) {
+      return;
+    }
+    
     // Check for recovery parameter in URL - this helps break navigation loops
     const urlParams = new URLSearchParams(location.search);
     const recoveryRequested = urlParams.get('recovery') === 'true';
     const tabParam = urlParams.get('tab');
     
+    // Update last synced URL
+    lastSyncedUrl.current = currentUrl;
+    
     // Skip processing if we've already done it for this render
     if (hasProcessedTabUpdate.current) {
+      return;
+    }
+    
+    // Check for recovery flag in session storage
+    if (needsRecovery.current && !recoveryRequested) {
+      debug.warn("Recovery needed based on session storage flag");
+      
+      // Force navigation to recovery mode
+      const recoveryUrl = `/communication?tab=${activeTab || 'announcements'}&recovery=true&ts=${Date.now()}`;
+      navigate(recoveryUrl, { replace: true });
+      
+      // Reset the flag after handling it
+      window.sessionStorage.removeItem('message_tab_recovery_needed');
+      needsRecovery.current = false;
+      
+      hasProcessedTabUpdate.current = true;
       return;
     }
     
@@ -84,6 +117,10 @@ export function useNavigationRecovery({
           // Mark navigation as complete to prevent loops
           navigationComplete.current = true;
           navigationInProgress.current = false;
+          
+          // Clear any stored flags that might be causing issues
+          window.sessionStorage.removeItem('message_tab_recovery_needed');
+          localStorage.removeItem('last_communication_tab');
         }
       }
     } else if (location.pathname === '/communication' && !tabParam) {

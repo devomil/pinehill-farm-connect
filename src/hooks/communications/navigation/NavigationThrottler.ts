@@ -5,16 +5,23 @@ export class NavigationThrottler {
   private lastNavigationTime: number = 0;
   private navigationAttempts: number[] = [];
   private loopDetected: boolean = false;
-  private readonly MAX_ATTEMPTS_WINDOW = 3; // Reduced threshold for earlier detection
-  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Shorter window for faster detection
-  private readonly THROTTLE_THRESHOLD_MS = 1000; // Increased min time between navigations
-  private readonly SAFETY_WINDOW_MS = 15000; // Extended safety window for resetting detection
+  private readonly MAX_ATTEMPTS_WINDOW = 3; // Threshold for loop detection
+  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Window for detection
+  private readonly THROTTLE_THRESHOLD_MS = 1500; // Increased min time between navigations
+  private readonly SAFETY_WINDOW_MS = 15000; // Safety window for resetting detection
+  private forcedBreakActive: boolean = false; // New flag for forced break mode
 
   /**
    * Track a navigation attempt and check if it forms part of a loop
    */
   trackNavigationAttempt(): boolean {
     const now = Date.now();
+    
+    // If we're in forced break mode, block all navigation attempts temporarily
+    if (this.forcedBreakActive) {
+      console.warn("Navigation throttler in forced break mode - navigation blocked");
+      return true;
+    }
     
     // Add current attempt to history
     this.navigationAttempts.push(now);
@@ -30,8 +37,14 @@ export class NavigationThrottler {
         "attempts in", this.LOOP_DETECTION_THRESHOLD_MS, "ms");
       this.loopDetected = true;
       
+      // Activate forced break mode to completely block navigation for a short period
+      this.forcedBreakActive = true;
+      setTimeout(() => {
+        console.log("Deactivating forced break mode");
+        this.forcedBreakActive = false;
+      }, 3000); // Block for 3 seconds to allow state to stabilize
+      
       // Safety mechanism: Clear attempts array to prevent continuous loop detection
-      // after the issue has been addressed
       this.navigationAttempts = [];
       
       // Set a timer to auto-reset loop detection
@@ -54,6 +67,11 @@ export class NavigationThrottler {
    * Check if navigation should be throttled
    */
   shouldThrottle(): boolean {
+    // Always block if in forced break mode
+    if (this.forcedBreakActive) {
+      return true;
+    }
+    
     const now = Date.now();
     const timeSinceLastNavigation = now - this.lastNavigationTime;
     
@@ -67,9 +85,7 @@ export class NavigationThrottler {
       throttleTime = this.THROTTLE_THRESHOLD_MS * recentAttemptCount;
     }
     
-    const shouldThrottle = timeSinceLastNavigation < throttleTime;
-    
-    return shouldThrottle;
+    return timeSinceLastNavigation < throttleTime;
   }
 
   /**
@@ -85,6 +101,7 @@ export class NavigationThrottler {
   resetLoopDetection(): void {
     this.loopDetected = false;
     this.navigationAttempts = [];
+    this.forcedBreakActive = false;
     console.log("Navigation throttler manually reset");
   }
   
