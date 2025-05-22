@@ -58,7 +58,7 @@ export function useRefreshMessages() {
         try {
           const result = refreshMessages();
           // Only add to the array if it's a Promise-like object
-          if (result instanceof Promise) {
+          if (result && typeof result === 'object' && 'then' in result) {
             refreshPromises.push(result);
           }
         } catch (e) {
@@ -82,9 +82,10 @@ export function useRefreshMessages() {
           // Execute the function and check if result is a Promise
           const result = handleRefreshData();
           
-          // Use instanceof Promise instead of checking for 'then' property
-          if (result instanceof Promise) {
-            refreshPromises.push(result);
+          // Use type check pattern that doesn't rely on instanceof
+          if (result && typeof result === 'object' && 'then' in result && 
+              typeof result.then === 'function') {
+            refreshPromises.push(result as Promise<any>);
           }
         } catch (e) {
           console.error("Error calling handleRefreshData:", e);
