@@ -7,6 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { WorkShift } from "@/types/workSchedule";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Clock } from "lucide-react";
 
 interface ShiftDialogProps {
   isOpen: boolean;
@@ -27,7 +29,7 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
 }) => {
   const [editedShift, setEditedShift] = useState<WorkShift>({...shift});
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditedShift(prev => ({
       ...prev,
@@ -51,13 +53,14 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
   };
   
   // Format the date for display
-  const formattedDate = format(new Date(shift.date), "MMMM d, yyyy");
+  const formattedDate = format(new Date(shift.date), "EEEE, MMMM d, yyyy");
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] pointer-events-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
             {isEditMode ? "Edit Shift" : "Add Shift"} for {formattedDate}
           </DialogTitle>
         </DialogHeader>
@@ -65,7 +68,9 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
+              <Label htmlFor="startTime" className="flex items-center gap-1">
+                Start Time <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="startTime"
                 name="startTime"
@@ -73,11 +78,14 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
                 value={editedShift.startTime}
                 onChange={handleInputChange}
                 className="pointer-events-auto"
+                required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="endTime">End Time</Label>
+              <Label htmlFor="endTime" className="flex items-center gap-1">
+                End Time <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="endTime"
                 name="endTime"
@@ -85,6 +93,7 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
                 value={editedShift.endTime}
                 onChange={handleInputChange}
                 className="pointer-events-auto"
+                required
               />
             </div>
           </div>
@@ -128,12 +137,13 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
-            <Input
+            <Textarea
               id="notes"
               name="notes"
               value={editedShift.notes || ""}
               onChange={handleInputChange}
-              className="pointer-events-auto"
+              className="pointer-events-auto min-h-[80px]"
+              placeholder="Add any relevant details about this shift..."
             />
           </div>
         </div>
@@ -158,7 +168,13 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
             >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="pointer-events-auto">Save</Button>
+            <Button 
+              onClick={handleSave} 
+              className="pointer-events-auto"
+              disabled={!editedShift.startTime || !editedShift.endTime}
+            >
+              Save
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>

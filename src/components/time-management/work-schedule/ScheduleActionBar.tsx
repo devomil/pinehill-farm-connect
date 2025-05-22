@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, CalendarDays, Loader2, RefreshCw, CalendarRange } from "lucide-react";
+import { PlusCircle, CalendarDays, Loader2, RefreshCw, CalendarRange, Clock } from "lucide-react";
 
 interface ScheduleActionBarProps {
   bulkMode: string | null;
@@ -26,6 +26,22 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
+      <Button
+        variant={selectionMode === "single" ? "default" : "outline"}
+        size="sm"
+        onClick={() => {
+          if (selectionMode !== "single") {
+            // Switch to single selection mode
+            onToggleSelectionMode();
+          }
+        }}
+        disabled={loading}
+        className="flex items-center"
+      >
+        <Clock className="h-4 w-4 mr-1" />
+        {selectionMode === "single" ? "Single Day Selection (Active)" : "Single Day Selection"}
+      </Button>
+      
       <Button
         variant="outline"
         size="sm"
@@ -61,7 +77,7 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
         ) : (
           <>
             <PlusCircle className="h-4 w-4 mr-1" />
-            Select Specific Days
+            Select Multiple Days
           </>
         )}
       </Button>
