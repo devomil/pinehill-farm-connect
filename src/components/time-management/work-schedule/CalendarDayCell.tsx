@@ -1,3 +1,4 @@
+
 import React from "react";
 import { format, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -75,7 +76,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        "h-full min-h-[90px] p-1 border border-gray-200 rounded-sm flex flex-col",
+        "min-h-[80px] p-1 border border-gray-200 rounded-md flex flex-col",
         outside ? "bg-gray-50 text-gray-400" : "bg-white",
         today ? "border-blue-500" : "",
         isSelected ? "bg-blue-50 border-blue-500" : "",

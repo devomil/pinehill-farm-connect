@@ -1,5 +1,6 @@
 
-import { startOfMonth, endOfMonth, addDays, getDay } from "date-fns";
+import { startOfMonth, endOfMonth, addDays, getDay, format, isValid } from "date-fns";
+import { WorkShift } from "@/types/workSchedule";
 
 /**
  * Generate an array of days for the calendar grid including padding days
@@ -40,4 +41,20 @@ export const generateCalendarDays = (currentMonth: Date): Date[] => {
   }
   
   return days;
+};
+
+/**
+ * Safe format function that handles invalid dates
+ */
+export const safeFormat = (date: Date | undefined, formatStr: string): string => {
+  if (!date || !isValid(date)) return "";
+  return format(date, formatStr);
+};
+
+/**
+ * Get shifts for a specific day from the shifts map
+ */
+export const getShiftsForDay = (day: Date, shiftsMap: Map<string, WorkShift[]>): WorkShift[] => {
+  const dateKey = format(day, "yyyy-MM-dd");
+  return shiftsMap.get(dateKey) || [];
 };

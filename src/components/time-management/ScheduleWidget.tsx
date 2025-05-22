@@ -96,7 +96,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         />
         
         <div className="text-center mt-4">
-          <Link to="/time?tab=team-calendar">
+          <Link to="/time?tab=work-schedules">
             <Button variant="accent" size="sm" className="w-full">
               View Full Calendar
             </Button>
