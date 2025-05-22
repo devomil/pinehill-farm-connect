@@ -7,3 +7,5 @@ export * from './tools/useWeekdayShiftAssignment';
 export * from './tools/useWeekendShiftAssignment';
 export * from './tools/useTimeOffConflictCheck';
 export * from './tools/useAutoCoverageAssignment';
+export * from './types/adminScheduleTypes';
+

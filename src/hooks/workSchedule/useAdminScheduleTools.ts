@@ -6,12 +6,14 @@ import { useWeekdayShiftAssignment } from "./tools/useWeekdayShiftAssignment";
 import { useWeekendShiftAssignment } from "./tools/useWeekendShiftAssignment";
 import { useTimeOffConflictCheck } from "./tools/useTimeOffConflictCheck";
 import { useAutoCoverageAssignment } from "./tools/useAutoCoverageAssignment";
+import { AdminScheduleHookOptions, AdminScheduleHookResult } from "./types/adminScheduleTypes";
 
 export function useAdminScheduleTools(
-  scheduleData: WorkSchedule | null,
-  onSave: (schedule: WorkSchedule) => void
-) {
+  options: AdminScheduleHookOptions
+): AdminScheduleHookResult {
+  const { scheduleData, onSave } = options;
   const [loading, setLoading] = useState(false);
+  
   const { assignWeekdayShifts: weekdayAssign, loading: weekdayLoading } = useWeekdayShiftAssignment();
   const { assignWeekendShifts: weekendAssign, loading: weekendLoading } = useWeekendShiftAssignment();
   const { checkTimeOffConflicts: conflictCheck, loading: conflictLoading } = useTimeOffConflictCheck();
@@ -45,7 +47,7 @@ export function useAdminScheduleTools(
     return weekendAssign(scheduleData, employeeId, startDate, endDate, startTime, endTime, onSave);
   }, [scheduleData, onSave, weekendAssign]);
   
-  // Wrapper for time off conflicts check - fixed to match expected parameter signature
+  // Wrapper for time off conflicts check
   const checkTimeOffConflicts = useCallback((
     employeeId: string,
     shifts: WorkShift[]

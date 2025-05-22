@@ -36,9 +36,12 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
     checkTimeOffConflicts,
     autoAssignCoverage,
     loading
-  } = useAdminScheduleTools(scheduleData, (updatedSchedule) => {
-    console.log("Schedule updated:", updatedSchedule);
-    // In a real implementation, this would call a parent function to update the schedule
+  } = useAdminScheduleTools({
+    scheduleData,
+    onSave: (updatedSchedule) => {
+      console.log("Schedule updated:", updatedSchedule);
+      // In a real implementation, this would call a parent function to update the schedule
+    }
   });
 
   if (!selectedEmployee) {
