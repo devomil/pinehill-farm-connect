@@ -1,8 +1,9 @@
 
 import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface SpecificDaysSchedulingBarProps {
   selectedDays: string[];
@@ -19,93 +20,83 @@ export const SpecificDaysSchedulingBar: React.FC<SpecificDaysSchedulingBarProps>
   onCancel,
   onClearSelection
 }) => {
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
+  const [startTime, setStartTime] = useState<string>("09:00");
+  const [endTime, setEndTime] = useState<string>("17:00");
   
   const handleSchedule = () => {
-    if (selectedDays.length === 0) {
-      return;
-    }
-    onSchedule(startTime, endTime, selectedDays);
-  };
-  
-  // Format days for display
-  const formatSelectedDays = () => {
-    if (selectedDays.length === 0) {
-      return "No days selected";
-    } else if (selectedDays.length <= 3) {
-      return selectedDays.join(", ");
-    } else {
-      return `${selectedDays.length} days selected`;
+    try {
+      if (selectedDays.length === 0) {
+        toast.error("No days selected for scheduling");
+        return;
+      }
+      
+      // Call the onSchedule callback with the standardized parameter order
+      onSchedule(startTime, endTime, selectedDays);
+    } catch (error) {
+      console.error("Error in specific days scheduling:", error);
+      toast.error("Failed to schedule shifts");
     }
   };
-  
+
   return (
-    <Card className="p-4 mb-4 bg-orange-50 border-orange-300">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-orange-900">Scheduling for Specific Days</h3>
-        <div className="text-sm text-orange-700">
-          {formatSelectedDays()}
-        </div>
+    <div className="bg-green-50 p-3 rounded-md mb-4 flex justify-between items-center flex-wrap gap-4 border border-green-300">
+      <div>
+        <h3 className="font-medium">
+          Add Shifts for Selected Days
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {selectedDays.length} {selectedDays.length === 1 ? "day" : "days"} selected in {currentMonth.toLocaleString('default', { month: 'long' })}
+        </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <label htmlFor="start-time" className="text-sm font-medium whitespace-nowrap">
-            Start Time:
-          </label>
+      <div className="flex flex-wrap gap-4 items-end">
+        <div className="space-y-2">
+          <Label htmlFor="startTimeSpecific">Start Time</Label>
           <Input
-            id="start-time"
+            id="startTimeSpecific"
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="flex-1"
+            className="w-24 pointer-events-auto"
           />
         </div>
         
-        <div className="flex items-center gap-2">
-          <label htmlFor="end-time" className="text-sm font-medium whitespace-nowrap">
-            End Time:
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="endTimeSpecific">End Time</Label>
           <Input
-            id="end-time"
+            id="endTimeSpecific"
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="flex-1"
+            className="w-24 pointer-events-auto"
           />
         </div>
         
-        <div className="flex justify-end gap-2">
-          <Button 
+        <div className="flex gap-2">
+          <Button
             variant="outline"
-            size="sm" 
+            size="sm"
             onClick={onClearSelection}
+            className="pointer-events-auto"
           >
             Clear Selection
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
             onClick={onCancel}
+            className="pointer-events-auto"
           >
             Cancel
           </Button>
-          <Button 
-            variant="default" 
-            size="sm"
+          <Button
             onClick={handleSchedule}
-            disabled={selectedDays.length === 0}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
+            className="pointer-events-auto"
+            variant="default"
           >
-            Schedule Selected Days
+            Schedule
           </Button>
         </div>
       </div>
-      
-      <div className="text-sm text-orange-700 bg-orange-100 p-2 rounded-md">
-        <strong>Tip:</strong> Click on calendar days above to select them. You can select multiple days for scheduling.
-      </div>
-    </Card>
+    </div>
   );
 };
