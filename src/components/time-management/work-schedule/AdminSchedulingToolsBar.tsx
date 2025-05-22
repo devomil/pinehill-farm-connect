@@ -11,37 +11,15 @@ import {
   SpecificDaySelector,
   ActionButtons
 } from "./admin-tools";
+import { AdminScheduleActions } from "@/hooks/workSchedule/types/adminScheduleTypes";
 
 interface AdminSchedulingToolsBarProps {
   selectedEmployee: string;
   currentMonth: Date;
   scheduleData: WorkSchedule | null;
   availableEmployees: User[];
-  onAssignWeekday: (
-    employeeId: string,
-    startDate: Date,
-    endDate: Date,
-    startTime: string,
-    endTime: string,
-    daysToInclude: number[]
-  ) => void;
-  onAssignWeekend: (
-    employeeId: string,
-    startDate: Date,
-    endDate: Date,
-    startTime: string,
-    endTime: string
-  ) => void;
-  onCheckConflicts: (
-    employeeId: string,
-    shifts: WorkShift[]
-  ) => Promise<string[]>;
-  onAutoAssignCoverage: (
-    gapDate: string,
-    startTime: string,
-    endTime: string,
-    availableEmployees: User[]
-  ) => Promise<WorkShift | null>;
+  // Updated props to match our new hooks pattern
+  actions: AdminScheduleActions;
   onAddSpecificDayShift?: (
     employeeId: string,
     date: Date,
@@ -55,10 +33,7 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
   currentMonth,
   scheduleData,
   availableEmployees,
-  onAssignWeekday,
-  onAssignWeekend,
-  onCheckConflicts,
-  onAutoAssignCoverage,
+  actions,
   onAddSpecificDayShift
 }) => {
   const [startTime, setStartTime] = useState("09:00");
@@ -80,6 +55,7 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
     });
   };
   
+  // Updated to use the new actions pattern
   const handleAssignWeekday = () => {
     if (!selectedDays.length) {
       toast({
@@ -89,7 +65,7 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
       return;
     }
     
-    onAssignWeekday(
+    actions.assignWeekdayShifts(
       selectedEmployee,
       monthStart,
       monthEnd,
@@ -100,7 +76,7 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
   };
   
   const handleAssignWeekend = () => {
-    onAssignWeekend(
+    actions.assignWeekendShifts(
       selectedEmployee,
       monthStart,
       monthEnd,
@@ -118,7 +94,10 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
       return;
     }
     
-    const conflicts = await onCheckConflicts(selectedEmployee, scheduleData.shifts);
+    const conflicts = await actions.checkTimeOffConflicts(
+      selectedEmployee, 
+      scheduleData.shifts
+    );
     
     if (conflicts.length === 0) {
       toast({
@@ -132,7 +111,7 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
     // For demo purposes, we'll just use the current date
     const today = format(new Date(), "yyyy-MM-dd");
     
-    const result = await onAutoAssignCoverage(
+    const result = await actions.autoAssignCoverage(
       today,
       startTime,
       endTime,

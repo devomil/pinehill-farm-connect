@@ -30,13 +30,8 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
   // Filter out the currently selected employee
   const availableEmployees: User[] = employees || [];
   
-  const {
-    assignWeekdayShifts,
-    assignWeekendShifts,
-    checkTimeOffConflicts,
-    autoAssignCoverage,
-    loading
-  } = useAdminScheduleTools({
+  // Use our refactored hook - now it returns actions and loading state
+  const { actions, loading } = useAdminScheduleTools({
     scheduleData,
     onSave: (updatedSchedule) => {
       console.log("Schedule updated:", updatedSchedule);
@@ -54,10 +49,7 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
       currentMonth={currentMonth}
       scheduleData={scheduleData}
       availableEmployees={availableEmployees}
-      onAssignWeekday={assignWeekdayShifts}
-      onAssignWeekend={assignWeekendShifts}
-      onCheckConflicts={checkTimeOffConflicts}
-      onAutoAssignCoverage={autoAssignCoverage}
+      actions={actions}
       onAddSpecificDayShift={onAddSpecificDayShift}
     />
   );
