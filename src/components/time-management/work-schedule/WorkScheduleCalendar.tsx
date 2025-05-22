@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
+import React, { useState } from "react";
+import { format, startOfMonth, endOfMonth, addDays, getDay, isSameMonth, isSameDay } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { WorkShift } from "@/types/workSchedule";
 import { CalendarNavigation } from "./CalendarNavigation";
-import { format, isEqual } from "date-fns";
 import { CalendarDayCell } from "./CalendarDayCell";
+import { EmployeeShiftDetailsDialog } from "./EmployeeShiftDetailsDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -13,13 +15,14 @@ interface WorkScheduleCalendarProps {
   shiftsMap: Map<string, WorkShift[]>;
   selectedDate: Date | undefined;
   setSelectedDate: (date: Date | undefined) => void;
-  onDateSelected?: (date: Date | undefined) => void;
+  onDateSelected?: (date: Date) => void;
   onShiftClick?: (shift: WorkShift) => void;
   selectionMode?: "single" | "multiple" | "range";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
   selectedCount?: number;
   hideCalendar?: boolean;
+  onDeleteShift?: (shiftId: string) => void; // Added prop for deleting shifts
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -34,119 +37,140 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   isDaySelected,
   onDayToggle,
   selectedCount = 0,
-  hideCalendar = false
+  hideCalendar = false,
+  onDeleteShift, // Added prop
 }) => {
-  const [highlightedDates, setHighlightedDates] = useState<Date[]>([]);
-  
-  // Format dates from shiftsMap to be displayed
-  useEffect(() => {
-    const dates: Date[] = [];
-    shiftsMap.forEach((shifts, dateStr) => {
-      if (shifts.length > 0) {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        dates.push(new Date(year, month - 1, day));
-      }
-    });
-    setHighlightedDates(dates);
-  }, [shiftsMap]);
-  
-  // Common Day component renderer for both calendar modes
-  const DayComponent = (props: any) => {
-    const date = props.date;
-    if (!date) return null;
+  const [viewingDate, setViewingDate] = useState<Date | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
 
-    const dateKey = format(date, 'yyyy-MM-dd');
-    const shifts = shiftsMap.get(dateKey) || [];
-    const isSelected = selectionMode === "multiple" && isDaySelected ? 
-      isDaySelected(date) : 
-      selectedDate ? isEqual(date, selectedDate) : false;
+  // Return an ordered array of days for the calendar grid
+  const calendarDays = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = monthStart;
+    const endDate = monthEnd;
     
-    return (
-      <CalendarDayCell
-        date={date}
-        shifts={shifts}
-        isSelected={isSelected}
-        selectionMode={selectionMode}
-        onShiftClick={onShiftClick}
-        onSelect={() => {
-          console.log(`Calendar day cell selected: ${format(date, 'yyyy-MM-dd')}, mode: ${selectionMode}`);
-          // In multiple selection mode
-          if (selectionMode === "multiple" && onDayToggle) {
-            console.log('Calling onDayToggle for multiple selection');
-            onDayToggle(date);
-          } 
-          // In single selection mode
-          else if (selectionMode === "single") {
-            console.log('Setting selected date and calling onDateSelected for single selection');
-            setSelectedDate(date);
-            if (onDateSelected) {
-              onDateSelected(date);
-            }
-          }
-        }}
-      />
-    );
+    // Get the starting day of week (0 = Sunday, 1 = Monday, etc.)
+    const startDay = getDay(startDate);
+    
+    // Create array for days in the month + padding days
+    const days = [];
+    
+    // Add days from previous month to start from Sunday or fill the first row
+    for (let i = 0; i < startDay; i++) {
+      const prevDate = addDays(startDate, -1 * (startDay - i));
+      days.push(prevDate);
+    }
+    
+    // Add all days in the current month
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      days.push(currentDate);
+      currentDate = addDays(currentDate, 1);
+    }
+    
+    // Add days from next month to complete the last row if needed
+    const remainingCells = 7 - (days.length % 7);
+    if (remainingCells < 7) {
+      for (let i = 1; i <= remainingCells; i++) {
+        const nextDate = addDays(endDate, i);
+        days.push(nextDate);
+      }
+    }
+    
+    return days;
   };
   
-  // If calendar is hidden (for range selection mode), don't render it
-  if (hideCalendar) {
-    return null;
-  }
+  const days = calendarDays();
+  
+  // Handle day click action based on selection mode
+  const handleDayClick = (date: Date) => {
+    if (selectionMode === "single") {
+      setSelectedDate(date);
+      if (onDateSelected && isSameMonth(date, currentMonth)) {
+        onDateSelected(date);
+      }
+    } else if (selectionMode === "multiple" && onDayToggle) {
+      if (isSameMonth(date, currentMonth)) {
+        onDayToggle(date);
+      }
+    }
+  };
+  
+  // Handle clicking on a shift indicator
+  const handleShiftClick = (date: Date, shift: WorkShift) => {
+    if (onShiftClick) {
+      onShiftClick(shift);
+    } else {
+      // Open the shift details dialog
+      setViewingDate(date);
+      setIsDialogOpen(true);
+    }
+  };
+
+  // Handle deleting a shift
+  const handleDeleteShift = (shiftId: string) => {
+    if (isAdmin && onDeleteShift) {
+      onDeleteShift(shiftId);
+      // Close the dialog after deleting
+      setIsDialogOpen(false);
+    }
+  };
   
   return (
-    <Card className="mb-6">
-      <div className="p-4">
-        <div className="mb-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            Work Schedule {format(currentMonth, "MMMM yyyy")}
-          </h2>
+    <>
+      <Card className={hideCalendar ? "hidden" : ""}>
+        <CardContent className="p-0">
           <CalendarNavigation
             currentMonth={currentMonth}
-            onPreviousMonth={() => {
-              const newDate = new Date(currentMonth);
-              newDate.setMonth(currentMonth.getMonth() - 1);
-              setCurrentMonth(newDate);
-            }}
-            onNextMonth={() => {
-              const newDate = new Date(currentMonth);
-              newDate.setMonth(currentMonth.getMonth() + 1);
-              setCurrentMonth(newDate);
-            }}
+            onPrevMonth={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
+            onNextMonth={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
           />
-        </div>
-        
-        <div className="border rounded-md">
-          {selectionMode === "single" ? (
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                console.log("Single calendar onSelect handler:", date);
-                // Use our custom handling in Day component
-              }}
-              month={currentMonth}
-              className="rounded-md border pointer-events-auto"
-              components={{
-                Day: DayComponent
-              }}
-            />
-          ) : (
-            <Calendar
-              mode="multiple"
-              selected={highlightedDates}
-              onSelect={() => {
-                console.log("Multiple calendar onSelect handler");
-                // Multiple selection is handled by the custom day component
-              }}
-              month={currentMonth}
-              className="rounded-md border pointer-events-auto"
-              components={{
-                Day: DayComponent
-              }}
-            />
-          )}
-        </div>
-      </div>
-    </Card>
+          
+          <div className="grid grid-cols-7 bg-muted/50">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+              <div
+                key={day}
+                className="py-2 text-center text-sm font-medium"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 h-[calc(100%-2.5rem)]">
+            {days.map((day, i) => {
+              const dateKey = format(day, "yyyy-MM-dd");
+              const shiftsForDay = shiftsMap.get(dateKey) || [];
+              
+              return (
+                <CalendarDayCell
+                  key={i}
+                  date={day}
+                  currentMonth={currentMonth}
+                  shifts={shiftsForDay}
+                  isSelected={selectionMode === "single" ? selectedDate ? isSameDay(day, selectedDate) : false : false}
+                  isHighlighted={selectionMode === "multiple" && isDaySelected ? isDaySelected(day) : false}
+                  onClick={() => handleDayClick(day)}
+                  onShiftClick={(shift) => handleShiftClick(day, shift)}
+                />
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {viewingDate && isDialogOpen && (
+        <EmployeeShiftDetailsDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          date={viewingDate}
+          shifts={shiftsMap.get(format(viewingDate, "yyyy-MM-dd")) || []}
+          onDeleteShift={isAdmin ? handleDeleteShift : undefined}
+        />
+      )}
+    </>
   );
 };

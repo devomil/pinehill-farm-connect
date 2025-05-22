@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { createNewShift } from "../scheduleHelpers";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function useShiftEditor(
   selectedEmployee: string | null,
@@ -53,6 +53,7 @@ export function useShiftEditor(
     
     onSave(updatedSchedule);
     setIsDialogOpen(false);
+    toast("Shift saved successfully");
   };
   
   // Handle deleting a shift

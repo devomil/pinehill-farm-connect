@@ -9,7 +9,7 @@ import { toast } from 'sonner';
  * Type guard to safely check if a value is Promise-like
  */
 function isPromise<T = any>(val: unknown): val is Promise<T> {
-  return Boolean(val) && typeof val === 'object' && 'then' in val && typeof (val as any).then === 'function';
+  return Boolean(val) && typeof val === 'object' && val !== null && 'then' in val && typeof (val as any).then === 'function';
 }
 
 /**

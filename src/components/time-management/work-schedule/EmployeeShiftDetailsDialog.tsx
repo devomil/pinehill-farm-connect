@@ -2,16 +2,19 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 import { WorkShift } from "@/types/workSchedule";
 import { Button } from "@/components/ui/button";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface EmployeeShiftDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   date: Date;
   shifts: WorkShift[];
+  onDeleteShift?: (shiftId: string) => void;
 }
 
 export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProps> = ({
@@ -19,13 +22,28 @@ export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProp
   onClose,
   date,
   shifts,
+  onDeleteShift,
 }) => {
   const { employees } = useEmployeeDirectory();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   
   // Helper function to get employee name by ID
   const getEmployeeName = (employeeId: string): string => {
     const employee = employees?.find(emp => emp.id === employeeId);
     return employee?.name || 'Unknown Employee';
+  };
+
+  const handleDeleteShift = (shiftId: string) => {
+    if (!isAdmin) {
+      toast("Only administrators can delete shifts");
+      return;
+    }
+    
+    if (onDeleteShift) {
+      onDeleteShift(shiftId);
+      toast("Shift deleted successfully");
+    }
   };
   
   return (
@@ -56,15 +74,31 @@ export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProp
           
           <div className="space-y-2">
             {shifts.map((shift, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 bg-accent/20 rounded-md">
-                <Clock className="h-4 w-4 text-primary" />
-                <span>
-                  {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
-                </span>
+              <div key={i} className="p-2 bg-accent/20 rounded-md">
+                <div className="flex items-center gap-2 justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span>
+                      {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
+                    </span>
+                  </div>
+                  
+                  {isAdmin && onDeleteShift && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-destructive"
+                      onClick={() => handleDeleteShift(shift.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                
                 {shift.notes && (
-                  <span className="text-xs text-muted-foreground ml-2">
+                  <div className="text-xs text-muted-foreground mt-1 ml-6">
                     {shift.notes}
-                  </span>
+                  </div>
                 )}
               </div>
             ))}
