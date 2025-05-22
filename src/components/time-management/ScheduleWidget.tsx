@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamCalendar } from "./TeamCalendar";
 import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
+import { toast } from "sonner";
 
 interface ScheduleWidgetProps {
   currentUser?: User;
@@ -55,12 +56,23 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   // This ensures we always have data to display
   const displayShiftsMap = allEmployeeShifts || fetchedShiftsMap || userShiftsMap;
   
+  // Handle refresh - enhanced to ensure data consistency
+  const handleRefresh = useCallback(() => {
+    console.log("ScheduleWidget: Refreshing data");
+    refreshShifts().then(() => {
+      if (onRefresh) {
+        onRefresh();
+      }
+      toast.success("Schedule refreshed");
+    });
+  }, [refreshShifts, onRefresh]);
+  
   // Effect to handle refresh requests
   useEffect(() => {
     if (onRefresh) {
-      refreshShifts();
+      handleRefresh();
     }
-  }, [onRefresh, refreshShifts]);
+  }, [onRefresh, handleRefresh]);
 
   useEffect(() => {
     // Log the amount of shifts we're showing
@@ -97,6 +109,16 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
               Show Declined
             </label>
           </div>
+          
+          {/* Add refresh button */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            className="h-8 px-2 text-xs"
+          >
+            Refresh
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

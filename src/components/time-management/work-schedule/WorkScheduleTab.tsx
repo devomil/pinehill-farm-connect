@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { User } from "@/types";
 import { AdminWorkScheduleEditor } from "./AdminWorkScheduleEditor";
@@ -81,17 +81,39 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
   const displayShiftsMap = (isAdmin && !selectedEmployee) ? allEmployeeShiftsMap : shiftsMap;
 
   // Enhanced save handler that also refreshes global shift state
-  const handleSaveSchedule = async (updatedSchedule) => {
+  const handleSaveSchedule = useCallback(async (updatedSchedule) => {
     try {
+      // First save the schedule
       await saveSchedule(updatedSchedule);
-      // Refresh all employee shifts to update team view
-      refreshShifts();
+      
+      // Then explicitly refresh all employee shifts to update team view
+      await refreshShifts();
+      
       toast.success("Schedule updated successfully");
     } catch (error) {
       console.error("Error saving schedule:", error);
       toast.error("Failed to update schedule");
     }
-  };
+  }, [saveSchedule, refreshShifts]);
+
+  // Enhanced delete handler for shifts
+  const handleDeleteShift = useCallback(async (shiftId: string) => {
+    if (!scheduleData) return;
+    
+    try {
+      // Create updated schedule without the deleted shift
+      const updatedSchedule = {
+        ...scheduleData,
+        shifts: scheduleData.shifts.filter(s => s.id !== shiftId),
+      };
+      
+      // Save the updated schedule and refresh global state
+      await handleSaveSchedule(updatedSchedule);
+    } catch (error) {
+      console.error("Error deleting shift:", error);
+      toast.error("Failed to delete shift");
+    }
+  }, [scheduleData, handleSaveSchedule]);
 
   // Log the number of shifts we're showing for debugging
   useEffect(() => {
@@ -145,6 +167,7 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
                 isAdminView={isAdmin}
                 showEmployeeNames={true}
                 title="Work Schedule"
+                onDeleteShift={handleDeleteShift}  // Added delete handler
               />
               <EmployeeScheduleView 
                 scheduleData={scheduleData}

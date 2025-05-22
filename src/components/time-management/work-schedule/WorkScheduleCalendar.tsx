@@ -16,12 +16,12 @@ interface WorkScheduleCalendarProps {
   setSelectedDate: (date: Date | undefined) => void;
   onDateSelected?: (date: Date) => void;
   onShiftClick?: (shift: WorkShift) => void;
+  onDeleteShift?: (shiftId: string) => void;  // Make sure this prop is properly defined
   selectionMode?: "single" | "multiple" | "range";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
   selectedCount?: number;
   hideCalendar?: boolean;
-  onDeleteShift?: (shiftId: string) => void;
   isAdminView?: boolean;
   showEmployeeNames?: boolean;
   title?: string;

@@ -7,6 +7,7 @@ import { ErrorAlertBar } from "./ErrorAlertBar";
 import { DebugPanel } from "./DebugPanel";
 import { TabNavigation } from "./TabNavigation";
 import { TabContent } from "./tabs/TabContent";
+import { TeamCalendar } from "./TeamCalendar";
 
 interface TimeManagementTabsProps {
   currentUser: User;
@@ -47,6 +48,11 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     <>
       <ErrorAlertBar error={error} messagesError={messagesError} onRetry={handleRetry} />
       <DebugPanel />
+      
+      {/* Add Team Calendar at the top */}
+      <div className="mb-4">
+        <TeamCalendar currentUser={currentUser} />
+      </div>
       
       <Tabs value={activeTab} className="mt-4">
         <TabNavigation isAdmin={isAdmin} />

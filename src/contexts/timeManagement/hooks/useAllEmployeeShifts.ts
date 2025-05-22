@@ -11,6 +11,7 @@ export function useAllEmployeeShifts() {
   const [shiftsMap, setShiftsMap] = useState<Map<string, WorkShift[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const { employees } = useEmployeeDirectory();
   
   // Clear mock data on first load (to reset between dashboard and time management views)
@@ -47,55 +48,60 @@ export function useAllEmployeeShifts() {
       // Always create mock shifts for each employee to ensure we always have data to display
       // This ensures the time management view always has data
       employees.forEach(employee => {
-        // Generate 3-5 random shifts for each employee
-        const shiftsCount = 3 + Math.floor(Math.random() * 3);
+        // Generate 3-5 random shifts for each employee if they don't already have shifts
+        // Check if employee already has shifts
+        const existingShifts = mockShifts.filter(shift => shift.employeeId === employee.id);
         
-        for (let i = 0; i < shiftsCount; i++) {
-          // Random day of month between 1-28
-          const day = 1 + Math.floor(Math.random() * 28);
-          const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
+        if (existingShifts.length === 0) {
+          const shiftsCount = 3 + Math.floor(Math.random() * 3);
           
-          // Random shift times - make them realistic working hours
-          const startOptions = [8, 9, 10, 11, 12, 13, 14];
-          const durationOptions = [4, 6, 8, 9]; // shift lengths in hours
-          
-          const startHour = startOptions[Math.floor(Math.random() * startOptions.length)];
-          const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
-          const endHour = startHour + duration;
-          
-          const startTime = `${startHour.toString().padStart(2, '0')}:00:00`;
-          const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
-          
-          const shift = {
-            id: `${employee.id}-${date}-${i}`,
-            employeeId: employee.id,
-            date,
-            startTime,
-            endTime,
-            isRecurring: false,
-            notes: `Shift ${i+1} for ${employee.name}`
-          };
-          
-          mockShifts.push(shift);
-          
-          // Add this shift to the employee's schedule in the global store
-          if (!globalMockScheduleStore[employee.id]) {
-            globalMockScheduleStore[employee.id] = {
-              id: employee.id,
+          for (let i = 0; i < shiftsCount; i++) {
+            // Random day of month between 1-28
+            const day = 1 + Math.floor(Math.random() * 28);
+            const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
+            
+            // Random shift times - make them realistic working hours
+            const startOptions = [8, 9, 10, 11, 12, 13, 14];
+            const durationOptions = [4, 6, 8, 9]; // shift lengths in hours
+            
+            const startHour = startOptions[Math.floor(Math.random() * startOptions.length)];
+            const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
+            const endHour = startHour + duration;
+            
+            const startTime = `${startHour.toString().padStart(2, '0')}:00:00`;
+            const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
+            
+            const shift = {
+              id: `${employee.id}-${date}-${i}`,
               employeeId: employee.id,
-              month: currentMonth,
-              shifts: []
+              date,
+              startTime,
+              endTime,
+              isRecurring: false,
+              notes: `Shift ${i+1} for ${employee.name}`
             };
-          }
-          
-          // Make sure we don't add duplicates
-          if (!globalMockScheduleStore[employee.id].shifts.some(s => s.id === shift.id)) {
-            globalMockScheduleStore[employee.id].shifts.push(shift);
+            
+            mockShifts.push(shift);
+            
+            // Add this shift to the employee's schedule in the global store
+            if (!globalMockScheduleStore[employee.id]) {
+              globalMockScheduleStore[employee.id] = {
+                id: employee.id,
+                employeeId: employee.id,
+                month: currentMonth,
+                shifts: []
+              };
+            }
+            
+            // Make sure we don't add duplicates
+            if (!globalMockScheduleStore[employee.id].shifts.some(s => s.id === shift.id)) {
+              globalMockScheduleStore[employee.id].shifts.push(shift);
+            }
           }
         }
       });
       
-      console.log("Created sample shifts for global store:", mockShifts.length);
+      console.log("Created/loaded shifts for global store:", mockShifts.length);
       console.log("Global store now contains schedules for:", Object.keys(globalMockScheduleStore).length, "employees");
       
       setAllShifts(mockShifts);
@@ -110,6 +116,8 @@ export function useAllEmployeeShifts() {
       });
       
       setShiftsMap(map);
+      // Update last refresh time
+      setLastRefreshTime(Date.now());
     } catch (err) {
       console.error("Error fetching all employee shifts:", err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -122,6 +130,7 @@ export function useAllEmployeeShifts() {
   const refreshShifts = useCallback(() => {
     console.log("Refreshing all employee shifts");
     loadAllShifts();
+    return Promise.resolve(); // Return a promise for async usage
   }, [loadAllShifts]);
 
   // Initial load of all shifts
@@ -134,6 +143,7 @@ export function useAllEmployeeShifts() {
     shiftsMap,
     loading,
     error,
-    refreshShifts  // Add the refresh function
+    lastRefreshTime,
+    refreshShifts
   };
 }
