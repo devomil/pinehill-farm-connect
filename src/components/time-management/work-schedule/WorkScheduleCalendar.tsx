@@ -24,6 +24,7 @@ interface WorkScheduleCalendarProps {
   onDeleteShift?: (shiftId: string) => void;
   isAdminView?: boolean;
   showEmployeeNames?: boolean;
+  title?: string;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -42,6 +43,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   onDeleteShift,
   isAdminView = false,
   showEmployeeNames = false,
+  title
 }) => {
   const [viewingDate, setViewingDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -99,6 +101,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
             currentMonth={currentMonth}
             onPrevMonth={goToPreviousMonth}
             onNextMonth={goToNextMonth}
+            title={title}
           />
           
           <CalendarDaysGrid 

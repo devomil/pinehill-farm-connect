@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarViewSelector } from "./CalendarViewSelector";
@@ -102,10 +102,10 @@ export function CalendarContent({
       </CardHeader>
       <CardContent>
         <Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as "month" | "team")}>
-          <CalendarViewSelector
-            viewMode={viewMode}
-            onViewModeChange={onViewModeChange}
-          />
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="month">Work Schedule</TabsTrigger>
+            <TabsTrigger value="team">Company Events</TabsTrigger>
+          </TabsList>
           
           <TabsContent value="month" className="mt-0">
             <div className="border rounded-md p-3 pointer-events-auto">

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
@@ -12,6 +13,7 @@ import { WorkShift } from "@/types/workSchedule";
 import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { TeamCalendar } from "./TeamCalendar";
 
 interface ScheduleWidgetProps {
   currentUser?: User;
@@ -29,6 +31,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>("work-schedule");
   const { timeOffRequests = [] } = useTimeManagement();
   const { currentUser: authUser } = useAuth();
   const isAdmin = authUser?.role === "admin";
@@ -49,9 +52,10 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
       shiftsMapSize: shiftsMap?.size || 0,
       isCustomizing,
       hasShifts: allEmployeeShifts ? allEmployeeShifts.size : 0,
-      currentUser: currentUser ? currentUser.id : "undefined"
+      currentUser: currentUser ? currentUser.id : "undefined",
+      activeTab
     });
-  }, [currentMonth, selectedDate, shiftsMap, isCustomizing, allEmployeeShifts, currentUser]);
+  }, [currentMonth, selectedDate, shiftsMap, isCustomizing, allEmployeeShifts, currentUser, activeTab]);
 
   // Choose which shifts data to use - prefer all employee shifts if provided (for admin view)
   const displayShiftsMap = allEmployeeShifts || shiftsMap;
@@ -85,15 +89,35 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <WorkScheduleCalendar 
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          shiftsMap={displayShiftsMap}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          isAdminView={isAdmin}
-          showEmployeeNames={true}
-        />
+        <Tabs 
+          defaultValue="work-schedule" 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="work-schedule">Work Schedule</TabsTrigger>
+            <TabsTrigger value="company-events">Company Events</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="work-schedule" className="mt-0">
+            <WorkScheduleCalendar 
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              shiftsMap={displayShiftsMap}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              isAdminView={isAdmin}
+              showEmployeeNames={true}
+            />
+          </TabsContent>
+          
+          <TabsContent value="company-events" className="mt-0">
+            {currentUser && (
+              <TeamCalendar currentUser={currentUser} />
+            )}
+          </TabsContent>
+        </Tabs>
         
         <div className="text-center mt-4">
           <Link to="/time?tab=work-schedules">
