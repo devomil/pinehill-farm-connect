@@ -79,9 +79,15 @@ export function useRefreshMessages() {
       // Add dashboard refresh if available
       if (handleRefreshData) {
         try {
+          // Execute the function but don't check its return value directly
           const result = handleRefreshData();
-          // Only add to the array if it's a Promise-like object
-          if (result && typeof result === 'object' && 'then' in result) {
+          
+          // Check if the result exists, is an object, and has a 'then' property that's a function
+          if (result !== undefined && 
+              result !== null && 
+              typeof result === 'object' && 
+              'then' in result && 
+              typeof result.then === 'function') {
             refreshPromises.push(result);
           }
         } catch (e) {
