@@ -3,6 +3,9 @@ import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 
+// Shared mock store that will be used across all components
+export const globalMockScheduleStore: Record<string, WorkSchedule> = {};
+
 /**
  * Builds a map of date strings to arrays of shifts
  */
@@ -35,4 +38,32 @@ export function createNewShift(employeeId: string, date: Date): WorkShift {
     isRecurring: false,
     notes: ''
   };
+}
+
+/**
+ * Clears all mock schedule data
+ */
+export function clearAllMockData() {
+  // Clear all keys in the global store
+  Object.keys(globalMockScheduleStore).forEach(key => {
+    delete globalMockScheduleStore[key];
+  });
+  console.log("All mock schedule data cleared");
+  return true;
+}
+
+/**
+ * Gets mock schedule for an employee, creating a new one if it doesn't exist
+ */
+export function getMockScheduleForEmployee(employeeId: string, currentMonth: string): WorkSchedule {
+  if (!globalMockScheduleStore[employeeId]) {
+    globalMockScheduleStore[employeeId] = {
+      id: uuidv4(),
+      employeeId,
+      month: currentMonth,
+      shifts: []
+    };
+  }
+  
+  return globalMockScheduleStore[employeeId];
 }
