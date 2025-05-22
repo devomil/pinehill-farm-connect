@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, RefreshCw, CalendarRange, Calendar } from "lucide-react";
+import { PlusCircle, Loader2, RefreshCw, CalendarRange, Calendar, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,8 @@ interface ScheduleActionBarProps {
   onSetBulkMode: (mode: string | null) => void;
   onReset: () => void;
   onToggleRangeMode: () => void;
+  showAdminTools?: boolean;
+  onToggleAdminTools?: () => void;
 }
 
 export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
@@ -30,7 +32,9 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
   onToggleSelectionMode,
   onSetBulkMode,
   onReset,
-  onToggleRangeMode
+  onToggleRangeMode,
+  showAdminTools = false,
+  onToggleAdminTools
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -116,6 +120,23 @@ export const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
         )}
         Reset Schedule
       </Button>
+      
+      {/* Settings Menu */}
+      <div className="ml-auto">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1" />
+              Settings
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onToggleAdminTools}>
+              {showAdminTools ? "Hide Admin Tools" : "Show Admin Tools"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

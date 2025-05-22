@@ -13,6 +13,7 @@ export const useScheduleEditor = ({
   onSave 
 }: UseScheduleEditorProps) => {
   const [selectionMode, setSelectionMode] = useState<"single" | "multiple" | "range">("single");
+  const [showAdminTools, setShowAdminTools] = useState(false);
   
   // Use the component hooks
   const {
@@ -100,6 +101,22 @@ export const useScheduleEditor = ({
     console.log(`Adding shift for date: ${date ? format(date, 'yyyy-MM-dd') : 'undefined'}`);
     handleAddShift(date || selectedDate);
   };
+  
+  // Handle adding a specific day shift from the admin tools
+  const handleAddSpecificDayShift = (
+    employeeId: string,
+    date: Date,
+    startTime: string,
+    endTime: string
+  ) => {
+    console.log(`Adding specific day shift: ${format(date, 'yyyy-MM-dd')} ${startTime}-${endTime}`);
+    // Set the selected date first
+    setSelectedDate(date);
+    // Then call handleAddShift which will use this date
+    setTimeout(() => {
+      handleAddShift(date);
+    }, 0);
+  };
 
   return {
     selectedEmployee, 
@@ -117,11 +134,14 @@ export const useScheduleEditor = ({
     selectionMode,
     selectedCount,
     shiftsMap,
+    showAdminTools,
+    setShowAdminTools,
     handleAddShift: handleAddShiftFromCalendar,
     handleEditShift,
     handleSaveShift,
     handleDeleteShift,
     handleBulkSchedule,
+    handleAddSpecificDayShift,
     toggleSelectionMode,
     toggleRangeMode,
     toggleDay,

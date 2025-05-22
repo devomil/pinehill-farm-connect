@@ -6,17 +6,10 @@ import { BulkSchedulingBar } from "./BulkSchedulingBar";
 import { SpecificDaysSchedulingBar } from "./SpecificDaysSchedulingBar";
 import { ScheduleActionBar } from "./ScheduleActionBar";
 import { AdminSchedulingTools } from "./AdminSchedulingTools";
-import { Button } from "@/components/ui/button";
 import { ScheduleEditorState } from "./hooks/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, Settings } from "lucide-react";
+import { Info } from "lucide-react";
 import { DateRangeSelector } from "./DateRangeSelector";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
 
 interface ScheduleEditorContentProps {
   editorState: ReturnType<typeof import("./hooks/useScheduleEditor").useScheduleEditor>;
@@ -29,8 +22,6 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
   loading,
   onReset
 }) => {
-  const [showAdminTools, setShowAdminTools] = useState(false);
-  
   const {
     selectedDate,
     setSelectedDate,
@@ -45,11 +36,14 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
     selectionMode,
     selectedCount,
     shiftsMap,
+    showAdminTools,
+    setShowAdminTools,
     handleAddShift,
     handleEditShift,
     handleSaveShift,
     handleDeleteShift,
     handleBulkSchedule,
+    handleAddSpecificDayShift,
     toggleSelectionMode,
     toggleRangeMode,
     toggleDay,
@@ -70,21 +64,9 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
           onToggleRangeMode={toggleRangeMode}
           onSetBulkMode={setBulkMode}
           onReset={onReset}
+          showAdminTools={showAdminTools}
+          onToggleAdminTools={() => setShowAdminTools(!showAdminTools)}
         />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-1" />
-              Settings
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setShowAdminTools(!showAdminTools)}>
-              {showAdminTools ? "Hide Admin Tools" : "Show Admin Tools"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       
       {selectionMode === "multiple" && (
@@ -121,6 +103,7 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
           selectedEmployee={editorState.selectedEmployee}
           currentMonth={currentMonth}
           scheduleData={editorState.scheduleData}
+          onAddSpecificDayShift={handleAddSpecificDayShift}
         />
       )}
       

@@ -1,46 +1,53 @@
 
 import React from "react";
-import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
-import { useAdminScheduleTools } from "@/hooks/workSchedule";
-import { AdminSchedulingToolsBar } from "./AdminSchedulingToolsBar";
 import { WorkSchedule } from "@/types/workSchedule";
+import { AdminSchedulingToolsBar } from "./AdminSchedulingToolsBar";
+import { useAdminScheduleTools } from "@/hooks/workSchedule/useAdminScheduleTools";
 
 interface AdminSchedulingToolsProps {
   selectedEmployee: string | null;
   currentMonth: Date;
   scheduleData: WorkSchedule | null;
+  onAddSpecificDayShift?: (
+    employeeId: string,
+    date: Date,
+    startTime: string,
+    endTime: string
+  ) => void;
 }
 
 export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
-  selectedEmployee, 
+  selectedEmployee,
   currentMonth,
-  scheduleData
+  scheduleData,
+  onAddSpecificDayShift
 }) => {
-  const { unfilteredEmployees } = useEmployeeDirectory();
-  
-  // Use admin scheduling tools
-  const { 
-    assignWeekdayShifts, 
-    assignWeekendShifts,
-    checkTimeOffConflicts,
-    autoAssignCoverage
-  } = useAdminScheduleTools(scheduleData, (updatedSchedule) => {
-    // This is a placeholder - the actual save function will be passed from parent
-    console.log("Schedule updated:", updatedSchedule);
+  const {
+    availableEmployees,
+    handleAssignWeekdayShifts,
+    handleAssignWeekendShifts,
+    handleCheckTimeOffConflicts,
+    handleAutoAssignCoverage
+  } = useAdminScheduleTools({
+    selectedEmployee,
+    scheduleData
   });
-  
-  if (!selectedEmployee) return null;
-  
+
+  if (!selectedEmployee) {
+    return null;
+  }
+
   return (
     <AdminSchedulingToolsBar
       selectedEmployee={selectedEmployee}
       currentMonth={currentMonth}
-      onAssignWeekday={assignWeekdayShifts}
-      onAssignWeekend={assignWeekendShifts}
-      onCheckConflicts={(shifts) => checkTimeOffConflicts(selectedEmployee, shifts)}
-      onAutoAssignCoverage={autoAssignCoverage}
-      availableEmployees={unfilteredEmployees}
       scheduleData={scheduleData}
+      availableEmployees={availableEmployees}
+      onAssignWeekday={handleAssignWeekdayShifts}
+      onAssignWeekend={handleAssignWeekendShifts}
+      onCheckConflicts={handleCheckTimeOffConflicts}
+      onAutoAssignCoverage={handleAutoAssignCoverage}
+      onAddSpecificDayShift={onAddSpecificDayShift}
     />
   );
 };

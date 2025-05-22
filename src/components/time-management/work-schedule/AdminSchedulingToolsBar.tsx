@@ -2,19 +2,15 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, isValid } from "date-fns";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@/types";
+import { Calendar, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface AdminSchedulingToolsBarProps {
   selectedEmployee: string;
@@ -43,6 +39,12 @@ interface AdminSchedulingToolsBarProps {
     endTime: string,
     availableEmployees: User[]
   ) => Promise<WorkShift | null>;
+  onAddSpecificDayShift?: (
+    employeeId: string,
+    date: Date,
+    startTime: string,
+    endTime: string
+  ) => void;
 }
 
 export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = ({
@@ -53,11 +55,13 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
   onAssignWeekday,
   onAssignWeekend,
   onCheckConflicts,
-  onAutoAssignCoverage
+  onAutoAssignCoverage,
+  onAddSpecificDayShift
 }) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon-Fri
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
   // Month range for scheduling
   const monthStart = startOfMonth(currentMonth);
@@ -127,6 +131,33 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
         description: "Coverage auto-assigned successfully",
         variant: "success"
       });
+    }
+  };
+  
+  const handleAddSpecificDayShift = () => {
+    if (!selectedDate || !isValid(selectedDate)) {
+      toast({
+        description: "Please select a specific day",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (onAddSpecificDayShift) {
+      onAddSpecificDayShift(
+        selectedEmployee,
+        selectedDate,
+        startTime,
+        endTime
+      );
+      
+      toast({
+        description: `Shift added for ${format(selectedDate, "MMMM d, yyyy")}`,
+        variant: "success"
+      });
+      
+      // Reset the selected date after adding
+      setSelectedDate(undefined);
     }
   };
   
@@ -211,7 +242,45 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
         </div>
       </div>
       
-      <div className="flex flex-wrap gap-2">
+      {/* New Specific Day Selection */}
+      <div className="border-t pt-4">
+        <h4 className="font-medium mb-2">Specific Day Scheduling</h4>
+        <div className="flex flex-wrap md:flex-nowrap gap-2 items-end">
+          <div className="space-y-1 w-full md:w-auto">
+            <label className="text-sm font-medium">Select Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className={`w-full md:w-[240px] justify-start text-left font-normal ${!selectedDate ? "text-muted-foreground" : ""}`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  month={currentMonth}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <Button 
+            onClick={handleAddSpecificDayShift}
+            className="shrink-0"
+            disabled={!selectedDate}
+          >
+            Add Shift for Selected Day
+          </Button>
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap gap-2 border-t pt-4">
         <Button size="sm" onClick={handleAssignWeekday}>
           Assign Weekday Shifts
         </Button>

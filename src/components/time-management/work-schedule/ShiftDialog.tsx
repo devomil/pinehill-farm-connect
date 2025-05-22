@@ -28,9 +28,16 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
   onDelete,
 }) => {
   const [editedShift, setEditedShift] = useState<WorkShift>({...shift});
+  const [startTimeError, setStartTimeError] = useState<string>("");
+  const [endTimeError, setEndTimeError] = useState<string>("");
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Clear any existing errors when the user types
+    if (name === "startTime") setStartTimeError("");
+    if (name === "endTime") setEndTimeError("");
+    
     setEditedShift(prev => ({
       ...prev,
       [name]: value,
@@ -44,8 +51,36 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
     }));
   };
   
+  const validateTimes = (): boolean => {
+    let isValid = true;
+    
+    if (!editedShift.startTime) {
+      setStartTimeError("Start time is required");
+      isValid = false;
+    }
+    
+    if (!editedShift.endTime) {
+      setEndTimeError("End time is required");
+      isValid = false;
+    }
+    
+    if (editedShift.startTime && editedShift.endTime) {
+      const start = new Date(`2000-01-01T${editedShift.startTime}`);
+      const end = new Date(`2000-01-01T${editedShift.endTime}`);
+      
+      if (end <= start) {
+        setEndTimeError("End time must be after start time");
+        isValid = false;
+      }
+    }
+    
+    return isValid;
+  };
+  
   const handleSave = () => {
-    onSave(editedShift);
+    if (validateTimes()) {
+      onSave(editedShift);
+    }
   };
   
   const handleDelete = () => {
@@ -77,9 +112,12 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
                 type="time"
                 value={editedShift.startTime}
                 onChange={handleInputChange}
-                className="pointer-events-auto"
+                className={`pointer-events-auto ${startTimeError ? "border-red-500" : ""}`}
                 required
               />
+              {startTimeError && (
+                <p className="text-sm text-red-500">{startTimeError}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -92,9 +130,12 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
                 type="time"
                 value={editedShift.endTime}
                 onChange={handleInputChange}
-                className="pointer-events-auto"
+                className={`pointer-events-auto ${endTimeError ? "border-red-500" : ""}`}
                 required
               />
+              {endTimeError && (
+                <p className="text-sm text-red-500">{endTimeError}</p>
+              )}
             </div>
           </div>
           
