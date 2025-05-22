@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { format, addMonths, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { CalendarLegend } from "@/components/calendar/CalendarLegend";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
@@ -82,7 +82,6 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Use the WorkScheduleCalendar component for all schedule views */}
         <WorkScheduleCalendar 
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
