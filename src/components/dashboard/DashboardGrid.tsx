@@ -100,10 +100,10 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
         isDraggable={isCustomizing}
         isResizable={isCustomizing}
         draggableHandle={`.${dragHandleClass}`}
-        compactType={null} // Set to null to allow free movement (both horizontal and vertical)
-        preventCollision={false}
+        compactType={null} // Set to null to prevent automatic compacting
+        preventCollision={true} // Prevent widgets from overlapping
         useCSSTransforms={true}
-        isBounded={true}
+        isBounded={false} // Allow widgets to be placed freely
         resizeHandles={['se']}
         autoSize={true}
         onResize={(layout, oldItem, newItem) => {

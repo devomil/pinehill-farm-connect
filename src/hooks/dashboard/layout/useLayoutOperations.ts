@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { validateLayout } from "./layoutUtils";
 import { LayoutItem } from "@/types/dashboard";
 
 interface UseLayoutOperationsProps {
@@ -58,13 +57,9 @@ export function useLayoutOperations({
 
   // Handle layout changes
   const handleLayoutChange = (layout: LayoutItem[]) => {
-    // Validate if any widgets would overlap
-    if (validateLayout(layout)) {
-      setCurrentLayout(layout);
-      setHasLayoutChanged(true);
-    } else {
-      toast.warning("Widget overlapping detected - please adjust your layout");
-    }
+    // Accept all layout changes - removed validation to prevent constraint issues
+    setCurrentLayout(layout);
+    setHasLayoutChanged(true);
   };
 
   // Reset to default layout

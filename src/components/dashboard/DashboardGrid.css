@@ -91,9 +91,18 @@
   transition: opacity 300ms, transform 300ms;
 }
 
-/* Allow horizontal movement explicitly */
-.react-grid-item {
+/* Allow free movement without pushing other widgets */
+.react-grid-layout {
+  position: relative;
   transform-origin: center;
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+.react-grid-item {
+  position: absolute; /* Ensure absolute positioning for free movement */
+  transform-origin: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  overflow: visible !important; /* Prevent content clipping */
 }
