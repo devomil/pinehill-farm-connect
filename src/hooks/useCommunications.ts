@@ -133,7 +133,7 @@ export const useCommunications = (excludeShiftCoverage = false) => {
         bgRefreshCount.current++;
         lastBackgroundRefreshTime.current = now;
         
-        refetch({ stale: false }).finally(() => {
+        refetch().finally(() => {
           // Just mark it done, no further action needed
         });
       }

@@ -79,7 +79,7 @@ export function useMessageRefreshManager(
           // Avoid showing loading indicators for background refreshes
           loadingToastShown.current = true;
           
-          refetch({ stale: false }) // Set stale to false to prevent visual flickering
+          refetch()
             .then(() => resolve())
             .finally(() => {
               setTimeout(() => {
@@ -98,7 +98,7 @@ export function useMessageRefreshManager(
     
     loadingToastShown.current = true; // Track that we've shown a loading indicator
     
-    return refetch({ stale: false }).finally(() => {
+    return refetch().finally(() => {
       // Much longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;
