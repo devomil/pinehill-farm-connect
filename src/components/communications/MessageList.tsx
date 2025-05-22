@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useEmployeeName } from "@/hooks/employee/useEmployeeName";
@@ -43,6 +44,7 @@ export function MessageList({
   unreadMessages = []
 }: MessageListProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingFailed, setLoadingFailed] = useState(false);
   
   // Group messages by conversation
   const groupedMessages = useGroupedMessages(messages, currentUserId);
@@ -51,8 +53,12 @@ export function MessageList({
   const unreadCount = useUnreadMessageCount(unreadMessages);
   
   // Auto refresh messages on mount or when unread count changes
-  // Passing only onRefresh as the useMessageRefreshEffect hook expects just one argument
-  useMessageRefreshEffect(onRefresh);
+  // Create a proper object to pass to useMessageRefreshEffect
+  useMessageRefreshEffect({
+    refreshMessages: onRefresh || (async () => {}),
+    isAdmin: false, // Default to false, update this if you have access to user role info
+    setLoadingFailed: setLoadingFailed
+  });
 
   // Handle refresh action
   const handleRefresh = useCallback(async (): Promise<void> => {
