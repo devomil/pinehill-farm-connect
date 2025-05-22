@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect, useRef, useState } from "react";
 import { MessageItem } from "./MessageItem";
 import { EmptyMessageState } from "./EmptyMessageState";
@@ -11,6 +10,7 @@ import { MessageSquare, AlertCircle } from "lucide-react";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { EmptyConversation } from "../communications/conversation/EmptyConversation";
 
 interface MessageListProps {
   messages: Communication[];
