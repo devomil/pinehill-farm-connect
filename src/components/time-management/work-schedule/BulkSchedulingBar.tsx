@@ -8,7 +8,7 @@ import { toast } from "sonner";
 interface BulkSchedulingBarProps {
   bulkMode: string;
   currentMonth: Date;
-  onSchedule: (days: string[], startTime: string, endTime: string) => void;
+  onSchedule: (startTime: string, endTime: string, days: string[]) => void;
   onCancel: () => void;
 }
 
@@ -49,7 +49,7 @@ export const BulkSchedulingBar: React.FC<BulkSchedulingBarProps> = ({
       }
       
       // Call the onSchedule callback
-      onSchedule(days, startTime, endTime);
+      onSchedule(startTime, endTime, days);
     } catch (error) {
       console.error("Error in bulk scheduling:", error);
       toast.error("Failed to schedule shifts");

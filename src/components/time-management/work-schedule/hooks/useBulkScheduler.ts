@@ -11,8 +11,8 @@ export function useBulkScheduler(
 ) {
   const [bulkMode, setBulkMode] = useState<string | null>(null);
   
-  // Handle bulk scheduling (for either bulk mode or specific days)
-  const handleBulkSchedule = (mode: string, startTime: string, endTime: string, days: string[]) => {
+  // Internal handler with mode parameter
+  const handleBulkScheduleInternal = (mode: string, startTime: string, endTime: string, days: string[]) => {
     if (!scheduleData || !selectedEmployee) {
       toast({
         description: "No employee or schedule data available",
@@ -67,6 +67,12 @@ export function useBulkScheduler(
       description: `Added ${newShifts.length} shifts to the schedule`,
       variant: "success"
     });
+  };
+
+  // Public handler with standardized parameter order (startTime, endTime, days)
+  const handleBulkSchedule = (startTime: string, endTime: string, days: string[]) => {
+    // We know this is coming from the specific component since we're using the standardized interface
+    handleBulkScheduleInternal(bulkMode || "specific", startTime, endTime, days);
   };
 
   return {

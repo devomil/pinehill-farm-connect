@@ -103,7 +103,7 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
         <SpecificDaysSchedulingBar
           selectedDays={getSelectedDayStrings()}
           currentMonth={currentMonth}
-          onSchedule={(startTime, endTime, days) => handleBulkSchedule("specific", startTime, endTime, days)}
+          onSchedule={handleBulkSchedule}
           onCancel={toggleSelectionMode}
           onClearSelection={clearSelectedDays}
         />
