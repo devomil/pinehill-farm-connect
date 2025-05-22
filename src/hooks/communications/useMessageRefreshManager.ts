@@ -16,8 +16,9 @@ export function useMessageRefreshManager(
   const refreshInProgress = useRef<boolean>(false);
   const refreshDebounceTimer = useRef<number | null>(null);
   const refreshCount = useRef<number>(0);
-  const MAX_REFRESHES_PER_SESSION = 20; // Reduced from 40 to 20
-  const FORCED_COOLDOWN_TIME = 180000; // 3 minutes forced cooldown after MAX_REFRESHES reached
+  const MAX_REFRESHES_PER_SESSION = 10; // Reduced from 20 to 10
+  const FORCED_COOLDOWN_TIME = 300000; // 5 minutes forced cooldown after MAX_REFRESHES reached
+  const loadingToastShown = useRef<boolean>(false);
 
   // Track when we hit refresh limit
   const refreshLimitHitTime = useRef<number | null>(null);
@@ -56,7 +57,7 @@ export function useMessageRefreshManager(
     
     // Much longer refresh intervals to reduce database load
     const isAdmin = currentUser?.role === 'admin';
-    const minRefreshInterval = isAdmin ? 180000 : 240000; // 3min for admins, 4min for others - greatly increased
+    const minRefreshInterval = isAdmin ? 300000 : 480000; // 5min for admins, 8min for others
     
     if (refreshInProgress.current) {
       console.log("Communications refresh skipped - already in progress");
@@ -75,12 +76,15 @@ export function useMessageRefreshManager(
           lastRefreshTime.current = Date.now();
           refreshCount.current++;
           
-          refetch()
+          // Avoid showing loading indicators for background refreshes
+          loadingToastShown.current = true;
+          
+          refetch({ stale: false }) // Set stale to false to prevent visual flickering
             .then(() => resolve())
             .finally(() => {
               setTimeout(() => {
                 refreshInProgress.current = false;
-              }, 5000); // 5 second cooldown
+              }, 10000); // 10 second cooldown
             });
         }, minRefreshInterval - (now - lastRefreshTime.current)) as unknown as number;
       });
@@ -92,11 +96,13 @@ export function useMessageRefreshManager(
     lastRefreshTime.current = now;
     refreshCount.current++;
     
-    return refetch().finally(() => {
+    loadingToastShown.current = true; // Track that we've shown a loading indicator
+    
+    return refetch({ stale: false }).finally(() => {
       // Much longer cooldown to prevent immediate subsequent refreshes
       setTimeout(() => {
         refreshInProgress.current = false;
-      }, isAdmin ? 15000 : 30000); // 15-30s cooldown periods
+      }, isAdmin ? 30000 : 60000); // 30-60s cooldown periods
     });
   }, [refetch, currentUser, MAX_REFRESHES_PER_SESSION]);
 
@@ -113,6 +119,7 @@ export function useMessageRefreshManager(
     lastRefreshTime,
     refreshInProgress,
     refreshCount,
-    cleanup
+    cleanup,
+    loadingToastShown
   };
 }

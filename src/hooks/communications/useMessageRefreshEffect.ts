@@ -16,7 +16,8 @@ export function useMessageRefreshEffect({
   const initialLoadRef = useRef<boolean>(false);
   const componentMountedAt = useRef(Date.now());
   const refreshAttemptCount = useRef(0);
-  const MAX_AUTO_REFRESHES = 3; // Reduced from 5 to 3
+  const MAX_AUTO_REFRESHES = 1; // Reduced to only 1 auto-refresh
+  const loadingToastShown = useRef<boolean>(false);
   
   // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
@@ -34,6 +35,11 @@ export function useMessageRefreshEffect({
       // Delay initial refresh to ensure component is fully mounted
       const initialTimer = setTimeout(async () => {
         try {
+          if (!loadingToastShown.current) {
+            // Avoid showing loading toast on every refresh
+            loadingToastShown.current = true;
+          }
+          
           await refreshMessages();
         } catch (error) {
           console.error("Error during initial message load:", error);
@@ -41,7 +47,7 @@ export function useMessageRefreshEffect({
         } finally {
           initialLoadRef.current = true;
         }
-      }, 2500); // Increased from 1500 to 2500
+      }, 3000); // Increased further to 3000ms
       
       return () => clearTimeout(initialTimer);
     }
@@ -70,9 +76,8 @@ export function useMessageRefreshEffect({
       }
     };
     
-    // Much longer intervals to prevent excessive refreshes
-    // These are extremely extended intervals to minimize load
-    const interval = window.setInterval(refreshHandler, isAdmin ? 360000 : 480000); // Every 6-8 minutes (greatly increased)
+    // Extremely limited refresh intervals
+    const interval = window.setInterval(refreshHandler, isAdmin ? 600000 : 900000); // 10-15 minutes (greatly extended)
     
     refreshIntervalRef.current = interval as unknown as number;
     

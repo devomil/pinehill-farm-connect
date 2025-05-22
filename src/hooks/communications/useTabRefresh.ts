@@ -12,7 +12,7 @@ interface TabRefreshProps {
 }
 
 /**
- * Manages refreshing data when a tab is selected
+ * Manages refreshing data when a tab is selected with optimized toast handling
  */
 export function useTabRefresh({
   refreshMessages,
@@ -22,34 +22,56 @@ export function useTabRefresh({
 }: TabRefreshProps) {
   const debug = createDebugContext('TabRefresh');
   const processingPendingNavigation = useRef<boolean>(false);
+  const loadingToastShown = useRef<boolean>(false);
+  const lastToastTime = useRef<number>(0);
 
   const performRefresh = useCallback(async () => {
     debug.info("Refreshing messages tab data");
     isRefreshing.current = true;
     
-    // Show a loading toast
-    const loadingToast = toast.loading("Loading messages...");
+    // Skip showing loading toast if we've shown one recently
+    const now = Date.now();
+    const shouldShowLoadingToast = !loadingToastShown.current && (now - lastToastTime.current > 30000);
+    
+    // Only show loading toast if needed
+    let loadingToast: string | undefined;
+    if (shouldShowLoadingToast) {
+      loadingToast = toast.loading("Loading messages...");
+      loadingToastShown.current = true;
+      lastToastTime.current = now;
+    }
     
     try {
       await refreshMessages();
-      // Update the loading toast to success
-      toast.success("Messages loaded successfully", {
-        id: loadingToast
-      });
+      
+      // Only show success toast if we showed a loading toast
+      if (loadingToast) {
+        toast.success("Messages loaded successfully", {
+          id: loadingToast,
+          duration: 2000
+        });
+      }
     } catch (err) {
       console.error("Error refreshing messages:", err);
-      toast.error("Failed to load messages. Please try again.", {
-        id: loadingToast
-      });
+      
+      // Always show error toast
+      if (loadingToast) {
+        toast.error("Failed to load messages. Please try again.", {
+          id: loadingToast
+        });
+      } else {
+        toast.error("Failed to load messages. Please try again.");
+      }
     } finally {
       isRefreshing.current = false;
       lastRefreshTime.current = Date.now();
+      loadingToastShown.current = false;
       
       // Mark navigation as complete after a short delay
       setTimeout(() => {
         completeNavigation();
         debug.info("Navigation complete set to true after refresh");
-      }, 300); // Increased delay to ensure everything is ready
+      }, 500); // Better delay to ensure everything is ready
     }
   }, [refreshMessages, isRefreshing, lastRefreshTime, completeNavigation, debug]);
 

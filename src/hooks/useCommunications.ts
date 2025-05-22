@@ -26,7 +26,8 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const respondToShiftRequestMutation = useRespondToShiftRequest(currentUser);
   
   // Get modular functionality hooks
-  const { refreshMessages, lastRefreshTime, refreshInProgress } = useMessageRefreshManager(currentUser, refetch);
+  const { refreshMessages, lastRefreshTime, refreshInProgress, refreshCount, loadingToastShown } = 
+    useMessageRefreshManager(currentUser, refetch);
   const { markMessageAsRead, isMarking } = useMessageReadingManager(currentUser);
   
   // Create properly typed version of sendMessage and respondToShiftRequest
@@ -49,6 +50,9 @@ export const useCommunications = (excludeShiftCoverage = false) => {
   const isMounted = useRef(false);
   const initialFetchDone = useRef(false);
   const refreshTimeoutRef = useRef<number | null>(null);
+  const lastBackgroundRefreshTime = useRef<number>(Date.now());
+  const bgRefreshCount = useRef<number>(0);
+  const MAX_BG_REFRESHES = 3;
   
   // Function to mark all messages as read
   const markAllMessagesAsRead = useCallback(async (messagesToMark: Communication[]) => {
@@ -84,59 +88,60 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     }
   }, [isOnMessagesTab, unreadMessages, currentUser, markAllMessagesAsRead]);
 
-  // Initial data loading
+  // Initial data loading - more conservative approach
   useEffect(() => {
     if (!currentUser?.id || initialFetchDone.current) return;
     
-    // Initial fetch
-    console.log(`Initial communications fetch for ${currentUser?.email}`);
-    refetch().then(() => {
-      initialFetchDone.current = true;
-    });
+    // Initial fetch with delay to prevent immediate loading on mount
+    console.log(`Scheduling initial communications fetch for ${currentUser?.email}`);
+    
+    const initialFetchTimer = setTimeout(() => {
+      console.log(`Executing initial communications fetch for ${currentUser?.email}`);
+      refetch().then(() => {
+        initialFetchDone.current = true;
+      });
+    }, 1500);
     
     isMounted.current = true;
     
     // Clean up function
     return () => {
       isMounted.current = false;
+      clearTimeout(initialFetchTimer);
       if (refreshTimeoutRef.current !== null) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
   }, [refetch, currentUser?.id, currentUser?.email]);
 
-  // Set up background refresh with reasonable intervals - MUCH LESS FREQUENTLY
+  // Set up background refresh with EXTREMELY limited frequency
   useEffect(() => {
     if (!currentUser?.id || !isMounted.current) return;
     
-    // MUCH less frequent refreshes to prevent UI flickering
+    // EXTREMELY less frequent refreshes to prevent UI flickering
     const isAdmin = currentUser.role === 'admin';
-    const refreshInterval = window.setInterval(() => {
-      // Don't refresh if component is unmounted or refresh is in progress
-      if (!isMounted.current || refreshInProgress.current) return;
+    
+    // One-time setup for background refresh
+    const backgroundRefreshTimer = window.setTimeout(() => {
+      // Don't refresh if component is unmounted or refresh is in progress or max refreshes reached
+      if (!isMounted.current || refreshInProgress.current || bgRefreshCount.current >= MAX_BG_REFRESHES) return;
       
       const now = Date.now();
-      // Increased refresh thresholds to reduce flickering
-      const refreshThreshold = isAdmin ? 120000 : 180000; // 2min for admins, 3min for others
-      
-      if (now - lastRefreshTime.current > refreshThreshold) {
+      // Only do a background refresh if it's been at least 10 minutes
+      if (now - lastBackgroundRefreshTime.current > 600000) { // 10 minutes
         console.log(`Scheduled background refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
-        refreshInProgress.current = true;
+        bgRefreshCount.current++;
+        lastBackgroundRefreshTime.current = now;
         
-        refetch().finally(() => {
-          // Use a timeout to prevent immediate subsequent refreshes
-          refreshTimeoutRef.current = window.setTimeout(() => {
-            refreshInProgress.current = false;
-          }, 2000) as unknown as number;
+        refetch({ stale: false }).finally(() => {
+          // Just mark it done, no further action needed
         });
-        
-        lastRefreshTime.current = now;
       }
-    }, isAdmin ? 180000 : 240000); // Every 3min for admins, 4min for others - greatly increased
+    }, isAdmin ? 600000 : 900000); // 10-15 minutes - greatly increased
     
-    // Clear interval on unmount
+    // Clear timeout on unmount
     return () => {
-      if (refreshInterval) clearInterval(refreshInterval);
+      clearTimeout(backgroundRefreshTimer);
       if (refreshTimeoutRef.current !== null) {
         clearTimeout(refreshTimeoutRef.current);
       }
