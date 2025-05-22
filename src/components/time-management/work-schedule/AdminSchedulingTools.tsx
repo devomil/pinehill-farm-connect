@@ -3,6 +3,7 @@ import React from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { AdminSchedulingToolsBar } from "./AdminSchedulingToolsBar";
 import { useAdminScheduleTools } from "@/hooks/workSchedule/useAdminScheduleTools";
+import { User } from "@/types";
 
 interface AdminSchedulingToolsProps {
   selectedEmployee: string | null;
@@ -22,15 +23,18 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
   scheduleData,
   onAddSpecificDayShift
 }) => {
+  // Mock available employees - in a real app, this would come from a context or prop
+  const availableEmployees: User[] = [];
+  
   const {
-    availableEmployees,
-    handleAssignWeekdayShifts,
-    handleAssignWeekendShifts,
-    handleCheckTimeOffConflicts,
-    handleAutoAssignCoverage
-  } = useAdminScheduleTools({
-    selectedEmployee,
-    scheduleData
+    assignWeekdayShifts,
+    assignWeekendShifts,
+    checkTimeOffConflicts,
+    autoAssignCoverage,
+    loading
+  } = useAdminScheduleTools(scheduleData, (updatedSchedule) => {
+    console.log("Schedule updated:", updatedSchedule);
+    // In a real implementation, this would call a parent function to update the schedule
   });
 
   if (!selectedEmployee) {
@@ -43,10 +47,10 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
       currentMonth={currentMonth}
       scheduleData={scheduleData}
       availableEmployees={availableEmployees}
-      onAssignWeekday={handleAssignWeekdayShifts}
-      onAssignWeekend={handleAssignWeekendShifts}
-      onCheckConflicts={handleCheckTimeOffConflicts}
-      onAutoAssignCoverage={handleAutoAssignCoverage}
+      onAssignWeekday={assignWeekdayShifts}
+      onAssignWeekend={assignWeekendShifts}
+      onCheckConflicts={checkTimeOffConflicts}
+      onAutoAssignCoverage={autoAssignCoverage}
       onAddSpecificDayShift={onAddSpecificDayShift}
     />
   );

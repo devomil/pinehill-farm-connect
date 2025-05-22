@@ -14,7 +14,7 @@ export function useAdminScheduleTools(
   const [loading, setLoading] = useState(false);
   const { assignWeekdayShifts: weekdayAssign, loading: weekdayLoading } = useWeekdayShiftAssignment();
   const { assignWeekendShifts: weekendAssign, loading: weekendLoading } = useWeekendShiftAssignment();
-  const { checkTimeOffConflicts, loading: conflictLoading } = useTimeOffConflictCheck();
+  const { checkTimeOffConflicts: conflictCheck, loading: conflictLoading } = useTimeOffConflictCheck();
   const { autoAssignCoverage: autoCoverage, loading: coverageLoading } = useAutoCoverageAssignment();
 
   // Update loading state based on all sub-hooks
@@ -45,6 +45,13 @@ export function useAdminScheduleTools(
     return weekendAssign(scheduleData, employeeId, startDate, endDate, startTime, endTime, onSave);
   }, [scheduleData, onSave, weekendAssign]);
   
+  // Wrapper for time off conflicts check
+  const checkTimeOffConflicts = useCallback((
+    shifts: WorkShift[]
+  ) => {
+    return conflictCheck(shifts);
+  }, [conflictCheck]);
+  
   // Wrapper for auto-assigning coverage
   const autoAssignCoverage = useCallback(async (
     gapDate: string,
@@ -60,6 +67,6 @@ export function useAdminScheduleTools(
     assignWeekendShifts,
     checkTimeOffConflicts,
     autoAssignCoverage,
-    loading: loading || weekdayLoading || weekendLoading || conflictLoading || coverageLoading
+    loading
   };
 }
