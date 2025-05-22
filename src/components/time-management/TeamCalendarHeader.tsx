@@ -2,13 +2,7 @@
 import React from "react";
 import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TeamCalendarEventForm } from "./TeamCalendarEventForm";
-import { TeamCalendarProps } from "./TeamCalendar.types";
-
-interface TeamCalendarHeaderProps extends TeamCalendarProps {
-  dialogOpen: boolean;
-  setDialogOpen: (open: boolean) => void;
-  onEventCreated: () => void;
-}
+import { TeamCalendarHeaderProps } from "./TeamCalendar.types";
 
 export const TeamCalendarHeader: React.FC<TeamCalendarHeaderProps> = ({
   currentUser,
