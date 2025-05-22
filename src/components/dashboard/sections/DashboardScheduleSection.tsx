@@ -6,17 +6,22 @@ import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmpl
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardScheduleSectionProps {
-  currentUser: User;
-  isCustomizing: boolean;
+  currentUser?: User;
+  isCustomizing?: boolean;
+  isAdmin: boolean;
+  scheduleData: any;
+  scheduleLoading: boolean;
+  viewAllUrl?: string;
 }
 
 export const DashboardScheduleSection: React.FC<DashboardScheduleSectionProps> = ({
   currentUser,
-  isCustomizing,
+  isCustomizing = false,
+  isAdmin,
+  scheduleData,
+  scheduleLoading,
+  viewAllUrl,
 }) => {
-  const { currentUser: authUser } = useAuth();
-  const isAdmin = authUser?.role === "admin";
-  
   // Only fetch all employee shifts if user is an admin
   const { shiftsMap: allEmployeeShifts, loading } = isAdmin 
     ? useAllEmployeeShifts() 

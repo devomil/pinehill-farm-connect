@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useCommunications } from '@/hooks/useCommunications';
-import { Communication } from '@/types/communications/communicationTypes';
+import { Communication, MessageType } from '@/types/communications/communicationTypes';
 import { User } from '@/types';
 import { useRequestFiltering } from './useRequestFiltering';
 
@@ -20,8 +20,14 @@ export function useShiftCoverageData(currentUser: User | null) {
   } = useCommunications(false);
 
   // Filter messages to show only shift coverage requests
+  // Cast the raw messages to ensure they match the Communication type
   const shiftCoverageRequests = useMemo(() => {
-    return filterShiftCoverageRequests(rawMessages, false);
+    const typedMessages = rawMessages ? rawMessages.map(msg => ({
+      ...msg,
+      type: msg.type as MessageType // Ensure type is cast to MessageType
+    })) as Communication[] : [];
+    
+    return filterShiftCoverageRequests(typedMessages, false);
   }, [rawMessages, filterShiftCoverageRequests]);
 
   // Set overall loading and error state
