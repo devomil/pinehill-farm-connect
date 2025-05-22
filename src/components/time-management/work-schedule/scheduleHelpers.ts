@@ -1,5 +1,7 @@
 
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
+import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
 
 /**
  * Builds a map of date strings to arrays of shifts
@@ -18,4 +20,19 @@ export function buildShiftsMap(scheduleData: WorkSchedule | null): Map<string, W
   }
   
   return shiftsMap;
+}
+
+/**
+ * Creates a new shift for a given employee and date
+ */
+export function createNewShift(employeeId: string, date: Date): WorkShift {
+  return {
+    id: uuidv4(),
+    employeeId: employeeId,
+    date: format(date, 'yyyy-MM-dd'),
+    startTime: '09:00:00',
+    endTime: '17:00:00',
+    isRecurring: false,
+    notes: ''
+  };
 }

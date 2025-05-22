@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -264,6 +263,12 @@ export function useEmployeeDirectory(): EmployeeDirectoryHook {
   // Set up real-time subscription for profile changes - with throttling built in
   useRealTimeUpdates(fetchEmployees);
 
+  // Helper function to get employee name by ID
+  const getEmployeeNameById = useCallback((id: string): string => {
+    const employee = employees.find(emp => emp.id === id);
+    return employee ? employee.name : 'Unknown';
+  }, [employees]);
+
   // Initial fetch
   useEffect(() => {
     fetchEmployees();
@@ -285,6 +290,7 @@ export function useEmployeeDirectory(): EmployeeDirectoryHook {
     refetch,
     addEmployee,
     updateEmployee,
-    deleteEmployee
+    deleteEmployee,
+    getEmployeeNameById
   };
 }

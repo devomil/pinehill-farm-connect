@@ -26,7 +26,13 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   onShiftClick,
   showEmployeeNames = false,
 }) => {
-  const { getEmployeeNameById } = useEmployeeDirectory();
+  const { employees } = useEmployeeDirectory();
+  
+  // Helper function to get employee name by ID
+  const getEmployeeNameById = (id: string): string => {
+    const employee = employees.find(emp => emp.id === id);
+    return employee ? employee.name : 'Unknown';
+  };
   
   // Format shifts for display
   const formattedShifts = shifts.slice(0, 3).map(shift => {
