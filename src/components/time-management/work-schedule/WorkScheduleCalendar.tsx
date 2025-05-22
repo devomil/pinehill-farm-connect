@@ -115,7 +115,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               selected={selectedDate}
               onSelect={(date) => {
                 console.log("Single calendar onSelect handler:", date);
-                // This built-in handler will be ignored, we're using custom handling in Day component
+                // Use our custom handling in Day component
               }}
               month={currentMonth}
               className="rounded-md border pointer-events-auto"
