@@ -4,7 +4,6 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarLegend } from "@/components/calendar/CalendarLegend";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";
@@ -12,6 +11,7 @@ import { GripVertical } from "lucide-react";
 import { WorkShift } from "@/types/workSchedule";
 import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface ScheduleWidgetProps {
   currentUser?: User;
@@ -34,7 +34,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const isAdmin = authUser?.role === "admin";
   
   // Use our calendar events hook to get all calendar items
-  const { calendarEvents, shiftsMap } = useCalendarEvents(
+  const { shiftsMap } = useCalendarEvents(
     currentUser,
     currentMonth,
     includeDeclinedRequests,
@@ -46,12 +46,15 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
     console.log("ScheduleWidget - mounted with:", {
       currentMonth: format(currentMonth, "MMMM yyyy"),
       selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None",
-      eventsCount: calendarEvents?.size || 0,
+      shiftsMapSize: shiftsMap?.size || 0,
       isCustomizing,
       hasShifts: allEmployeeShifts ? allEmployeeShifts.size : 0,
       currentUser: currentUser ? currentUser.id : "undefined"
     });
-  }, [currentMonth, selectedDate, calendarEvents, isCustomizing, allEmployeeShifts, currentUser]);
+  }, [currentMonth, selectedDate, shiftsMap, isCustomizing, allEmployeeShifts, currentUser]);
+
+  // Choose which shifts data to use - prefer all employee shifts if provided (for admin view)
+  const displayShiftsMap = allEmployeeShifts || shiftsMap;
 
   return (
     <Card className={cn("mt-4 relative group", className, isCustomizing ? "border-2 border-dashed border-blue-300" : "")}>
@@ -85,7 +88,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         <WorkScheduleCalendar 
           currentMonth={currentMonth}
           setCurrentMonth={setCurrentMonth}
-          shiftsMap={allEmployeeShifts || shiftsMap}
+          shiftsMap={displayShiftsMap}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           isAdminView={isAdmin}
@@ -103,7 +106,3 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
     </Card>
   );
 };
-
-function cn(...classes: (string | undefined | boolean)[]): string {
-  return classes.filter(Boolean).join(" ");
-}

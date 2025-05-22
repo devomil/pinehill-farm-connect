@@ -8,6 +8,7 @@ import { CalendarNavigation } from "./CalendarNavigation";
 import { CalendarDayCell } from "./CalendarDayCell";
 import { EmployeeShiftDetailsDialog } from "./EmployeeShiftDetailsDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -125,6 +126,16 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   
   const monthTitle = format(currentMonth, "MMMM yyyy");
   
+  // Navigate to previous month
+  const goToPreviousMonth = () => {
+    setCurrentMonth(addDays(startOfMonth(currentMonth), -1));
+  };
+
+  // Navigate to next month
+  const goToNextMonth = () => {
+    setCurrentMonth(addDays(endOfMonth(currentMonth), 1));
+  };
+  
   return (
     <>
       <Card className={hideCalendar ? "hidden" : ""}>
@@ -135,18 +146,18 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
+                onClick={goToPreviousMonth}
                 className="h-8 w-8 p-0"
               >
-                &lt;
+                <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
+                onClick={goToNextMonth}
                 className="h-8 w-8 p-0"
               >
-                &gt;
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
