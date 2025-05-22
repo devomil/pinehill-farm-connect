@@ -24,6 +24,8 @@ export function useRefreshMessages() {
   // Track last refresh time to prevent excessive refreshes
   const lastRefreshTimestamp = useRef<number>(Date.now());
   const isRefreshing = useRef<boolean>(false);
+  const lastEmployeeRefresh = useRef<number>(Date.now());
+  const EMPLOYEE_REFRESH_THRESHOLD = 60000; // Only refresh employee data every 60 seconds
   
   // Combined refresh function that ensures all message-related data is up-to-date
   const refresh = useCallback(async () => {
@@ -48,30 +50,37 @@ export function useRefreshMessages() {
     lastRefreshTimestamp.current = now;
     
     try {
-      // Create an array of promises to run in parallel, filtering out undefined functions
+      // Always refresh messages
       const refreshPromises = [
-        refreshMessages && refreshMessages(),
-        // Only conditionally refresh employee directory to reduce frequency
-        refetchEmployees && (() => {
-          console.log("Conditionally refreshing employee directory");
-          // Add random chance to further reduce refresh frequency (50% chance)
-          if (Math.random() > 0.5) {
-            console.log("Employee directory refresh skipped based on probability");
-            return Promise.resolve();
-          }
-          return refetchEmployees();
-        })(),
-        handleRefreshData && handleRefreshData() // Using handleRefreshData instead of refreshDashboardData
-      ].filter(Boolean); // Filter out undefined values
+        refreshMessages && refreshMessages()
+      ];
+      
+      // Only refresh employee directory occasionally to reduce frequency
+      const shouldRefreshEmployees = now - lastEmployeeRefresh.current > EMPLOYEE_REFRESH_THRESHOLD;
+      if (shouldRefreshEmployees && refetchEmployees) {
+        console.log("Refreshing employee directory (infrequent update)");
+        refreshPromises.push(refetchEmployees());
+        lastEmployeeRefresh.current = now;
+      } else {
+        console.log("Skipping employee directory refresh - too frequent");
+      }
+      
+      // Add dashboard refresh if available
+      if (handleRefreshData) {
+        refreshPromises.push(handleRefreshData());
+      }
+      
+      // Filter out undefined values
+      const validRefreshPromises = refreshPromises.filter(Boolean);
       
       // If there are no valid refresh functions, show a warning
-      if (refreshPromises.length === 0) {
+      if (validRefreshPromises.length === 0) {
         console.warn("No refresh functions available");
         return false;
       }
       
       // Run all refresh operations in parallel
-      await Promise.all(refreshPromises);
+      await Promise.all(validRefreshPromises);
       
       console.log("useRefreshMessages: Successfully refreshed all message data");
       return true;

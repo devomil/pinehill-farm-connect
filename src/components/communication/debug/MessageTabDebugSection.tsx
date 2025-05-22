@@ -11,6 +11,7 @@ interface MessageTabDebugSectionProps {
     tabParam: string | null;
     mountedAt: number;
     errorState?: string;
+    lastDirectoryRefresh?: number;
   };
   activeTab: string;
 }
@@ -23,6 +24,11 @@ export const MessageTabDebugSection: React.FC<MessageTabDebugSectionProps> = ({
   const timeInTabSeconds = messageTabInfo?.mountedAt 
     ? Math.round((Date.now() - messageTabInfo.mountedAt) / 1000)
     : 0;
+    
+  // Calculate time since last directory refresh
+  const timeSinceLastRefreshSeconds = messageTabInfo?.lastDirectoryRefresh
+    ? Math.round((Date.now() - messageTabInfo.lastDirectoryRefresh) / 1000)
+    : null;
 
   return (
     <Collapsible className="mt-2 pt-2 border-t" defaultOpen={messageTabInfo?.errorState === 'error'}>
@@ -46,6 +52,13 @@ export const MessageTabDebugSection: React.FC<MessageTabDebugSectionProps> = ({
           value={`${timeInTabSeconds} seconds`}
           condition={timeInTabSeconds < 2}
         />
+        {timeSinceLastRefreshSeconds !== null && (
+          <DebugBadge 
+            label="Directory Refresh" 
+            value={`${timeSinceLastRefreshSeconds}s ago`}
+            variant={timeSinceLastRefreshSeconds < 10 ? "warning" : "outline"}
+          />
+        )}
         {messageTabInfo.errorState && (
           <DebugBadge 
             label="Error State" 

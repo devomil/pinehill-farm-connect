@@ -42,6 +42,9 @@ export function useEmployeeDirectory(): EmployeeDirectoryHook {
   const FETCH_COOLDOWN = 60000; // 1 minute between fetches
   const fetchAttemptCount = useRef<number>(0);
   const MAX_FETCH_ATTEMPTS = 5;
+  const toastShownRef = useRef<boolean>(false);
+  const lastToastTime = useRef<number>(0);
+  const TOAST_COOLDOWN = 10000; // 10 seconds between toasts
 
   /**
    * Main function to fetch employees from various sources, with improved caching
@@ -227,8 +230,16 @@ export function useEmployeeDirectory(): EmployeeDirectoryHook {
       console.log(`Debouncing employee directory refetch, last fetch was ${Math.round((now - lastFetchTime.current)/1000)}s ago`);
       
       // Only show the toast for the first request within the debounce period
-      if (!fetchDebounceTimer.current) {
+      // And only if we haven't shown it recently
+      if (now - lastToastTime.current > TOAST_COOLDOWN && !toastShownRef.current) {
         toast.info("Refreshing employee directory");
+        lastToastTime.current = now;
+        toastShownRef.current = true;
+        
+        // Reset the toast shown flag after the cooldown
+        setTimeout(() => {
+          toastShownRef.current = false;
+        }, TOAST_COOLDOWN);
       }
       
       // Set up debounced refetch
@@ -236,12 +247,17 @@ export function useEmployeeDirectory(): EmployeeDirectoryHook {
         fetchDebounceTimer.current = window.setTimeout(() => {
           console.log("Executing debounced employee directory refetch");
           fetchEmployees(true).then(() => resolve());
+          toastShownRef.current = false; // Reset after the fetch completes
         }, 10000 - (now - lastFetchTime.current)) as unknown as number;
       });
     }
     
     // If it's been long enough, fetch immediately
-    toast.info("Refreshing employee directory");
+    // Only show toast if we haven't shown it recently
+    if (now - lastToastTime.current > TOAST_COOLDOWN) {
+      toast.info("Refreshing employee directory");
+      lastToastTime.current = now;
+    }
     return fetchEmployees(true);
   }, [fetchEmployees]);
   

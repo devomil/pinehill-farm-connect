@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { User } from "@/types";
 import { MessageConversation } from "./MessageConversation";
 import { Communication } from "@/types/communications/communicationTypes";
@@ -28,14 +28,26 @@ export function EmployeeConversationView({
 }: EmployeeConversationViewProps) {
   const { currentUser } = useAuth();
   const refresh = useRefreshMessages();
+  const initialRefreshDone = useRef(false);
+  const lastConversationId = useRef<string | null>(null);
   
   // Use the hook to automatically mark messages as read
   useMessageReadStatus(selectedEmployee, currentUser, unreadMessages);
   
-  // Additional effect to ensure we refresh message data when the component mounts or employee changes
+  // Additional effect to ensure we refresh message data only when the employee changes or on initial load
   useEffect(() => {
-    if (selectedEmployee && unreadMessages.length > 0) {
-      console.log("EmployeeConversationView - employee selected with unread messages, refreshing");
+    // Create a unique ID for this conversation
+    const conversationId = selectedEmployee?.id;
+    
+    // Only refresh if employee changes or there are unread messages on first load
+    const shouldRefresh = 
+      (conversationId !== lastConversationId.current) || 
+      (!initialRefreshDone.current && unreadMessages.length > 0);
+    
+    if (shouldRefresh) {
+      console.log("EmployeeConversationView - employee selected or changed, refreshing once");
+      initialRefreshDone.current = true;
+      lastConversationId.current = conversationId;
       refresh();
     }
   }, [selectedEmployee?.id, refresh, unreadMessages.length]);
