@@ -58,7 +58,7 @@ export function useRefreshMessages() {
         try {
           const result = refreshMessages();
           // Only add to the array if it's a Promise-like object
-          if (result && typeof result === 'object' && 'then' in result) {
+          if (result instanceof Promise) {
             refreshPromises.push(result);
           }
         } catch (e) {
@@ -79,15 +79,12 @@ export function useRefreshMessages() {
       // Add dashboard refresh if available
       if (handleRefreshData) {
         try {
-          // Execute the function but don't check its return value directly
+          // Execute the function and check if result is a Promise
           const result = handleRefreshData();
           
-          // Complete null check before attempting to access any properties
-          if (result && typeof result === 'object') {
-            // We've already verified result is not null and is an object
-            if ('then' in result && typeof result.then === 'function') {
-              refreshPromises.push(result);
-            }
+          // Use instanceof Promise instead of checking for 'then' property
+          if (result instanceof Promise) {
+            refreshPromises.push(result);
           }
         } catch (e) {
           console.error("Error calling handleRefreshData:", e);
