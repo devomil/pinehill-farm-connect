@@ -31,53 +31,45 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   const hasShifts = shifts && shifts.length > 0;
   
   // Group shifts by employee if showing names
-  const employeeNames = React.useMemo(() => {
+  const employeeShifts = React.useMemo(() => {
     if (!showEmployeeNames || !hasShifts) return [];
     
-    // Extract unique employee names from shift notes or IDs
-    const uniqueEmployees = new Set<string>();
-    
-    shifts.forEach(shift => {
+    // Extract unique employee names and their shift times from shifts
+    return shifts.map(shift => {
+      let employeeName = "Employee";
+      const startTime = shift.startTime.substring(0, 5);  // Format: HH:MM
+      const endTime = shift.endTime.substring(0, 5);      // Format: HH:MM
+      
       if (shift.notes) {
         // Try to extract employee name from notes
         const nameParts = shift.notes.split(':');
         if (nameParts.length > 1) {
-          uniqueEmployees.add(nameParts[1].trim());
+          employeeName = nameParts[1].trim();
         } else if (shift.notes.includes('@')) {
           // If notes contains an email format, get the part before @
           const emailPart = shift.notes.split('@')[0];
-          uniqueEmployees.add(emailPart.trim());
+          employeeName = emailPart.trim();
         } else {
           // Otherwise use a portion of notes
-          uniqueEmployees.add(shift.notes.substring(0, 20).trim());
+          employeeName = shift.notes.substring(0, 15).trim();
         }
-      } else {
-        // If no notes, use a portion of the employee ID
-        const shortId = shift.employeeId.substring(0, 6);
-        uniqueEmployees.add(`Employee ${shortId}`);
+      } else if (shift.employeeId) {
+        // If no notes but we have employeeId, use a shortened version
+        employeeName = `Employee ${shift.employeeId.substring(0, 6)}`;
       }
+      
+      return {
+        name: employeeName,
+        timeRange: `${startTime} - ${endTime}`,
+        shift
+      };
     });
-    
-    return Array.from(uniqueEmployees).slice(0, 4); // Limit to avoid overcrowding
   }, [shifts, showEmployeeNames, hasShifts]);
 
-  // Get the name from the shift data - in a real app this would use a lookup
-  const getEmployeeName = (shift: WorkShift) => {
-    if (shift.notes) {
-      const nameParts = shift.notes.split(':');
-      if (nameParts.length > 1) {
-        return nameParts[1].trim();
-      } else {
-        return shift.notes.substring(0, 15);
-      }
-    }
-    return `Employee ${shift.employeeId.substring(0, 6)}`;
-  };
-  
   // Handle showing more indicator if there are more shifts than we display
-  const hasMoreShifts = showEmployeeNames && employeeNames.length > 3;
-  const displayedNames = hasMoreShifts ? employeeNames.slice(0, 3) : employeeNames;
-  const moreCount = hasMoreShifts ? employeeNames.length - 3 : 0;
+  const hasMoreShifts = employeeShifts.length > 3;
+  const displayedShifts = hasMoreShifts ? employeeShifts.slice(0, 3) : employeeShifts;
+  const moreCount = hasMoreShifts ? employeeShifts.length - 3 : 0;
 
   return (
     <div
@@ -96,12 +88,22 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
       </div>
       
       <div className="flex-1 overflow-hidden">
-        {showEmployeeNames && displayedNames.length > 0 ? (
+        {showEmployeeNames && displayedShifts.length > 0 ? (
           <div className="mt-1 space-y-1">
-            {displayedNames.map((name, idx) => (
-              <div key={idx} className="flex items-center text-xs">
+            {displayedShifts.map((shiftInfo, idx) => (
+              <div 
+                key={idx} 
+                className="flex items-center text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShiftClick && onShiftClick(shiftInfo.shift);
+                }}
+              >
                 <span className="h-2 w-2 rounded-full bg-blue-500 mr-1"></span>
-                <span className="truncate">{name}</span>
+                <div className="truncate flex flex-col">
+                  <span className="font-medium truncate">{shiftInfo.name}</span>
+                  <span className="text-gray-500 truncate">{shiftInfo.timeRange}</span>
+                </div>
               </div>
             ))}
             {hasMoreShifts && (
