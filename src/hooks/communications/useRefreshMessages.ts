@@ -54,7 +54,11 @@ export function useRefreshMessages() {
       const refreshPromises: Promise<any>[] = [];
       
       if (refreshMessages) {
-        refreshPromises.push(refreshMessages());
+        const refreshMessagesPromise = refreshMessages();
+        // Only add to promises if it returns a Promise
+        if (refreshMessagesPromise instanceof Promise) {
+          refreshPromises.push(refreshMessagesPromise);
+        }
       }
       
       // Only refresh employee directory occasionally to reduce frequency
@@ -69,7 +73,11 @@ export function useRefreshMessages() {
       
       // Add dashboard refresh if available
       if (handleRefreshData) {
-        refreshPromises.push(handleRefreshData());
+        const dashboardPromise = handleRefreshData();
+        // Only add to promises if it returns a Promise
+        if (dashboardPromise instanceof Promise) {
+          refreshPromises.push(dashboardPromise);
+        }
       }
       
       // Filter out undefined values
