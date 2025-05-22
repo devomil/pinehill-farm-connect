@@ -1,17 +1,14 @@
 
-import { useMemo } from "react";
-import { Communication } from "@/types/communications/communicationTypes";
+import { useMemo } from 'react';
+import { Communication } from '@/types/communications/communicationTypes';
 
 /**
- * Calculate the number of unread messages for the current user
+ * Returns the count of unread messages
+ * @param messages Array of messages to check
+ * @returns Number of unread messages
  */
-export function useUnreadMessageCount(
-  unreadMessages: Communication[] = [], 
-  currentUserId: string | undefined
-) {
-  return useMemo(() => unreadMessages?.filter(
-    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
-           msg.recipient_id === currentUserId &&
-           msg.read_at === null
-  ).length || 0, [unreadMessages, currentUserId]);
+export function useUnreadMessageCount(messages: Communication[] = []) {
+  return useMemo(() => {
+    return messages.filter(message => message.read_at === null).length;
+  }, [messages]);
 }

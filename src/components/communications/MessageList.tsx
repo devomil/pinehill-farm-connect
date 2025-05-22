@@ -49,7 +49,7 @@ export function MessageList({
   const groupedMessages = useGroupedMessages(messages, currentUserId);
   
   // Get unread message count
-  const unreadCount = useUnreadMessageCount(unreadMessages, currentUserId);
+  const unreadCount = useUnreadMessageCount(unreadMessages);
   
   // Auto refresh messages on mount or when unread count changes
   useMessageRefreshEffect(onRefresh, unreadCount);
