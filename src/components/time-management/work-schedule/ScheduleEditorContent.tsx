@@ -8,8 +8,11 @@ import { ScheduleActionBar } from "./ScheduleActionBar";
 import { AdminSchedulingTools } from "./AdminSchedulingTools";
 import { ScheduleEditorState } from "./hooks/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, User, Calendar, Clock, FileText } from "lucide-react";
 import { DateRangeSelector } from "./DateRangeSelector";
+import { WorkShift } from "@/types/workSchedule";
+import { format } from "date-fns";
+import { Card } from "@/components/ui/card";
 
 interface ScheduleEditorContentProps {
   editorState: ReturnType<typeof import("./hooks/useScheduleEditor").useScheduleEditor>;
@@ -49,11 +52,17 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
     toggleDay,
     isDaySelected,
     clearSelectedDays,
-    getSelectedDayStrings
+    getSelectedDayStrings,
+    selectedEmployee,
+    scheduleData
   } = editorState;
+
+  // Get shifts for the selected date
+  const selectedDateString = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
+  const selectedDateShifts = selectedDateString ? (shiftsMap.get(selectedDateString) || []) : [];
   
   return (
-    <>
+    <div className="space-y-4">
       <div className="flex justify-between">
         <ScheduleActionBar
           bulkMode={bulkMode}
@@ -126,20 +135,85 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
         />
       )}
       
-      <WorkScheduleCalendar
-        currentMonth={currentMonth}
-        setCurrentMonth={setCurrentMonth}
-        shiftsMap={shiftsMap}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        onDateSelected={handleAddShift}
-        onShiftClick={handleEditShift}
-        selectionMode={selectionMode}
-        isDaySelected={isDaySelected}
-        onDayToggle={toggleDay}
-        selectedCount={selectedCount}
-        hideCalendar={selectionMode === "range"}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <WorkScheduleCalendar
+            currentMonth={currentMonth}
+            setCurrentMonth={setCurrentMonth}
+            shiftsMap={shiftsMap}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            onDateSelected={handleAddShift}
+            onShiftClick={handleEditShift}
+            selectionMode={selectionMode}
+            isDaySelected={isDaySelected}
+            onDayToggle={toggleDay}
+            selectedCount={selectedCount}
+            hideCalendar={selectionMode === "range"}
+          />
+        </div>
+        
+        <div className="lg:col-span-1">
+          <Card className="p-4">
+            <h3 className="text-lg font-medium mb-4">Shift Details</h3>
+            {selectedDateString ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Calendar className="h-4 w-4" />
+                  <span>{selectedDate && format(selectedDate, "EEEE, MMMM d, yyyy")}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-gray-700">
+                  <User className="h-4 w-4" />
+                  <span>Employee: {selectedEmployee || "None selected"}</span>
+                </div>
+                
+                {selectedDateShifts.length > 0 ? (
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Scheduled Shifts</h4>
+                    {selectedDateShifts.map((shift, index) => (
+                      <div 
+                        key={shift.id} 
+                        className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleEditShift(shift)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-green-600" />
+                          <span className="font-medium">
+                            {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
+                          </span>
+                        </div>
+                        
+                        {shift.notes && (
+                          <div className="mt-2 flex items-start gap-2">
+                            <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                            <span className="text-sm text-gray-600">{shift.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-4 text-center text-gray-500">
+                    No shifts scheduled for this day
+                  </div>
+                )}
+                
+                <button
+                  onClick={() => handleAddShift(selectedDate)}
+                  className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-sm"
+                >
+                  Add Shift for {format(selectedDate, "MMM d")}
+                </button>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-500">
+                Select a date to view or add shifts
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
       
       {isDialogOpen && editingShift && (
         <ShiftDialog
@@ -151,6 +225,6 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
           onDelete={handleDeleteShift}
         />
       )}
-    </>
+    </div>
   );
 };

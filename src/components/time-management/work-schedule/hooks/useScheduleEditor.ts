@@ -13,7 +13,8 @@ export const useScheduleEditor = ({
   onSave 
 }: UseScheduleEditorProps) => {
   const [selectionMode, setSelectionMode] = useState<"single" | "multiple" | "range">("single");
-  const [showAdminTools, setShowAdminTools] = useState(false);
+  // Always show admin tools for admins
+  const [showAdminTools, setShowAdminTools] = useState(true);
   
   // Use the component hooks
   const {

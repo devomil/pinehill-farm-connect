@@ -82,15 +82,16 @@ export function useRefreshMessages() {
           // Execute the function but don't check its return value directly
           const result = handleRefreshData();
           
-          // Restructured condition to avoid null checks on properties
-          // First check if result exists and is an object
-          if (result !== undefined && result !== null && typeof result === 'object') {
-            // Then safely check for 'then' property and its type
-            const hasThenFunction = 'then' in result && 
-                                    typeof result.then === 'function';
-            
-            if (hasThenFunction) {
-              refreshPromises.push(result);
+          // Fixed null check issue by ensuring result exists before checking its properties
+          if (result !== undefined && result !== null) {
+            // Only check for 'then' property if result is an object
+            if (typeof result === 'object') {
+              const hasThenFunction = 'then' in result && 
+                                      typeof result.then === 'function';
+              
+              if (hasThenFunction) {
+                refreshPromises.push(result);
+              }
             }
           }
         } catch (e) {
