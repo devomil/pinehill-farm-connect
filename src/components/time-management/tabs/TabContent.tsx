@@ -1,4 +1,3 @@
-
 import React from "react";
 import { User } from "@/types";
 import { TabsContent } from "@/components/ui/tabs";
@@ -29,6 +28,26 @@ export const TabContent: React.FC<TabContentProps> = ({ currentUser, isAdmin }) 
     refreshMessages
   } = useTimeManagement();
 
+  // Keep a ref to track if the component is mounted to prevent navigation loops
+  const isMounted = React.useRef(true);
+  
+  // Clean up effect to track component mount status
+  React.useEffect(() => {
+    isMounted.current = true;
+    
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
+  // Safe refresh function that checks mount status first
+  const safeRefresh = React.useCallback(() => {
+    if (isMounted.current) {
+      return refreshMessages();
+    }
+    return Promise.resolve();
+  }, [refreshMessages]);
+
   return (
     <>
       <TabsContent value="my-requests" className="space-y-4 pt-4">
@@ -46,7 +65,7 @@ export const TabContent: React.FC<TabContentProps> = ({ currentUser, isAdmin }) 
           loading={messagesLoading}
           onRespond={respondToShiftRequest}
           currentUser={currentUser}
-          onRefresh={refreshMessages}
+          onRefresh={safeRefresh}
           error={messagesError}
         />
       </TabsContent>

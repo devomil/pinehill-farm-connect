@@ -1,5 +1,5 @@
 
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
   const { activeTab, setActiveTab, forceRefreshData, fetchRequests } = useTimeManagement();
   const location = useLocation();
   const navigate = useNavigate();
+  const lastTabChange = useRef<number>(0);
 
   // Handle URL query parameters for direct navigation
   React.useEffect(() => {
@@ -26,34 +27,42 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
 
   // Memoize tab change handler to prevent recreation on every render
   const handleTabChange = useCallback((value: string) => {
-    console.log(`Tab changing from ${activeTab} to ${value}`);
+    // Skip if we're already on this tab
+    if (value === activeTab) {
+      console.log(`Already on tab ${value}, skipping change`);
+      return;
+    }
     
-    // Only update if actually changing tabs
-    if (value !== activeTab) {
-      setActiveTab(value);
-      
-      // Update URL query parameter
-      const params = new URLSearchParams(location.search);
-      params.set('tab', value);
-      navigate(`/time?${params.toString()}`, { replace: true });
-      
-      // Force refresh data when switching tabs to ensure we have the latest data
-      console.log(`Refreshing data for tab: ${value}`);
-      
-      // Specific refresh actions for different tabs
-      if (value === "shift-coverage") {
-        console.log("Refreshing shift coverage data");
+    // Prevent rapid tab switching (add throttling)
+    const now = Date.now();
+    if (now - lastTabChange.current < 1000) {
+      console.log(`Tab change throttled, too soon since last change`);
+      return;
+    }
+    
+    console.log(`Tab changing from ${activeTab} to ${value}`);
+    lastTabChange.current = now;
+    
+    setActiveTab(value);
+    
+    // Update URL query parameter
+    const params = new URLSearchParams(location.search);
+    params.set('tab', value);
+    navigate(`/time?${params.toString()}`, { replace: true });
+    
+    // Only refresh data for certain tabs and not too frequently
+    if (value === "shift-coverage") {
+      // Delay refresh to prevent navigation loop
+      setTimeout(() => {
+        console.log("Refreshing shift coverage data after delay");
         forceRefreshData();
-      } else if (value === "my-requests") {
-        console.log("Refreshing time-off requests data");
+      }, 1000);
+    } else if (value === "my-requests") {
+      // Delay refresh to prevent navigation loop
+      setTimeout(() => {
+        console.log("Refreshing time-off requests data after delay");
         fetchRequests();
-      } else if (value === "team-calendar") {
-        console.log("Refreshing team calendar data");
-        forceRefreshData();
-      } else if (value === "work-schedules") {
-        console.log("Refreshing work schedules data");
-        forceRefreshData();
-      }
+      }, 1000);
     }
   }, [activeTab, setActiveTab, forceRefreshData, fetchRequests, location.search, navigate]);
 

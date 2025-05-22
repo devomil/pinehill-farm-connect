@@ -6,10 +6,10 @@ export class NavigationThrottler {
   private lastNavigationTime: number = 0;
   private navigationAttempts: number[] = [];
   private loopDetected: boolean = false;
-  private readonly MAX_ATTEMPTS_WINDOW = 6; // Increased slightly to be more tolerant
-  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Extended window for loop detection
-  private readonly THROTTLE_THRESHOLD_MS = 400; // Increased min time between navigations
-  private readonly SAFETY_WINDOW_MS = 7000; // Extended safety window for resetting detection
+  private readonly MAX_ATTEMPTS_WINDOW = 4; // Reduced from 6 to be more conservative
+  private readonly LOOP_DETECTION_THRESHOLD_MS = 5000; // Extended window for loop detection
+  private readonly THROTTLE_THRESHOLD_MS = 800; // Increased min time between navigations
+  private readonly SAFETY_WINDOW_MS = 10000; // Extended safety window for resetting detection
 
   /**
    * Track a navigation attempt and check if it forms part of a loop
@@ -63,12 +63,18 @@ export class NavigationThrottler {
     
     // More aggressive throttling if we have multiple recent attempts
     const recentAttemptCount = this.navigationAttempts.length;
-    const shouldThrottle = recentAttemptCount > 3 
-      ? timeSinceLastNavigation < (this.THROTTLE_THRESHOLD_MS * 1.5) // Longer throttle on high activity
-      : timeSinceLastNavigation < this.THROTTLE_THRESHOLD_MS; // Normal throttle otherwise
+    
+    // Progressively increase throttling as attempts increase
+    let throttleTime = this.THROTTLE_THRESHOLD_MS;
+    if (recentAttemptCount > 2) {
+      // Exponentially increase throttle time based on attempt count
+      throttleTime = this.THROTTLE_THRESHOLD_MS * (1 + (recentAttemptCount - 2));
+    }
+    
+    const shouldThrottle = timeSinceLastNavigation < throttleTime;
       
-    if (shouldThrottle && recentAttemptCount > 3) {
-      console.log(`Enhanced throttling applied with ${recentAttemptCount} recent attempts`);
+    if (shouldThrottle && recentAttemptCount > 2) {
+      console.log(`Enhanced throttling applied with ${recentAttemptCount} recent attempts - waiting ${throttleTime}ms`);
     }
     
     return shouldThrottle;

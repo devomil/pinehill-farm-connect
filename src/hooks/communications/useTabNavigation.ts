@@ -58,7 +58,7 @@ export function useTabNavigation({
     handleTabChange: processNavigationHandler
   });
 
-  // Get the navigation change handler
+  // Get the navigation change handler with added navigation loop prevention
   const { handleTabChange: baseHandleTabChange, loopDetected } = useNavigationChange({
     activeTab,
     setActiveTab,
@@ -72,10 +72,19 @@ export function useTabNavigation({
     processPendingNavigation
   });
 
-  // Create our own simple debounce function
+  // Create a debounced version with increased delay to prevent rapid navigation
   const debouncedTabChange = useCallback(
-    (value: string) => createDebouncedFunction(baseHandleTabChange, 300)(value),
-    [baseHandleTabChange]
+    (value: string) => {
+      // Skip handling if we're already on this tab to prevent unnecessary navigation
+      if (value === activeTab) {
+        debug.info("Tab already active, skipping navigation entirely");
+        return;
+      }
+      
+      // Use a more aggressive debounce to prevent loops
+      createDebouncedFunction(baseHandleTabChange, 500)(value);
+    },
+    [baseHandleTabChange, activeTab, debug]
   );
 
   return { 
