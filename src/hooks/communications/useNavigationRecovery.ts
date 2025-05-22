@@ -44,7 +44,27 @@ export function useNavigationRecovery({
       // CRITICAL: If there's a tab parameter but active tab doesn't match, fix it immediately
       if (newTab !== activeTab) {
         debug.info(`Tab parameter (${newTab}) doesn't match active tab (${activeTab}). Forcing sync.`);
+        
+        // Set the active tab to match URL - this is crucial
         setActiveTab(newTab);
+        
+        // If we're in recovery mode, we need more assertive handling
+        if (recoveryRequested) {
+          debug.info("Recovery mode detected, ensuring URL and tab state are in sync");
+          
+          // Hard sync to match URL parameter - overriding any UI state
+          setTimeout(() => {
+            const updatedParams = new URLSearchParams(location.search);
+            updatedParams.set('tab', newTab);
+            updatedParams.set('recovery', 'true');
+            const path = `${location.pathname}?${updatedParams.toString()}`;
+            
+            if (location.pathname + location.search !== path) {
+              debug.info(`Forced URL update in recovery mode: ${path}`);
+              navigate(path, { replace: true });
+            }
+          }, 100);
+        }
         
         // Mark navigation as complete to prevent loops
         navigationComplete.current = true;
@@ -81,14 +101,14 @@ export function useNavigationRecovery({
             newParams.delete('ts');
             
             // KEEP the tab parameter!
-            const tabValue = newParams.get('tab') || 'announcements';
+            const tabValue = newParams.get('tab') || activeTab || 'announcements';
             newParams.set('tab', tabValue);
             
             const newSearch = newParams.toString() ? `?${newParams.toString()}` : '';
             window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
             debug.info("Cleared recovery parameters after stabilization");
           }
-        }, 3000);
+        }, 5000); // Extended time to ensure stable before removing recovery flag
       }
     }
 
