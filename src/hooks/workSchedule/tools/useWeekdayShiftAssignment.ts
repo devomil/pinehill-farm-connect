@@ -4,8 +4,12 @@ import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { format, addDays, getDay } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
+import { WeekdayShiftAssignmentOptions, WeekdayShiftAssignmentResult } from "../types/adminScheduleTypes";
 
-export function useWeekdayShiftAssignment() {
+export function useWeekdayShiftAssignment(
+  options: WeekdayShiftAssignmentOptions = {}
+): WeekdayShiftAssignmentResult {
+  const { onSaveComplete } = options;
   const [loading, setLoading] = useState(false);
 
   // Assign weekday shifts to an employee
@@ -76,6 +80,9 @@ export function useWeekdayShiftAssignment() {
         description: `Created ${shifts.length} weekday shifts`,
         variant: "success"
       });
+      
+      // Call optional callback
+      if (onSaveComplete) onSaveComplete();
     } catch (error) {
       console.error("Error assigning weekday shifts:", error);
       toast({

@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from "react";
-import { WorkSchedule, WorkShift } from "@/types/workSchedule";
+import { WorkShift } from "@/types/workSchedule";
 import { User } from "@/types";
 import { useWeekdayShiftAssignment } from "./tools/useWeekdayShiftAssignment";
 import { useWeekendShiftAssignment } from "./tools/useWeekendShiftAssignment";
@@ -14,10 +14,22 @@ export function useAdminScheduleTools(
   const { scheduleData, onSave } = options;
   const [loading, setLoading] = useState(false);
   
-  const { assignWeekdayShifts: weekdayAssign, loading: weekdayLoading } = useWeekdayShiftAssignment();
-  const { assignWeekendShifts: weekendAssign, loading: weekendLoading } = useWeekendShiftAssignment();
-  const { checkTimeOffConflicts: conflictCheck, loading: conflictLoading } = useTimeOffConflictCheck();
-  const { autoAssignCoverage: autoCoverage, loading: coverageLoading } = useAutoCoverageAssignment();
+  // Initialize tool hooks with callbacks if needed
+  const { assignWeekdayShifts: weekdayAssign, loading: weekdayLoading } = useWeekdayShiftAssignment({
+    onSaveComplete: () => console.log("Weekday shifts assigned successfully")
+  });
+  
+  const { assignWeekendShifts: weekendAssign, loading: weekendLoading } = useWeekendShiftAssignment({
+    onSaveComplete: () => console.log("Weekend shifts assigned successfully")
+  });
+  
+  const { checkTimeOffConflicts: conflictCheck, loading: conflictLoading } = useTimeOffConflictCheck({
+    onConflictFound: (conflicts) => console.log(`Found ${conflicts.length} conflicts`)
+  });
+  
+  const { autoAssignCoverage: autoCoverage, loading: coverageLoading } = useAutoCoverageAssignment({
+    onCoverageAssigned: (shift) => console.log("Coverage assigned:", shift)
+  });
 
   // Update loading state based on all sub-hooks
   useEffect(() => {

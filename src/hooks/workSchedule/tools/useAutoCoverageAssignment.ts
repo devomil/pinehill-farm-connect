@@ -4,8 +4,12 @@ import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 import { User } from "@/types";
+import { AutoCoverageAssignmentOptions, AutoCoverageAssignmentResult } from "../types/adminScheduleTypes";
 
-export function useAutoCoverageAssignment() {
+export function useAutoCoverageAssignment(
+  options: AutoCoverageAssignmentOptions = {}
+): AutoCoverageAssignmentResult {
+  const { onCoverageAssigned } = options;
   const [loading, setLoading] = useState(false);
 
   // Auto-assign coverage for gaps in the schedule
@@ -56,7 +60,9 @@ export function useAutoCoverageAssignment() {
         variant: "success"
       });
       
-      setLoading(false);
+      // Call optional callback
+      if (onCoverageAssigned) onCoverageAssigned(newShift);
+      
       return newShift;
     } catch (error) {
       console.error("Error auto-assigning coverage:", error);
@@ -64,8 +70,9 @@ export function useAutoCoverageAssignment() {
         description: "Failed to auto-assign coverage",
         variant: "destructive"
       });
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
