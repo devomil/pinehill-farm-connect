@@ -12,8 +12,7 @@ import { UseWidgetHookProps, WidgetHookResult } from "@/components/dashboard/typ
 export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult {
   // Default heights for widgets
   const defaultHeights: Record<string, number> = {
-    calendar: 12,
-    schedule: 10,
+    schedule: 12,
     timeOff: 10,
     training: 8,
     shiftCoverage: 10,
@@ -22,7 +21,6 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
   };
 
   const columnSpans: Record<string, number> = {
-    calendar: 6,
     schedule: 6,
     timeOff: 3,
     training: 3,
@@ -31,12 +29,8 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
     announcements: 6
   };
 
-  // Define widget definitions and components
+  // Define widget definitions and components - removed the "calendar" widget
   const initialWidgetDefinitions: Record<string, { title: string; columnSpan: number }> = {
-    calendar: {
-      title: "Calendar",
-      columnSpan: columnSpans.calendar
-    },
     schedule: {
       title: "Work Schedule",
       columnSpan: columnSpans.schedule
@@ -63,24 +57,8 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
     }
   };
 
-  // Widget components
+  // Widget components - removed the "calendar" widget
   const widgetComponents: Record<string, { title: string; component: React.ReactNode }> = {
-    calendar: {
-      title: "Calendar",
-      component: (
-        <DashboardCalendarSection 
-          date={props.date}
-          currentMonth={props.currentMonth}
-          viewMode={props.viewMode}
-          currentUser={props.currentUser}
-          onDateSelect={props.onDateSelect}
-          onViewModeChange={props.onViewModeChange}
-          onPreviousMonth={props.onPreviousMonth}
-          onNextMonth={props.onNextMonth}
-          viewAllUrl="/time?tab=team-calendar"
-        />
-      )
-    },
     schedule: {
       title: "Work Schedule",
       component: (
@@ -88,6 +66,7 @@ export function useDashboardWidgets(props: UseWidgetHookProps): WidgetHookResult
           isAdmin={props.isAdmin}
           scheduleData={props.scheduleData}
           scheduleLoading={props.scheduleLoading}
+          currentUser={props.currentUser}
           viewAllUrl="/time?tab=work-schedules"
         />
       )
