@@ -1,69 +1,80 @@
 
+import { format } from "date-fns";
+import { v4 as uuid } from "uuid";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
-import { v4 as uuidv4 } from 'uuid';
-import { format } from 'date-fns';
 
-// Shared mock store that will be used across all components
-export const globalMockScheduleStore: Record<string, WorkSchedule> = {};
+// Helper function to create a new shift object
+export function createNewShift(employeeId: string, date: Date): WorkShift {
+  // Format the date as YYYY-MM-DD
+  const formattedDate = format(date, "yyyy-MM-dd");
+  
+  // Log the creation date
+  console.log(`Creating new shift for ${employeeId} on ${formattedDate}`);
+  
+  return {
+    id: uuid(),
+    employeeId,
+    date: formattedDate, // Properly formatted date string
+    startTime: "09:00",
+    endTime: "17:00",
+    isRecurring: false,
+    notes: ""
+  };
+}
 
-/**
- * Builds a map of date strings to arrays of shifts
- */
+// Helper function to create a map of dates to shifts
 export function buildShiftsMap(scheduleData: WorkSchedule | null): Map<string, WorkShift[]> {
   const shiftsMap = new Map<string, WorkShift[]>();
   
-  if (scheduleData?.shifts) {
-    scheduleData.shifts.forEach(shift => {
-      const dateKey = shift.date;
-      if (!shiftsMap.has(dateKey)) {
-        shiftsMap.set(dateKey, []);
-      }
-      shiftsMap.get(dateKey)!.push(shift);
-    });
+  if (!scheduleData) return shiftsMap;
+  
+  for (const shift of scheduleData.shifts) {
+    // Use the shift's date string directly as the key
+    const dateKey = shift.date;
+    
+    if (!shiftsMap.has(dateKey)) {
+      shiftsMap.set(dateKey, []);
+    }
+    
+    const shifts = shiftsMap.get(dateKey);
+    if (shifts) {
+      shifts.push(shift);
+    }
   }
   
   return shiftsMap;
 }
 
-/**
- * Creates a new shift for a given employee and date
- */
-export function createNewShift(employeeId: string, date: Date): WorkShift {
-  return {
-    id: uuidv4(),
-    employeeId: employeeId,
-    date: format(date, 'yyyy-MM-dd'),
-    startTime: '09:00:00',
-    endTime: '17:00:00',
-    isRecurring: false,
-    notes: ''
-  };
-}
-
-/**
- * Clears all mock schedule data
- */
-export function clearAllMockData() {
-  // Clear all keys in the global store
-  Object.keys(globalMockScheduleStore).forEach(key => {
-    delete globalMockScheduleStore[key];
-  });
-  console.log("All mock schedule data cleared");
+// Helper function to check if two schedules have the same shifts
+export function schedulesEqual(a: WorkSchedule, b: WorkSchedule): boolean {
+  if (a.shifts.length !== b.shifts.length) return false;
+  
+  // Create a map for faster lookup
+  const shiftsB = new Map(b.shifts.map(shift => [shift.id, shift]));
+  
+  for (const shiftA of a.shifts) {
+    const shiftB = shiftsB.get(shiftA.id);
+    if (!shiftB) return false;
+    
+    if (shiftA.date !== shiftB.date ||
+        shiftA.startTime !== shiftB.startTime ||
+        shiftA.endTime !== shiftB.endTime ||
+        shiftA.isRecurring !== shiftB.isRecurring ||
+        shiftA.recurringPattern !== shiftB.recurringPattern ||
+        shiftA.notes !== shiftB.notes) {
+      return false;
+    }
+  }
+  
   return true;
 }
 
-/**
- * Gets mock schedule for an employee, creating a new one if it doesn't exist
- */
-export function getMockScheduleForEmployee(employeeId: string, currentMonth: string): WorkSchedule {
-  if (!globalMockScheduleStore[employeeId]) {
-    globalMockScheduleStore[employeeId] = {
-      id: uuidv4(),
-      employeeId,
-      month: currentMonth,
-      shifts: []
-    };
-  }
-  
-  return globalMockScheduleStore[employeeId];
+// Create default schedule for an employee
+export function createEmptySchedule(employeeId: string, month: string): WorkSchedule {
+  return {
+    id: uuid(),
+    employeeId,
+    month,
+    shifts: []
+  };
 }

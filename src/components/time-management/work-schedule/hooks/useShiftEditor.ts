@@ -3,6 +3,7 @@ import { useState } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { createNewShift } from "../scheduleHelpers";
 import { toast } from "sonner";
+import { format, isValid } from "date-fns";
 
 export function useShiftEditor(
   selectedEmployee: string | null,
@@ -15,8 +16,12 @@ export function useShiftEditor(
 
   // Handle adding a new shift
   const handleAddShift = (selectedDate: Date | undefined) => {
-    if (!selectedEmployee || !selectedDate) return;
+    if (!selectedEmployee || !selectedDate || !isValid(selectedDate)) {
+      toast.error("Please select a valid employee and date");
+      return;
+    }
     
+    console.log("Creating new shift for date:", format(selectedDate, "yyyy-MM-dd"));
     const newShift = createNewShift(selectedEmployee, selectedDate);
     setEditingShift(newShift);
     setIsEditMode(false);
@@ -25,6 +30,7 @@ export function useShiftEditor(
   
   // Handle editing an existing shift
   const handleEditShift = (shift: WorkShift) => {
+    console.log("Editing shift for date:", shift.date);
     setEditingShift(shift);
     setIsEditMode(true);
     setIsDialogOpen(true);
@@ -53,7 +59,7 @@ export function useShiftEditor(
     
     onSave(updatedSchedule);
     setIsDialogOpen(false);
-    toast("Shift saved successfully");
+    toast.success("Shift saved successfully");
   };
   
   // Handle deleting a shift
@@ -67,6 +73,7 @@ export function useShiftEditor(
     
     onSave(updatedSchedule);
     setIsDialogOpen(false);
+    toast.success("Shift deleted successfully");
   };
 
   return {

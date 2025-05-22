@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -86,8 +87,11 @@ export const ShiftDialog: React.FC<ShiftDialogProps> = ({
     onDelete(shift.id);
   };
   
-  // Format the date for display
-  const formattedDate = format(new Date(shift.date), "EEEE, MMMM d, yyyy");
+  // Convert the date string to a proper Date object and format it
+  const shiftDate = new Date(shift.date);
+  const formattedDate = isNaN(shiftDate.getTime()) 
+    ? "Invalid Date" 
+    : format(shiftDate, "EEEE, MMMM d, yyyy");
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
