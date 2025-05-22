@@ -55,8 +55,8 @@ export function useRefreshMessages() {
       
       if (refreshMessages) {
         const refreshMessagesPromise = refreshMessages();
-        // Only add to promises if it returns a Promise
-        if (refreshMessagesPromise instanceof Promise) {
+        // Check if the result is a Promise without using instanceof
+        if (refreshMessagesPromise && typeof refreshMessagesPromise.then === 'function') {
           refreshPromises.push(refreshMessagesPromise);
         }
       }
@@ -74,8 +74,8 @@ export function useRefreshMessages() {
       // Add dashboard refresh if available
       if (handleRefreshData) {
         const dashboardPromise = handleRefreshData();
-        // Only add to promises if it returns a Promise
-        if (dashboardPromise instanceof Promise) {
+        // Check if the result is a Promise without using instanceof
+        if (dashboardPromise && typeof dashboardPromise.then === 'function') {
           refreshPromises.push(dashboardPromise);
         }
       }
