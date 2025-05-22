@@ -163,10 +163,8 @@ const TimeManagementContent: React.FC = () => {
     // Prevent rapid refreshes
     const now = Date.now();
     if (now - lastSaveTime < 30000) { // 30 second minimum between refreshes
-      toast({
-        description: "Please wait before refreshing again",
-        variant: "default"
-      });
+      // FIX 1: Use toast() with content as the first parameter instead of an object with description
+      toast("Please wait before refreshing again");
       return;
     }
     
@@ -179,24 +177,39 @@ const TimeManagementContent: React.FC = () => {
     toastIdRef.current = toast.loading("Refreshing time management data...").toString();
     
     setLastSaveTime(now);
-    forceRefreshData()
-      .then(() => {
-        // Update toast on success
+    // FIX 2: Store the Promise returned from forceRefreshData() before chaining then/catch
+    const refreshPromise = forceRefreshData();
+    if (refreshPromise && typeof refreshPromise.then === 'function') {
+      refreshPromise
+        .then(() => {
+          // Update toast on success
+          if (toastIdRef.current) {
+            toast.success("Data refreshed successfully", { 
+              id: toastIdRef.current,
+              duration: 2000
+            });
+            toastIdRef.current = null;
+          }
+        })
+        .catch(() => {
+          // Update toast on failure
+          if (toastIdRef.current) {
+            toast.error("Failed to refresh data", { id: toastIdRef.current });
+            toastIdRef.current = null;
+          }
+        });
+    } else {
+      // Handle case where forceRefreshData doesn't return a Promise
+      setTimeout(() => {
         if (toastIdRef.current) {
-          toast.success("Data refreshed successfully", { 
+          toast.success("Data refresh completed", { 
             id: toastIdRef.current,
             duration: 2000
           });
           toastIdRef.current = null;
         }
-      })
-      .catch(() => {
-        // Update toast on failure
-        if (toastIdRef.current) {
-          toast.error("Failed to refresh data", { id: toastIdRef.current });
-          toastIdRef.current = null;
-        }
-      });
+      }, 1000);
+    }
   };
 
   return (
