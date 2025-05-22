@@ -1,16 +1,17 @@
-import React, { useMemo, useEffect, useRef, useState } from "react";
+
+import React, { useState } from "react";
 import { MessageItem } from "./MessageItem";
-import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
-import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle } from "lucide-react";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { EmptyConversation } from "../communications/conversation/EmptyConversation";
+import { EmptyConversation } from "./conversation/EmptyConversation";
+import { useGroupedMessages } from "@/hooks/communications/useGroupedMessages";
+import { useUnreadMessageCount } from "@/hooks/communications/useUnreadMessageCount";
+import { useMessageRefreshEffect } from "@/hooks/communications/useMessageRefreshEffect";
+import { MessageListHeader } from "./MessageListHeader";
+import { MessageListError } from "./MessageListError";
 
 interface MessageListProps {
   messages: Communication[];
@@ -37,68 +38,19 @@ export function MessageList({
   const { currentUser } = useAuth();
   const refreshMessages = useRefreshMessages();
   const isAdmin = currentUser?.role === 'admin';
-  const refreshIntervalRef = useRef<number | null>(null);
-  const initialLoadRef = useRef<boolean>(false);
-  const messageHashRef = useRef<string>("");
-  const componentMountedAt = useRef(Date.now());
-  const refreshAttemptCount = useRef(0);
-  const MAX_AUTO_REFRESHES = 5; // Limit auto refreshes
   const [loadingFailed, setLoadingFailed] = useState(false);
   const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false);
   
-  // Compute a hash of the messages to detect real changes
-  const messagesHash = useMemo(() => {
-    return messages.map(m => m.id).join(',');
-  }, [messages]);
-
-  // Group messages by conversation with improved memoization
-  const groupedMessages = useMemo(() => {
-    // Skip recomputation if messages haven't changed
-    if (messageHashRef.current === messagesHash && messageHashRef.current !== "") {
-      return groupedMessagesRef.current;
-    }
-    
-    // Sort messages by time, newest first
-    const sortedMessages = [...messages].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    // Group by unique conversation (combination of sender and recipient)
-    const conversations = new Map();
-
-    sortedMessages.forEach(message => {
-      const otherId = 
-        message.sender_id === currentUser?.id 
-          ? message.recipient_id 
-          : message.sender_id;
-          
-      // Skip if we've already added this conversation
-      if (!conversations.has(otherId)) {
-        const latestMessage = sortedMessages.find(
-          msg => (msg.sender_id === otherId || msg.recipient_id === otherId)
-        );
-        
-        if (latestMessage) {
-          conversations.set(otherId, latestMessage);
-        }
-      }
-    });
-    
-    const result = Array.from(conversations.values());
-    messageHashRef.current = messagesHash;
-    groupedMessagesRef.current = result;
-    return result;
-  }, [messages, messagesHash, currentUser?.id]);
+  // Use custom hooks
+  const groupedMessages = useGroupedMessages(messages, currentUser?.id);
+  const unreadCount = useUnreadMessageCount(unreadMessages, currentUser?.id);
   
-  // Ref to store the latest computed grouped messages
-  const groupedMessagesRef = useRef<Communication[]>([]);
-
-  // Count unread direct messages with improved memoization
-  const unreadCount = useMemo(() => unreadMessages?.filter(
-    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') &&
-           msg.recipient_id === currentUser?.id &&
-           msg.read_at === null
-  ).length || 0, [unreadMessages, currentUser]);
+  // Set up auto refresh effect
+  useMessageRefreshEffect({ 
+    refreshMessages, 
+    isAdmin, 
+    setLoadingFailed
+  });
   
   // Function to handle manual refresh with state tracking
   const handleManualRefresh = async () => {
@@ -107,8 +59,6 @@ export function MessageList({
     
     try {
       await refreshMessages();
-      // Reset counter after successful manual refresh
-      refreshAttemptCount.current = 0;
     } catch (error) {
       console.error("Error during manual refresh:", error);
       setLoadingFailed(true);
@@ -116,94 +66,10 @@ export function MessageList({
       setIsManuallyRefreshing(false);
     }
   };
-  
-  // Auto-refresh messages with much less frequency to reduce server load
-  useEffect(() => {
-    console.log(`MessageList component mounted at ${new Date().toISOString()}`);
-    
-    // Clear any existing interval when component re-renders
-    if (refreshIntervalRef.current !== null) {
-      clearInterval(refreshIntervalRef.current);
-    }
-    
-    // Initial load only once - with error handling
-    if (!initialLoadRef.current) {
-      console.log("Initial message list data load");
-      
-      // Delay initial refresh to ensure component is fully mounted
-      const initialTimer = setTimeout(async () => {
-        try {
-          await refreshMessages();
-        } catch (error) {
-          console.error("Error during initial message load:", error);
-          setLoadingFailed(true);
-        } finally {
-          initialLoadRef.current = true;
-        }
-      }, 1500);
-      
-      return () => clearTimeout(initialTimer);
-    }
-    
-    // Set up refresh interval with much longer timing and limited refreshes
-    const refreshHandler = async () => {
-      // Don't refresh if we've hit the limit
-      if (refreshAttemptCount.current >= MAX_AUTO_REFRESHES) {
-        console.log(`Auto-refresh limit reached (${MAX_AUTO_REFRESHES}), stopping automatic refreshes`);
-        if (refreshIntervalRef.current !== null) {
-          clearInterval(refreshIntervalRef.current);
-          refreshIntervalRef.current = null;
-        }
-        return;
-      }
-      
-      console.log(`Auto-refreshing message list (${refreshAttemptCount.current + 1}/${MAX_AUTO_REFRESHES})`);
-      refreshAttemptCount.current++;
-      
-      try {
-        await refreshMessages();
-        setLoadingFailed(false);
-      } catch (error) {
-        console.error("Error during auto-refresh:", error);
-        // Don't set loading failed for background refreshes
-      }
-    };
-    
-    // Much longer intervals to prevent excessive refreshes
-    const interval = window.setInterval(refreshHandler, isAdmin ? 240000 : 300000); // Every 4-5 minutes
-    
-    refreshIntervalRef.current = interval as unknown as number;
-    
-    return () => {
-      console.log(`MessageList component unmounting after ${Date.now() - componentMountedAt.current}ms`);
-      if (refreshIntervalRef.current !== null) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [refreshMessages, isAdmin]);
 
   // Show loading error state if we've tried and failed to load
   if (loadingFailed && !isLoading && messages.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            There was an issue loading your messages. Please try refreshing.
-            
-            <div className="mt-2">
-              <Button 
-                variant="outline" 
-                onClick={handleManualRefresh}
-                disabled={isManuallyRefreshing}
-              >
-                {isManuallyRefreshing ? 'Refreshing...' : 'Refresh Messages'}
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <MessageListError onRefresh={handleManualRefresh} isRefreshing={isManuallyRefreshing} />;
   }
 
   // Loading state
@@ -218,15 +84,7 @@ export function MessageList({
 
   return (
     <div className="space-y-4">
-      {unreadCount > 0 && (
-        <div className="bg-muted/30 p-3 rounded-md flex items-center justify-between">
-          <div className="flex items-center">
-            <MessageSquare className="h-4 w-4 mr-2 text-primary" />
-            <span className="text-sm font-medium">You have new messages</span>
-          </div>
-          <Badge variant="default">{unreadCount} unread</Badge>
-        </div>
-      )}
+      <MessageListHeader unreadCount={unreadCount} />
       
       {groupedMessages.map(message => {
         // Determine if the message is incoming or outgoing
