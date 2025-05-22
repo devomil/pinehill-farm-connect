@@ -1,165 +1,125 @@
-
 import React from "react";
-import { WorkShift } from "@/types/workSchedule";
+import { format, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { WorkShift } from "@/types/workSchedule";
 import { User } from "lucide-react";
-import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 
 interface CalendarDayCellProps {
   date: Date;
   shifts: WorkShift[];
   isSelected?: boolean;
-  selectionMode?: "single" | "multiple" | "range";
-  onShiftClick?: (shift: WorkShift) => void;
-  onClick?: () => void;
   outside?: boolean;
-  disabled?: boolean;
   today?: boolean;
+  onClick?: () => void;
+  onShiftClick?: (shift: WorkShift) => void;
+  isDaySelected?: boolean;
   showEmployeeNames?: boolean;
 }
 
 export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   date,
   shifts,
-  isSelected,
-  selectionMode = "single",
-  onShiftClick,
-  onClick,
+  isSelected = false,
   outside = false,
-  disabled = false,
   today = false,
-  showEmployeeNames = false
+  onClick,
+  onShiftClick,
+  isDaySelected,
+  showEmployeeNames = false,
 }) => {
-  const hasShifts = shifts.length > 0;
-  const dayNumber = date.getDate();
-  const { employees } = useEmployeeDirectory();
+  const dayNumber = format(date, "d");
+  const hasShifts = shifts && shifts.length > 0;
   
-  // Group shifts by employee
-  const shiftsByEmployee = shifts.reduce((acc, shift) => {
-    if (!acc[shift.employeeId]) {
-      acc[shift.employeeId] = [];
+  // Group shifts by employee if showing names
+  const employeeNames = React.useMemo(() => {
+    if (!showEmployeeNames || !hasShifts) return [];
+    
+    // Extract unique employee names from shift notes or IDs
+    const uniqueEmployees = new Set<string>();
+    
+    shifts.forEach(shift => {
+      if (shift.notes) {
+        // Try to extract employee name from notes
+        const nameParts = shift.notes.split(':');
+        if (nameParts.length > 1) {
+          uniqueEmployees.add(nameParts[1].trim());
+        } else if (shift.notes.includes('@')) {
+          // If notes contains an email format, get the part before @
+          const emailPart = shift.notes.split('@')[0];
+          uniqueEmployees.add(emailPart.trim());
+        } else {
+          // Otherwise use a portion of notes
+          uniqueEmployees.add(shift.notes.substring(0, 20).trim());
+        }
+      } else {
+        // If no notes, use a portion of the employee ID
+        const shortId = shift.employeeId.substring(0, 6);
+        uniqueEmployees.add(`Employee ${shortId}`);
+      }
+    });
+    
+    return Array.from(uniqueEmployees).slice(0, 4); // Limit to avoid overcrowding
+  }, [shifts, showEmployeeNames, hasShifts]);
+
+  // Get the name from the shift data - in a real app this would use a lookup
+  const getEmployeeName = (shift: WorkShift) => {
+    if (shift.notes) {
+      const nameParts = shift.notes.split(':');
+      if (nameParts.length > 1) {
+        return nameParts[1].trim();
+      } else {
+        return shift.notes.substring(0, 15);
+      }
     }
-    acc[shift.employeeId].push(shift);
-    return acc;
-  }, {} as Record<string, WorkShift[]>);
-  
-  // Get employee name by ID
-  const getEmployeeName = (employeeId: string): string => {
-    const employee = employees?.find(emp => emp.id === employeeId);
-    return employee ? employee.name.split(' ')[0] : 'Unknown'; // First name only for space reasons
+    return `Employee ${shift.employeeId.substring(0, 6)}`;
   };
   
-  const handleClick = () => {
-    if (disabled) return;
-    
-    console.log(`Day clicked: ${format(date, 'yyyy-MM-dd')}, calling onClick handler`);
-    
-    if (onClick) {
-      onClick();
-    }
-  };
-  
-  const handleShiftClick = (e: React.MouseEvent, shift: WorkShift) => {
-    e.stopPropagation(); // Prevent parent click
-    
-    if (onShiftClick) {
-      onShiftClick(shift);
-    }
-  };
-  
+  // Handle showing more indicator if there are more shifts than we display
+  const hasMoreShifts = showEmployeeNames && employeeNames.length > 3;
+  const displayedNames = hasMoreShifts ? employeeNames.slice(0, 3) : employeeNames;
+  const moreCount = hasMoreShifts ? employeeNames.length - 3 : 0;
+
   return (
     <div
+      onClick={onClick}
       className={cn(
-        "h-full w-full p-1 rounded-md flex flex-col relative cursor-pointer transition-all duration-150",
-        outside && "opacity-50",
-        disabled && "opacity-30 cursor-not-allowed",
-        isSelected && selectionMode === "single" && "bg-primary text-primary-foreground shadow-md ring-2 ring-primary",
-        isSelected && selectionMode === "multiple" && "bg-orange-200 ring-2 ring-orange-500",
-        isSelected && selectionMode === "range" && "bg-blue-200 ring-2 ring-blue-500",
-        !isSelected && hasShifts && "bg-blue-50 hover:bg-blue-100",
-        today && !isSelected && "bg-accent/50",
-        !isSelected && !disabled && selectionMode === "single" && "hover:bg-primary/10",
-        !isSelected && !disabled && selectionMode === "multiple" && "hover:bg-orange-100",
-        !isSelected && !disabled && selectionMode === "range" && "hover:bg-blue-100"
+        "h-full min-h-[90px] p-1 border border-gray-200 rounded-sm flex flex-col",
+        outside ? "bg-gray-50 text-gray-400" : "bg-white",
+        today ? "border-blue-500" : "",
+        isSelected ? "bg-blue-50 border-blue-500" : "",
+        isDaySelected ? "ring-2 ring-accent" : "",
+        "transition-colors hover:bg-gray-50 cursor-pointer"
       )}
-      onClick={handleClick}
-      aria-selected={isSelected}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          handleClick();
-        }
-      }}
     >
-      <span className={cn(
-        "text-sm font-medium",
-        isSelected && selectionMode === "single" && "text-white font-bold",
-        isSelected && selectionMode === "multiple" && "text-orange-900 font-bold",
-        isSelected && selectionMode === "range" && "text-blue-900 font-bold"
-      )}>
+      <div className="text-right text-sm font-medium">
         {dayNumber}
-      </span>
+      </div>
       
-      {hasShifts && (
-        <div className="flex flex-col gap-0.5 mt-0.5 overflow-hidden">
-          {/* Show max 3 employees or indicate more with a count */}
-          {showEmployeeNames ? (
-            // Display with employee names for admin view
-            <div className="overflow-hidden w-full">
-              {Object.keys(shiftsByEmployee).slice(0, 3).map((employeeId) => (
-                <div 
-                  key={employeeId}
-                  className="flex items-center text-xs truncate w-full"
-                  title={`${getEmployeeName(employeeId)} (${shiftsByEmployee[employeeId].length} shift${shiftsByEmployee[employeeId].length > 1 ? 's' : ''})`}
-                  onClick={(e) => handleShiftClick(e, shiftsByEmployee[employeeId][0])}
-                >
-                  <span 
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full mr-1",
-                      isSelected && selectionMode === "single" ? "bg-white/80" : "bg-blue-500"
-                    )}
-                  />
-                  <span className="truncate">{getEmployeeName(employeeId)}</span>
-                </div>
-              ))}
-              {Object.keys(shiftsByEmployee).length > 3 && (
-                <div className="text-xs text-blue-700 flex items-center">
-                  <User className="h-3 w-3 mr-1" />
-                  <span>+{Object.keys(shiftsByEmployee).length - 3} more</span>
-                </div>
-              )}
+      <div className="flex-1 overflow-hidden">
+        {showEmployeeNames && displayedNames.length > 0 ? (
+          <div className="mt-1 space-y-1">
+            {displayedNames.map((name, idx) => (
+              <div key={idx} className="flex items-center text-xs">
+                <span className="h-2 w-2 rounded-full bg-blue-500 mr-1"></span>
+                <span className="truncate">{name}</span>
+              </div>
+            ))}
+            {hasMoreShifts && (
+              <div className="text-xs text-gray-500 font-medium">
+                +{moreCount} more
+              </div>
+            )}
+          </div>
+        ) : (
+          hasShifts && !showEmployeeNames && (
+            <div className="mt-2 flex justify-center">
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100">
+                <User className="h-3 w-3 text-green-700" />
+              </div>
             </div>
-          ) : (
-            // Display just indicators for employee view
-            <div className="flex gap-0.5 flex-wrap">
-              {shifts.slice(0, 3).map((shift, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    "h-2 w-2 rounded-full",
-                    isSelected && selectionMode === "single" ? "bg-white/80" : "bg-blue-500"
-                  )}
-                  title={`${format(new Date(`${shift.date}T${shift.startTime}`), 'HH:mm')} - ${format(new Date(`${shift.date}T${shift.endTime}`), 'HH:mm')}`}
-                  onClick={(e) => handleShiftClick(e, shift)}
-                />
-              ))}
-              {shifts.length > 3 && (
-                <div className={cn(
-                  "h-2 w-2 rounded-full relative",
-                  isSelected && selectionMode === "single" ? "bg-white/80" : "bg-blue-500"
-                )}>
-                  <span className={cn(
-                    "absolute -right-1 -top-0.5 text-xs",
-                    isSelected && selectionMode === "single" ? "text-white" : "text-blue-700"
-                  )}>+{shifts.length - 3}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+          )
+        )}
+      </div>
     </div>
   );
 };

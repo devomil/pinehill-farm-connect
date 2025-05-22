@@ -24,6 +24,7 @@ interface WorkScheduleCalendarProps {
   hideCalendar?: boolean;
   onDeleteShift?: (shiftId: string) => void;
   isAdminView?: boolean;
+  showEmployeeNames?: boolean;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -41,6 +42,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   hideCalendar = false,
   onDeleteShift,
   isAdminView = false,
+  showEmployeeNames = false,
 }) => {
   const [viewingDate, setViewingDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -121,15 +123,33 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     }
   };
   
+  const monthTitle = format(currentMonth, "MMMM yyyy");
+  
   return (
     <>
       <Card className={hideCalendar ? "hidden" : ""}>
         <CardContent className="p-0">
-          <CalendarNavigation
-            currentMonth={currentMonth}
-            onPreviousMonth={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
-            onNextMonth={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
-          />
+          <div className="flex justify-between items-center p-2 bg-gray-50">
+            <h3 className="text-lg font-medium">{monthTitle}</h3>
+            <div className="flex gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentMonth(addDays(startOfMonth(currentMonth), -1))}
+                className="h-8 w-8 p-0"
+              >
+                &lt;
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentMonth(addDays(endOfMonth(currentMonth), 1))}
+                className="h-8 w-8 p-0"
+              >
+                &gt;
+              </Button>
+            </div>
+          </div>
           
           <div className="grid grid-cols-7 bg-muted/50">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
@@ -157,7 +177,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
                   today={isSameDay(day, new Date())}
                   onClick={() => handleDayClick(day)}
                   onShiftClick={(shift) => handleShiftClick(day, shift)}
-                  showEmployeeNames={isAdminView}
+                  showEmployeeNames={showEmployeeNames || isAdminView}
                 />
               );
             })}

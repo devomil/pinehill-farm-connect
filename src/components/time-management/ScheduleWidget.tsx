@@ -89,9 +89,8 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           isAdminView={isAdmin}
+          showEmployeeNames={true}
         />
-        
-        <CalendarLegend />
         
         <div className="text-center mt-4">
           <Link to="/time?tab=team-calendar">
