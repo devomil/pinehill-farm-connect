@@ -9,6 +9,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { WorkScheduleHeader } from "./WorkScheduleHeader";
 import { WorkScheduleError } from "./WorkScheduleError";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TeamCalendar } from "../TeamCalendar";
+import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 
 interface WorkScheduleTabProps {
   isAdmin: boolean;
@@ -30,7 +33,10 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
   } = useWorkSchedule(selectedEmployee);
   
   const currentMonthLabel = format(new Date(), "MMMM yyyy");
-
+  const [viewMode, setViewMode] = useState<"work-schedules" | "company-events">("work-schedules");
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   // If user is not admin, they can only see their own schedule
   useEffect(() => {
     if (!isAdmin) {
@@ -48,6 +54,23 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
     }
   };
 
+  // Convert scheduleData to shiftsMap for calendar display
+  const shiftsMap = React.useMemo(() => {
+    const map = new Map<string, any[]>();
+    
+    if (scheduleData?.shifts) {
+      scheduleData.shifts.forEach(shift => {
+        const dateKey = shift.date;
+        if (!map.has(dateKey)) {
+          map.set(dateKey, []);
+        }
+        map.get(dateKey)!.push(shift);
+      });
+    }
+    
+    return map;
+  }, [scheduleData]);
+
   return (
     <Card className="mt-4">
       <CardHeader className="pb-3">
@@ -60,23 +83,46 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
           onCopyFromLastMonth={copyFromLastMonth}
           loading={loading}
         />
+        
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "work-schedules" | "company-events")} className="mt-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="work-schedules">Work Schedules</TabsTrigger>
+            <TabsTrigger value="company-events">Company Events</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </CardHeader>
       <CardContent>
         {error ? (
           <WorkScheduleError error={error} />
-        ) : isAdmin ? (
-          <AdminWorkScheduleEditor
-            selectedEmployee={selectedEmployee}
-            scheduleData={scheduleData}
-            onSave={saveSchedule}
-            onReset={resetSchedule}
-            loading={loading}
-          />
+        ) : viewMode === "work-schedules" ? (
+          isAdmin ? (
+            <AdminWorkScheduleEditor
+              selectedEmployee={selectedEmployee}
+              scheduleData={scheduleData}
+              onSave={saveSchedule}
+              onReset={resetSchedule}
+              loading={loading}
+            />
+          ) : (
+            <>
+              <WorkScheduleCalendar 
+                currentMonth={currentMonth}
+                setCurrentMonth={setCurrentMonth}
+                shiftsMap={shiftsMap}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                isAdminView={isAdmin}
+                showEmployeeNames={true}
+                title="Work Schedule"
+              />
+              <EmployeeScheduleView 
+                scheduleData={scheduleData}
+                loading={loading}
+              />
+            </>
+          )
         ) : (
-          <EmployeeScheduleView 
-            scheduleData={scheduleData}
-            loading={loading}
-          />
+          <TeamCalendar currentUser={currentUser} />
         )}
       </CardContent>
     </Card>

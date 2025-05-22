@@ -12,6 +12,7 @@ import { WorkShift } from "@/types/workSchedule";
 import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamCalendar } from "./TeamCalendar";
 
 interface ScheduleWidgetProps {
@@ -30,6 +31,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"schedule" | "events">("schedule");
   const { timeOffRequests = [] } = useTimeManagement();
   const { currentUser: authUser } = useAuth();
   const isAdmin = authUser?.role === "admin";
@@ -74,16 +76,29 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <WorkScheduleCalendar 
-          currentMonth={currentMonth}
-          setCurrentMonth={setCurrentMonth}
-          shiftsMap={displayShiftsMap}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          isAdminView={isAdmin}
-          showEmployeeNames={true}
-          title="Work Schedule"
-        />
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "schedule" | "events")} className="mb-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="schedule">Work Schedule</TabsTrigger>
+            <TabsTrigger value="events">Company Events</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="schedule" className="mt-2">
+            <WorkScheduleCalendar 
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              shiftsMap={displayShiftsMap}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              isAdminView={isAdmin}
+              showEmployeeNames={true}
+              title="Work Schedule"
+            />
+          </TabsContent>
+          
+          <TabsContent value="events" className="mt-2">
+            {currentUser && <TeamCalendar currentUser={currentUser} />}
+          </TabsContent>
+        </Tabs>
         
         <div className="text-center mt-4">
           <Link to="/time?tab=work-schedules">

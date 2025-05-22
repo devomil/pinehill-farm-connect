@@ -3,12 +3,12 @@ import React, { useState } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, addMonths, subMonths } from "date-fns";
-import { EmployeeScheduleCalendar } from "./EmployeeScheduleCalendar";
 import { EmployeeShiftDetailsDialog } from "./EmployeeShiftDetailsDialog";
 import { buildShiftsMap } from "./scheduleHelpers";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { usePrintSchedule } from "@/contexts/timeManagement/hooks";
+import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 
 interface EmployeeScheduleViewProps {
   scheduleData: WorkSchedule | null;
@@ -24,7 +24,7 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({
   viewAllUrl,
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [selectedShiftDate, setSelectedShiftDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { printSchedule } = usePrintSchedule();
@@ -32,30 +32,26 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({
   // Create map of dates to shifts
   const shiftsMap = buildShiftsMap(scheduleData);
   
-  // Handle previous month click
-  const handlePreviousMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
-  };
-  
-  // Handle next month click
-  const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
-  
   // Handle day click
   const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
     const dateStr = format(day, "yyyy-MM-dd");
     const shiftsForDay = shiftsMap.get(dateStr);
     
     if (shiftsForDay && shiftsForDay.length > 0) {
-      setSelectedShiftDate(day);
       setIsDialogOpen(true);
     }
   };
 
+  // Handle shift click
+  const handleShiftClick = (shift: any) => {
+    setSelectedDate(new Date(shift.date));
+    setIsDialogOpen(true);
+  };
+
   const handlePrint = () => {
     if (scheduleData) {
-      printSchedule(scheduleData, {});  // Add an empty object as second argument
+      printSchedule(scheduleData, {});
     }
   };
   
@@ -89,24 +85,23 @@ export const EmployeeScheduleView: React.FC<EmployeeScheduleViewProps> = ({
         </Button>
       </div>
       
-      <Card>
-        <CardContent className="pt-6">
-          <EmployeeScheduleCalendar
-            currentDate={currentDate}
-            shiftsMap={shiftsMap}
-            onDayClick={handleDayClick}
-            onPreviousMonth={handlePreviousMonth}
-            onNextMonth={handleNextMonth}
-          />
-        </CardContent>
-      </Card>
+      <WorkScheduleCalendar
+        currentMonth={currentDate}
+        setCurrentMonth={setCurrentDate}
+        shiftsMap={shiftsMap}
+        selectedDate={selectedDate || undefined}
+        setSelectedDate={(date) => setSelectedDate(date || null)}
+        onShiftClick={handleShiftClick}
+        showEmployeeNames={true}
+        title="My Schedule"
+      />
       
-      {isDialogOpen && selectedShiftDate && (
+      {isDialogOpen && selectedDate && (
         <EmployeeShiftDetailsDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          date={selectedShiftDate}
-          shifts={shiftsMap.get(format(selectedShiftDate, "yyyy-MM-dd")) || []}
+          date={selectedDate}
+          shifts={shiftsMap.get(format(selectedDate, "yyyy-MM-dd")) || []}
         />
       )}
     </div>
