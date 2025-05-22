@@ -13,6 +13,7 @@ interface EmptyConversationProps {
 export function EmptyConversation({ onRefresh, hasNavigationIssues }: EmptyConversationProps) {
   const location = useLocation();
   const isRecoveryMode = new URLSearchParams(location.search).get('recovery') === 'true';
+  const urlTabParam = new URLSearchParams(location.search).get('tab');
   
   return (
     <Card className="p-6 flex flex-col items-center justify-center text-center">
@@ -30,6 +31,11 @@ export function EmptyConversation({ onRefresh, hasNavigationIssues }: EmptyConve
           </div>
           <p className="text-xs text-muted-foreground mb-3">
             Navigation recovery enabled to stabilize the Direct Messages tab.
+            {urlTabParam !== 'messages' && (
+              <span className="block mt-1 text-amber-600">
+                Note: URL shows "messages" tab but you're viewing "announcements".
+              </span>
+            )}
           </p>
         </div>
       )}

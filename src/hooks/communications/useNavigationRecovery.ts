@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebug } from '@/hooks/useDebug';
@@ -34,11 +33,27 @@ export function useNavigationRecovery({
   useEffect(() => {
     // Check for recovery parameter in URL - this helps break navigation loops
     const urlParams = new URLSearchParams(location.search);
-    const isRecoveryMode = urlParams.get('recovery') === 'true';
-    const isMessagesTab = urlParams.get('tab') === 'messages';
+    const recoveryRequested = urlParams.get('recovery') === 'true';
+    const tabParam = urlParams.get('tab');
+    
+    // Force sync tab from URL parameter
+    if (tabParam) {
+      // Only use valid tab values
+      const newTab = tabParam === 'messages' ? "messages" : "announcements";
+      
+      // CRITICAL: If there's a tab parameter but active tab doesn't match, fix it immediately
+      if (newTab !== activeTab) {
+        debug.info(`Tab parameter (${newTab}) doesn't match active tab (${activeTab}). Forcing sync.`);
+        setActiveTab(newTab);
+        
+        // Mark navigation as complete to prevent loops
+        navigationComplete.current = true;
+        navigationInProgress.current = false;
+      }
+    }
     
     // Special handling for recovery mode
-    if (isRecoveryMode) {
+    if (recoveryRequested) {
       // In recovery mode, we ensure navigation is marked as complete
       navigationComplete.current = true;
       debug.info("Running in navigation recovery mode");
@@ -64,50 +79,27 @@ export function useNavigationRecovery({
             const newParams = new URLSearchParams(location.search);
             newParams.delete('recovery');
             newParams.delete('ts');
+            
+            // KEEP the tab parameter!
+            const tabValue = newParams.get('tab') || 'announcements';
+            newParams.set('tab', tabValue);
+            
             const newSearch = newParams.toString() ? `?${newParams.toString()}` : '';
             window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
             debug.info("Cleared recovery parameters after stabilization");
           }
         }, 3000);
       }
-      return;
     }
-    
-    // Special handling for messages tab - if we detect it's causing issues
-    if (isMessagesTab && navigationInProgress.current && !navigationComplete.current) {
-      // If we detect we've been stuck too long trying to load messages tab,
-      // force navigation to complete to break potential loops
-      setTimeout(() => {
-        if (navigationInProgress.current && !navigationComplete.current) {
-          debug.warn("Detected stuck navigation to messages tab, forcing completion");
-          navigationComplete.current = true;
-          navigationInProgress.current = false;
-        }
-      }, 5000);
-    }
-    
-    // Only run this effect if navigation is complete to prevent loops
-    if (!navigationComplete.current) {
-      debug.info("Skipping URL sync, navigation in progress");
-      return;
-    }
-    
-    // Parse URL parameters and update active tab if needed
-    const tabParam = urlParams.get('tab');
-    const newTab = tabParam === 'messages' ? "messages" : "announcements";
-    
-    if (newTab !== activeTab) {
-      debug.info("Syncing tab from URL", { urlTab: newTab, currentTab: activeTab });
-      setActiveTab(newTab);
-      
+
+    // Only perform refresh if navigation is complete and we're on messages tab
+    if (navigationComplete.current && tabParam === 'messages' && activeTab === 'messages' && !navigationInProgress.current) {
       // If switching to messages tab via direct URL, ensure messages are refreshed
-      if (newTab === 'messages' && !navigationInProgress?.current) {
-        debug.info("Direct URL navigation to messages tab, refreshing data");
-        refreshMessages().catch(err => {
-          console.error("Error refreshing messages during URL sync:", err);
-          toast.error("Failed to load messages");
-        });
-      }
+      debug.info("Refreshing messages data after URL sync");
+      refreshMessages().catch(err => {
+        console.error("Error refreshing messages during URL sync:", err);
+        toast.error("Failed to load messages");
+      });
     }
   }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, 
       navigationInProgress, showDebugInfo, setShowDebugInfo, navigate]);

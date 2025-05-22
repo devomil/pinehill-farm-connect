@@ -32,19 +32,25 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
     // Show recovery feedback
     toast.loading("Starting navigation recovery...", { id: "recovery-toast" });
     
-    // Execute recovery function
+    // Execute recovery function from parent
     onRecover();
     
     // If there's a detected loop, perform a more thorough recovery
     if (loopDetected) {
       // First navigate to announcements tab to reset state
-      navigate('/communication?tab=announcements&reset=true', { replace: true });
+      navigate('/communication?tab=announcements&recovery=true', { replace: true });
       
       // After a short delay, allow navigation back to messages tab with recovery mode
       setTimeout(() => {
-        navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
-        toast.success("Navigation recovery complete", { id: "recovery-toast" });
-      }, 800);
+        // Force the active tab in the URL
+        const messagesRecoveryUrl = `/communication?tab=messages&recovery=true&ts=${timestamp}`;
+        navigate(messagesRecoveryUrl, { replace: true });
+        
+        // After a bit more delay, update the toast
+        setTimeout(() => {
+          toast.success("Navigation recovery complete", { id: "recovery-toast" });
+        }, 300);
+      }, 1000); // Increased delay for stability
     } else {
       // For non-critical cases, just refresh the current page with recovery mode
       setTimeout(() => {
