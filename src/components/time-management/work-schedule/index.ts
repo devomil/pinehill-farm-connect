@@ -19,3 +19,6 @@ export * from "./EmployeeShiftDetailsDialog";
 export * from "./ScheduleEditorContent";
 export * from "./AdminSchedulingTools";
 export * from "./NoEmployeeSelected";
+export * from "./calendar/CalendarDaysGrid";
+export * from "./calendar/CalendarHeader";
+export * from "./calendar/calendarUtils";
