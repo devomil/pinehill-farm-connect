@@ -3,6 +3,29 @@ import { format } from "date-fns";
 import { v4 as uuid } from "uuid";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 
+// Global mock store for schedules
+export const globalMockScheduleStore: Record<string, WorkSchedule> = {};
+
+// Helper function to clear all mock data
+export function clearAllMockData() {
+  Object.keys(globalMockScheduleStore).forEach(key => {
+    delete globalMockScheduleStore[key];
+  });
+  console.log("Cleared all mock schedule data");
+}
+
+// Helper function to get or create a mock schedule for an employee
+export function getMockScheduleForEmployee(employeeId: string, month: string): WorkSchedule {
+  if (globalMockScheduleStore[employeeId]) {
+    return globalMockScheduleStore[employeeId];
+  }
+  
+  // Create a new empty schedule
+  const newSchedule = createEmptySchedule(employeeId, month);
+  globalMockScheduleStore[employeeId] = newSchedule;
+  return newSchedule;
+}
+
 // Helper function to create a new shift object
 export function createNewShift(employeeId: string, date: Date): WorkShift {
   // Format the date as YYYY-MM-DD
