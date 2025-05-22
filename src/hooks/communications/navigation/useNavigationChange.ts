@@ -53,13 +53,60 @@ export function useNavigationChange({
     // Check for a navigation loop by tracking rapid requests
     const loopDetected = throttler.trackNavigationAttempt();
     
-    if (loopDetected) {
-      toast.error("Navigation loop detected", {
-        description: "Use the debug panel to fix this issue",
-        id: 'navigation-loop'
-      });
+    // If we have multiple recent attempts but not yet a loop, add a small delay
+    // to help prevent loops from occurring
+    const recentAttempts = throttler.getRecentAttempts();
+    if (recentAttempts >= 3 && !loopDetected) {
+      debug.warn(`Multiple navigation attempts detected (${recentAttempts}), adding delay`);
+      setTimeout(() => {
+        processTabChange(value);
+      }, 300);
+      return;
     }
     
+    if (loopDetected) {
+      // If loop detected, force a reset by using a different temporary tab first
+      toast.error("Navigation loop detected", {
+        description: "Attempting to stabilize navigation",
+        id: 'navigation-loop'
+      });
+      
+      // Safety measure: If we're in a loop, use recovery mode
+      const recoveryUrl = buildRecoveryPath('announcements');
+      navigate(recoveryUrl, { replace: true });
+      
+      // Reset navigation state
+      navigationInProgress.current = false;
+      navigationComplete.current = true;
+      
+      // Try again after a delay with explicit recovery mode
+      setTimeout(() => {
+        const messagesRecoveryUrl = buildRecoveryPath(value);
+        navigate(messagesRecoveryUrl, { replace: true });
+      }, 500);
+      
+      return;
+    }
+    
+    // Normal path - process the tab change
+    processTabChange(value);
+    
+  }, [
+    activeTab, 
+    setActiveTab, 
+    navigationComplete, 
+    navigationInProgress, 
+    startNavigation, 
+    completeNavigation, 
+    setPendingNavigation,
+    performRefresh,
+    processPendingNavigation,
+    navigate,
+    debug
+  ]);
+  
+  // Extracted the actual tab change logic to its own function for clarity
+  const processTabChange = useCallback((value: string) => {
     // If navigation is already in progress, store this as the pending navigation
     if (navigationInProgress.current) {
       debug.info("Navigation already in progress, marking as pending", value);
@@ -69,7 +116,10 @@ export function useNavigationChange({
     
     // Throttle if there have been too many attempts in a short time
     if (throttler.shouldThrottle()) {
-      toast.error("Navigation issue detected. Please try again in a moment.");
+      setTimeout(() => {
+        debug.info("Processing throttled navigation after delay");
+        processTabChange(value);
+      }, 300);
       return;
     }
     
@@ -116,9 +166,12 @@ export function useNavigationChange({
       if (value === 'messages') {
         debug.info("Switching to messages tab, refreshing data");
         
-        performRefresh().finally(() => {
-          processPendingNavigation();
-        });
+        // Add timeout to ensure UI updates first before potentially heavy data loading
+        setTimeout(() => {
+          performRefresh().finally(() => {
+            processPendingNavigation();
+          });
+        }, 50);
       } else {
         // For other tabs, mark as complete more quickly
         setTimeout(() => {
@@ -148,7 +201,6 @@ export function useNavigationChange({
     }
   }, [
     navigate,
-    activeTab,
     location.pathname,
     location.search,
     setActiveTab,

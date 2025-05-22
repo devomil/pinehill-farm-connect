@@ -4,6 +4,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface NavigationWarningProps {
   hasLoopDetected: boolean;
@@ -34,12 +35,13 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
     
     // Force a clean navigation to announcements tab first
     navigate(recoveryUrl, { replace: true });
+    toast.success("Resetting navigation state...");
     
     // After a delay, we'll try to navigate back to messages tab
     setTimeout(() => {
       const messagesRecoveryUrl = `/communication?tab=messages&recovery=true&ts=${Date.now()}`;
       navigate(messagesRecoveryUrl, { replace: true });
-    }, 500);
+    }, 1000);
   };
 
   return (
@@ -57,6 +59,7 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
               e.preventDefault();
               e.stopPropagation();
               attemptRecovery();
+              toast.success("Fixing navigation...");
             }} 
             size="sm" 
             variant="outline" 

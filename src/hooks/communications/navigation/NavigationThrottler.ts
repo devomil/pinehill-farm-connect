@@ -1,3 +1,4 @@
+
 /**
  * Class that tracks navigation attempts and detects navigation loops
  */
@@ -8,6 +9,7 @@ export class NavigationThrottler {
   private readonly MAX_ATTEMPTS_WINDOW = 5; // Max attempts in time window
   private readonly LOOP_DETECTION_THRESHOLD_MS = 2000; // Time window for loop detection
   private readonly THROTTLE_THRESHOLD_MS = 300; // Min time between navigations
+  private readonly SAFETY_WINDOW_MS = 5000; // Safety window for resetting detection
 
   /**
    * Track a navigation attempt and check if it forms part of a loop
@@ -28,6 +30,16 @@ export class NavigationThrottler {
       console.warn("Navigation loop detected:", this.navigationAttempts.length, 
         "attempts in", this.LOOP_DETECTION_THRESHOLD_MS, "ms");
       this.loopDetected = true;
+      
+      // Safety mechanism: Clear attempts array to prevent continuous loop detection
+      // after the issue has been addressed
+      setTimeout(() => {
+        if (this.navigationAttempts.length > 0) {
+          console.log("Clearing navigation attempts after safety window");
+          this.navigationAttempts = [];
+        }
+      }, this.SAFETY_WINDOW_MS);
+      
       return true;
     }
     
@@ -57,5 +69,12 @@ export class NavigationThrottler {
   resetLoopDetection(): void {
     this.loopDetected = false;
     this.navigationAttempts = [];
+  }
+  
+  /**
+   * Get the number of recent navigation attempts
+   */
+  getRecentAttempts(): number {
+    return this.navigationAttempts.length;
   }
 }

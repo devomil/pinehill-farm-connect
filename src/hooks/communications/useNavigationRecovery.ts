@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebug } from '@/hooks/useDebug';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ export function useNavigationRecovery({
   setShowDebugInfo
 }: NavigationRecoveryProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const debug = useDebug('NavigationRecovery', {
     traceLifecycle: true,
     logStateChanges: true
@@ -34,7 +35,9 @@ export function useNavigationRecovery({
     // Check for recovery parameter in URL - this helps break navigation loops
     const urlParams = new URLSearchParams(location.search);
     const isRecoveryMode = urlParams.get('recovery') === 'true';
+    const isMessagesTab = urlParams.get('tab') === 'messages';
     
+    // Special handling for recovery mode
     if (isRecoveryMode) {
       // In recovery mode, we ensure navigation is marked as complete
       navigationComplete.current = true;
@@ -45,13 +48,42 @@ export function useNavigationRecovery({
         setShowDebugInfo(true);
       }
       
-      // Clear recovery parameter but maintain tab parameter
-      if (urlParams.has('recovery')) {
-        urlParams.delete('recovery');
-        const newSearch = urlParams.toString() ? `?${urlParams.toString()}` : '';
-        window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
+      // Clear navigation in progress flag to prevent deadlocks
+      if (navigationInProgress.current) {
+        navigationInProgress.current = false;
+        debug.info("Cleared navigation in progress flag during recovery");
+      }
+      
+      // Don't immediately clear recovery flag - let it help stabilize first
+      if (urlParams.has('ts')) {
+        // After the page has had time to stabilize with recovery mode,
+        // we can clear the recovery flag
+        setTimeout(() => {
+          // Only modify URL if we're still on the same page
+          if (document.location.pathname.includes('communication')) {
+            const newParams = new URLSearchParams(location.search);
+            newParams.delete('recovery');
+            newParams.delete('ts');
+            const newSearch = newParams.toString() ? `?${newParams.toString()}` : '';
+            window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
+            debug.info("Cleared recovery parameters after stabilization");
+          }
+        }, 3000);
       }
       return;
+    }
+    
+    // Special handling for messages tab - if we detect it's causing issues
+    if (isMessagesTab && navigationInProgress.current && !navigationComplete.current) {
+      // If we detect we've been stuck too long trying to load messages tab,
+      // force navigation to complete to break potential loops
+      setTimeout(() => {
+        if (navigationInProgress.current && !navigationComplete.current) {
+          debug.warn("Detected stuck navigation to messages tab, forcing completion");
+          navigationComplete.current = true;
+          navigationInProgress.current = false;
+        }
+      }, 5000);
     }
     
     // Only run this effect if navigation is complete to prevent loops
@@ -78,5 +110,5 @@ export function useNavigationRecovery({
       }
     }
   }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, 
-      navigationInProgress, showDebugInfo, setShowDebugInfo]);
+      navigationInProgress, showDebugInfo, setShowDebugInfo, navigate]);
 }
