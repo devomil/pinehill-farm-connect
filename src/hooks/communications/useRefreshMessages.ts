@@ -6,6 +6,13 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { toast } from 'sonner';
 
 /**
+ * Type guard to safely check if a value is Promise-like
+ */
+function isPromise<T = any>(val: unknown): val is Promise<T> {
+  return Boolean(val) && typeof val === 'object' && 'then' in val && typeof (val as any).then === 'function';
+}
+
+/**
  * Custom hook that provides a centralized way to refresh message-related data
  * across different components without duplicating code or logic.
  */
@@ -57,9 +64,8 @@ export function useRefreshMessages() {
       if (refreshMessages) {
         try {
           const result = refreshMessages();
-          // Safely check if result is a Promise-like object
-          if (typeof result === 'object' && result !== null && 'then' in result && typeof result.then === 'function') {
-            refreshPromises.push(result as Promise<any>);
+          if (isPromise(result)) {
+            refreshPromises.push(result);
           }
         } catch (e) {
           console.error("Error calling refreshMessages:", e);
@@ -82,10 +88,8 @@ export function useRefreshMessages() {
           // Execute the function and check if result is a Promise
           const result = handleRefreshData();
           
-          // Safely check if result is a Promise-like object
-          if (typeof result === 'object' && result !== null && 'then' in result && 
-              typeof result.then === 'function') {
-            refreshPromises.push(result as Promise<any>);
+          if (isPromise(result)) {
+            refreshPromises.push(result);
           }
         } catch (e) {
           console.error("Error calling handleRefreshData:", e);
