@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScheduleEditorState } from "./hooks/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { DateRangeSelector } from "./DateRangeSelector";
 
 interface ScheduleEditorContentProps {
   editorState: ReturnType<typeof import("./hooks/useScheduleEditor").useScheduleEditor>;
@@ -44,6 +45,7 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
     handleDeleteShift,
     handleBulkSchedule,
     toggleSelectionMode,
+    toggleRangeMode,
     toggleDay,
     isDaySelected,
     clearSelectedDays,
@@ -59,6 +61,7 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
           loading={loading}
           selectedCount={selectedCount}
           onToggleSelectionMode={toggleSelectionMode}
+          onToggleRangeMode={toggleRangeMode}
           onSetBulkMode={setBulkMode}
           onReset={onReset}
         />
@@ -80,6 +83,25 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
             Click on calendar days below to select them for scheduling. You can select multiple days.
           </AlertDescription>
         </Alert>
+      )}
+
+      {selectionMode === "range" && (
+        <DateRangeSelector 
+          onDaysSelected={(days) => {
+            clearSelectedDays();
+            // Add all days in range to selection
+            for (const day of days) {
+              const [year, month, dayNum] = day.split('-').map(Number);
+              const date = new Date(year, month - 1, dayNum);
+              toggleDay(date);
+            }
+            
+            // Show the specific days scheduling bar now
+            toggleRangeMode(); // Exit range mode
+            toggleSelectionMode(); // Enter multiple selection mode
+          }}
+          onCancel={toggleRangeMode}
+        />
       )}
 
       {showAdminTools && (
@@ -121,6 +143,7 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
         isDaySelected={isDaySelected}
         onDayToggle={toggleDay}
         selectedCount={selectedCount}
+        hideCalendar={selectionMode === "range"}
       />
       
       {isDialogOpen && editingShift && (

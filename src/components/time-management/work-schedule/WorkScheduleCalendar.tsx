@@ -15,10 +15,11 @@ interface WorkScheduleCalendarProps {
   setSelectedDate: (date: Date | undefined) => void;
   onDateSelected?: (date: Date | undefined) => void;
   onShiftClick?: (shift: WorkShift) => void;
-  selectionMode?: "single" | "multiple";
+  selectionMode?: "single" | "multiple" | "range";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
   selectedCount?: number;
+  hideCalendar?: boolean;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -32,7 +33,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   selectionMode = "single",
   isDaySelected,
   onDayToggle,
-  selectedCount = 0
+  selectedCount = 0,
+  hideCalendar = false
 }) => {
   const [highlightedDates, setHighlightedDates] = useState<Date[]>([]);
   
@@ -85,6 +87,11 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
       />
     );
   };
+  
+  // If calendar is hidden (for range selection mode), don't render it
+  if (hideCalendar) {
+    return null;
+  }
   
   return (
     <Card className="mb-6">

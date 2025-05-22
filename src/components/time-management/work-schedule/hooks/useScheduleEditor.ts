@@ -12,7 +12,7 @@ export const useScheduleEditor = ({
   scheduleData,
   onSave 
 }: UseScheduleEditorProps) => {
-  const [selectionMode, setSelectionMode] = useState<"single" | "multiple">("single");
+  const [selectionMode, setSelectionMode] = useState<"single" | "multiple" | "range">("single");
   
   // Use the component hooks
   const {
@@ -66,10 +66,32 @@ export const useScheduleEditor = ({
       setSelectionMode("multiple");
       // Clear any single date selection when switching to multiple mode
       setSelectedDate(undefined);
-    } else {
+    } else if (selectionMode === "multiple") {
       console.log("Switching to single selection mode");
       setSelectionMode("single");
       clearSelectedDays();
+    } else {
+      // If in range mode, switch to single mode
+      console.log("Switching to single selection mode from range mode");
+      setSelectionMode("single");
+    }
+  };
+
+  // Toggle range selection mode
+  const toggleRangeMode = () => {
+    if (selectionMode === "range") {
+      console.log("Exiting range selection mode");
+      setSelectionMode("single");
+    } else {
+      console.log("Entering range selection mode");
+      setSelectionMode("range");
+      // Clear any selections when switching to range mode
+      setSelectedDate(undefined);
+      clearSelectedDays();
+      // Also clear bulk mode if active
+      if (bulkMode) {
+        setBulkMode(null);
+      }
     }
   };
 
@@ -101,6 +123,7 @@ export const useScheduleEditor = ({
     handleDeleteShift,
     handleBulkSchedule,
     toggleSelectionMode,
+    toggleRangeMode,
     toggleDay,
     isDaySelected,
     clearSelectedDays,
