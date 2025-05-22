@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -105,7 +104,8 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
       return;
     }
     
-    const conflicts = await onCheckConflicts(scheduleData.shifts);
+    // Updated to pass the selectedEmployee as the first parameter
+    const conflicts = await onCheckConflicts(selectedEmployee, scheduleData.shifts);
     
     if (conflicts.length === 0) {
       toast({

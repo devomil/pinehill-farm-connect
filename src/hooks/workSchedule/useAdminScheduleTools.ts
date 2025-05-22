@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { WorkSchedule, WorkShift } from "@/types/workSchedule";
 import { User } from "@/types";
 import { useWeekdayShiftAssignment } from "./tools/useWeekdayShiftAssignment";
@@ -18,9 +18,9 @@ export function useAdminScheduleTools(
   const { autoAssignCoverage: autoCoverage, loading: coverageLoading } = useAutoCoverageAssignment();
 
   // Update loading state based on all sub-hooks
-  useState(() => {
+  useEffect(() => {
     setLoading(weekdayLoading || weekendLoading || conflictLoading || coverageLoading);
-  });
+  }, [weekdayLoading, weekendLoading, conflictLoading, coverageLoading]);
 
   // Wrapper for weekday shift assignment
   const assignWeekdayShifts = useCallback((
@@ -45,11 +45,12 @@ export function useAdminScheduleTools(
     return weekendAssign(scheduleData, employeeId, startDate, endDate, startTime, endTime, onSave);
   }, [scheduleData, onSave, weekendAssign]);
   
-  // Wrapper for time off conflicts check
+  // Wrapper for time off conflicts check - fixed to match expected parameter signature
   const checkTimeOffConflicts = useCallback((
+    employeeId: string,
     shifts: WorkShift[]
   ) => {
-    return conflictCheck(shifts);
+    return conflictCheck(employeeId, shifts);
   }, [conflictCheck]);
   
   // Wrapper for auto-assigning coverage
