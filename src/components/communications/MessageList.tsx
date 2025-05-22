@@ -1,5 +1,5 @@
 
-import React, { useMemo, useEffect, useRef } from "react";
+import React, { useMemo, useEffect, useRef, useState } from "react";
 import { MessageItem } from "./MessageItem";
 import { EmptyMessageState } from "./EmptyMessageState";
 import { MessageSkeleton } from "./MessageSkeleton";
@@ -7,8 +7,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { User } from "@/types";
 import { Communication } from "@/types/communications/communicationTypes";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, AlertCircle } from "lucide-react";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface MessageListProps {
   messages: Communication[];
@@ -41,6 +43,8 @@ export function MessageList({
   const componentMountedAt = useRef(Date.now());
   const refreshAttemptCount = useRef(0);
   const MAX_AUTO_REFRESHES = 5; // Limit auto refreshes
+  const [loadingFailed, setLoadingFailed] = useState(false);
+  const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false);
   
   // Compute a hash of the messages to detect real changes
   const messagesHash = useMemo(() => {
@@ -96,6 +100,23 @@ export function MessageList({
            msg.read_at === null
   ).length || 0, [unreadMessages, currentUser]);
   
+  // Function to handle manual refresh with state tracking
+  const handleManualRefresh = async () => {
+    setIsManuallyRefreshing(true);
+    setLoadingFailed(false);
+    
+    try {
+      await refreshMessages();
+      // Reset counter after successful manual refresh
+      refreshAttemptCount.current = 0;
+    } catch (error) {
+      console.error("Error during manual refresh:", error);
+      setLoadingFailed(true);
+    } finally {
+      setIsManuallyRefreshing(false);
+    }
+  };
+  
   // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
     console.log(`MessageList component mounted at ${new Date().toISOString()}`);
@@ -105,21 +126,27 @@ export function MessageList({
       clearInterval(refreshIntervalRef.current);
     }
     
-    // Initial load only once
+    // Initial load only once - with error handling
     if (!initialLoadRef.current) {
       console.log("Initial message list data load");
       
       // Delay initial refresh to ensure component is fully mounted
-      const initialTimer = setTimeout(() => {
-        refreshMessages();
-        initialLoadRef.current = true;
+      const initialTimer = setTimeout(async () => {
+        try {
+          await refreshMessages();
+        } catch (error) {
+          console.error("Error during initial message load:", error);
+          setLoadingFailed(true);
+        } finally {
+          initialLoadRef.current = true;
+        }
       }, 1500);
       
       return () => clearTimeout(initialTimer);
     }
     
     // Set up refresh interval with much longer timing and limited refreshes
-    const refreshHandler = () => {
+    const refreshHandler = async () => {
       // Don't refresh if we've hit the limit
       if (refreshAttemptCount.current >= MAX_AUTO_REFRESHES) {
         console.log(`Auto-refresh limit reached (${MAX_AUTO_REFRESHES}), stopping automatic refreshes`);
@@ -132,7 +159,14 @@ export function MessageList({
       
       console.log(`Auto-refreshing message list (${refreshAttemptCount.current + 1}/${MAX_AUTO_REFRESHES})`);
       refreshAttemptCount.current++;
-      refreshMessages();
+      
+      try {
+        await refreshMessages();
+        setLoadingFailed(false);
+      } catch (error) {
+        console.error("Error during auto-refresh:", error);
+        // Don't set loading failed for background refreshes
+      }
     };
     
     // Much longer intervals to prevent excessive refreshes
@@ -148,6 +182,30 @@ export function MessageList({
     };
   }, [refreshMessages, isAdmin]);
 
+  // Show loading error state if we've tried and failed to load
+  if (loadingFailed && !isLoading && messages.length === 0) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            There was an issue loading your messages. Please try refreshing.
+            
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                onClick={handleManualRefresh}
+                disabled={isManuallyRefreshing}
+              >
+                {isManuallyRefreshing ? 'Refreshing...' : 'Refresh Messages'}
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   // Loading state
   if (isLoading) {
     return <MessageSkeleton />;
@@ -155,7 +213,7 @@ export function MessageList({
 
   // Empty state
   if (groupedMessages.length === 0) {
-    return <EmptyMessageState />;
+    return <EmptyConversation onRefresh={handleManualRefresh} />;
   }
 
   return (

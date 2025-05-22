@@ -31,17 +31,28 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
     window.sessionStorage.setItem('communication_recovery', 'true');
     
     // Generate a unique recovery URL with timestamp
-    const recoveryUrl = `/communication?tab=announcements&recovery=true&ts=${Date.now()}`;
+    const timestamp = Date.now();
     
-    // Force a clean navigation to announcements tab first
-    navigate(recoveryUrl, { replace: true });
-    toast.success("Resetting navigation state...");
+    // Show toast for user feedback
+    toast.success("Starting navigation recovery...");
+    
+    // First navigate to announcements tab with recovery enabled
+    navigate(`/communication?tab=announcements&recovery=true&ts=${timestamp}`, { replace: true });
     
     // After a delay, we'll try to navigate back to messages tab
     setTimeout(() => {
-      const messagesRecoveryUrl = `/communication?tab=messages&recovery=true&ts=${Date.now()}`;
+      const messagesRecoveryUrl = `/communication?tab=messages&recovery=true&ts=${timestamp + 500}`;
       navigate(messagesRecoveryUrl, { replace: true });
+      toast.success("Completed navigation reset");
     }, 1000);
+  };
+
+  // Handle simple recovery 
+  const handleQuickRecovery = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    attemptRecovery();
+    toast.success("Fixing navigation...");
   };
 
   return (
@@ -55,28 +66,19 @@ export const NavigationWarning: React.FC<NavigationWarningProps> = ({
         </p>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              attemptRecovery();
-              toast.success("Fixing navigation...");
-            }} 
+            onClick={handleQuickRecovery}
             size="sm" 
             variant="outline" 
             className="bg-white"
           >
-            <RefreshCw className="mr-2 h-4 w-4" /> Fix Navigation Issue
+            <RefreshCw className="mr-2 h-4 w-4" /> Quick Fix
           </Button>
           <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              performThoroughRecovery();
-            }}
+            onClick={performThoroughRecovery}
             size="sm"
             variant="default"
           >
-            <ArrowRight className="mr-2 h-4 w-4" /> Force Full Recovery
+            <ArrowRight className="mr-2 h-4 w-4" /> Full Recovery
           </Button>
         </div>
       </AlertDescription>

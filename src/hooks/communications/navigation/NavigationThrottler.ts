@@ -6,10 +6,10 @@ export class NavigationThrottler {
   private lastNavigationTime: number = 0;
   private navigationAttempts: number[] = [];
   private loopDetected: boolean = false;
-  private readonly MAX_ATTEMPTS_WINDOW = 5; // Max attempts in time window
-  private readonly LOOP_DETECTION_THRESHOLD_MS = 2000; // Time window for loop detection
-  private readonly THROTTLE_THRESHOLD_MS = 300; // Min time between navigations
-  private readonly SAFETY_WINDOW_MS = 5000; // Safety window for resetting detection
+  private readonly MAX_ATTEMPTS_WINDOW = 6; // Increased slightly to be more tolerant
+  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Extended window for loop detection
+  private readonly THROTTLE_THRESHOLD_MS = 400; // Increased min time between navigations
+  private readonly SAFETY_WINDOW_MS = 7000; // Extended safety window for resetting detection
 
   /**
    * Track a navigation attempt and check if it forms part of a loop
@@ -37,6 +37,12 @@ export class NavigationThrottler {
         if (this.navigationAttempts.length > 0) {
           console.log("Clearing navigation attempts after safety window");
           this.navigationAttempts = [];
+          
+          // After safety window, also reset loop detection if it was still active
+          if (this.loopDetected) {
+            this.loopDetected = false;
+            console.log("Auto-resetting loop detection after safety window");
+          }
         }
       }, this.SAFETY_WINDOW_MS);
       
@@ -53,7 +59,19 @@ export class NavigationThrottler {
    */
   shouldThrottle(): boolean {
     const now = Date.now();
-    return now - this.lastNavigationTime < this.THROTTLE_THRESHOLD_MS;
+    const timeSinceLastNavigation = now - this.lastNavigationTime;
+    
+    // More aggressive throttling if we have multiple recent attempts
+    const recentAttemptCount = this.navigationAttempts.length;
+    const shouldThrottle = recentAttemptCount > 3 
+      ? timeSinceLastNavigation < (this.THROTTLE_THRESHOLD_MS * 1.5) // Longer throttle on high activity
+      : timeSinceLastNavigation < this.THROTTLE_THRESHOLD_MS; // Normal throttle otherwise
+      
+    if (shouldThrottle && recentAttemptCount > 3) {
+      console.log(`Enhanced throttling applied with ${recentAttemptCount} recent attempts`);
+    }
+    
+    return shouldThrottle;
   }
 
   /**
@@ -69,6 +87,7 @@ export class NavigationThrottler {
   resetLoopDetection(): void {
     this.loopDetected = false;
     this.navigationAttempts = [];
+    console.log("Navigation throttler manually reset");
   }
   
   /**
@@ -76,5 +95,22 @@ export class NavigationThrottler {
    */
   getRecentAttempts(): number {
     return this.navigationAttempts.length;
+  }
+  
+  /**
+   * Clear old navigation attempts that are no longer relevant
+   */
+  cleanupOldAttempts(): void {
+    const now = Date.now();
+    const previousLength = this.navigationAttempts.length;
+    
+    this.navigationAttempts = this.navigationAttempts.filter(
+      time => now - time < this.LOOP_DETECTION_THRESHOLD_MS
+    );
+    
+    const removed = previousLength - this.navigationAttempts.length;
+    if (removed > 0) {
+      console.log(`Cleaned up ${removed} old navigation attempts`);
+    }
   }
 }

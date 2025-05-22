@@ -1,17 +1,32 @@
 
-import React from "react";
-import { MessageCircle } from "lucide-react";
+import React from 'react';
+import { MessageSquare, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export function EmptyConversation() {
+interface EmptyConversationProps {
+  onRefresh?: () => void;
+}
+
+export function EmptyConversation({ onRefresh }: EmptyConversationProps) {
   return (
-    <div className="flex items-center justify-center h-96">
-      <div className="text-center">
-        <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-lg font-medium">Select an employee to view messages</p>
-        <p className="text-muted-foreground">
-          Your conversations will appear here
-        </p>
-      </div>
+    <div className="flex flex-col items-center justify-center p-8 text-center h-64 border border-dashed rounded-md bg-muted/20">
+      <MessageSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+      <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+      <p className="text-muted-foreground mb-4">
+        Select an employee from the list to start a conversation or view your existing messages.
+      </p>
+      
+      {onRefresh && (
+        <Button 
+          variant="outline" 
+          onClick={onRefresh} 
+          className="mt-2"
+          size="sm"
+        >
+          <RefreshCw className="h-3 w-3 mr-2" />
+          Refresh Messages
+        </Button>
+      )}
     </div>
   );
 }
