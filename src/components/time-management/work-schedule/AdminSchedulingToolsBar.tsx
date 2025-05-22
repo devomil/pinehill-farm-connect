@@ -18,7 +18,6 @@ interface AdminSchedulingToolsBarProps {
   currentMonth: Date;
   scheduleData: WorkSchedule | null;
   availableEmployees: User[];
-  // Updated props to match our new hooks pattern
   actions: AdminScheduleActions;
   onAddSpecificDayShift?: (
     employeeId: string,
@@ -55,7 +54,6 @@ export const AdminSchedulingToolsBar: React.FC<AdminSchedulingToolsBarProps> = (
     });
   };
   
-  // Updated to use the new actions pattern
   const handleAssignWeekday = () => {
     if (!selectedDays.length) {
       toast({

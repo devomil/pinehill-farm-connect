@@ -30,7 +30,7 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
   // Filter out the currently selected employee
   const availableEmployees: User[] = employees || [];
   
-  // Use our refactored hook - now it returns actions and loading state
+  // Use our refactored hook - it returns actions and loading state
   const { actions, loading } = useAdminScheduleTools({
     scheduleData,
     onSave: (updatedSchedule) => {
