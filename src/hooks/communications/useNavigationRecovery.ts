@@ -32,6 +32,10 @@ export function useNavigationRecovery({
   
   // Track if we've already processed a tab update for this render
   const hasProcessedTabUpdate = useRef(false);
+  // Track if we've refreshed data for this tab
+  const hasRefreshedData = useRef(false);
+  // Track the number of navigation recovery attempts
+  const recoveryAttempts = useRef(0);
 
   // Effect to sync the URL with the active tab on mount and location changes
   useEffect(() => {
@@ -50,36 +54,44 @@ export function useNavigationRecovery({
       // Only use valid tab values
       const newTab = tabParam === 'messages' ? "messages" : "announcements";
       
-      // CRITICAL: If there's a tab parameter but active tab doesn't match, fix it immediately
+      // If there's a tab parameter but active tab doesn't match, fix it
       if (newTab !== activeTab) {
-        debug.info(`Tab parameter (${newTab}) doesn't match active tab (${activeTab}). Forcing sync.`);
+        debug.info(`Tab parameter (${newTab}) doesn't match active tab (${activeTab}). Syncing.`);
         
         // Set the active tab to match URL - this is crucial
         setActiveTab(newTab);
         hasProcessedTabUpdate.current = true;
         
-        // If we're in recovery mode, we need more assertive handling
+        // If we're in recovery mode, handle with more care
         if (recoveryRequested) {
-          debug.info("Recovery mode detected, ensuring URL and tab state are in sync");
+          debug.info("Recovery mode detected, ensuring state stability");
           
-          // Hard sync to match URL parameter - overriding any UI state
-          setTimeout(() => {
-            const updatedParams = new URLSearchParams(location.search);
-            updatedParams.set('tab', newTab);
-            updatedParams.set('recovery', 'true');
-            const path = `${location.pathname}?${updatedParams.toString()}`;
-            
-            if (location.pathname + location.search !== path) {
-              debug.info(`Forced URL update in recovery mode: ${path}`);
-              navigate(path, { replace: true });
-            }
-          }, 100);
+          // Increment recovery attempts
+          recoveryAttempts.current++;
+          
+          // If we've tried recovery too many times, force navigation to announcements
+          if (recoveryAttempts.current > 3 && newTab === 'messages') {
+            debug.warn(`Too many recovery attempts (${recoveryAttempts.current}), redirecting to announcements`);
+            setTimeout(() => {
+              navigate('/communication?tab=announcements', { replace: true });
+              toast.warning("Navigation issues detected - redirecting to announcements tab", {
+                duration: 4000
+              });
+            }, 500);
+            return;
+          }
+          
+          // Mark navigation as complete to prevent loops
+          navigationComplete.current = true;
+          navigationInProgress.current = false;
         }
-        
-        // Mark navigation as complete to prevent loops
-        navigationComplete.current = true;
-        navigationInProgress.current = false;
       }
+    } else if (location.pathname === '/communication' && !tabParam) {
+      // If we're on the communication page with no tab param, default to announcements
+      debug.info("No tab parameter found, defaulting to announcements");
+      navigate('/communication?tab=announcements', { replace: true });
+      setActiveTab('announcements');
+      hasProcessedTabUpdate.current = true;
     }
     
     // Special handling for recovery mode
@@ -99,10 +111,8 @@ export function useNavigationRecovery({
         debug.info("Cleared navigation in progress flag during recovery");
       }
       
-      // Don't immediately clear recovery flag - let it help stabilize first
+      // After a reasonable delay, clear the recovery flag
       if (urlParams.has('ts')) {
-        // After the page has had time to stabilize with recovery mode,
-        // we can clear the recovery flag
         setTimeout(() => {
           // Only modify URL if we're still on the same page
           if (document.location.pathname.includes('communication')) {
@@ -115,28 +125,43 @@ export function useNavigationRecovery({
             newParams.set('tab', tabValue);
             
             const newSearch = newParams.toString() ? `?${newParams.toString()}` : '';
+            // Use history.replaceState to avoid triggering new navigation events
             window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
             debug.info("Cleared recovery parameters after stabilization");
+            
+            // Reset recovery attempts counter
+            recoveryAttempts.current = 0;
           }
-        }, 8000); // Extended time to ensure stable before removing recovery flag
+        }, 5000);
       }
     }
 
-    // Reset the tab update flag on next frame
-    requestAnimationFrame(() => {
+    // Reset the tab update flag after processing
+    setTimeout(() => {
       hasProcessedTabUpdate.current = false;
-    });
+    }, 100);
 
-    // Only perform refresh if navigation is complete and we're on messages tab
-    if (navigationComplete.current && tabParam === 'messages' && activeTab === 'messages' && !navigationInProgress.current) {
-      // If switching to messages tab via direct URL, ensure messages are refreshed
-      // But use a longer delay to avoid excessive refreshes
+    // Only perform refresh if navigation is complete, we're on messages tab, and we haven't refreshed already
+    if (navigationComplete.current && 
+        tabParam === 'messages' && 
+        activeTab === 'messages' && 
+        !navigationInProgress.current && 
+        !hasRefreshedData.current) {
+        
+      // Set this flag to prevent multiple refreshes
+      hasRefreshedData.current = true;
+      
+      // Use a longer delay to avoid excessive refreshes
       const refreshTimer = setTimeout(() => {
         debug.info("Refreshing messages data after URL sync");
         refreshMessages().catch(err => {
           console.error("Error refreshing messages during URL sync:", err);
-          toast.error("Failed to load messages");
         });
+        
+        // Reset this flag after some time
+        setTimeout(() => {
+          hasRefreshedData.current = false;
+        }, 10000);
       }, 1500);
       
       return () => clearTimeout(refreshTimer);

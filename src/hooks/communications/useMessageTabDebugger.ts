@@ -11,9 +11,11 @@ export function useMessageTabDebugger(isActive: boolean) {
   const debug = createDebugContext('MessageTabDebugger');
   const location = useLocation();
   const mountCount = useRef(0);
+  const initialMountCompleted = useRef(false);
   const lastQueryParams = useRef<URLSearchParams | null>(null);
   const mountTime = useRef<number>(Date.now());
   const lastError = useRef<Error | null>(null);
+  const lastDirectoryRefresh = useRef<number | null>(null);
   const [tabMetrics, setTabMetrics] = useState({
     avgMountTime: 0,
     hasEverMounted: false,
@@ -29,10 +31,18 @@ export function useMessageTabDebugger(isActive: boolean) {
   
   // Monitor mount/unmount cycles to detect instability
   useEffect(() => {
+    // Skip monitoring if not active
     if (!isActive) return;
     
     try {
-      mountCount.current += 1;
+      // Only count mounts after initial render has settled
+      if (initialMountCompleted.current) {
+        mountCount.current += 1;
+      } else {
+        initialMountCompleted.current = true;
+        console.log("Initial mount of message tab completed");
+      }
+      
       mountTime.current = Date.now();
       
       debug.info(`Messages tab mounted (count: ${mountCount.current})`, {
@@ -72,11 +82,17 @@ export function useMessageTabDebugger(isActive: boolean) {
       // Store current params for next comparison
       lastQueryParams.current = urlParams;
       
-      // Show toast if there have been excessive mounts in short succession
-      if (mountCount.current > 3) {
+      // Track directory refresh time
+      if (mountCount.current === 1 || mountCount.current % 10 === 0) {
+        lastDirectoryRefresh.current = Date.now();
+      }
+      
+      // Show toast only if we have excessive mounts in short succession
+      // but not in recovery mode to avoid bothering the user
+      if (mountCount.current > 10 && !isRecoveryMode) {
         debug.warn(`Messages tab mounted ${mountCount.current} times, potential navigation loop`);
         
-        if (mountCount.current > 5 && !isRecoveryMode) {
+        if (mountCount.current > 20 && !isRecoveryMode) {
           // This is a serious problem, we should try to recover
           toast.error("Navigation issue detected", {
             id: 'message-tab-recovery-needed',
@@ -92,6 +108,9 @@ export function useMessageTabDebugger(isActive: boolean) {
     }
     
     return () => {
+      // Only track unmounts if we're monitoring the active tab
+      if (!isActive) return;
+      
       try {
         const unmountTime = Date.now();
         const duration = unmountTime - mountTime.current;
@@ -110,7 +129,7 @@ export function useMessageTabDebugger(isActive: boolean) {
         }));
         
         // Alert if component unmounted very quickly
-        if (duration < 500) {
+        if (duration < 500 && mountCount.current > 3) {
           debug.warn(`Messages tab unmounted suspiciously quickly (${duration}ms)`, {
             navigationCount: mountCount.current,
             path: location.pathname + location.search
@@ -129,6 +148,7 @@ export function useMessageTabDebugger(isActive: boolean) {
       tabParam: new URLSearchParams(location.search).get('tab'),
       mountedAt: mountTime.current,
       errorState: lastError.current ? 'error' : 'ok',
+      lastDirectoryRefresh: lastDirectoryRefresh.current,
       avgTimeInTab: Math.round(tabMetrics.avgMountTime),
       hasEverMounted: tabMetrics.hasEverMounted
     },

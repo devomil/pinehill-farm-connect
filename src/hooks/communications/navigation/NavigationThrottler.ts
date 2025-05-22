@@ -1,4 +1,3 @@
-
 /**
  * Class that tracks navigation attempts and detects navigation loops
  */
@@ -6,10 +5,10 @@ export class NavigationThrottler {
   private lastNavigationTime: number = 0;
   private navigationAttempts: number[] = [];
   private loopDetected: boolean = false;
-  private readonly MAX_ATTEMPTS_WINDOW = 4; // Reduced from 6 to be more conservative
-  private readonly LOOP_DETECTION_THRESHOLD_MS = 5000; // Extended window for loop detection
-  private readonly THROTTLE_THRESHOLD_MS = 800; // Increased min time between navigations
-  private readonly SAFETY_WINDOW_MS = 10000; // Extended safety window for resetting detection
+  private readonly MAX_ATTEMPTS_WINDOW = 3; // Reduced threshold for earlier detection
+  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Shorter window for faster detection
+  private readonly THROTTLE_THRESHOLD_MS = 1000; // Increased min time between navigations
+  private readonly SAFETY_WINDOW_MS = 15000; // Extended safety window for resetting detection
 
   /**
    * Track a navigation attempt and check if it forms part of a loop
@@ -33,16 +32,13 @@ export class NavigationThrottler {
       
       // Safety mechanism: Clear attempts array to prevent continuous loop detection
       // after the issue has been addressed
+      this.navigationAttempts = [];
+      
+      // Set a timer to auto-reset loop detection
       setTimeout(() => {
-        if (this.navigationAttempts.length > 0) {
-          console.log("Clearing navigation attempts after safety window");
-          this.navigationAttempts = [];
-          
-          // After safety window, also reset loop detection if it was still active
-          if (this.loopDetected) {
-            this.loopDetected = false;
-            console.log("Auto-resetting loop detection after safety window");
-          }
+        if (this.loopDetected) {
+          console.log("Auto-resetting loop detection after safety window");
+          this.loopDetected = false;
         }
       }, this.SAFETY_WINDOW_MS);
       
@@ -66,16 +62,12 @@ export class NavigationThrottler {
     
     // Progressively increase throttling as attempts increase
     let throttleTime = this.THROTTLE_THRESHOLD_MS;
-    if (recentAttemptCount > 2) {
-      // Exponentially increase throttle time based on attempt count
-      throttleTime = this.THROTTLE_THRESHOLD_MS * (1 + (recentAttemptCount - 2));
+    if (recentAttemptCount > 1) {
+      // Double throttle time for each additional attempt
+      throttleTime = this.THROTTLE_THRESHOLD_MS * recentAttemptCount;
     }
     
     const shouldThrottle = timeSinceLastNavigation < throttleTime;
-      
-    if (shouldThrottle && recentAttemptCount > 2) {
-      console.log(`Enhanced throttling applied with ${recentAttemptCount} recent attempts - waiting ${throttleTime}ms`);
-    }
     
     return shouldThrottle;
   }
