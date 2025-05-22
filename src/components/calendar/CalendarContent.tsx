@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,10 @@ export function CalendarContent({
   clickable = false,
   viewAllUrl,
 }: CalendarContentProps) {
-  const { timeOffRequests } = useTimeManagement();
+  // Only try to access the TimeManagement context if we have a currentUser
+  // This prevents errors when the context is not available
+  const timeManagementContext = useTimeManagement();
+  const timeOffRequests = timeManagementContext?.timeOffRequests || [];
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
   
   // Use our custom hook to manage calendar events

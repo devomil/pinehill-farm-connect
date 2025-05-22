@@ -8,7 +8,7 @@ import { processCalendarEvents, CalendarEventMap } from "@/components/calendar/u
 import { format } from "date-fns";
 
 export const useCalendarEvents = (
-  currentUser: User,
+  currentUser: User | undefined,
   currentMonth: Date,
   includeDeclinedRequests: boolean = false,
   timeOffRequests: TimeOffRequest[]
@@ -34,6 +34,12 @@ export const useCalendarEvents = (
 
   // Fetch work schedules for the month view
   useEffect(() => {
+    // Guard against undefined currentUser
+    if (!currentUser) {
+      console.log("useCalendarEvents: currentUser is undefined, skipping fetch");
+      return;
+    }
+    
     const fetchWorkSchedules = async () => {
       const monthStr = format(currentMonth, "yyyy-MM");
       
@@ -68,6 +74,9 @@ export const useCalendarEvents = (
     };
 
     const fetchShiftCoverage = async () => {
+      // Guard against undefined currentUser
+      if (!currentUser) return;
+      
       try {
         const { data, error } = await supabase
           .from('shift_coverage_requests')
@@ -88,7 +97,7 @@ export const useCalendarEvents = (
 
     fetchWorkSchedules();
     fetchShiftCoverage();
-  }, [currentUser.id, currentMonth, includeDeclinedRequests]);
+  }, [currentUser, currentMonth, includeDeclinedRequests]);
 
   return {
     calendarEvents,

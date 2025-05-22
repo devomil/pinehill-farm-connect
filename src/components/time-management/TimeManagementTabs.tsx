@@ -49,8 +49,8 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
       <ErrorAlertBar error={error} messagesError={messagesError} onRetry={handleRetry} />
       <DebugPanel />
       
-      {/* Add Schedule Widget at the top */}
-      <ScheduleWidget currentUser={currentUser} />
+      {/* Add Schedule Widget at the top with proper currentUser prop */}
+      {currentUser && <ScheduleWidget currentUser={currentUser} />}
       
       <Tabs value={activeTab} className="mt-4">
         <TabNavigation isAdmin={isAdmin} />

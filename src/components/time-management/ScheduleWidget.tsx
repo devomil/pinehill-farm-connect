@@ -17,7 +17,7 @@ import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ScheduleWidgetProps {
-  currentUser: User;
+  currentUser?: User;
   className?: string;
   isCustomizing?: boolean;
   allEmployeeShifts?: Map<string, WorkShift[]>;
@@ -32,7 +32,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
-  const { timeOffRequests } = useTimeManagement();
+  const { timeOffRequests = [] } = useTimeManagement();
   const { currentUser: authUser } = useAuth();
   const isAdmin = authUser?.role === "admin";
   
@@ -51,9 +51,10 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
       selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None",
       eventsCount: calendarEvents?.size || 0,
       isCustomizing,
-      hasShifts: allEmployeeShifts ? allEmployeeShifts.size : 0
+      hasShifts: allEmployeeShifts ? allEmployeeShifts.size : 0,
+      currentUser: currentUser ? currentUser.id : "undefined"
     });
-  }, [currentMonth, selectedDate, calendarEvents, isCustomizing, allEmployeeShifts]);
+  }, [currentMonth, selectedDate, calendarEvents, isCustomizing, allEmployeeShifts, currentUser]);
   
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
