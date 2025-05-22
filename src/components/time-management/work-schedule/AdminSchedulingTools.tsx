@@ -4,6 +4,7 @@ import { WorkSchedule } from "@/types/workSchedule";
 import { AdminSchedulingToolsBar } from "./AdminSchedulingToolsBar";
 import { useAdminScheduleTools } from "@/hooks/workSchedule/useAdminScheduleTools";
 import { User } from "@/types";
+import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory"; 
 
 interface AdminSchedulingToolsProps {
   selectedEmployee: string | null;
@@ -23,8 +24,11 @@ export const AdminSchedulingTools: React.FC<AdminSchedulingToolsProps> = ({
   scheduleData,
   onAddSpecificDayShift
 }) => {
-  // Mock available employees - in a real app, this would come from a context or prop
-  const availableEmployees: User[] = [];
+  // Get employees from the directory
+  const { employees } = useEmployeeDirectory();
+  
+  // Filter out the currently selected employee
+  const availableEmployees: User[] = employees || [];
   
   const {
     assignWeekdayShifts,
