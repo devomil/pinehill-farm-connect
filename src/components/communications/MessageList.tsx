@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useEmployeeName } from "@/hooks/employee/useEmployeeName";
@@ -52,7 +51,8 @@ export function MessageList({
   const unreadCount = useUnreadMessageCount(unreadMessages);
   
   // Auto refresh messages on mount or when unread count changes
-  useMessageRefreshEffect(onRefresh, unreadCount);
+  // Passing only onRefresh as the useMessageRefreshEffect hook expects just one argument
+  useMessageRefreshEffect(onRefresh);
 
   // Handle refresh action
   const handleRefresh = useCallback(async (): Promise<void> => {
