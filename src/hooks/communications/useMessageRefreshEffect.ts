@@ -16,7 +16,7 @@ export function useMessageRefreshEffect({
   const initialLoadRef = useRef<boolean>(false);
   const componentMountedAt = useRef(Date.now());
   const refreshAttemptCount = useRef(0);
-  const MAX_AUTO_REFRESHES = 5; // Limit auto refreshes
+  const MAX_AUTO_REFRESHES = 3; // Reduced from 5 to 3
   
   // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
@@ -27,7 +27,7 @@ export function useMessageRefreshEffect({
       clearInterval(refreshIntervalRef.current);
     }
     
-    // Initial load only once - with error handling
+    // Initial load only once - with error handling and a longer delay
     if (!initialLoadRef.current) {
       console.log("Initial message list data load");
       
@@ -41,7 +41,7 @@ export function useMessageRefreshEffect({
         } finally {
           initialLoadRef.current = true;
         }
-      }, 1500);
+      }, 2500); // Increased from 1500 to 2500
       
       return () => clearTimeout(initialTimer);
     }
@@ -71,7 +71,8 @@ export function useMessageRefreshEffect({
     };
     
     // Much longer intervals to prevent excessive refreshes
-    const interval = window.setInterval(refreshHandler, isAdmin ? 240000 : 300000); // Every 4-5 minutes
+    // These are extremely extended intervals to minimize load
+    const interval = window.setInterval(refreshHandler, isAdmin ? 360000 : 480000); // Every 6-8 minutes (greatly increased)
     
     refreshIntervalRef.current = interval as unknown as number;
     

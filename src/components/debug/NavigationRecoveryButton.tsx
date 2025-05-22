@@ -38,7 +38,7 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
     // Always force navigation to announcements tab first to reset UI state
     navigate('/communication?tab=announcements&recovery=true', { replace: true });
     
-    // After a short delay, allow navigation back to messages tab with recovery mode
+    // After a longer delay, allow navigation back to messages tab with recovery mode
     setTimeout(() => {
       // Force the active tab in the URL
       const messagesRecoveryUrl = `/communication?tab=messages&recovery=true&ts=${timestamp}`;
@@ -47,8 +47,8 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
       // After a bit more delay, update the toast
       setTimeout(() => {
         toast.success("Navigation recovery complete", { id: "recovery-toast" });
-      }, 300);
-    }, 1500); // Increased delay for stability
+      }, 500);
+    }, 2500); // Increased delay for stability
   };
 
   return (

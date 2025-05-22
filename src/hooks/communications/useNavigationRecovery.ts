@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebug } from '@/hooks/useDebug';
 import { toast } from 'sonner';
@@ -28,6 +29,9 @@ export function useNavigationRecovery({
     traceLifecycle: true,
     logStateChanges: true
   });
+  
+  // Track if we've already processed a tab update for this render
+  const hasProcessedTabUpdate = useRef(false);
 
   // Effect to sync the URL with the active tab on mount and location changes
   useEffect(() => {
@@ -35,6 +39,11 @@ export function useNavigationRecovery({
     const urlParams = new URLSearchParams(location.search);
     const recoveryRequested = urlParams.get('recovery') === 'true';
     const tabParam = urlParams.get('tab');
+    
+    // Skip processing if we've already done it for this render
+    if (hasProcessedTabUpdate.current) {
+      return;
+    }
     
     // Force sync tab from URL parameter
     if (tabParam) {
@@ -47,6 +56,7 @@ export function useNavigationRecovery({
         
         // Set the active tab to match URL - this is crucial
         setActiveTab(newTab);
+        hasProcessedTabUpdate.current = true;
         
         // If we're in recovery mode, we need more assertive handling
         if (recoveryRequested) {
@@ -108,18 +118,28 @@ export function useNavigationRecovery({
             window.history.replaceState(null, '', `${location.pathname}${newSearch}`);
             debug.info("Cleared recovery parameters after stabilization");
           }
-        }, 5000); // Extended time to ensure stable before removing recovery flag
+        }, 8000); // Extended time to ensure stable before removing recovery flag
       }
     }
+
+    // Reset the tab update flag on next frame
+    requestAnimationFrame(() => {
+      hasProcessedTabUpdate.current = false;
+    });
 
     // Only perform refresh if navigation is complete and we're on messages tab
     if (navigationComplete.current && tabParam === 'messages' && activeTab === 'messages' && !navigationInProgress.current) {
       // If switching to messages tab via direct URL, ensure messages are refreshed
-      debug.info("Refreshing messages data after URL sync");
-      refreshMessages().catch(err => {
-        console.error("Error refreshing messages during URL sync:", err);
-        toast.error("Failed to load messages");
-      });
+      // But use a longer delay to avoid excessive refreshes
+      const refreshTimer = setTimeout(() => {
+        debug.info("Refreshing messages data after URL sync");
+        refreshMessages().catch(err => {
+          console.error("Error refreshing messages during URL sync:", err);
+          toast.error("Failed to load messages");
+        });
+      }, 1500);
+      
+      return () => clearTimeout(refreshTimer);
     }
   }, [location, debug, activeTab, setActiveTab, navigationComplete, refreshMessages, 
       navigationInProgress, showDebugInfo, setShowDebugInfo, navigate]);
