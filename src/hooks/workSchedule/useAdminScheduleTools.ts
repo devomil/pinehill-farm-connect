@@ -6,7 +6,7 @@ import { useWeekdayShiftAssignment } from "./tools/useWeekdayShiftAssignment";
 import { useWeekendShiftAssignment } from "./tools/useWeekendShiftAssignment";
 import { useTimeOffConflictCheck } from "./tools/useTimeOffConflictCheck";
 import { useAutoCoverageAssignment } from "./tools/useAutoCoverageAssignment";
-import { AdminScheduleHookOptions, AdminScheduleHookResult } from "./types/adminScheduleTypes";
+import { AdminScheduleHookOptions, AdminScheduleHookResult, AdminScheduleActions } from "./types/adminScheduleTypes";
 
 export function useAdminScheduleTools(
   options: AdminScheduleHookOptions
@@ -77,11 +77,16 @@ export function useAdminScheduleTools(
     return autoCoverage(scheduleData, gapDate, startTime, endTime, availableEmployees);
   }, [scheduleData, autoCoverage]);
 
-  return {
+  // Create actions object that contains all action functions
+  const actions: AdminScheduleActions = {
     assignWeekdayShifts,
     assignWeekendShifts,
     checkTimeOffConflicts,
-    autoAssignCoverage,
+    autoAssignCoverage
+  };
+
+  return {
+    actions,
     loading
   };
 }

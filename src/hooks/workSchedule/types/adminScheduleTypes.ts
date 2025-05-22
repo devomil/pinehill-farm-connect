@@ -38,7 +38,8 @@ export interface AdminScheduleHookOptions {
   onSave: (schedule: WorkSchedule) => void;
 }
 
-export interface AdminScheduleHookResult extends AdminScheduleActions {
+export interface AdminScheduleHookResult {
+  actions: AdminScheduleActions;
   loading: boolean;
 }
 
