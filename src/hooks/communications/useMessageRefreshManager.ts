@@ -19,6 +19,7 @@ export function useMessageRefreshManager(
   const MAX_REFRESHES_PER_SESSION = 10; // Reduced from 20 to 10
   const FORCED_COOLDOWN_TIME = 300000; // 5 minutes forced cooldown after MAX_REFRESHES reached
   const loadingToastShown = useRef<boolean>(false);
+  const toastIdRef = useRef<string | null>(null);
 
   // Track when we hit refresh limit
   const refreshLimitHitTime = useRef<number | null>(null);
@@ -96,7 +97,11 @@ export function useMessageRefreshManager(
     lastRefreshTime.current = now;
     refreshCount.current++;
     
-    loadingToastShown.current = true; // Track that we've shown a loading indicator
+    // Only show loading indicators on intentional manual refreshes
+    // And only when we're on the communications or time page
+    const currentPath = window.location.pathname;
+    const onRelevantPage = currentPath === '/time' || currentPath === '/communication';
+    loadingToastShown.current = onRelevantPage;
     
     return refetch().finally(() => {
       // Much longer cooldown to prevent immediate subsequent refreshes
@@ -111,6 +116,11 @@ export function useMessageRefreshManager(
     if (refreshDebounceTimer.current !== null) {
       clearTimeout(refreshDebounceTimer.current);
       refreshDebounceTimer.current = null;
+    }
+    
+    // Clear any active toast
+    if (toastIdRef.current) {
+      // We'd dismiss the toast here if we had access to the toast function
     }
   }, []);
 

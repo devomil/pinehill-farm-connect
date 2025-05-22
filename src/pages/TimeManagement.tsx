@@ -6,12 +6,19 @@ import { ErrorAlert } from "@/components/time-management/ErrorAlert";
 import { TimeManagementHeader } from "@/components/time-management/TimeManagementHeader";
 import { TimeManagementTabs } from "@/components/time-management/TimeManagementTabs";
 import { TimeManagementProvider, useTimeManagement } from "@/contexts/timeManagement";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User } from "@/types";
+import { dismissAllToasts } from "@/utils/toastCleanup";
 
 export default function TimeManagement() {
   const { currentUser } = useAuth();
   const pageLoadRef = useRef(false);
+  
+  // When the Time Management page mounts, dismiss any existing toasts
+  // that might be lingering from other pages
+  useEffect(() => {
+    dismissAllToasts();
+  }, []);
   
   useEffect(() => {
     if (!pageLoadRef.current && currentUser) {
@@ -58,6 +65,22 @@ const TimeManagementContent: React.FC = () => {
   const refreshCountRef = useRef(0);
   const refreshTimeoutRef = useRef<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const toastIdRef = useRef<string | null>(null);
+  
+  // Clear any lingering toasts on mount
+  useEffect(() => {
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+      toastIdRef.current = null;
+    }
+    
+    return () => {
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
+    };
+  }, []);
   
   useEffect(() => {
     // Guard against undefined currentUser
@@ -118,6 +141,12 @@ const TimeManagementContent: React.FC = () => {
         window.clearTimeout(refreshTimeoutRef.current);
         refreshTimeoutRef.current = null;
       }
+      
+      // Clear any lingering toasts on unmount
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
     };
   }, [currentUser, error, messagesError, forceRefreshData, allEmployees, lastSaveTime, setLastSaveTime]);
   
@@ -141,12 +170,33 @@ const TimeManagementContent: React.FC = () => {
       return;
     }
     
-    toast({
-      description: "Refreshing time management data...",
-      variant: "default"
-    });
+    // Clear any existing toast
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+    }
+    
+    // Show a new toast for this refresh
+    toastIdRef.current = toast.loading("Refreshing time management data...").toString();
+    
     setLastSaveTime(now);
-    forceRefreshData();
+    forceRefreshData()
+      .then(() => {
+        // Update toast on success
+        if (toastIdRef.current) {
+          toast.success("Data refreshed successfully", { 
+            id: toastIdRef.current,
+            duration: 2000
+          });
+          toastIdRef.current = null;
+        }
+      })
+      .catch(() => {
+        // Update toast on failure
+        if (toastIdRef.current) {
+          toast.error("Failed to refresh data", { id: toastIdRef.current });
+          toastIdRef.current = null;
+        }
+      });
   };
 
   return (

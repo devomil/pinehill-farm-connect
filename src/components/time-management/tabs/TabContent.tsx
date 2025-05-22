@@ -1,3 +1,4 @@
+
 import React from "react";
 import { User } from "@/types";
 import { TabsContent } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
 import { WorkScheduleTab } from "@/components/time-management/work-schedule";
 import { useTimeManagement } from "@/contexts/timeManagement";
+import { toast } from "sonner";
 
 interface TabContentProps {
   currentUser: User;
@@ -30,13 +32,26 @@ export const TabContent: React.FC<TabContentProps> = ({ currentUser, isAdmin }) 
 
   // Keep a ref to track if the component is mounted to prevent navigation loops
   const isMounted = React.useRef(true);
+  const toastIdRef = React.useRef<string | null>(null);
   
-  // Clean up effect to track component mount status
+  // Clean up effect to track component mount status and clear any pending toasts
   React.useEffect(() => {
     isMounted.current = true;
     
+    // Clear any existing toast when the component mounts
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+      toastIdRef.current = null;
+    }
+    
     return () => {
       isMounted.current = false;
+      
+      // Clear any remaining toast when the component unmounts
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
     };
   }, []);
   

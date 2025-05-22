@@ -1,5 +1,6 @@
 
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 interface RefreshEffectOptions {
   refreshMessages: () => Promise<void>;
@@ -18,10 +19,17 @@ export function useMessageRefreshEffect({
   const refreshAttemptCount = useRef(0);
   const MAX_AUTO_REFRESHES = 1; // Reduced to only 1 auto-refresh
   const loadingToastShown = useRef<boolean>(false);
+  const toastIdRef = useRef<string | null>(null);
   
   // Auto-refresh messages with much less frequency to reduce server load
   useEffect(() => {
     console.log(`MessageList component mounted at ${new Date().toISOString()}`);
+    
+    // Clear any existing toast on component mount
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+      toastIdRef.current = null;
+    }
     
     // Clear any existing interval when component re-renders
     if (refreshIntervalRef.current !== null) {
@@ -36,20 +44,58 @@ export function useMessageRefreshEffect({
       const initialTimer = setTimeout(async () => {
         try {
           if (!loadingToastShown.current) {
-            // Avoid showing loading toast on every refresh
-            loadingToastShown.current = true;
+            // Only show loading toast on time management page
+            if (window.location.pathname === '/time') {
+              toastIdRef.current = toast.loading("Loading messages...").toString();
+              loadingToastShown.current = true;
+              
+              // Auto-dismiss after 5 seconds to prevent stuck toasts
+              setTimeout(() => {
+                if (toastIdRef.current) {
+                  toast.dismiss(toastIdRef.current);
+                  toastIdRef.current = null;
+                  loadingToastShown.current = false;
+                }
+              }, 5000);
+            }
           }
           
           await refreshMessages();
+          
+          // Update toast with success if still active
+          if (toastIdRef.current && window.location.pathname === '/time') {
+            toast.success("Messages loaded successfully", {
+              id: toastIdRef.current,
+              duration: 2000
+            });
+            toastIdRef.current = null;
+            loadingToastShown.current = false;
+          }
         } catch (error) {
           console.error("Error during initial message load:", error);
           setLoadingFailed(true);
+          
+          // Update toast with error if still active
+          if (toastIdRef.current && window.location.pathname === '/time') {
+            toast.error("Failed to load messages", {
+              id: toastIdRef.current
+            });
+            toastIdRef.current = null;
+          }
         } finally {
           initialLoadRef.current = true;
+          loadingToastShown.current = false;
         }
       }, 3000); // Increased further to 3000ms
       
-      return () => clearTimeout(initialTimer);
+      return () => {
+        clearTimeout(initialTimer);
+        // Clear any active toast
+        if (toastIdRef.current) {
+          toast.dismiss(toastIdRef.current);
+          toastIdRef.current = null;
+        }
+      };
     }
     
     // Set up refresh interval with much longer timing and limited refreshes
@@ -85,6 +131,12 @@ export function useMessageRefreshEffect({
       console.log(`MessageList component unmounting after ${Date.now() - componentMountedAt.current}ms`);
       if (refreshIntervalRef.current !== null) {
         clearInterval(refreshIntervalRef.current);
+      }
+      
+      // Clear any active toast on unmount
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
       }
     };
   }, [refreshMessages, isAdmin, setLoadingFailed]);
