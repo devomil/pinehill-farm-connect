@@ -53,11 +53,16 @@ export function useRefreshMessages() {
       // Always refresh messages
       const refreshPromises: Promise<any>[] = [];
       
+      // Safely handle refreshMessages which might return void or a Promise
       if (refreshMessages) {
-        const refreshMessagesPromise = refreshMessages();
-        // Check if the result is a Promise without using instanceof
-        if (refreshMessagesPromise && typeof refreshMessagesPromise.then === 'function') {
-          refreshPromises.push(refreshMessagesPromise);
+        try {
+          const result = refreshMessages();
+          // Only add to the array if it's a Promise-like object
+          if (result && typeof result === 'object' && 'then' in result) {
+            refreshPromises.push(result);
+          }
+        } catch (e) {
+          console.error("Error calling refreshMessages:", e);
         }
       }
       
@@ -73,10 +78,14 @@ export function useRefreshMessages() {
       
       // Add dashboard refresh if available
       if (handleRefreshData) {
-        const dashboardPromise = handleRefreshData();
-        // Check if the result is a Promise without using instanceof
-        if (dashboardPromise && typeof dashboardPromise.then === 'function') {
-          refreshPromises.push(dashboardPromise);
+        try {
+          const result = handleRefreshData();
+          // Only add to the array if it's a Promise-like object
+          if (result && typeof result === 'object' && 'then' in result) {
+            refreshPromises.push(result);
+          }
+        } catch (e) {
+          console.error("Error calling handleRefreshData:", e);
         }
       }
       
