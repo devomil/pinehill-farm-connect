@@ -8,7 +8,7 @@ interface CalendarDayCellProps {
   date: Date;
   shifts: WorkShift[];
   isSelected?: boolean;
-  selectionMode?: "single" | "multiple";
+  selectionMode?: "single" | "multiple" | "range";
   onShiftClick?: (shift: WorkShift) => void;
   onSelect?: () => void;
   outside?: boolean;
@@ -56,6 +56,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
         disabled && "opacity-30 cursor-not-allowed",
         isSelected && selectionMode === "single" && "bg-primary/20 border-2 border-primary",
         isSelected && selectionMode === "multiple" && "bg-orange-200 border-2 border-orange-500",
+        isSelected && selectionMode === "range" && "bg-blue-200 border-2 border-blue-500",
         !isSelected && hasShifts && "bg-blue-50",
         today && !isSelected && "bg-accent/50"
       )}
@@ -72,7 +73,8 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
       <span className={cn(
         "text-sm font-medium mt-1",
         isSelected && selectionMode === "single" && "text-primary font-bold",
-        isSelected && selectionMode === "multiple" && "text-orange-900 font-bold"
+        isSelected && selectionMode === "multiple" && "text-orange-900 font-bold",
+        isSelected && selectionMode === "range" && "text-blue-900 font-bold"
       )}>
         {dayNumber}
       </span>
