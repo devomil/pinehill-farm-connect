@@ -22,7 +22,8 @@ interface WorkScheduleCalendarProps {
   onDayToggle?: (date: Date) => void;
   selectedCount?: number;
   hideCalendar?: boolean;
-  onDeleteShift?: (shiftId: string) => void; // Added prop for deleting shifts
+  onDeleteShift?: (shiftId: string) => void;
+  isAdminView?: boolean;
 }
 
 export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
@@ -38,7 +39,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
   onDayToggle,
   selectedCount = 0,
   hideCalendar = false,
-  onDeleteShift, // Added prop
+  onDeleteShift,
+  isAdminView = false,
 }) => {
   const [viewingDate, setViewingDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -140,7 +142,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
             ))}
           </div>
           
-          <div className="grid grid-cols-7 h-[calc(100%-2.5rem)]">
+          <div className="grid grid-cols-7 gap-1 p-1">
             {days.map((day, i) => {
               const dateKey = format(day, "yyyy-MM-dd");
               const shiftsForDay = shiftsMap.get(dateKey) || [];
@@ -155,6 +157,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
                   today={isSameDay(day, new Date())}
                   onClick={() => handleDayClick(day)}
                   onShiftClick={(shift) => handleShiftClick(day, shift)}
+                  showEmployeeNames={isAdminView}
                 />
               );
             })}

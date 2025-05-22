@@ -12,22 +12,29 @@ import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";
 import { GripVertical } from "lucide-react";
+import { WorkShift } from "@/types/workSchedule";
+import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ScheduleWidgetProps {
   currentUser: User;
   className?: string;
   isCustomizing?: boolean;
+  allEmployeeShifts?: Map<string, WorkShift[]>;
 }
 
 export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ 
   currentUser, 
   className, 
-  isCustomizing = false 
+  isCustomizing = false,
+  allEmployeeShifts
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
   const { timeOffRequests } = useTimeManagement();
+  const { currentUser: authUser } = useAuth();
+  const isAdmin = authUser?.role === "admin";
   
   // Use our calendar events hook to get all calendar items
   const { calendarEvents } = useCalendarEvents(
@@ -43,9 +50,10 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
       currentMonth: format(currentMonth, "MMMM yyyy"),
       selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "None",
       eventsCount: calendarEvents?.size || 0,
-      isCustomizing
+      isCustomizing,
+      hasShifts: allEmployeeShifts ? allEmployeeShifts.size : 0
     });
-  }, [currentMonth, selectedDate, calendarEvents, isCustomizing]);
+  }, [currentMonth, selectedDate, calendarEvents, isCustomizing, allEmployeeShifts]);
   
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
@@ -59,6 +67,9 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
     console.log("ScheduleWidget - Day selected:", date?.toISOString());
     setSelectedDate(date);
   };
+
+  // For admin view, show the WorkScheduleCalendar with employee details
+  const showAdminCalendarView = isAdmin && allEmployeeShifts && allEmployeeShifts.size > 0;
 
   return (
     <Card className={cn("mt-4 relative group", className, isCustomizing ? "border-2 border-dashed border-blue-300" : "")}>
@@ -94,23 +105,36 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-md">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDaySelect}
-            month={currentMonth}
-            className="rounded-md border pointer-events-auto"
-            components={{
-              Day: (props) => (
-                <CalendarDay 
-                  {...props} 
-                  eventsMap={calendarEvents}
-                />
-              )
-            }}
+        {showAdminCalendarView ? (
+          // Admin view showing all employee shifts
+          <WorkScheduleCalendar 
+            currentMonth={currentMonth}
+            setCurrentMonth={setCurrentMonth}
+            shiftsMap={allEmployeeShifts}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            isAdminView={true}
           />
-        </div>
+        ) : (
+          // Regular calendar view
+          <div className="border rounded-md">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDaySelect}
+              month={currentMonth}
+              className="rounded-md border pointer-events-auto"
+              components={{
+                Day: (props) => (
+                  <CalendarDay 
+                    {...props} 
+                    eventsMap={calendarEvents}
+                  />
+                )
+              }}
+            />
+          </div>
+        )}
         
         <CalendarLegend />
         

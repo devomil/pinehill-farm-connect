@@ -1,54 +1,32 @@
 
 import React from "react";
-import { AdminEmployeeScheduleCard } from "@/components/time-management/work-schedule/AdminEmployeeScheduleCard";
-import { EmployeeScheduleCard } from "@/components/time-management/work-schedule/EmployeeScheduleCard";
-import { ScheduleEmptyState } from "../empty-states";
-import { useNavigate } from "react-router-dom";
+import { ScheduleWidget } from "@/components/time-management/ScheduleWidget";
+import { User } from "@/types";
+import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardScheduleSectionProps {
-  isAdmin: boolean;
-  scheduleData: any;
-  scheduleLoading: boolean;
-  viewAllUrl?: string;
+  currentUser: User;
+  isCustomizing: boolean;
 }
 
 export const DashboardScheduleSection: React.FC<DashboardScheduleSectionProps> = ({
-  isAdmin,
-  scheduleData,
-  scheduleLoading,
-  viewAllUrl
+  currentUser,
+  isCustomizing,
 }) => {
-  const navigate = useNavigate();
+  const { currentUser: authUser } = useAuth();
+  const isAdmin = authUser?.role === "admin";
   
-  const handleManageSchedule = () => {
-    navigate("/time?tab=work-schedules");
-  };
-  
-  const hasSchedule = scheduleData && Object.keys(scheduleData).length > 0;
+  // Only fetch all employee shifts if user is an admin
+  const { shiftsMap: allEmployeeShifts, loading } = isAdmin 
+    ? useAllEmployeeShifts() 
+    : { shiftsMap: undefined, loading: false };
   
   return (
-    <div className="md:col-span-2">
-      {isAdmin ? (
-        hasSchedule ? (
-          <AdminEmployeeScheduleCard 
-            clickable={true} 
-            viewAllUrl={viewAllUrl} 
-          />
-        ) : (
-          <ScheduleEmptyState isAdmin={true} onManageSchedule={handleManageSchedule} />
-        )
-      ) : (
-        hasSchedule ? (
-          <EmployeeScheduleCard 
-            schedule={scheduleData}
-            loading={scheduleLoading}
-            clickable={true}
-            viewAllUrl={viewAllUrl}
-          />
-        ) : (
-          <ScheduleEmptyState />
-        )
-      )}
-    </div>
+    <ScheduleWidget 
+      currentUser={currentUser} 
+      isCustomizing={isCustomizing}
+      allEmployeeShifts={allEmployeeShifts}
+    />
   );
 };
