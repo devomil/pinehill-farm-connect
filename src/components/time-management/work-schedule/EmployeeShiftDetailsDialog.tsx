@@ -34,6 +34,15 @@ export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProp
     return employee?.name || 'Unknown Employee';
   };
 
+  // Helper function to convert 24h time to 12h time with am/pm
+  const convertTo12HourFormat = (time24h: string): string => {
+    const [hours, minutes] = time24h.split(':');
+    const hour = parseInt(hours, 10);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${hour12}:${minutes} ${period}`;
+  };
+
   const handleDeleteShift = (shiftId: string) => {
     if (!isAdmin) {
       toast("Only administrators can delete shifts");
@@ -79,7 +88,7 @@ export const EmployeeShiftDetailsDialog: React.FC<EmployeeShiftDetailsDialogProp
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
                     <span>
-                      {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)}
+                      {convertTo12HourFormat(shift.startTime.substring(0, 5))} - {convertTo12HourFormat(shift.endTime.substring(0, 5))}
                     </span>
                   </div>
                   

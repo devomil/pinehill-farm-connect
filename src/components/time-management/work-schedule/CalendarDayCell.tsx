@@ -34,10 +34,19 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     return employee ? employee.name : 'Unknown';
   };
   
+  // Helper function to convert 24h time to 12h time with am/pm
+  const convertTo12HourFormat = (time24h: string): string => {
+    const [hours, minutes] = time24h.split(':');
+    const hour = parseInt(hours, 10);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${hour12}:${minutes} ${period}`;
+  };
+  
   // Format shifts for display
   const formattedShifts = shifts.slice(0, 3).map(shift => {
-    const startTime = shift.startTime.substring(0, 5);
-    const endTime = shift.endTime.substring(0, 5);
+    const startTime = convertTo12HourFormat(shift.startTime.substring(0, 5));
+    const endTime = convertTo12HourFormat(shift.endTime.substring(0, 5));
     const employeeName = showEmployeeNames ? getEmployeeNameById(shift.employeeId) : '';
     
     return {
