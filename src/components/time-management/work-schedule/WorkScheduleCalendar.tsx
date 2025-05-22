@@ -67,13 +67,15 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
         selectionMode={selectionMode}
         onShiftClick={onShiftClick}
         onSelect={() => {
-          console.log(`Calendar day selected: ${format(date, 'yyyy-MM-dd')}, mode: ${selectionMode}`);
+          console.log(`Calendar day cell selected: ${format(date, 'yyyy-MM-dd')}, mode: ${selectionMode}`);
           // In multiple selection mode
           if (selectionMode === "multiple" && onDayToggle) {
+            console.log('Calling onDayToggle for multiple selection');
             onDayToggle(date);
           } 
           // In single selection mode
           else if (selectionMode === "single") {
+            console.log('Setting selected date and calling onDateSelected for single selection');
             setSelectedDate(date);
             if (onDateSelected) {
               onDateSelected(date);
@@ -112,11 +114,8 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               mode="single"
               selected={selectedDate}
               onSelect={(date) => {
-                console.log("Single date selected:", date);
-                setSelectedDate(date);
-                if (onDateSelected && date) {
-                  onDateSelected(date);
-                }
+                console.log("Single calendar onSelect handler:", date);
+                // This built-in handler will be ignored, we're using custom handling in Day component
               }}
               month={currentMonth}
               className="rounded-md border pointer-events-auto"
@@ -129,7 +128,7 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
               mode="multiple"
               selected={highlightedDates}
               onSelect={() => {
-                console.log("Multiple selection mode - using custom handler");
+                console.log("Multiple calendar onSelect handler");
                 // Multiple selection is handled by the custom day component
               }}
               month={currentMonth}

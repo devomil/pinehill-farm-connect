@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { WorkSchedule } from "@/types/workSchedule";
 import { uuid } from "@/utils/uuid";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function useBulkScheduler(
   selectedEmployee: string | null,
@@ -11,8 +11,8 @@ export function useBulkScheduler(
 ) {
   const [bulkMode, setBulkMode] = useState<string | null>(null);
   
-  // Internal handler with mode parameter
-  const handleBulkScheduleInternal = (mode: string, startTime: string, endTime: string, days: string[]) => {
+  // Standard handler with consistent parameter order (startTime, endTime, days)
+  const handleBulkSchedule = (startTime: string, endTime: string, days: string[]) => {
     if (!scheduleData || !selectedEmployee) {
       toast({
         description: "No employee or schedule data available",
@@ -67,12 +67,6 @@ export function useBulkScheduler(
       description: `Added ${newShifts.length} shifts to the schedule`,
       variant: "success"
     });
-  };
-
-  // Public handler with standardized parameter order (startTime, endTime, days)
-  const handleBulkSchedule = (startTime: string, endTime: string, days: string[]) => {
-    // We know this is coming from the specific component since we're using the standardized interface
-    handleBulkScheduleInternal(bulkMode || "specific", startTime, endTime, days);
   };
 
   return {

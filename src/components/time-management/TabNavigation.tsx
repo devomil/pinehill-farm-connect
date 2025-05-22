@@ -37,18 +37,21 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ isAdmin }) => {
       params.set('tab', value);
       navigate(`/time?${params.toString()}`, { replace: true });
       
-      // Force full refresh when switching to shift coverage to ensure we have the latest data
+      // Force refresh data when switching tabs to ensure we have the latest data
+      console.log(`Refreshing data for tab: ${value}`);
+      
+      // Specific refresh actions for different tabs
       if (value === "shift-coverage") {
-        console.log("Refreshing all data due to tab change to shift-coverage");
+        console.log("Refreshing shift coverage data");
         forceRefreshData();
       } else if (value === "my-requests") {
-        console.log("Refreshing time-off requests due to tab change to my-requests");
+        console.log("Refreshing time-off requests data");
         fetchRequests();
       } else if (value === "team-calendar") {
-        console.log("Refreshing data for team calendar view");
+        console.log("Refreshing team calendar data");
         forceRefreshData();
       } else if (value === "work-schedules") {
-        console.log("Navigating to work schedules view");
+        console.log("Refreshing work schedules data");
         forceRefreshData();
       }
     }

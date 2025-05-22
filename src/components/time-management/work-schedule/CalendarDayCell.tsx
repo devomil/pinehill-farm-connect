@@ -30,13 +30,10 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   const hasShifts = shifts.length > 0;
   const dayNumber = date.getDate();
   
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    e.preventDefault();
-    
+  const handleClick = () => {
     if (disabled) return;
     
-    console.log(`Day clicked: ${format(date, 'yyyy-MM-dd')}`);
+    console.log(`Day clicked: ${format(date, 'yyyy-MM-dd')}, calling onSelect handler`);
     
     if (onSelect) {
       onSelect();
@@ -45,7 +42,6 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
   
   const handleShiftClick = (e: React.MouseEvent, shift: WorkShift) => {
     e.stopPropagation(); // Prevent parent click
-    e.preventDefault();
     
     if (onShiftClick) {
       onShiftClick(shift);
@@ -69,7 +65,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-          handleClick(e as any);
+          handleClick();
         }
       }}
     >
