@@ -13,7 +13,7 @@ export interface EmployeeDirectoryHook extends EmployeeDirectoryState {
   addEmployee: (newEmployee: Partial<User>) => Promise<any>;
   updateEmployee: (id: string, updates: Partial<User>) => Promise<any>;
   deleteEmployee: (id: string) => Promise<boolean>;
-  getEmployeeNameById?: (id: string) => string;
+  getEmployeeNameById: (id: string) => string;
 }
 
 export interface FetchEmployeesOptions {

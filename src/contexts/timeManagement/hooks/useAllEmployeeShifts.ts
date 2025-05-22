@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { WorkShift, WorkSchedule } from "@/types/workSchedule";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
 import { supabase } from "@/integrations/supabase/client";
-import { globalMockScheduleStore } from "@/components/time-management/work-schedule/scheduleHelpers";
+import { globalMockScheduleStore, clearAllMockData } from "@/components/time-management/work-schedule/scheduleHelpers";
 
 export function useAllEmployeeShifts() {
   const [allShifts, setAllShifts] = useState<WorkShift[]>([]);
@@ -12,6 +12,21 @@ export function useAllEmployeeShifts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { employees } = useEmployeeDirectory();
+  
+  // Clear mock data on first load (to reset between dashboard and time management views)
+  useEffect(() => {
+    // We'll clear the data once when this hook is first used
+    if (employees && employees.length > 0) {
+      const shouldClearData = Object.keys(globalMockScheduleStore).length === 0 || 
+                             !sessionStorage.getItem('mockDataInitialized');
+      
+      if (shouldClearData) {
+        console.log("Initializing fresh mock data for all employees");
+        clearAllMockData();
+        sessionStorage.setItem('mockDataInitialized', 'true');
+      }
+    }
+  }, [employees]);
 
   // Fetch all employee shifts for admin view
   useEffect(() => {
@@ -45,10 +60,16 @@ export function useAllEmployeeShifts() {
             const day = 1 + Math.floor(Math.random() * 28);
             const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
             
-            // Random shift times
-            const startHour = 8 + Math.floor(Math.random() * 10);
+            // Random shift times - make them realistic working hours
+            const startOptions = [8, 9, 10, 11, 12, 13, 14];
+            const durationOptions = [4, 6, 8, 9]; // shift lengths in hours
+            
+            const startHour = startOptions[Math.floor(Math.random() * startOptions.length)];
+            const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
+            const endHour = startHour + duration;
+            
             const startTime = `${startHour.toString().padStart(2, '0')}:00:00`;
-            const endTime = `${(startHour + 8).toString().padStart(2, '0')}:00:00`;
+            const endTime = `${endHour.toString().padStart(2, '0')}:00:00`;
             
             const shift = {
               id: `${employee.id}-${date}-${i}`,
