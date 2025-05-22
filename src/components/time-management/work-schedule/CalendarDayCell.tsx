@@ -54,12 +54,14 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
         "h-12 w-12 p-0 rounded-md flex flex-col items-center relative cursor-pointer transition-all duration-150",
         outside && "opacity-50",
         disabled && "opacity-30 cursor-not-allowed",
-        isSelected && selectionMode === "single" && "bg-primary/20 border-2 border-primary shadow-md",
-        isSelected && selectionMode === "multiple" && "bg-orange-200 border-2 border-orange-500",
-        isSelected && selectionMode === "range" && "bg-blue-200 border-2 border-blue-500",
+        isSelected && selectionMode === "single" && "bg-primary text-primary-foreground shadow-md ring-2 ring-primary",
+        isSelected && selectionMode === "multiple" && "bg-orange-200 ring-2 ring-orange-500",
+        isSelected && selectionMode === "range" && "bg-blue-200 ring-2 ring-blue-500",
         !isSelected && hasShifts && "bg-blue-50",
         today && !isSelected && "bg-accent/50",
-        !isSelected && !disabled && selectionMode === "single" && "hover:bg-primary/10" // Add hover effect for single mode
+        !isSelected && !disabled && selectionMode === "single" && "hover:bg-primary/10",
+        !isSelected && !disabled && selectionMode === "multiple" && "hover:bg-orange-100",
+        !isSelected && !disabled && selectionMode === "range" && "hover:bg-blue-100"
       )}
       onClick={handleClick}
       aria-selected={isSelected}
@@ -73,7 +75,7 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     >
       <span className={cn(
         "text-sm font-medium mt-1",
-        isSelected && selectionMode === "single" && "text-primary font-bold",
+        isSelected && selectionMode === "single" && "text-white font-bold",
         isSelected && selectionMode === "multiple" && "text-orange-900 font-bold",
         isSelected && selectionMode === "range" && "text-blue-900 font-bold"
       )}>
@@ -85,14 +87,23 @@ export const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
           {shifts.slice(0, 2).map((shift, idx) => (
             <div
               key={idx}
-              className="h-1.5 w-1.5 rounded-full bg-blue-500"
+              className={cn(
+                "h-2 w-2 rounded-full",
+                isSelected && selectionMode === "single" ? "bg-white/80" : "bg-blue-500"
+              )}
               title={`${format(new Date(`${shift.date}T${shift.startTime}`), 'HH:mm')} - ${format(new Date(`${shift.date}T${shift.endTime}`), 'HH:mm')}`}
               onClick={(e) => handleShiftClick(e, shift)}
             />
           ))}
           {shifts.length > 2 && (
-            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 relative">
-              <span className="absolute -right-1 -top-0.5 text-xs">+{shifts.length - 2}</span>
+            <div className={cn(
+              "h-2 w-2 rounded-full relative",
+              isSelected && selectionMode === "single" ? "bg-white/80" : "bg-blue-500"
+            )}>
+              <span className={cn(
+                "absolute -right-1 -top-0.5 text-xs",
+                isSelected && selectionMode === "single" ? "text-white" : "text-blue-700"
+              )}>+{shifts.length - 2}</span>
             </div>
           )}
         </div>

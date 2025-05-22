@@ -9,8 +9,14 @@ import { AdminSchedulingTools } from "./AdminSchedulingTools";
 import { Button } from "@/components/ui/button";
 import { ScheduleEditorState } from "./hooks/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, Settings } from "lucide-react";
 import { DateRangeSelector } from "./DateRangeSelector";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 interface ScheduleEditorContentProps {
   editorState: ReturnType<typeof import("./hooks/useScheduleEditor").useScheduleEditor>;
@@ -66,13 +72,19 @@ export const ScheduleEditorContent: React.FC<ScheduleEditorContentProps> = ({
           onReset={onReset}
         />
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAdminTools(!showAdminTools)}
-        >
-          {showAdminTools ? "Hide Admin Tools" : "Show Admin Tools"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1" />
+              Settings
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setShowAdminTools(!showAdminTools)}>
+              {showAdminTools ? "Hide Admin Tools" : "Show Admin Tools"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       {selectionMode === "multiple" && (
