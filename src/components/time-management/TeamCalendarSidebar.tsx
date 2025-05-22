@@ -5,6 +5,7 @@ import { CalendarItem } from "./TeamCalendar.types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { List } from "lucide-react";
+import { CalendarHeader } from "./work-schedule/calendar/CalendarHeader";
 
 interface TeamCalendarSidebarProps {
   calendarItems: CalendarItem[];
