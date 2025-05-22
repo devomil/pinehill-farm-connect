@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useEmployeeName } from "@/hooks/employee/useEmployeeName";
 import { useUnreadMessageCount } from "@/hooks/communications/useUnreadMessageCount";
@@ -7,13 +7,14 @@ import { User } from "@/types";
 import { MessageItem } from "./MessageItem";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertTriangle } from "lucide-react";
 import { MessageListError } from "./MessageListError";
 import { MessageListHeader } from "./MessageListHeader";
 import { EmptyConversation } from "./conversation/EmptyConversation";
 import { useGroupedMessages } from "@/hooks/communications/useGroupedMessages";
 import { useMessageRefreshEffect } from "@/hooks/communications/useMessageRefreshEffect";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MessageListProps {
   messages: Communication[];
@@ -45,6 +46,9 @@ export function MessageList({
 }: MessageListProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingFailed, setLoadingFailed] = useState(false);
+  const [navigationLoopDetected, setNavigationLoopDetected] = useState(false);
+  const mountCount = useRef(0);
+  const mountTimeRef = useRef(Date.now());
   
   // Group messages by conversation
   const groupedMessages = useGroupedMessages(messages, currentUserId);
@@ -52,8 +56,26 @@ export function MessageList({
   // Get unread message count
   const unreadCount = useUnreadMessageCount(unreadMessages);
   
-  // Auto refresh messages on mount or when unread count changes
-  // Create a proper object to pass to useMessageRefreshEffect
+  // Detect potential navigation loops
+  useEffect(() => {
+    mountCount.current += 1;
+    mountTimeRef.current = Date.now();
+    
+    // Check if component is mounting too frequently
+    if (mountCount.current > 5) {
+      console.log(`MessageList mounted ${mountCount.current} times - possible navigation issue`);
+      setNavigationLoopDetected(true);
+    }
+    
+    return () => {
+      const mountDuration = Date.now() - mountTimeRef.current;
+      if (mountDuration < 1000) {
+        console.log(`MessageList unmounted after only ${mountDuration}ms - possible navigation issue`);
+      }
+    };
+  }, []);
+  
+  // Auto refresh messages on mount
   useMessageRefreshEffect({
     refreshMessages: onRefresh || (async () => {}),
     isAdmin: false, // Default to false, update this if you have access to user role info
@@ -71,6 +93,7 @@ export function MessageList({
     } catch (err) {
       console.error("Error refreshing messages:", err);
       toast.error("Failed to refresh messages");
+      setLoadingFailed(true);
     } finally {
       setIsRefreshing(false);
     }
@@ -79,13 +102,32 @@ export function MessageList({
   // Get employee name helper function
   const getEmployeeName = useEmployeeName(employees);
 
+  // Handle navigation loop detected
+  if (navigationLoopDetected) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertDescription>
+          <p className="mb-2">Navigation issue detected - Direct Messages tab is reloading repeatedly.</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/communication?tab=messages&recovery=true'}
+            className="mt-2"
+          >
+            Attempt Recovery
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   // Handle empty state
   if (!loading && !error && groupedMessages.length === 0) {
     return <EmptyConversation onRefresh={handleRefresh} />;
   }
 
   // Handle error state
-  if (error) {
+  if (error || loadingFailed) {
     return <MessageListError onRefresh={handleRefresh} isRefreshing={isRefreshing} />;
   }
 

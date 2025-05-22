@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { MessageSquare, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, MessageSquare } from "lucide-react";
 
 interface EmptyConversationProps {
   onRefresh?: () => void;
@@ -9,24 +10,23 @@ interface EmptyConversationProps {
 
 export function EmptyConversation({ onRefresh }: EmptyConversationProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center h-64 border border-dashed rounded-md bg-muted/20">
-      <MessageSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-      <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+    <Card className="p-6 flex flex-col items-center justify-center text-center">
+      <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-medium mb-2">No Messages Found</h3>
       <p className="text-muted-foreground mb-4">
-        Select an employee from the list to start a conversation or view your existing messages.
+        You don't have any messages yet. Select an employee to start a conversation.
       </p>
-      
       {onRefresh && (
         <Button 
           variant="outline" 
+          size="sm" 
           onClick={onRefresh} 
           className="mt-2"
-          size="sm"
         >
-          <RefreshCw className="h-3 w-3 mr-2" />
-          Refresh Messages
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
         </Button>
       )}
-    </div>
+    </Card>
   );
 }
