@@ -14,18 +14,12 @@ export function useBulkScheduler(
   // Standard handler with consistent parameter order (startTime, endTime, days)
   const handleBulkSchedule = (startTime: string, endTime: string, days: string[]) => {
     if (!scheduleData || !selectedEmployee) {
-      toast({
-        description: "No employee or schedule data available",
-        variant: "destructive"
-      });
+      toast.error("No employee or schedule data available");
       return;
     }
     
     if (days.length === 0) {
-      toast({
-        description: "No days selected for scheduling",
-        variant: "destructive"
-      });
+      toast.error("No days selected for scheduling");
       return;
     }
     
@@ -63,10 +57,7 @@ export function useBulkScheduler(
     
     // Save the updated schedule and show feedback
     onSave(updatedSchedule);
-    toast({
-      description: `Added ${newShifts.length} shifts to the schedule`,
-      variant: "success"
-    });
+    toast.success(`Added ${newShifts.length} shifts to the schedule`);
   };
 
   return {
