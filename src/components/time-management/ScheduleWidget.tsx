@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";

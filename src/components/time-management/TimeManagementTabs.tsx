@@ -7,8 +7,8 @@ import { ErrorAlertBar } from "./ErrorAlertBar";
 import { DebugPanel } from "./DebugPanel";
 import { TabNavigation } from "./TabNavigation";
 import { TabContent } from "./tabs/TabContent";
-import { CalendarContent } from "@/components/calendar/CalendarContent";
 import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
+import { ScheduleWidget } from "./ScheduleWidget";
 
 interface TimeManagementTabsProps {
   currentUser: User;
@@ -31,13 +31,8 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     handleRetry
   } = useTimeManagement();
   
-  // State for calendar view
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "team">("month");
-  
   // Fetch all employee shifts to ensure we have data for the calendar
-  const { refreshShifts } = useAllEmployeeShifts();
+  const { shiftsMap, refreshShifts } = useAllEmployeeShifts();
   
   // Enhanced debugging with less frequent logging to prevent re-renders
   useEffect(() => {
@@ -53,41 +48,17 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
     console.log("TimeManagementTabs - Shift coverage messages:", shiftMessages.length);
   }, [activeTab, userRequests, loading, error, pendingRequests, processedMessages, messagesLoading, messagesError]);
 
-  // Handle calendar navigation
-  const goToPreviousMonth = () => {
-    const prevMonth = new Date(currentMonth);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    setCurrentMonth(prevMonth);
-  };
-
-  const goToNextMonth = () => {
-    const nextMonth = new Date(currentMonth);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    setCurrentMonth(nextMonth);
-  };
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-  };
-
   return (
     <>
       <ErrorAlertBar error={error} messagesError={messagesError} onRetry={handleRetry} />
       <DebugPanel />
       
-      {/* Dashboard-style calendar at the top */}
+      {/* Display work schedule with employee names and shifts */}
       <div className="mb-4">
-        <CalendarContent 
-          date={selectedDate}
-          currentMonth={currentMonth}
-          viewMode={viewMode}
+        <ScheduleWidget 
           currentUser={currentUser}
-          onDateSelect={handleDateSelect}
-          onViewModeChange={setViewMode}
-          onPreviousMonth={goToPreviousMonth}
-          onNextMonth={goToNextMonth}
-          clickable={true}
-          viewAllUrl="/time?tab=work-schedules"
+          allEmployeeShifts={shiftsMap}
+          onRefresh={refreshShifts}
         />
       </div>
       
