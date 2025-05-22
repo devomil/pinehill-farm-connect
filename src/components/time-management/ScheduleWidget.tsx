@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
 import { User } from "@/types";
-import { GripVertical } from "lucide-react";
+import { GripVertical, RefreshCcw } from "lucide-react";
 import { WorkShift } from "@/types/workSchedule";
 import { WorkScheduleCalendar } from "./work-schedule/WorkScheduleCalendar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,7 +53,6 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   
   // Choose which shifts data to use - prefer all employee shifts if provided (for admin view)
   // Fall back to fetched shifts map if allEmployeeShifts is not provided
-  // This ensures we always have data to display
   const displayShiftsMap = allEmployeeShifts || fetchedShiftsMap || userShiftsMap;
   
   // Handle refresh - enhanced to ensure data consistency
@@ -83,6 +82,20 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
     console.log(`ScheduleWidget: Displaying ${totalShifts} total shifts across ${displayShiftsMap?.size || 0} days`);
   }, [displayShiftsMap]);
 
+  // Handle deleting a shift
+  const handleDeleteShift = (shiftId: string) => {
+    if (isAdmin) {
+      console.log("ScheduleWidget: Deleting shift", shiftId);
+      // After deletion, refresh the shifts
+      refreshShifts().then(() => {
+        toast.success("Shift deleted successfully");
+        if (onRefresh) {
+          onRefresh();
+        }
+      });
+    }
+  };
+
   return (
     <Card className={cn("mt-4 relative group", className, isCustomizing ? "border-2 border-dashed border-blue-300" : "")}>
       {isCustomizing && (
@@ -110,13 +123,13 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
             </label>
           </div>
           
-          {/* Add refresh button */}
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
-            className="h-8 px-2 text-xs"
+            className="h-8 px-2 text-xs flex items-center gap-1"
           >
+            <RefreshCcw className="h-3 w-3" />
             Refresh
           </Button>
         </div>
@@ -138,6 +151,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
               isAdminView={isAdmin}
               showEmployeeNames={true}
               title="Work Schedule"
+              onDeleteShift={handleDeleteShift}
             />
           </TabsContent>
           

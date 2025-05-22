@@ -21,7 +21,7 @@ export function useTeamCalendarData(currentUser: User) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Only fetch company events - no longer fetching time_off_requests
+      // Fetch company events
       const { data: eventData, error: eventError } = await supabase
         .from("company_events")
         .select("*");
@@ -53,7 +53,7 @@ export function useTeamCalendarData(currentUser: User) {
 
   useEffect(() => {
     fetchData();
-    // Set up realtime subscription for company_events table only
+    // Set up realtime subscription for company_events table
     const channel = supabase
       .channel('calendar-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'company_events' }, fetchData)
@@ -75,16 +75,17 @@ export function useTeamCalendarData(currentUser: User) {
     attendanceType: e.attendance_type,
   }));
   
-  // Add time off items if available through the context
+  // Add time off items from the context
   const timeOffItems: CalendarItem[] = filteredTimeOffRequests?.map((request) => ({
     id: request.id,
-    type: "event",
+    type: "time-off",
     label: `Time Off: ${request.status}`,
     startDate: new Date(request.start_date),
     endDate: new Date(request.end_date),
     attendanceType: "info-only"
   })) || [];
   
+  // Combine all calendar items
   const calendarItems = [...eventItems, ...timeOffItems];
 
   // Map days to events for quick lookup

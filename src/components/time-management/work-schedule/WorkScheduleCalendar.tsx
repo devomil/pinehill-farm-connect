@@ -7,6 +7,7 @@ import { EmployeeShiftDetailsDialog } from "./EmployeeShiftDetailsDialog";
 import { CalendarDaysGrid } from "./calendar/CalendarDaysGrid";
 import { CalendarHeader } from "./calendar/CalendarHeader";
 import { generateCalendarDays } from "./calendar/calendarUtils";
+import { toast } from "sonner";
 
 interface WorkScheduleCalendarProps {
   currentMonth: Date;
@@ -16,7 +17,7 @@ interface WorkScheduleCalendarProps {
   setSelectedDate: (date: Date | undefined) => void;
   onDateSelected?: (date: Date) => void;
   onShiftClick?: (shift: WorkShift) => void;
-  onDeleteShift?: (shiftId: string) => void;  // Make sure this prop is properly defined
+  onDeleteShift?: (shiftId: string) => void;
   selectionMode?: "single" | "multiple" | "range";
   isDaySelected?: (date: Date) => boolean;
   onDayToggle?: (date: Date) => void;
@@ -74,12 +75,19 @@ export const WorkScheduleCalendar: React.FC<WorkScheduleCalendarProps> = ({
     }
   };
 
-  // Handle deleting a shift
+  // Handle deleting a shift with validation and notification
   const handleDeleteShift = (shiftId: string) => {
     if (isAdminView && onDeleteShift) {
-      onDeleteShift(shiftId);
-      // Close the dialog after deleting
-      setIsDialogOpen(false);
+      console.log("Deleting shift:", shiftId);
+      try {
+        onDeleteShift(shiftId);
+        // Close the dialog after deleting
+        setIsDialogOpen(false);
+        toast.success("Shift deleted successfully");
+      } catch (error) {
+        console.error("Error deleting shift:", error);
+        toast.error("Failed to delete shift");
+      }
     }
   };
   
