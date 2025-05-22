@@ -51,9 +51,11 @@ export function useRefreshMessages() {
     
     try {
       // Always refresh messages
-      const refreshPromises = [
-        refreshMessages && refreshMessages()
-      ];
+      const refreshPromises: Promise<any>[] = [];
+      
+      if (refreshMessages) {
+        refreshPromises.push(refreshMessages());
+      }
       
       // Only refresh employee directory occasionally to reduce frequency
       const shouldRefreshEmployees = now - lastEmployeeRefresh.current > EMPLOYEE_REFRESH_THRESHOLD;

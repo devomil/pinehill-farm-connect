@@ -56,7 +56,7 @@ export const MessageTabDebugSection: React.FC<MessageTabDebugSectionProps> = ({
           <DebugBadge 
             label="Directory Refresh" 
             value={`${timeSinceLastRefreshSeconds}s ago`}
-            variant={timeSinceLastRefreshSeconds < 10 ? "warning" : "outline"}
+            variant={timeSinceLastRefreshSeconds < 10 ? "secondary" : "outline"}
           />
         )}
         {messageTabInfo.errorState && (
