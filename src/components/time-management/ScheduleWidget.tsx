@@ -21,13 +21,15 @@ interface ScheduleWidgetProps {
   className?: string;
   isCustomizing?: boolean;
   allEmployeeShifts?: Map<string, WorkShift[]>;
+  onRefresh?: () => void;
 }
 
 export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({ 
   currentUser, 
   className, 
   isCustomizing = false,
-  allEmployeeShifts
+  allEmployeeShifts,
+  onRefresh
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -38,7 +40,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const isAdmin = authUser?.role === "admin";
   
   // Always fetch shifts regardless of allEmployeeShifts prop to ensure we have data
-  const { shiftsMap: fetchedShiftsMap } = useAllEmployeeShifts();
+  const { shiftsMap: fetchedShiftsMap, refreshShifts } = useAllEmployeeShifts();
   
   // Use our calendar events hook to get all calendar items
   const { shiftsMap: userShiftsMap } = useCalendarEvents(
@@ -53,6 +55,13 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   // This ensures we always have data to display
   const displayShiftsMap = allEmployeeShifts || fetchedShiftsMap || userShiftsMap;
   
+  // Effect to handle refresh requests
+  useEffect(() => {
+    if (onRefresh) {
+      refreshShifts();
+    }
+  }, [onRefresh, refreshShifts]);
+
   useEffect(() => {
     // Log the amount of shifts we're showing
     let totalShifts = 0;

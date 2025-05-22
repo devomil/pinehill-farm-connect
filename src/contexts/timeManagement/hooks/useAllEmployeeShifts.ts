@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { WorkShift, WorkSchedule } from "@/types/workSchedule";
 import { useEmployeeDirectory } from "@/hooks/useEmployeeDirectory";
@@ -25,8 +25,8 @@ export function useAllEmployeeShifts() {
     }
   }, [employees]);
 
-  // Fetch all employee shifts for admin view
-  useEffect(() => {
+  // Function to load all shifts
+  const loadAllShifts = useCallback(() => {
     if (!employees || employees.length === 0) return;
     
     setLoading(true);
@@ -117,11 +117,23 @@ export function useAllEmployeeShifts() {
       setLoading(false);
     }
   }, [employees]);
+
+  // Function to refresh shifts - can be called after shift updates
+  const refreshShifts = useCallback(() => {
+    console.log("Refreshing all employee shifts");
+    loadAllShifts();
+  }, [loadAllShifts]);
+
+  // Initial load of all shifts
+  useEffect(() => {
+    loadAllShifts();
+  }, [loadAllShifts]);
   
   return {
     allShifts,
     shiftsMap,
     loading,
-    error
+    error,
+    refreshShifts  // Add the refresh function
   };
 }

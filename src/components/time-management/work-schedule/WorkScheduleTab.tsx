@@ -35,8 +35,8 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
     copyFromLastMonth
   } = useWorkSchedule(selectedEmployee);
   
-  // Also fetch all employee shifts to ensure we have data
-  const { shiftsMap: allEmployeeShiftsMap } = useAllEmployeeShifts();
+  // Always fetch all employee shifts to ensure we have up-to-date data
+  const { shiftsMap: allEmployeeShiftsMap, refreshShifts } = useAllEmployeeShifts();
   
   const currentMonthLabel = format(new Date(), "MMMM yyyy");
   const [viewMode, setViewMode] = useState<"work-schedules" | "company-events">("work-schedules");
@@ -80,6 +80,19 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
   // Use the combined shiftsMap for display if we're in admin view with no employee selected
   const displayShiftsMap = (isAdmin && !selectedEmployee) ? allEmployeeShiftsMap : shiftsMap;
 
+  // Enhanced save handler that also refreshes global shift state
+  const handleSaveSchedule = async (updatedSchedule) => {
+    try {
+      await saveSchedule(updatedSchedule);
+      // Refresh all employee shifts to update team view
+      refreshShifts();
+      toast.success("Schedule updated successfully");
+    } catch (error) {
+      console.error("Error saving schedule:", error);
+      toast.error("Failed to update schedule");
+    }
+  };
+
   // Log the number of shifts we're showing for debugging
   useEffect(() => {
     let totalShifts = 0;
@@ -117,7 +130,7 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
             <AdminWorkScheduleEditor
               selectedEmployee={selectedEmployee}
               scheduleData={scheduleData}
-              onSave={saveSchedule}
+              onSave={handleSaveSchedule}
               onReset={resetSchedule}
               loading={loading}
             />
