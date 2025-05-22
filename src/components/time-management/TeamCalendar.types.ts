@@ -20,12 +20,12 @@ export interface CalendarItem {
   attachments?: string[];
 }
 
-// Add missing interfaces
+// Update the interface to make email required, matching the User type
 export interface TeamCalendarProps {
   currentUser: {
     id: string;
+    email: string;  // Now required
     name?: string;
-    email?: string;
     role?: string;
   };
 }
@@ -42,8 +42,8 @@ export interface TeamCalendarEventFormProps {
   onEventCreated: () => void;
   currentUser: {
     id: string;
+    email: string;  // Now required
     name?: string;
-    email?: string;
     role?: string;
   };
 }

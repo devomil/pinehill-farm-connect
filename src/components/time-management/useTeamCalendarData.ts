@@ -2,12 +2,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User } from "@/types";
 import { CompanyEvent, CalendarItem } from "./TeamCalendar.types";
 import { useRequestFiltering } from "@/hooks/timeManagement/useRequestFiltering";
 import { useTimeManagement } from "@/contexts/timeManagement";
 
-export function useTeamCalendarData(currentUser: User) {
+// Update to accept the currentUser type as defined in TeamCalendarProps
+export function useTeamCalendarData(currentUser: { id: string; email: string; name?: string; role?: string; }) {
   const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [includeDeclinedRequests, setIncludeDeclinedRequests] = useState<boolean>(false);
