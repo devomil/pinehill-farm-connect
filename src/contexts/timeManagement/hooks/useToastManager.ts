@@ -1,26 +1,25 @@
 
-import { useCallback, useRef, useState } from "react";
-import { createThrottledToast } from "../utils";
+import { useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 
-/**
- * Hook for managing toast notifications with throttling and deduplication
- */
-export const useToastManager = () => {
-  const [lastToastTime, setLastToastTime] = useState(0);
-  const pendingToasts = useRef<Set<string>>(new Set());
+export function useToastManager() {
+  // Track last toast time to prevent spam
+  let lastToastTime = 0;
   
-  // Create toast with throttling
-  const showThrottledToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
-    return createThrottledToast(
-      pendingToasts.current, 
-      setLastToastTime,
-      lastToastTime
-    )(message, type);
-  }, [lastToastTime]);
-  
-  return {
-    showThrottledToast,
-    lastToastTime,
-    pendingToasts
-  };
-};
+  const showThrottledToast = useCallback((message: string, variant: 'default' | 'destructive' = 'default') => {
+    const now = Date.now();
+    const TOAST_COOLDOWN = 5000; // 5 seconds between same toasts
+    
+    if (now - lastToastTime > TOAST_COOLDOWN) {
+      toast({
+        description: message,
+        variant
+      });
+      lastToastTime = now;
+    } else {
+      console.log(`Toast throttled: ${message} (cooldown: ${Math.round((now - lastToastTime) / 1000)}s < ${TOAST_COOLDOWN / 1000}s)`);
+    }
+  }, []);
+
+  return { showThrottledToast };
+}
