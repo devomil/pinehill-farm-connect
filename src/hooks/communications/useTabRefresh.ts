@@ -36,7 +36,8 @@ export function useTabRefresh({
     // Only show loading toast if needed
     let loadingToast: string | undefined;
     if (shouldShowLoadingToast) {
-      loadingToast = toast.loading("Loading messages...");
+      // Convert the id to string since toast.loading returns a string
+      loadingToast = toast.loading("Loading messages...").toString();
       loadingToastShown.current = true;
       lastToastTime.current = now;
     }
