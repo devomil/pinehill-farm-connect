@@ -82,13 +82,16 @@ export function useRefreshMessages() {
           // Execute the function but don't check its return value directly
           const result = handleRefreshData();
           
-          // Check if the result exists, is an object, and has a 'then' property that's a function
-          if (result !== undefined && 
-              result !== null && 
-              typeof result === 'object' && 
-              'then' in result && 
-              typeof result.then === 'function') {
-            refreshPromises.push(result);
+          // Restructured condition to avoid null checks on properties
+          // First check if result exists and is an object
+          if (result !== undefined && result !== null && typeof result === 'object') {
+            // Then safely check for 'then' property and its type
+            const hasThenFunction = 'then' in result && 
+                                    typeof result.then === 'function';
+            
+            if (hasThenFunction) {
+              refreshPromises.push(result);
+            }
           }
         } catch (e) {
           console.error("Error calling handleRefreshData:", e);
