@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Communication } from "@/types/communications/communicationTypes";
 import { useEmployeeName } from "@/hooks/employee/useEmployeeName";
@@ -15,6 +14,7 @@ import { useGroupedMessages } from "@/hooks/communications/useGroupedMessages";
 import { useMessageRefreshEffect } from "@/hooks/communications/useMessageRefreshEffect";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 interface MessageListProps {
   messages: Communication[];
@@ -44,11 +44,14 @@ export function MessageList({
   currentUserId,
   unreadMessages = []
 }: MessageListProps) {
+  const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingFailed, setLoadingFailed] = useState(false);
   const [navigationLoopDetected, setNavigationLoopDetected] = useState(false);
   const mountCount = useRef(0);
   const mountTimeRef = useRef(Date.now());
+  const lastUnmountTimeRef = useRef<number | null>(null);
+  const stableTimeRef = useRef<NodeJS.Timeout | null>(null);
   
   // Group messages by conversation
   const groupedMessages = useGroupedMessages(messages, currentUserId);
@@ -56,26 +59,51 @@ export function MessageList({
   // Get unread message count
   const unreadCount = useUnreadMessageCount(unreadMessages);
   
-  // Detect potential navigation loops
+  // More aggressive loop detection
   useEffect(() => {
     mountCount.current += 1;
     mountTimeRef.current = Date.now();
     
     // Check if component is mounting too frequently
-    if (mountCount.current > 5) {
-      console.log(`MessageList mounted ${mountCount.current} times - possible navigation issue`);
-      setNavigationLoopDetected(true);
+    if (mountCount.current > 4) {
+      console.warn(`MessageList mounted ${mountCount.current} times - possible navigation issue`);
+      // Check if we're remounting too quickly after unmounting
+      if (lastUnmountTimeRef.current) {
+        const timeBetweenMounts = Date.now() - lastUnmountTimeRef.current;
+        if (timeBetweenMounts < 1000) {
+          console.error(`MessageList remounted after only ${timeBetweenMounts}ms - navigation loop detected`);
+          setNavigationLoopDetected(true);
+        }
+      }
     }
+    
+    // Set a timer to mark the component as "stable" if it stays mounted
+    if (stableTimeRef.current) {
+      clearTimeout(stableTimeRef.current);
+    }
+    
+    stableTimeRef.current = setTimeout(() => {
+      console.log("MessageList component considered stable (mounted for 5 seconds)");
+      // Reset counter if component stays mounted for at least 5 seconds
+      mountCount.current = 0;
+      setNavigationLoopDetected(false);
+    }, 5000);
     
     return () => {
       const mountDuration = Date.now() - mountTimeRef.current;
+      lastUnmountTimeRef.current = Date.now();
+      
       if (mountDuration < 1000) {
-        console.log(`MessageList unmounted after only ${mountDuration}ms - possible navigation issue`);
+        console.warn(`MessageList unmounted after only ${mountDuration}ms - possible navigation issue`);
+      }
+      
+      if (stableTimeRef.current) {
+        clearTimeout(stableTimeRef.current);
       }
     };
   }, []);
   
-  // Auto refresh messages on mount
+  // Auto refresh messages on mount (with proper type handling)
   useMessageRefreshEffect({
     refreshMessages: onRefresh || (async () => {}),
     isAdmin: false, // Default to false, update this if you have access to user role info
@@ -102,18 +130,31 @@ export function MessageList({
   // Get employee name helper function
   const getEmployeeName = useEmployeeName(employees);
 
+  // Handle recovery from navigation loop
+  const handleRecovery = () => {
+    // Reset state
+    mountCount.current = 0;
+    setNavigationLoopDetected(false);
+    
+    // Force navigation with recovery flag
+    const timestamp = Date.now();
+    navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
+    toast.success("Navigation recovery attempted");
+  };
+
   // Handle navigation loop detected
   if (navigationLoopDetected) {
     return (
       <Alert variant="destructive" className="mb-4">
         <AlertTriangle className="h-4 w-4 mr-2" />
-        <AlertDescription>
+        <AlertDescription className="space-y-2">
           <p className="mb-2">Navigation issue detected - Direct Messages tab is reloading repeatedly.</p>
           <Button 
             variant="outline" 
-            onClick={() => window.location.href = '/communication?tab=messages&recovery=true'}
+            onClick={handleRecovery}
             className="mt-2"
           >
+            <RefreshCw className="h-4 w-4 mr-2" />
             Attempt Recovery
           </Button>
         </AlertDescription>

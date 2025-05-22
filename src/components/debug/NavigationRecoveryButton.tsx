@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Bug } from 'lucide-react';
+import { AlertCircle, Bug, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface NavigationRecoveryButtonProps {
   onRecover: () => void;
@@ -28,6 +29,9 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
     // Add current timestamp to avoid caching issues
     const timestamp = Date.now();
     
+    // Show recovery feedback
+    toast.loading("Starting navigation recovery...", { id: "recovery-toast" });
+    
     // Execute recovery function
     onRecover();
     
@@ -39,7 +43,15 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
       // After a short delay, allow navigation back to messages tab with recovery mode
       setTimeout(() => {
         navigate(`/communication?tab=messages&recovery=true&ts=${timestamp}`, { replace: true });
-      }, 500);
+        toast.success("Navigation recovery complete", { id: "recovery-toast" });
+      }, 800);
+    } else {
+      // For non-critical cases, just refresh the current page with recovery mode
+      setTimeout(() => {
+        const currentTab = new URLSearchParams(window.location.search).get('tab') || 'messages';
+        navigate(`/communication?tab=${currentTab}&recovery=true&ts=${timestamp}`, { replace: true });
+        toast.success("Navigation reset complete", { id: "recovery-toast" });
+      }, 300);
     }
   };
 
@@ -58,7 +70,14 @@ export function NavigationRecoveryButton({ onRecover, loopDetected = false }: Na
             ) : (
               <Bug className="h-3 w-3" />
             )}
-            {loopDetected ? 'Fix Navigation Loop' : 'Reset Navigation'}
+            {loopDetected ? (
+              <>
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> 
+                Fix Navigation Loop
+              </>
+            ) : (
+              'Reset Navigation'
+            )}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">
