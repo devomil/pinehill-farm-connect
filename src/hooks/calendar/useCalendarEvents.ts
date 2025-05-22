@@ -15,6 +15,7 @@ export const useCalendarEvents = (
 ) => {
   const [shifts, setShifts] = useState<WorkShift[]>([]);
   const [shiftCoverage, setShiftCoverage] = useState<any[]>([]);
+  const [shiftsMap, setShiftsMap] = useState<Map<string, WorkShift[]>>(new Map());
   
   // Filter time off requests based on status
   const filteredTimeOffRequests = useMemo(() => {
@@ -67,6 +68,16 @@ export const useCalendarEvents = (
               notes: `Shift coverage: ${item.status}`
             }));
           setShifts(formattedShifts);
+          
+          // Create a map of dates to shifts for easier lookup
+          const shiftsByDate = new Map<string, WorkShift[]>();
+          formattedShifts.forEach(shift => {
+            if (!shiftsByDate.has(shift.date)) {
+              shiftsByDate.set(shift.date, []);
+            }
+            shiftsByDate.get(shift.date)!.push(shift);
+          });
+          setShiftsMap(shiftsByDate);
         }
       } catch (error) {
         console.error('Error in fetch:', error);
@@ -102,6 +113,7 @@ export const useCalendarEvents = (
   return {
     calendarEvents,
     shifts,
-    shiftCoverage
+    shiftCoverage,
+    shiftsMap
   };
 };

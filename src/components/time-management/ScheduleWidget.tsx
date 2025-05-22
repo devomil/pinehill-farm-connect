@@ -1,12 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { format, addMonths, subMonths } from "date-fns";
-import { CalendarNavigation } from "@/components/calendar/CalendarNavigation";
-import { CalendarDay } from "@/components/calendar/CalendarDay";
 import { CalendarLegend } from "@/components/calendar/CalendarLegend";
 import { useCalendarEvents } from "@/hooks/calendar/useCalendarEvents";
 import { useTimeManagement } from "@/contexts/timeManagement";
@@ -37,7 +34,7 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
   const isAdmin = authUser?.role === "admin";
   
   // Use our calendar events hook to get all calendar items
-  const { calendarEvents } = useCalendarEvents(
+  const { calendarEvents, shiftsMap } = useCalendarEvents(
     currentUser,
     currentMonth,
     includeDeclinedRequests,
@@ -55,22 +52,6 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
       currentUser: currentUser ? currentUser.id : "undefined"
     });
   }, [currentMonth, selectedDate, calendarEvents, isCustomizing, allEmployeeShifts, currentUser]);
-  
-  const handlePreviousMonth = () => {
-    setCurrentMonth(prev => subMonths(prev, 1));
-  };
-  
-  const handleNextMonth = () => {
-    setCurrentMonth(prev => addMonths(prev, 1));
-  };
-  
-  const handleDaySelect = (date: Date | undefined) => {
-    console.log("ScheduleWidget - Day selected:", date?.toISOString());
-    setSelectedDate(date);
-  };
-
-  // For admin view, show the WorkScheduleCalendar with employee details
-  const showAdminCalendarView = isAdmin && allEmployeeShifts && allEmployeeShifts.size > 0;
 
   return (
     <Card className={cn("mt-4 relative group", className, isCustomizing ? "border-2 border-dashed border-blue-300" : "")}>
@@ -98,44 +79,18 @@ export const ScheduleWidget: React.FC<ScheduleWidgetProps> = ({
               Show Declined
             </label>
           </div>
-          <CalendarNavigation
-            currentMonth={currentMonth}
-            onPreviousMonth={handlePreviousMonth}
-            onNextMonth={handleNextMonth}
-          />
         </div>
       </CardHeader>
       <CardContent>
-        {showAdminCalendarView ? (
-          // Admin view showing all employee shifts
-          <WorkScheduleCalendar 
-            currentMonth={currentMonth}
-            setCurrentMonth={setCurrentMonth}
-            shiftsMap={allEmployeeShifts}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            isAdminView={true}
-          />
-        ) : (
-          // Regular calendar view
-          <div className="border rounded-md">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDaySelect}
-              month={currentMonth}
-              className="rounded-md border pointer-events-auto"
-              components={{
-                Day: (props) => (
-                  <CalendarDay 
-                    {...props} 
-                    eventsMap={calendarEvents}
-                  />
-                )
-              }}
-            />
-          </div>
-        )}
+        {/* Use the WorkScheduleCalendar component for all schedule views */}
+        <WorkScheduleCalendar 
+          currentMonth={currentMonth}
+          setCurrentMonth={setCurrentMonth}
+          shiftsMap={allEmployeeShifts || shiftsMap}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          isAdminView={isAdmin}
+        />
         
         <CalendarLegend />
         
