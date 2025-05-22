@@ -75,7 +75,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
       <ErrorAlertBar error={error} messagesError={messagesError} onRetry={handleRetry} />
       <DebugPanel />
       
-      {/* Add Calendar at the top matching dashboard style */}
+      {/* Dashboard-style calendar at the top */}
       <div className="mb-4">
         <CalendarContent 
           date={selectedDate}
@@ -87,6 +87,7 @@ export const TimeManagementTabs: React.FC<TimeManagementTabsProps> = ({
           onPreviousMonth={goToPreviousMonth}
           onNextMonth={goToNextMonth}
           clickable={true}
+          viewAllUrl="/time?tab=work-schedules"
         />
       </div>
       

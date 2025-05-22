@@ -3,8 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User } from "@/types";
-import { CompanyEvent } from "./TeamCalendar.types";
-import { CalendarItem } from "./TeamCalendar.types";
+import { CompanyEvent, CalendarItem } from "./TeamCalendar.types";
 import { useRequestFiltering } from "@/hooks/timeManagement/useRequestFiltering";
 import { useTimeManagement } from "@/contexts/timeManagement";
 
@@ -75,10 +74,10 @@ export function useTeamCalendarData(currentUser: User) {
     attendanceType: e.attendance_type,
   }));
   
-  // Add time off items from the context
+  // Add time off items from the context with fixed type
   const timeOffItems: CalendarItem[] = filteredTimeOffRequests?.map((request) => ({
     id: request.id,
-    type: "time-off",
+    type: "time-off", // This type is now included in the CalendarItem interface
     label: `Time Off: ${request.status}`,
     startDate: new Date(request.start_date),
     endDate: new Date(request.end_date),

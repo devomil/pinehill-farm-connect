@@ -9,8 +9,6 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { WorkScheduleHeader } from "./WorkScheduleHeader";
 import { WorkScheduleError } from "./WorkScheduleError";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeamCalendar } from "../TeamCalendar";
 import { WorkScheduleCalendar } from "./WorkScheduleCalendar";
 import { useAllEmployeeShifts } from "@/contexts/timeManagement/hooks/useAllEmployeeShifts";
 import { toast } from "sonner";
@@ -39,7 +37,6 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
   const { shiftsMap: allEmployeeShiftsMap, refreshShifts } = useAllEmployeeShifts();
   
   const currentMonthLabel = format(new Date(), "MMMM yyyy");
-  const [viewMode, setViewMode] = useState<"work-schedules" | "company-events">("work-schedules");
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -136,47 +133,36 @@ export const WorkScheduleTab: React.FC<WorkScheduleTabProps> = ({ isAdmin, curre
           onCopyFromLastMonth={copyFromLastMonth}
           loading={loading}
         />
-        
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "work-schedules" | "company-events")} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="work-schedules">Work Schedules</TabsTrigger>
-            <TabsTrigger value="company-events">Company Events</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </CardHeader>
       <CardContent>
         {error ? (
           <WorkScheduleError error={error} />
-        ) : viewMode === "work-schedules" ? (
-          isAdmin ? (
-            <AdminWorkScheduleEditor
-              selectedEmployee={selectedEmployee}
+        ) : isAdmin ? (
+          <AdminWorkScheduleEditor
+            selectedEmployee={selectedEmployee}
+            scheduleData={scheduleData}
+            onSave={handleSaveSchedule}
+            onReset={resetSchedule}
+            loading={loading}
+          />
+        ) : (
+          <>
+            <WorkScheduleCalendar 
+              currentMonth={currentMonth}
+              setCurrentMonth={setCurrentMonth}
+              shiftsMap={displayShiftsMap}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              isAdminView={isAdmin}
+              showEmployeeNames={true}
+              title="Work Schedule"
+              onDeleteShift={handleDeleteShift}
+            />
+            <EmployeeScheduleView 
               scheduleData={scheduleData}
-              onSave={handleSaveSchedule}
-              onReset={resetSchedule}
               loading={loading}
             />
-          ) : (
-            <>
-              <WorkScheduleCalendar 
-                currentMonth={currentMonth}
-                setCurrentMonth={setCurrentMonth}
-                shiftsMap={displayShiftsMap}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                isAdminView={isAdmin}
-                showEmployeeNames={true}
-                title="Work Schedule"
-                onDeleteShift={handleDeleteShift}  // Added delete handler
-              />
-              <EmployeeScheduleView 
-                scheduleData={scheduleData}
-                loading={loading}
-              />
-            </>
-          )
-        ) : (
-          <TeamCalendar currentUser={currentUser} />
+          </>
         )}
       </CardContent>
     </Card>

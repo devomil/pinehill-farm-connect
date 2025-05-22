@@ -4,7 +4,6 @@ import { User } from "@/types";
 import { TabsContent } from "@/components/ui/tabs";
 import { UserTimeOffRequests } from "@/components/time-management/UserTimeOffRequests";
 import { PendingTimeOffApprovals } from "@/components/time-management/PendingTimeOffApprovals";
-import { TeamCalendar } from "@/components/time-management/TeamCalendar";
 import { ShiftCoverageRequestsTab } from "@/components/time-management/shift-coverage";
 import { WorkScheduleTab } from "@/components/time-management/work-schedule";
 import { useTimeManagement } from "@/contexts/timeManagement";
@@ -95,7 +94,10 @@ export const TabContent: React.FC<TabContentProps> = ({ currentUser, isAdmin }) 
       )}
       
       <TabsContent value="team-calendar" className="pt-4">
-        <TeamCalendar currentUser={currentUser} />
+        {/* No calendar here - it's now at the top of the page */}
+        <div className="text-center text-muted-foreground pt-4">
+          Calendar view is now available at the top of the page
+        </div>
       </TabsContent>
       
       <TabsContent value="work-schedules" className="pt-4">
