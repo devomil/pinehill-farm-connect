@@ -9,10 +9,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
+import { DebugButton } from "@/components/debug/DebugButton";
 
 interface SidebarMobileSheetProps {
   open: boolean;
@@ -26,6 +27,7 @@ export const SidebarMobileSheet = ({
   handleLogout
 }: SidebarMobileSheetProps) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
   // Get all nav items and filter based on user role
   const allNavItems = getAllNavItems();
@@ -57,6 +59,11 @@ export const SidebarMobileSheet = ({
   // Convert the map back to an array
   const navigationItems = Array.from(uniqueItemsMap.values());
 
+  const handleDebugClick = () => {
+    navigate("/communication?tab=announcements&debug=true");
+    setOpen(false); // Close the mobile sheet
+  };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -80,6 +87,17 @@ export const SidebarMobileSheet = ({
               </Link>
             </Button>
           ))}
+          
+          {/* Debug Button */}
+          <DebugButton
+            onClick={handleDebugClick}
+            className="justify-start font-normal"
+            variant="ghost"
+          >
+            Open Diagnostics
+          </DebugButton>
+          
+          {/* Logout Button */}
           <Button variant="ghost" className="justify-start font-normal" onClick={handleLogout}>
             <LogOut className="h-5 w-5 mr-2" />
             Logout
