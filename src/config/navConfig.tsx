@@ -7,18 +7,14 @@ export interface NavItem {
   path: string;
   label: string;
   icon: ReactNode;
-  // Optional properties
-  showIf?: boolean;
   badge?: ReactNode | null;
-  role?: string; // For role-based access control
-  section?: 'main' | 'communication' | 'tools'; // To categorize nav items
+  role?: string;
+  section?: 'main' | 'communication' | 'tools';
 }
 
-// Factory function to create icons
-const createIcon = (Icon: React.FC<any>) => {
-  return ({ className = "h-5 w-5 mr-3" }: { className?: string }) => 
-    <Icon className={className} />;
-};
+// Icon factory function
+const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
+  <Icon className={className} />;
 
 // Main navigation items
 export const mainNavItems: NavItem[] = [
@@ -26,14 +22,14 @@ export const mainNavItems: NavItem[] = [
     id: "dashboard",
     path: "/dashboard",
     label: "Dashboard",
-    icon: createIcon(Home)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(Home),
     section: 'main',
   },
   {
     id: "employees",
     path: "/employees",
     label: "Employees",
-    icon: createIcon(Users)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(Users),
     section: 'main',
     role: "admin",
   },
@@ -41,7 +37,7 @@ export const mainNavItems: NavItem[] = [
     id: "time",
     path: "/time",
     label: "Time Management",
-    icon: createIcon(CalendarIcon)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(CalendarIcon),
     section: 'main',
   },
 ];
@@ -52,14 +48,14 @@ export const communicationNavItems: NavItem[] = [
     id: "announcements",
     path: "/communication",
     label: "Announcements",
-    icon: createIcon(Megaphone)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(Megaphone),
     section: 'communication',
   },
   {
     id: "messages",
     path: "/communication?tab=messages",
     label: "Messages",
-    icon: createIcon(MessageSquare)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(MessageSquare),
     section: 'communication',
   }
 ];
@@ -70,34 +66,34 @@ export const toolsNavItems: NavItem[] = [
     id: "reports",
     path: "/reports",
     label: "Reports",
-    icon: createIcon(BarChart3)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(BarChart3),
     section: 'tools',
   },
   {
     id: "marketing",
     path: "/marketing",
     label: "Marketing",
-    icon: createIcon(Image)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(Image),
     section: 'tools',
   },
   {
     id: "training",
     path: "/training",
     label: "Training Portal",
-    icon: createIcon(BookOpen)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(BookOpen),
     section: 'tools',
   },
   {
     id: "admin-training",
     path: "/admin-training",
     label: "Training Admin",
-    icon: createIcon(BookOpenCheck)({ className: "h-5 w-5 mr-3" }),
+    icon: createIcon(BookOpenCheck),
     section: 'tools',
     role: "admin",
   }
 ];
 
-// Combine all navigation items
+// Combined navigation items
 export const getAllNavItems = (): NavItem[] => {
   return [...mainNavItems, ...communicationNavItems, ...toolsNavItems];
 };

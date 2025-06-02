@@ -1,45 +1,16 @@
 
-import { useNavigate } from "react-router-dom";
+import { useNavigationService } from "@/services/navigationService";
 
 export const useDashboardNavigation = () => {
-  const navigate = useNavigate();
-
-  // Navigation handlers for dashboard widgets
-  const handleTimeOffClick = () => {
-    navigate("/time?tab=my-requests");
-  };
-
-  const handleTrainingClick = () => {
-    navigate("/training");
-  };
-
-  const handleAnnouncementsClick = () => {
-    navigate("/communication?tab=announcements");
-  };
-
-  const handleCalendarClick = () => {
-    navigate("/time?tab=team-calendar");
-  };
-
-  const handleAdminTimeOffClick = () => {
-    navigate("/time?tab=pending-approvals");
-  };
-
-  const handleScheduleClick = () => {
-    navigate("/time?tab=work-schedules");
-  };
-
-  const handleMarketingClick = () => {
-    navigate("/marketing");
-  };
+  const navigationService = useNavigationService();
 
   return {
-    handleTimeOffClick,
-    handleTrainingClick,
-    handleAnnouncementsClick,
-    handleCalendarClick,
-    handleAdminTimeOffClick,
-    handleScheduleClick,
-    handleMarketingClick
+    handleTimeOffClick: navigationService.navigateToTimeOff,
+    handleTrainingClick: navigationService.navigateToTraining,
+    handleAnnouncementsClick: navigationService.navigateToAnnouncements,
+    handleCalendarClick: navigationService.navigateToCalendar,
+    handleAdminTimeOffClick: navigationService.navigateToAdminTimeOff,
+    handleScheduleClick: navigationService.navigateToSchedule,
+    handleMarketingClick: navigationService.navigateToMarketing
   };
 };

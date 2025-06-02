@@ -50,11 +50,15 @@ function App() {
                           <Route path="/dashboard" element={<DashboardPage />} />
                           <Route path="/communication" element={<CommunicationPage />} />
                           <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
-                          <Route path="/time-management" element={<TimeManagementPage />} />
+                          <Route path="/time" element={<TimeManagementPage />} />
                           <Route path="/employees" element={<EmployeePage />} />
                           <Route path="/marketing" element={<MarketingPage />} />
                           <Route path="/training" element={<TrainingPage />} />
                           <Route path="/reports" element={<ReportsPage />} />
+                          {/* Redirect deprecated routes */}
+                          <Route path="/time-management" element={<Navigate to="/time" replace />} />
+                          <Route path="/communications" element={<Navigate to="/communication" replace />} />
+                          <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
                         </Routes>
                       </DashboardLayout>
                     </RequireAuth>
