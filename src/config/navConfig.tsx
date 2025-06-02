@@ -16,25 +16,25 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// Main navigation items - ensuring unique paths and IDs
+// Main navigation items - unique IDs and paths
 export const mainNavItems: NavItem[] = [
   {
-    id: "main-dashboard",
+    id: "nav-dashboard",
     path: "/dashboard",
     label: "Dashboard",
     icon: createIcon(Home),
     section: 'main',
   },
   {
-    id: "main-employees",
-    path: "/employees",
+    id: "nav-employees",
+    path: "/employees", 
     label: "Employees",
     icon: createIcon(Users),
     section: 'main',
     role: "admin",
   },
   {
-    id: "main-time",
+    id: "nav-time",
     path: "/time",
     label: "Time Management",
     icon: createIcon(CalendarIcon),
@@ -42,17 +42,17 @@ export const mainNavItems: NavItem[] = [
   },
 ];
 
-// Communication navigation items - ensuring unique paths and IDs
+// Communication navigation items - unique IDs and paths
 export const communicationNavItems: NavItem[] = [
   {
-    id: "comm-announcements",
+    id: "nav-announcements",
     path: "/communication",
-    label: "Announcements",
+    label: "Announcements", 
     icon: createIcon(Megaphone),
     section: 'communication',
   },
   {
-    id: "comm-messages",
+    id: "nav-messages",
     path: "/communication?tab=messages",
     label: "Messages",
     icon: createIcon(MessageSquare),
@@ -60,31 +60,31 @@ export const communicationNavItems: NavItem[] = [
   }
 ];
 
-// Tools navigation items - ensuring unique paths and IDs
+// Tools navigation items - unique IDs and paths
 export const toolsNavItems: NavItem[] = [
   {
-    id: "tools-reports",
+    id: "nav-reports",
     path: "/reports",
     label: "Reports",
     icon: createIcon(BarChart3),
     section: 'tools',
   },
   {
-    id: "tools-marketing",
+    id: "nav-marketing",
     path: "/marketing",
     label: "Marketing",
     icon: createIcon(Image),
     section: 'tools',
   },
   {
-    id: "tools-training",
+    id: "nav-training",
     path: "/training",
     label: "Training Portal",
     icon: createIcon(BookOpen),
     section: 'tools',
   },
   {
-    id: "tools-admin-training",
+    id: "nav-admin-training",
     path: "/admin-training",
     label: "Training Admin",
     icon: createIcon(BookOpenCheck),
@@ -93,57 +93,67 @@ export const toolsNavItems: NavItem[] = [
   }
 ];
 
-// Enhanced deduplication that works with both path and ID
+// Enhanced deduplication with aggressive checking
 const deduplicateNavItems = (items: NavItem[]): NavItem[] => {
-  const seenPaths = new Set<string>();
-  const seenIds = new Set<string>();
-  const uniqueItems: NavItem[] = [];
-
-  for (const item of items) {
-    // Normalize path for comparison (remove query params)
-    const basePath = item.path.split('?')[0].toLowerCase();
+  console.log(`Starting deduplication with ${items.length} items`);
+  
+  const pathMap = new Map<string, NavItem>();
+  const idSet = new Set<string>();
+  
+  items.forEach((item, index) => {
+    // Normalize path for comparison
+    const normalizedPath = item.path.split('?')[0].toLowerCase();
     
-    // Skip if we've already seen this base path or ID
-    if (seenPaths.has(basePath) || seenIds.has(item.id)) {
-      console.log(`Deduplicating: Skipping duplicate item ${item.label} (ID: ${item.id}, Path: ${item.path})`);
-      continue;
+    // Check for ID duplicates first
+    if (idSet.has(item.id)) {
+      console.warn(`Duplicate ID found: ${item.id} at index ${index} - SKIPPING`);
+      return;
     }
     
-    seenPaths.add(basePath);
-    seenIds.add(item.id);
-    uniqueItems.push(item);
-  }
-
-  console.log(`Deduplication complete: ${items.length} -> ${uniqueItems.length} items`);
-  return uniqueItems;
+    // Check for path duplicates
+    if (pathMap.has(normalizedPath)) {
+      const existing = pathMap.get(normalizedPath);
+      console.warn(`Duplicate path found: ${normalizedPath} - keeping '${existing?.label}' (${existing?.id}), skipping '${item.label}' (${item.id})`);
+      return;
+    }
+    
+    // Add to tracking
+    pathMap.set(normalizedPath, item);
+    idSet.add(item.id);
+    console.log(`Added item: ${item.id} -> ${normalizedPath}`);
+  });
+  
+  const result = Array.from(pathMap.values());
+  console.log(`Deduplication complete: ${items.length} -> ${result.length} items`);
+  return result;
 };
 
 // Combined navigation items with strict deduplication
 export const getAllNavItems = (): NavItem[] => {
-  console.log('getAllNavItems called - combining navigation sections');
+  console.log('getAllNavItems: Starting navigation assembly');
   
   // Get all items from each section
   const allItems = [
     ...mainNavItems,
-    ...communicationNavItems, 
+    ...communicationNavItems,
     ...toolsNavItems
   ];
   
-  console.log(`Before deduplication: ${allItems.length} total items`);
-  console.log('Items before dedup:', allItems.map(item => `${item.id}: ${item.path}`));
+  console.log(`getAllNavItems: Total items before dedup: ${allItems.length}`);
+  allItems.forEach((item, i) => console.log(`  ${i + 1}. ${item.id}: ${item.path}`));
   
-  // Apply deduplication
+  // Apply strict deduplication
   const dedupedItems = deduplicateNavItems(allItems);
   
-  console.log(`After deduplication: ${dedupedItems.length} items`);
-  console.log('Final items:', dedupedItems.map(item => `${item.id}: ${item.path}`));
+  console.log(`getAllNavItems: Final items after dedup: ${dedupedItems.length}`);
+  dedupedItems.forEach((item, i) => console.log(`  ${i + 1}. ${item.id}: ${item.path}`));
   
   return dedupedItems;
 };
 
-// Helper for filtering items based on user role with enhanced deduplication
+// Helper for filtering items based on user role with deduplication
 export const filterNavItemsByRole = (items: NavItem[], role?: string | null): NavItem[] => {
-  console.log(`Filtering ${items.length} items by role: ${role || 'none'}`);
+  console.log(`filterNavItemsByRole: Filtering ${items.length} items by role: ${role || 'none'}`);
   
   // First filter by role
   const roleFilteredItems = items.filter(item => {
@@ -151,11 +161,11 @@ export const filterNavItemsByRole = (items: NavItem[], role?: string | null): Na
     return item.role === role;
   });
   
-  console.log(`After role filtering: ${roleFilteredItems.length} items`);
+  console.log(`filterNavItemsByRole: After role filtering: ${roleFilteredItems.length} items`);
   
-  // Then deduplicate to ensure no duplicates slip through
+  // Then apply deduplication to ensure no duplicates slip through
   const finalItems = deduplicateNavItems(roleFilteredItems);
   
-  console.log(`Final filtered items: ${finalItems.length}`);
+  console.log(`filterNavItemsByRole: Final filtered items: ${finalItems.length}`);
   return finalItems;
 };

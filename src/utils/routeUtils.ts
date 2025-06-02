@@ -1,6 +1,6 @@
 
 /**
- * Utility functions for route management and validation
+ * Enhanced route utilities with strict deduplication
  */
 
 export interface RouteConfig {
@@ -11,7 +11,7 @@ export interface RouteConfig {
   deprecated?: boolean;
 }
 
-// Comprehensive list of all valid routes (no duplicates)
+// Definitive list of valid routes (no duplicates allowed)
 export const APP_ROUTES: RouteConfig[] = [
   { path: "/", component: "Navigate", requiresAuth: false },
   { path: "/login", component: "LoginPage", requiresAuth: false },
@@ -31,20 +31,35 @@ export const APP_ROUTES: RouteConfig[] = [
 ];
 
 /**
- * Get active routes (non-deprecated) with deduplication
+ * Get active routes (non-deprecated) with ultra-strict deduplication
  */
 export function getActiveRoutes(): RouteConfig[] {
-  const activeRoutes = APP_ROUTES.filter(route => !route.deprecated);
+  console.log('getActiveRoutes: Starting route processing');
   
-  // Deduplicate by path
+  const activeRoutes = APP_ROUTES.filter(route => !route.deprecated);
+  console.log(`getActiveRoutes: Found ${activeRoutes.length} active routes`);
+  
+  // Ultra-strict deduplication by path
   const uniqueRoutes = new Map<string, RouteConfig>();
+  const duplicates: string[] = [];
+  
   activeRoutes.forEach(route => {
-    if (!uniqueRoutes.has(route.path)) {
-      uniqueRoutes.set(route.path, route);
+    const normalizedPath = route.path.toLowerCase().trim();
+    if (uniqueRoutes.has(normalizedPath)) {
+      duplicates.push(`Duplicate route: ${route.path}`);
+    } else {
+      uniqueRoutes.set(normalizedPath, route);
     }
   });
   
-  return Array.from(uniqueRoutes.values());
+  if (duplicates.length > 0) {
+    console.error('getActiveRoutes: Duplicates found:', duplicates);
+  }
+  
+  const result = Array.from(uniqueRoutes.values());
+  console.log(`getActiveRoutes: Final unique routes: ${result.length}`);
+  
+  return result;
 }
 
 /**
@@ -91,20 +106,77 @@ export function hasRouteAccess(
 }
 
 /**
- * Validate and clean navigation paths
+ * Ultra-strict navigation path validation and deduplication
  */
 export function validateNavigationPaths(paths: string[]): string[] {
-  const validPaths = getActiveRoutes().map(route => route.path);
-  const uniquePaths = [...new Set(paths)]; // Remove duplicates
+  console.log(`validateNavigationPaths: Processing ${paths.length} paths`);
   
-  return uniquePaths.filter(path => {
-    const basePath = path.split('?')[0];
-    const isValid = validPaths.includes(basePath);
+  const validPaths = getActiveRoutes().map(route => route.path);
+  const pathSet = new Set<string>();
+  const validatedPaths: string[] = [];
+  
+  paths.forEach(path => {
+    const basePath = path.split('?')[0].toLowerCase().trim();
     
-    if (!isValid) {
-      console.warn(`Invalid navigation path detected: ${path}`);
+    // Check if path is valid
+    if (!validPaths.includes(basePath)) {
+      console.warn(`validateNavigationPaths: Invalid path detected: ${path}`);
+      return;
     }
     
-    return isValid;
+    // Check for duplicates
+    if (pathSet.has(basePath)) {
+      console.warn(`validateNavigationPaths: Duplicate path detected: ${path}`);
+      return;
+    }
+    
+    pathSet.add(basePath);
+    validatedPaths.push(path);
   });
+  
+  console.log(`validateNavigationPaths: Validated ${validatedPaths.length} unique paths`);
+  return validatedPaths;
+}
+
+/**
+ * Debug function to analyze navigation duplicates
+ */
+export function debugNavigationDuplicates(items: any[]): void {
+  console.log('=== NAVIGATION DUPLICATE ANALYSIS ===');
+  
+  const pathMap = new Map<string, any[]>();
+  const idMap = new Map<string, any[]>();
+  
+  items.forEach((item, index) => {
+    const path = item.path?.split('?')[0].toLowerCase() || 'no-path';
+    const id = item.id || `no-id-${index}`;
+    
+    // Track paths
+    if (!pathMap.has(path)) {
+      pathMap.set(path, []);
+    }
+    pathMap.get(path)!.push({ ...item, originalIndex: index });
+    
+    // Track IDs
+    if (!idMap.has(id)) {
+      idMap.set(id, []);
+    }
+    idMap.get(id)!.push({ ...item, originalIndex: index });
+  });
+  
+  // Report path duplicates
+  pathMap.forEach((items, path) => {
+    if (items.length > 1) {
+      console.warn(`Path duplicate: ${path}`, items);
+    }
+  });
+  
+  // Report ID duplicates
+  idMap.forEach((items, id) => {
+    if (items.length > 1) {
+      console.warn(`ID duplicate: ${id}`, items);
+    }
+  });
+  
+  console.log('=== END NAVIGATION ANALYSIS ===');
 }

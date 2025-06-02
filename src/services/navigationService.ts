@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { NavItem } from "@/config/navConfig";
 
 /**
- * Centralized navigation service for handling all navigation logic
+ * Centralized navigation service with enhanced deduplication
  */
 export class NavigationService {
   private static navigate: ReturnType<typeof useNavigate> | null = null;
@@ -76,86 +76,79 @@ export class NavigationService {
     });
   }
 
-  // Strict deduplication by both path and ID with enhanced logging
+  // Ultra-strict deduplication with multiple validation layers
   static deduplicateNavItems(items: NavItem[]): NavItem[] {
-    console.log(`NavigationService: Starting deduplication of ${items.length} items`);
+    console.log(`NavigationService: Ultra-strict deduplication starting with ${items.length} items`);
     
-    const pathMap = new Map<string, NavItem>();
-    const idSet = new Set<string>();
-    const duplicates: string[] = [];
-    
-    items.forEach((item, index) => {
-      const normalizedPath = item.path.split('?')[0].toLowerCase();
-      
-      // Check for ID duplicates
-      if (idSet.has(item.id)) {
-        duplicates.push(`ID '${item.id}' at index ${index}`);
-        return;
-      }
-      
-      // Check for path duplicates
-      if (pathMap.has(normalizedPath)) {
-        const existing = pathMap.get(normalizedPath);
-        duplicates.push(`Path '${normalizedPath}' - keeping '${existing?.label}', skipping '${item.label}'`);
-        return;
-      }
-      
-      // Add to our tracking
-      pathMap.set(normalizedPath, item);
-      idSet.add(item.id);
-    });
-    
-    if (duplicates.length > 0) {
-      console.warn('NavigationService: Found duplicates:', duplicates);
-    }
-    
-    const result = Array.from(pathMap.values());
-    console.log(`NavigationService: Deduplication complete: ${items.length} -> ${result.length} items`);
-    
-    return result;
-  }
-
-  // Master processing pipeline with enhanced validation
-  static processNavigationItems(items: NavItem[]): NavItem[] {
-    console.log(`NavigationService: Processing ${items.length} navigation items through full pipeline`);
-    
-    // Step 1: Input validation
+    // Layer 1: Remove invalid items
     const validItems = items.filter(item => {
       if (!item.id || !item.path || !item.label) {
-        console.warn(`NavigationService: Invalid item detected:`, item);
+        console.warn(`NavigationService: Invalid item removed:`, item);
         return false;
       }
       return true;
     });
     
-    console.log(`NavigationService: After validation: ${validItems.length} items`);
+    // Layer 2: Track by both normalized path and exact ID
+    const seenPaths = new Set<string>();
+    const seenIds = new Set<string>();
+    const finalItems: NavItem[] = [];
     
-    // Step 2: Filter deprecated routes
-    const nonDeprecatedItems = this.filterDeprecatedRoutes(validItems);
-    console.log(`NavigationService: After deprecated filter: ${nonDeprecatedItems.length} items`);
-    
-    // Step 3: Strict deduplication
-    const uniqueItems = this.deduplicateNavItems(nonDeprecatedItems);
-    console.log(`NavigationService: Final processed items: ${uniqueItems.length}`);
-    
-    // Step 4: Final verification
-    const pathSet = new Set();
-    const idSet = new Set();
-    let hasIssues = false;
-    
-    uniqueItems.forEach(item => {
-      const basePath = item.path.split('?')[0].toLowerCase();
-      if (pathSet.has(basePath) || idSet.has(item.id)) {
-        console.error(`NavigationService: CRITICAL - Duplicate survived processing: ${item.id} - ${item.path}`);
-        hasIssues = true;
+    validItems.forEach((item, index) => {
+      const normalizedPath = item.path.split('?')[0].toLowerCase().trim();
+      
+      // Check for exact ID match
+      if (seenIds.has(item.id)) {
+        console.warn(`NavigationService: Duplicate ID '${item.id}' at index ${index} - REJECTED`);
+        return;
       }
-      pathSet.add(basePath);
-      idSet.add(item.id);
+      
+      // Check for path collision
+      if (seenPaths.has(normalizedPath)) {
+        console.warn(`NavigationService: Duplicate path '${normalizedPath}' for item '${item.label}' (${item.id}) - REJECTED`);
+        return;
+      }
+      
+      // Item is unique, add it
+      seenPaths.add(normalizedPath);
+      seenIds.add(item.id);
+      finalItems.push(item);
+      console.log(`NavigationService: Added unique item: ${item.id} -> ${normalizedPath}`);
     });
     
-    if (!hasIssues) {
-      console.log('NavigationService: ✅ All duplicates successfully removed');
+    // Layer 3: Final validation check
+    const pathCheck = new Set();
+    const idCheck = new Set();
+    let hasCollision = false;
+    
+    finalItems.forEach(item => {
+      const basePath = item.path.split('?')[0].toLowerCase();
+      if (pathCheck.has(basePath) || idCheck.has(item.id)) {
+        console.error(`NavigationService: CRITICAL - Duplicate survived: ${item.id} - ${item.path}`);
+        hasCollision = true;
+      }
+      pathCheck.add(basePath);
+      idCheck.add(item.id);
+    });
+    
+    if (!hasCollision) {
+      console.log(`NavigationService: ✅ Ultra-strict deduplication successful: ${items.length} -> ${finalItems.length} items`);
     }
+    
+    return finalItems;
+  }
+
+  // Master processing pipeline with complete validation
+  static processNavigationItems(items: NavItem[]): NavItem[] {
+    console.log(`NavigationService: Processing ${items.length} items through complete pipeline`);
+    
+    // Step 1: Remove deprecated routes
+    const nonDeprecatedItems = this.filterDeprecatedRoutes(items);
+    console.log(`NavigationService: After deprecated filter: ${nonDeprecatedItems.length} items`);
+    
+    // Step 2: Ultra-strict deduplication
+    const uniqueItems = this.deduplicateNavItems(nonDeprecatedItems);
+    console.log(`NavigationService: After ultra-strict dedup: ${uniqueItems.length} items`);
     
     return uniqueItems;
   }

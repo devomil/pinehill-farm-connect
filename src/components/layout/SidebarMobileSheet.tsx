@@ -30,29 +30,41 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  console.log('SidebarMobileSheet: Rendering mobile navigation');
+  console.log('SidebarMobileSheet: Starting mobile navigation processing');
   
-  // Get all nav items - this is where duplicates might be introduced
+  // Get all nav items and apply complete processing pipeline
   const allNavItems = getAllNavItems();
-  console.log(`SidebarMobileSheet: Got ${allNavItems.length} items from getAllNavItems`);
+  console.log(`SidebarMobileSheet: Retrieved ${allNavItems.length} items from getAllNavItems`);
   
-  // Filter by role first
+  // Filter by role
   const roleFilteredItems = filterNavItemsByRole(allNavItems, currentUser?.role);
   console.log(`SidebarMobileSheet: After role filtering: ${roleFilteredItems.length} items`);
   
-  // Apply full processing pipeline to ensure absolutely no duplicates
+  // Apply complete processing pipeline for ultimate deduplication
   const finalNavigationItems = NavigationService.processNavigationItems(roleFilteredItems);
-  console.log(`SidebarMobileSheet: Final items after full processing: ${finalNavigationItems.length}`);
+  console.log(`SidebarMobileSheet: Final items after complete processing: ${finalNavigationItems.length}`);
   
-  // Debug logging for mobile sheet
+  // Enhanced debugging
   console.log('SidebarMobileSheet: Final navigation items:');
   finalNavigationItems.forEach((item, index) => {
-    console.log(`  ${index + 1}. ${item.label} (${item.id}) -> ${item.path}`);
+    console.log(`  ${index + 1}. [${item.id}] ${item.label} -> ${item.path}`);
+  });
+  
+  // Verification check
+  const pathSet = new Set();
+  const idSet = new Set();
+  finalNavigationItems.forEach(item => {
+    const basePath = item.path.split('?')[0].toLowerCase();
+    if (pathSet.has(basePath) || idSet.has(item.id)) {
+      console.error(`SidebarMobileSheet: CRITICAL DUPLICATE DETECTED: ${item.id} - ${item.path}`);
+    }
+    pathSet.add(basePath);
+    idSet.add(item.id);
   });
 
   const handleDebugClick = () => {
     navigate("/diagnostics");
-    setOpen(false); // Close the mobile sheet
+    setOpen(false);
   };
 
   return (
@@ -79,7 +91,6 @@ export const SidebarMobileSheet = ({
             </Button>
           ))}
           
-          {/* Debug Button */}
           <DebugButton
             onClick={handleDebugClick}
             className="justify-start font-normal"
@@ -88,7 +99,6 @@ export const SidebarMobileSheet = ({
             Open Diagnostics
           </DebugButton>
           
-          {/* Logout Button */}
           <Button variant="ghost" className="justify-start font-normal" onClick={handleLogout}>
             <LogOut className="h-5 w-5 mr-2" />
             Logout
