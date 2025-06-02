@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -17,7 +18,7 @@ export const CommunicationIndicators: React.FC = () => {
   const { announcements, refetchData } = useDashboardData();
   const { unreadMessages, refreshMessages } = useCommunications();
   const location = useLocation();
-  const manualRefresh = useRefreshMessages();
+  const { refresh: manualRefresh } = useRefreshMessages();
   
   // Count unread announcements - exclude those requiring acknowledgment
   const unreadAnnouncements = announcements

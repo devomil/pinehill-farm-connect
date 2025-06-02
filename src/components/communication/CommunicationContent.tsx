@@ -23,7 +23,7 @@ export const CommunicationContent = React.memo<CommunicationContentProps>(({
   isAdmin
 }) => {
   const [errorState, setErrorState] = useState<{tab: string, count: number} | null>(null);
-  const refreshMessages = useRefreshMessages();
+  const { refresh: refreshMessages } = useRefreshMessages();
   const location = useLocation();
   const navigationDebugger = useNavigationDebugger();
   const mountRef = useRef(Date.now());

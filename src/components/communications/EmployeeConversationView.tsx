@@ -27,7 +27,7 @@ export function EmployeeConversationView({
   unreadMessages = []
 }: EmployeeConversationViewProps) {
   const { currentUser } = useAuth();
-  const refresh = useRefreshMessages();
+  const { refresh } = useRefreshMessages();
   const initialRefreshDone = useRef(false);
   const lastConversationId = useRef<string | null>(null);
   

@@ -14,7 +14,7 @@ export function useMessageReadStatus(
   currentUser: User | null,
   unreadMessages: Communication[]
 ) {
-  const refreshMessages = useRefreshMessages();
+  const { refresh: refreshMessages } = useRefreshMessages();
 
   useEffect(() => {
     // Function to mark messages as read
