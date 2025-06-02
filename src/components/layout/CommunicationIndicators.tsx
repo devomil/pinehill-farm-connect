@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
 import { useLocation } from "react-router-dom";
 import { useRefreshMessages } from "@/hooks/communications/useRefreshMessages";
-import { communicationNavItems } from "@/config/navConfig";
+import { getCommunicationNavItems } from "@/config/navConfig";
 
 export const CommunicationIndicators: React.FC = () => {
   const navigate = useNavigate();
@@ -66,6 +66,7 @@ export const CommunicationIndicators: React.FC = () => {
   }, [location.pathname, manualRefresh, refetchData]);
 
   // Find the communication items from our centralized config
+  const communicationNavItems = getCommunicationNavItems();
   const announcementItem = communicationNavItems.find(item => item.id === "announcements");
   const messagesItem = communicationNavItems.find(item => item.id === "messages");
 
