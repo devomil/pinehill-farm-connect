@@ -47,8 +47,8 @@ const CommunicationPage: React.FC = () => {
   // Keep navigation debugger for monitoring
   const navigationDebugger = useNavigationDebugger();
   
-  // Emergency detection - if tab switches exceed 1000, show emergency reset
-  const isEmergency = navigationDebugger.tabSwitchCount > 1000;
+  // Lower emergency threshold - trigger at 50 tab switches OR when loop detected
+  const isEmergency = navigationDebugger.tabSwitchCount >= 50 || navigationDebugger.hasLoopDetected;
   
   debug.info("CommunicationPage rendering", {
     activeTab, 
@@ -58,6 +58,8 @@ const CommunicationPage: React.FC = () => {
     isAdmin,
     isNavigating,
     tabSwitchCount: navigationDebugger.tabSwitchCount,
+    rapidNavigationCount: navigationDebugger.rapidNavigationCount,
+    hasLoopDetected: navigationDebugger.hasLoopDetected,
     isEmergency
   });
   

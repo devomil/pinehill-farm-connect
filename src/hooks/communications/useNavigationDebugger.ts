@@ -1,103 +1,104 @@
-import { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { createDebugContext } from '@/utils/debugUtils';
 
-/**
- * Specialized hook for debugging navigation issues with the messages tab
- * This will help diagnose why users are being "kicked out" of Direct Messages
- */
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useDebug } from "../useDebug";
+
 export function useNavigationDebugger() {
-  const debug = createDebugContext('NavigationDebugger');
   const location = useLocation();
-  const navigate = useNavigate();
-  const navigationHistory = useRef<{path: string, timestamp: number}[]>([]);
-  const tabSwitchCount = useRef(0);
-  const lastMessageTabAt = useRef(0);
-  const potentialLoopDetected = useRef(false);
+  const debug = useDebug('NavigationDebugger');
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [timeInMessagesTab, setTimeInMessagesTab] = useState(0);
+  const [hasLoopDetected, setHasLoopDetected] = useState(false);
   
-  // Monitor for navigation changes and potential loops
+  const messagesTabStartTime = useRef<number | null>(null);
+  const lastLocationRef = useRef(location);
+  const rapidNavigationCount = useRef(0);
+  const lastNavigationTime = useRef(Date.now());
+
+  // Track time spent in messages tab
   useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const currentTab = urlParams.get('tab');
+    
+    if (currentTab === 'messages') {
+      if (!messagesTabStartTime.current) {
+        messagesTabStartTime.current = Date.now();
+      }
+    } else {
+      messagesTabStartTime.current = null;
+    }
+    
+    const updateTimer = setInterval(() => {
+      if (messagesTabStartTime.current) {
+        setTimeInMessagesTab(Date.now() - messagesTabStartTime.current);
+      }
+    }, 100);
+    
+    return () => clearInterval(updateTimer);
+  }, [location.search]);
+
+  // Enhanced navigation tracking with lower thresholds
+  useEffect(() => {
+    const prevPath = lastLocationRef.current.pathname + lastLocationRef.current.search;
     const currentPath = location.pathname + location.search;
     const now = Date.now();
     
-    // Record this navigation in history
-    navigationHistory.current.push({
-      path: currentPath,
-      timestamp: now
-    });
-    
-    // Keep history manageable
-    if (navigationHistory.current.length > 20) {
-      navigationHistory.current.shift();
-    }
-    
-    // Check if we've navigated to messages tab
-    if (currentPath.includes('tab=messages')) {
-      lastMessageTabAt.current = now;
-      tabSwitchCount.current++;
-      
-      debug.info("Navigated to messages tab", {
-        switchCount: tabSwitchCount.current,
-        time: new Date().toISOString()
-      });
-    } 
-    
-    // Check if we've rapidly switched away from messages tab
-    if (lastMessageTabAt.current > 0 && 
-        !currentPath.includes('tab=messages') && 
-        now - lastMessageTabAt.current < 2000) {
-      
-      debug.warn("Rapid exit from messages tab detected", {
-        timeInMessagesTab: now - lastMessageTabAt.current,
-        previousPath: navigationHistory.current[navigationHistory.current.length - 2]?.path
+    if (prevPath !== currentPath) {
+      setTabSwitchCount(prev => {
+        const newCount = prev + 1;
+        
+        // Lower emergency threshold to 50 for faster detection
+        if (newCount >= 50) {
+          setHasLoopDetected(true);
+          debug.warn('Navigation loop detected at lower threshold', { 
+            count: newCount,
+            path: currentPath 
+          });
+        }
+        
+        return newCount;
       });
       
-      // If we've had multiple rapid switches, we might have a loop
-      if (tabSwitchCount.current > 3 && !potentialLoopDetected.current) {
-        potentialLoopDetected.current = true;
+      // Track rapid navigation (within 1 second)
+      if (now - lastNavigationTime.current < 1000) {
+        rapidNavigationCount.current++;
         
-        debug.error("Potential navigation loop detected", {
-          navigationHistory: navigationHistory.current.slice(-5),
-          currentLocation: currentPath
-        });
-        
-        // Show warning to user
-        toast.error(
-          "Navigation issue detected with direct messages", 
-          { 
-            description: "View the diagnostics panel for details", 
-            duration: 5000,
-            id: 'nav-loop-detected'
-          }
-        );
+        // If we have 10+ rapid navigations, consider it an emergency
+        if (rapidNavigationCount.current >= 10) {
+          setHasLoopDetected(true);
+          debug.error('Rapid navigation emergency detected', {
+            rapidCount: rapidNavigationCount.current,
+            totalCount: tabSwitchCount
+          });
+        }
+      } else {
+        // Reset rapid navigation counter if enough time has passed
+        rapidNavigationCount.current = 0;
       }
+      
+      lastNavigationTime.current = now;
+      lastLocationRef.current = location;
     }
-    
-  }, [location, debug]);
-  
-  // Recovery function to try to stabilize navigation
-  const attemptRecovery = () => {
-    potentialLoopDetected.current = false;
-    tabSwitchCount.current = 0;
-    
-    // Force navigation to messages tab with special recovery flag
-    navigate('/communication?tab=messages&recovery=true', { replace: true });
-    
-    debug.info("Navigation recovery attempted", {
-      historyCleared: true,
-      timestamp: new Date().toISOString()
-    });
-    
-    toast.success("Navigation recovery attempted");
-  };
-  
+  }, [location, debug, tabSwitchCount]);
+
+  // Auto-reset counters after a period of stability
+  useEffect(() => {
+    const resetTimer = setTimeout(() => {
+      if (tabSwitchCount > 0) {
+        setTabSwitchCount(0);
+        rapidNavigationCount.current = 0;
+        setHasLoopDetected(false);
+        debug.info('Navigation counters reset after stability period');
+      }
+    }, 30000); // Reset after 30 seconds of stability
+
+    return () => clearTimeout(resetTimer);
+  }, [tabSwitchCount, debug]);
+
   return {
-    navigationHistory: navigationHistory.current,
-    hasLoopDetected: potentialLoopDetected.current,
-    tabSwitchCount: tabSwitchCount.current,
-    timeInMessagesTab: lastMessageTabAt.current > 0 ? 
-      Date.now() - lastMessageTabAt.current : 0,
-    attemptRecovery
+    tabSwitchCount,
+    timeInMessagesTab,
+    hasLoopDetected,
+    rapidNavigationCount: rapidNavigationCount.current
   };
 }

@@ -31,17 +31,28 @@ export function EmergencyNavigationReset({ onReset, switchCount }: EmergencyNavi
     toast.success("Returned to dashboard");
   };
 
+  // Determine severity based on switch count
+  const severity = switchCount >= 100 ? "CRITICAL" : switchCount >= 50 ? "HIGH" : "MODERATE";
+  const alertMessage = switchCount >= 100 
+    ? "CRITICAL navigation loop detected!" 
+    : switchCount >= 50 
+    ? "Rapid navigation loop detected!" 
+    : "Navigation instability detected!";
+
   return (
     <Alert variant="destructive" className="mb-6 border-red-600 bg-red-50">
       <AlertTriangle className="h-5 w-5" />
       <AlertTitle className="text-lg font-bold">
-        🚨 NAVIGATION EMERGENCY DETECTED
+        🚨 NAVIGATION EMERGENCY DETECTED - {severity} LEVEL
       </AlertTitle>
       <AlertDescription className="space-y-4">
         <div className="text-sm">
-          <p className="font-semibold">Critical navigation loop detected!</p>
+          <p className="font-semibold">{alertMessage}</p>
           <p>Tab switches: <span className="font-mono bg-red-100 px-1 rounded">{switchCount.toLocaleString()}</span></p>
-          <p className="mt-2">The system has activated emergency protection to prevent browser crashes.</p>
+          <p className="mt-2">The system has activated emergency protection to prevent browser crashes and performance issues.</p>
+          {switchCount < 100 && (
+            <p className="text-xs mt-1 text-red-700">Emergency threshold lowered to 50 switches for faster detection.</p>
+          )}
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 pt-3">
@@ -66,7 +77,7 @@ export function EmergencyNavigationReset({ onReset, switchCount }: EmergencyNavi
         </div>
         
         <div className="text-xs text-red-600 mt-3 p-2 bg-red-100 rounded">
-          <strong>What happened?</strong> A navigation loop caused excessive tab switching, which can freeze the browser. 
+          <strong>What happened?</strong> A navigation loop caused excessive tab switching ({switchCount} times), which can freeze the browser. 
           The emergency reset will clear all navigation state and restore normal functionality.
         </div>
       </AlertDescription>
