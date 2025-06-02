@@ -12,9 +12,10 @@ export const ShiftCoverageEmpty: React.FC<ShiftCoverageEmptyProps> = ({
   onRefresh, 
   inline = false 
 }) => {
-  const handleRefreshClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRefresh(e);
+  const handleRefreshClick = () => {
+    // Create a synthetic event for the onRefresh callback
+    const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent;
+    onRefresh(syntheticEvent);
   };
   
   return (

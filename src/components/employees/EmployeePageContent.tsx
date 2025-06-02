@@ -40,9 +40,12 @@ export const EmployeePageContent: React.FC<EmployeePageContentProps> = ({
   return (
     <Section variant="card" title="Employee Directory">
       <UserTable
-        users={filteredEmployees}
-        onUpdateEmployee={onUpdateEmployee}
-        onDeleteEmployee={onDeleteEmployee}
+        employees={filteredEmployees}
+        loading={false}
+        error={null}
+        onUpdate={onUpdateEmployee}
+        onDelete={onDeleteEmployee}
+        onRetry={onRetry}
       />
     </Section>
   );

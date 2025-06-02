@@ -30,7 +30,7 @@ export * from "./loading-state";
 export * from "./error-state";
 export * from "./page-container";
 export * from "./section";
-export * from "./form-field";
+// Remove the conflicting export - use FormField from "./form" instead
 export * from "./data-table";
 export * from "./action-button";
 export * from "./status-badge";
