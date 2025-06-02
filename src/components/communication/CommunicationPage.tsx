@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
@@ -13,6 +14,9 @@ import { CommunicationPageContent } from "./CommunicationPageContent";
 import { toast } from "sonner";
 
 const CommunicationPage: React.FC = () => {
+  // Add immediate console log
+  console.log("CommunicationPage component rendering at", new Date().toISOString());
+  
   // Setup component debugging
   const debug = useDebug('CommunicationPage', {
     trackRenders: true,
@@ -74,10 +78,34 @@ const CommunicationPage: React.FC = () => {
     }
   }, [isEmergency, showDebugInfo, setShowDebugInfo]);
   
+  const containerStyle = {
+    width: '100%',
+    minHeight: '100vh',
+    padding: '0',
+    margin: '0',
+    backgroundColor: '#00ff00',
+    border: '3px solid #ff0000'
+  };
+  
+  console.log("CommunicationPage container style:", containerStyle);
+  
   return (
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
-        <div className="w-full min-h-screen">
+        <div style={containerStyle} className="communication-page-container">
+          <div style={{ 
+            position: 'absolute', 
+            top: '50px', 
+            left: '10px', 
+            backgroundColor: 'blue', 
+            color: 'white', 
+            padding: '5px',
+            zIndex: 10001,
+            fontSize: '12px'
+          }}>
+            COMMUNICATION PAGE CONTENT - Tab: {activeTab}
+          </div>
+          
           {/* Show emergency reset if critical loop detected */}
           {isEmergency && (
             <EmergencyNavigationReset 
