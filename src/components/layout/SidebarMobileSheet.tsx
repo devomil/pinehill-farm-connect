@@ -30,14 +30,25 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  // Get all nav items and filter based on user role
+  console.log('SidebarMobileSheet: Rendering mobile navigation');
+  
+  // Get all nav items - this is where duplicates might be introduced
   const allNavItems = getAllNavItems();
+  console.log(`SidebarMobileSheet: Got ${allNavItems.length} items from getAllNavItems`);
+  
+  // Filter by role first
   const roleFilteredItems = filterNavItemsByRole(allNavItems, currentUser?.role);
+  console.log(`SidebarMobileSheet: After role filtering: ${roleFilteredItems.length} items`);
   
-  // Apply full processing pipeline to ensure no duplicates
-  const navigationItems = NavigationService.processNavigationItems(roleFilteredItems);
+  // Apply full processing pipeline to ensure absolutely no duplicates
+  const finalNavigationItems = NavigationService.processNavigationItems(roleFilteredItems);
+  console.log(`SidebarMobileSheet: Final items after full processing: ${finalNavigationItems.length}`);
   
-  console.log(`Mobile navigation: Processing ${allNavItems.length} total items, ${roleFilteredItems.length} after role filter, ${navigationItems.length} final items`);
+  // Debug logging for mobile sheet
+  console.log('SidebarMobileSheet: Final navigation items:');
+  finalNavigationItems.forEach((item, index) => {
+    console.log(`  ${index + 1}. ${item.label} (${item.id}) -> ${item.path}`);
+  });
 
   const handleDebugClick = () => {
     navigate("/diagnostics");
@@ -59,7 +70,7 @@ export const SidebarMobileSheet = ({
           </SheetDescription>
         </SheetHeader>
         <nav className="grid gap-4 py-4">
-          {navigationItems.map(item => (
+          {finalNavigationItems.map(item => (
             <Button key={item.id} variant="ghost" className="justify-start font-normal">
               <Link to={item.path} className="flex items-center">
                 {item.icon}

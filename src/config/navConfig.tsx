@@ -16,17 +16,17 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// Main navigation items - ensuring unique paths
+// Main navigation items - ensuring unique paths and IDs
 export const mainNavItems: NavItem[] = [
   {
-    id: "dashboard",
+    id: "main-dashboard",
     path: "/dashboard",
     label: "Dashboard",
     icon: createIcon(Home),
     section: 'main',
   },
   {
-    id: "employees",
+    id: "main-employees",
     path: "/employees",
     label: "Employees",
     icon: createIcon(Users),
@@ -34,7 +34,7 @@ export const mainNavItems: NavItem[] = [
     role: "admin",
   },
   {
-    id: "time",
+    id: "main-time",
     path: "/time",
     label: "Time Management",
     icon: createIcon(CalendarIcon),
@@ -42,17 +42,17 @@ export const mainNavItems: NavItem[] = [
   },
 ];
 
-// Communication navigation items - ensuring unique paths
+// Communication navigation items - ensuring unique paths and IDs
 export const communicationNavItems: NavItem[] = [
   {
-    id: "communication-announcements",
+    id: "comm-announcements",
     path: "/communication",
     label: "Announcements",
     icon: createIcon(Megaphone),
     section: 'communication',
   },
   {
-    id: "communication-messages",
+    id: "comm-messages",
     path: "/communication?tab=messages",
     label: "Messages",
     icon: createIcon(MessageSquare),
@@ -60,31 +60,31 @@ export const communicationNavItems: NavItem[] = [
   }
 ];
 
-// Tools navigation items - ensuring unique paths
+// Tools navigation items - ensuring unique paths and IDs
 export const toolsNavItems: NavItem[] = [
   {
-    id: "reports",
+    id: "tools-reports",
     path: "/reports",
     label: "Reports",
     icon: createIcon(BarChart3),
     section: 'tools',
   },
   {
-    id: "marketing",
+    id: "tools-marketing",
     path: "/marketing",
     label: "Marketing",
     icon: createIcon(Image),
     section: 'tools',
   },
   {
-    id: "training",
+    id: "tools-training",
     path: "/training",
     label: "Training Portal",
     icon: createIcon(BookOpen),
     section: 'tools',
   },
   {
-    id: "admin-training",
+    id: "tools-admin-training",
     path: "/admin-training",
     label: "Training Admin",
     icon: createIcon(BookOpenCheck),
@@ -93,18 +93,19 @@ export const toolsNavItems: NavItem[] = [
   }
 ];
 
-// Enhanced deduplication function
+// Enhanced deduplication that works with both path and ID
 const deduplicateNavItems = (items: NavItem[]): NavItem[] => {
   const seenPaths = new Set<string>();
   const seenIds = new Set<string>();
   const uniqueItems: NavItem[] = [];
 
   for (const item of items) {
-    const basePath = item.path.split('?')[0];
+    // Normalize path for comparison (remove query params)
+    const basePath = item.path.split('?')[0].toLowerCase();
     
     // Skip if we've already seen this base path or ID
     if (seenPaths.has(basePath) || seenIds.has(item.id)) {
-      console.log(`Skipping duplicate navigation item: ${item.label} (${item.path})`);
+      console.log(`Deduplicating: Skipping duplicate item ${item.label} (ID: ${item.id}, Path: ${item.path})`);
       continue;
     }
     
@@ -113,17 +114,48 @@ const deduplicateNavItems = (items: NavItem[]): NavItem[] => {
     uniqueItems.push(item);
   }
 
+  console.log(`Deduplication complete: ${items.length} -> ${uniqueItems.length} items`);
   return uniqueItems;
 };
 
-// Combined navigation items with proper deduplication
+// Combined navigation items with strict deduplication
 export const getAllNavItems = (): NavItem[] => {
-  const allItems = [...mainNavItems, ...communicationNavItems, ...toolsNavItems];
-  return deduplicateNavItems(allItems);
+  console.log('getAllNavItems called - combining navigation sections');
+  
+  // Get all items from each section
+  const allItems = [
+    ...mainNavItems,
+    ...communicationNavItems, 
+    ...toolsNavItems
+  ];
+  
+  console.log(`Before deduplication: ${allItems.length} total items`);
+  console.log('Items before dedup:', allItems.map(item => `${item.id}: ${item.path}`));
+  
+  // Apply deduplication
+  const dedupedItems = deduplicateNavItems(allItems);
+  
+  console.log(`After deduplication: ${dedupedItems.length} items`);
+  console.log('Final items:', dedupedItems.map(item => `${item.id}: ${item.path}`));
+  
+  return dedupedItems;
 };
 
-// Helper for filtering items based on user role with deduplication
+// Helper for filtering items based on user role with enhanced deduplication
 export const filterNavItemsByRole = (items: NavItem[], role?: string | null): NavItem[] => {
-  const filteredItems = items.filter(item => !item.role || item.role === role);
-  return deduplicateNavItems(filteredItems);
+  console.log(`Filtering ${items.length} items by role: ${role || 'none'}`);
+  
+  // First filter by role
+  const roleFilteredItems = items.filter(item => {
+    if (!item.role) return true; // No role requirement
+    return item.role === role;
+  });
+  
+  console.log(`After role filtering: ${roleFilteredItems.length} items`);
+  
+  // Then deduplicate to ensure no duplicates slip through
+  const finalItems = deduplicateNavItems(roleFilteredItems);
+  
+  console.log(`Final filtered items: ${finalItems.length}`);
+  return finalItems;
 };
