@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
+import { getAllNavItems, filterNavItemsByRole, debugNavigationRegistry } from "@/config/navConfig";
 import { NavigationService } from "@/services/navigationService";
 import { DebugButton } from "@/components/debug/DebugButton";
 
@@ -30,36 +30,22 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  console.log('SidebarMobileSheet: Starting mobile navigation processing');
+  console.log('SidebarMobileSheet: Starting mobile navigation with centralized registry');
   
-  // Get all nav items and apply complete processing pipeline
+  // Debug registry state
+  debugNavigationRegistry();
+  
+  // Get items from centralized registry (already deduplicated)
   const allNavItems = getAllNavItems();
-  console.log(`SidebarMobileSheet: Retrieved ${allNavItems.length} items from getAllNavItems`);
+  console.log(`SidebarMobileSheet: Registry returned ${allNavItems.length} items`);
   
-  // Filter by role
-  const roleFilteredItems = filterNavItemsByRole(allNavItems, currentUser?.role);
-  console.log(`SidebarMobileSheet: After role filtering: ${roleFilteredItems.length} items`);
+  // Filter by role only
+  const navigationItems = filterNavItemsByRole(allNavItems, currentUser?.role);
+  console.log(`SidebarMobileSheet: Final items after role filter: ${navigationItems.length}`);
   
-  // Apply complete processing pipeline for ultimate deduplication
-  const finalNavigationItems = NavigationService.processNavigationItems(roleFilteredItems);
-  console.log(`SidebarMobileSheet: Final items after complete processing: ${finalNavigationItems.length}`);
-  
-  // Enhanced debugging
-  console.log('SidebarMobileSheet: Final navigation items:');
-  finalNavigationItems.forEach((item, index) => {
+  // Final verification
+  navigationItems.forEach((item, index) => {
     console.log(`  ${index + 1}. [${item.id}] ${item.label} -> ${item.path}`);
-  });
-  
-  // Verification check
-  const pathSet = new Set();
-  const idSet = new Set();
-  finalNavigationItems.forEach(item => {
-    const basePath = item.path.split('?')[0].toLowerCase();
-    if (pathSet.has(basePath) || idSet.has(item.id)) {
-      console.error(`SidebarMobileSheet: CRITICAL DUPLICATE DETECTED: ${item.id} - ${item.path}`);
-    }
-    pathSet.add(basePath);
-    idSet.add(item.id);
   });
 
   const handleDebugClick = () => {
@@ -82,7 +68,7 @@ export const SidebarMobileSheet = ({
           </SheetDescription>
         </SheetHeader>
         <nav className="grid gap-4 py-4">
-          {finalNavigationItems.map(item => (
+          {navigationItems.map(item => (
             <Button key={item.id} variant="ghost" className="justify-start font-normal">
               <Link to={item.path} className="flex items-center">
                 {item.icon}

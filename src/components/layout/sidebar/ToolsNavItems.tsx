@@ -5,7 +5,6 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toolsNavItems, filterNavItemsByRole } from "@/config/navConfig";
-import { NavigationService } from "@/services/navigationService";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -15,15 +14,14 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
-  // Filter items based on user role and apply full processing pipeline
-  const roleFilteredItems = filterNavItemsByRole(toolsNavItems, currentUser?.role);
-  const processedNavItems = NavigationService.processNavigationItems(roleFilteredItems);
+  // Items are already deduplicated at source via registry
+  const filteredItems = filterNavItemsByRole(toolsNavItems, currentUser?.role);
 
-  console.log(`Tools navigation: Processing ${toolsNavItems.length} tools items, ${roleFilteredItems.length} after role filter, ${processedNavItems.length} final items`);
+  console.log(`Tools navigation: Using ${filteredItems.length} pre-validated items from registry`);
 
   return (
     <div className="flex flex-col gap-1">
-      {processedNavItems.map(item => (
+      {filteredItems.map(item => (
         <Button
           key={item.id}
           variant="ghost"
