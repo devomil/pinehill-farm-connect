@@ -9,7 +9,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
-import CommunicationPage from '@/components/communication/CommunicationPage';
+import Communication from '@/pages/Communication';
 import { GlobalDiagnosticsPage } from '@/components/debug/GlobalDiagnosticsPage';
 import TimeManagementPage from '@/pages/TimeManagementPage';
 import EmployeePage from '@/pages/EmployeePage';
@@ -47,7 +47,7 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/communication" element={<CommunicationPage />} />
+                        <Route path="/communication" element={<Communication />} />
                         <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
                         <Route path="/time" element={<TimeManagementPage />} />
                         <Route path="/employees" element={<EmployeePage />} />
