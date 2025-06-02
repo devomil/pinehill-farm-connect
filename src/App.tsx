@@ -53,10 +53,6 @@ function App() {
                         <Route path="/marketing" element={<MarketingPage />} />
                         <Route path="/training" element={<TrainingPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
-                        {/* Redirect deprecated routes */}
-                        <Route path="/time-management" element={<Navigate to="/time" replace />} />
-                        <Route path="/communications" element={<Navigate to="/communication" replace />} />
-                        <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
                       </Routes>
                     </RequireAuth>
                   }

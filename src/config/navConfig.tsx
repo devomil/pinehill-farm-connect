@@ -1,5 +1,5 @@
 
-import { Home, Users, CalendarIcon, BookOpen, BookOpenCheck, BarChart3, Image, Megaphone, MessageSquare } from "lucide-react";
+import { Home, Users, CalendarIcon, BookOpen, BookOpenCheck, BarChart3, Image, Megaphone, MessageSquare, Settings } from "lucide-react";
 import { ReactNode } from "react";
 
 export interface NavItem {
@@ -16,9 +16,9 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// SINGLE SOURCE OF TRUTH - All navigation items in one clean array
+// CLEAN LIST - Only 10 essential pages, no duplicates
 const ALL_NAV_ITEMS: NavItem[] = [
-  // Main navigation
+  // Main navigation (4 items)
   {
     id: "dashboard",
     path: "/dashboard",
@@ -41,8 +41,15 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: createIcon(CalendarIcon),
     section: 'main',
   },
+  {
+    id: "reports",
+    path: "/reports",
+    label: "Reports",
+    icon: createIcon(BarChart3),
+    section: 'main',
+  },
   
-  // Communication navigation
+  // Communication navigation (2 items)
   {
     id: "announcements",
     path: "/communication",
@@ -58,14 +65,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'communication',
   },
   
-  // Tools navigation
-  {
-    id: "reports",
-    path: "/reports",
-    label: "Reports",
-    icon: createIcon(BarChart3),
-    section: 'tools',
-  },
+  // Tools navigation (4 items)
   {
     id: "marketing",
     path: "/marketing",
@@ -87,6 +87,13 @@ const ALL_NAV_ITEMS: NavItem[] = [
     icon: createIcon(BookOpenCheck),
     section: 'tools',
     role: "admin",
+  },
+  {
+    id: "diagnostics",
+    path: "/diagnostics",
+    label: "Diagnostics",
+    icon: createIcon(Settings),
+    section: 'tools',
   }
 ];
 
