@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -31,19 +32,25 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     navigate("/diagnostics");
   };
 
+  if (isMobile) {
+    return (
+      <SidebarMobileSheet open={open} setOpen={setOpen} handleLogout={handleLogout} />
+    );
+  }
+
   return (
     <div
       className={cn(
-        "border-r bg-background relative h-screen flex flex-col transition-all",
+        "border-r bg-background relative h-screen flex flex-col transition-all z-30",
         collapsed ? "w-16" : "w-64"
       )}
     >
       <SidebarBrand collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className="grow overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <SidebarNav collapsed={collapsed} />
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full border-t">
+      <div className="border-t">
         {/* Debug Button */}
         <div className="p-2 border-b">
           <DebugButton
@@ -65,10 +72,6 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
           <span className={!collapsed ? "block" : "hidden"}>Logout</span>
         </Button>
       </div>
-
-      {isMobile && (
-        <SidebarMobileSheet open={open} setOpen={setOpen} handleLogout={handleLogout} />
-      )}
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DebugProvider } from '@/contexts/DebugContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import LoginPage from '@/pages/LoginPage';
@@ -44,23 +43,21 @@ function App() {
                   path="/*"
                   element={
                     <RequireAuth>
-                      <DashboardLayout>
-                        <Routes>
-                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                          <Route path="/dashboard" element={<DashboardPage />} />
-                          <Route path="/communication" element={<CommunicationPage />} />
-                          <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
-                          <Route path="/time" element={<TimeManagementPage />} />
-                          <Route path="/employees" element={<EmployeePage />} />
-                          <Route path="/marketing" element={<MarketingPage />} />
-                          <Route path="/training" element={<TrainingPage />} />
-                          <Route path="/reports" element={<ReportsPage />} />
-                          {/* Redirect deprecated routes */}
-                          <Route path="/time-management" element={<Navigate to="/time" replace />} />
-                          <Route path="/communications" element={<Navigate to="/communication" replace />} />
-                          <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
-                        </Routes>
-                      </DashboardLayout>
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/communication" element={<CommunicationPage />} />
+                        <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
+                        <Route path="/time" element={<TimeManagementPage />} />
+                        <Route path="/employees" element={<EmployeePage />} />
+                        <Route path="/marketing" element={<MarketingPage />} />
+                        <Route path="/training" element={<TrainingPage />} />
+                        <Route path="/reports" element={<ReportsPage />} />
+                        {/* Redirect deprecated routes */}
+                        <Route path="/time-management" element={<Navigate to="/time" replace />} />
+                        <Route path="/communications" element={<Navigate to="/communication" replace />} />
+                        <Route path="/calendar" element={<Navigate to="/time?tab=team-calendar" replace />} />
+                      </Routes>
                     </RequireAuth>
                   }
                 />

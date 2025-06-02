@@ -4,6 +4,7 @@ import { CalendarContent } from "@/components/calendar/CalendarContent";
 import { User } from "@/types";
 import { CalendarEmptyState } from "../empty-states";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface DashboardCalendarSectionProps {
   date: Date;
@@ -29,12 +30,6 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   viewAllUrl,
 }) => {
   const navigate = useNavigate();
-  // Debug log the current props
-  console.log("DashboardCalendarSection - props:", {
-    date: date?.toISOString(),
-    currentMonth: currentMonth?.toISOString(),
-    viewMode
-  });
   
   const handleAddEvent = () => {
     navigate("/time?tab=team-calendar&action=new");
@@ -43,25 +38,29 @@ export const DashboardCalendarSection: React.FC<DashboardCalendarSectionProps> =
   // Check if calendar has events (this would need to be properly implemented)
   const hasEvents = true; // This is a placeholder - you would typically check if there are events
   
-  // The TimeManagementProvider is now at the Dashboard page level
   return (
-    <div className="md:col-span-2">
-      {hasEvents ? (
-        <CalendarContent
-          date={date}
-          currentMonth={currentMonth}
-          viewMode={viewMode}
-          currentUser={currentUser}
-          onDateSelect={onDateSelect}
-          onViewModeChange={onViewModeChange}
-          onPreviousMonth={onPreviousMonth}
-          onNextMonth={onNextMonth}
-          clickable={true}
-          viewAllUrl={viewAllUrl}
-        />
-      ) : (
-        <CalendarEmptyState onAddEvent={handleAddEvent} />
-      )}
-    </div>
+    <Card className="col-span-full">
+      <CardHeader>
+        <CardTitle>Team Calendar</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasEvents ? (
+          <CalendarContent
+            date={date}
+            currentMonth={currentMonth}
+            viewMode={viewMode}
+            currentUser={currentUser}
+            onDateSelect={onDateSelect}
+            onViewModeChange={onViewModeChange}
+            onPreviousMonth={onPreviousMonth}
+            onNextMonth={onNextMonth}
+            clickable={true}
+            viewAllUrl={viewAllUrl}
+          />
+        ) : (
+          <CalendarEmptyState onAddEvent={handleAddEvent} />
+        )}
+      </CardContent>
+    </Card>
   );
 };
