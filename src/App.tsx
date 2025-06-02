@@ -47,6 +47,7 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
+                        {/* Communication page renders without DashboardLayout to eliminate left padding */}
                         <Route path="/communication" element={<Communication />} />
                         <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
                         <Route path="/time" element={<TimeManagementPage />} />

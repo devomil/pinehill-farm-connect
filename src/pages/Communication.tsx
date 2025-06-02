@@ -1,7 +1,6 @@
 
 import React from "react";
 import CommunicationPage from "@/components/communication/CommunicationPage";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useLocation } from "react-router-dom";
 
 const Communication: React.FC = () => {
@@ -29,38 +28,39 @@ const Communication: React.FC = () => {
     }, [location]);
   }
 
-  // Add debug styles that should be very visible
-  const debugWrapperStyle = {
+  // Style to break out of the sidebar layout and take full width
+  const fullWidthStyle = {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
     backgroundColor: '#ff0000',
     border: '5px solid #00ff00',
     padding: '0',
     margin: '0',
-    minHeight: '100vh',
-    width: '100%',
-    position: 'relative' as const,
-    zIndex: 9999
+    zIndex: 9999,
+    overflow: 'auto'
   };
 
-  console.log("Communication wrapper style applied:", debugWrapperStyle);
+  console.log("Communication full-width style applied:", fullWidthStyle);
 
   return (
-    <DashboardLayout>
-      <div style={debugWrapperStyle} className="communication-debug-wrapper">
-        <div style={{ 
-          position: 'absolute', 
-          top: '10px', 
-          left: '10px', 
-          backgroundColor: 'yellow', 
-          color: 'black', 
-          padding: '5px',
-          zIndex: 10000,
-          fontSize: '12px'
-        }}>
-          COMMUNICATION PAGE LOADED - {new Date().toLocaleTimeString()}
-        </div>
-        <CommunicationPage />
+    <div style={fullWidthStyle} className="communication-full-width-wrapper">
+      <div style={{ 
+        position: 'absolute', 
+        top: '10px', 
+        left: '10px', 
+        backgroundColor: 'yellow', 
+        color: 'black', 
+        padding: '5px',
+        zIndex: 10000,
+        fontSize: '12px'
+      }}>
+        COMMUNICATION PAGE LOADED (FULL WIDTH) - {new Date().toLocaleTimeString()}
       </div>
-    </DashboardLayout>
+      <CommunicationPage />
+    </div>
   );
 };
 
