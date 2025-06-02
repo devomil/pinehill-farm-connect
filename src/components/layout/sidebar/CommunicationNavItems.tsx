@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useCommunications } from "@/hooks/useCommunications";
 import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
-import { communicationNavItems } from "@/config/navConfig";
+import { getCommunicationNavItems } from "@/config/navConfig";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -23,8 +23,6 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
   // Add effect to refresh unread messages when navigating to communications
   useEffect(() => {
     if (pathname === '/communication') {
-      console.log("On communication page, refreshing message data");
-      // Use a slight delay to prevent double refresh
       const timer = setTimeout(() => {
         refreshMessages();
         refetchData();
@@ -48,9 +46,11 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
           !a.requires_acknowledgment;
       }).length
     : 0;
+
+  const communicationItems = getCommunicationNavItems();
     
-  // Create a copy of the communication items with dynamic badges
-  const communicationItemsWithBadges = communicationNavItems.map(item => {
+  // Create items with dynamic badges
+  const communicationItemsWithBadges = communicationItems.map(item => {
     if (item.id === "announcements") {
       return {
         ...item,

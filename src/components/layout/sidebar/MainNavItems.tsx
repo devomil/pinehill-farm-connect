@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { mainNavItems, filterNavItemsByRole } from "@/config/navConfig";
+import { getMainNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface NavItemProps {
   collapsed: boolean;
@@ -14,10 +14,8 @@ export const MainNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
-  // Items are already deduplicated at source via registry
-  const filteredItems = filterNavItemsByRole(mainNavItems, currentUser?.role);
-
-  console.log(`Main navigation: Using ${filteredItems.length} pre-validated items from registry`);
+  const mainItems = getMainNavItems();
+  const filteredItems = filterNavItemsByRole(mainItems, currentUser?.role);
 
   return (
     <div className="flex flex-col gap-1">

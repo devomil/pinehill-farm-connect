@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllNavItems, filterNavItemsByRole, debugNavigationRegistry } from "@/config/navConfig";
-import { NavigationService } from "@/services/navigationService";
+import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
 import { DebugButton } from "@/components/debug/DebugButton";
 
 interface SidebarMobileSheetProps {
@@ -30,23 +29,9 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  console.log('SidebarMobileSheet: Starting mobile navigation with centralized registry');
-  
-  // Debug registry state
-  debugNavigationRegistry();
-  
-  // Get items from centralized registry (already deduplicated)
+  // Get all navigation items and filter by role
   const allNavItems = getAllNavItems();
-  console.log(`SidebarMobileSheet: Registry returned ${allNavItems.length} items`);
-  
-  // Filter by role only
   const navigationItems = filterNavItemsByRole(allNavItems, currentUser?.role);
-  console.log(`SidebarMobileSheet: Final items after role filter: ${navigationItems.length}`);
-  
-  // Final verification
-  navigationItems.forEach((item, index) => {
-    console.log(`  ${index + 1}. [${item.id}] ${item.label} -> ${item.path}`);
-  });
 
   const handleDebugClick = () => {
     navigate("/diagnostics");
@@ -70,7 +55,7 @@ export const SidebarMobileSheet = ({
         <nav className="grid gap-4 py-4">
           {navigationItems.map(item => (
             <Button key={item.id} variant="ghost" className="justify-start font-normal">
-              <Link to={item.path} className="flex items-center">
+              <Link to={item.path} className="flex items-center" onClick={() => setOpen(false)}>
                 {item.icon}
                 {item.label}
               </Link>

@@ -1,9 +1,8 @@
 
 import { useNavigate } from "react-router-dom";
-import { NavItem } from "@/config/navConfig";
 
 /**
- * Simplified navigation service - registry handles deduplication
+ * Simplified navigation service
  */
 export class NavigationService {
   private static navigate: ReturnType<typeof useNavigate> | null = null;
@@ -41,7 +40,7 @@ export class NavigationService {
     this.navigate?.("/marketing");
   }
 
-  // Route validation with normalized paths
+  // Route validation
   static isValidRoute(path: string): boolean {
     const validRoutes = [
       '/dashboard',
@@ -57,28 +56,6 @@ export class NavigationService {
     
     const basePath = path.split('?')[0].toLowerCase();
     return validRoutes.includes(basePath);
-  }
-
-  // Simple processing - registry ensures no duplicates exist
-  static processNavigationItems(items: NavItem[]): NavItem[] {
-    console.log(`NavigationService: Processing ${items.length} pre-validated items`);
-    
-    // Since items come from registry, they're already deduplicated
-    // Just do a final validation check
-    const seenPaths = new Set<string>();
-    const seenIds = new Set<string>();
-    
-    items.forEach(item => {
-      const normalizedPath = item.path.split('?')[0].toLowerCase();
-      if (seenPaths.has(normalizedPath) || seenIds.has(item.id)) {
-        console.error(`NavigationService: IMPOSSIBLE DUPLICATE DETECTED: ${item.id} - ${item.path}`);
-      }
-      seenPaths.add(normalizedPath);
-      seenIds.add(item.id);
-    });
-    
-    console.log(`NavigationService: Validated ${items.length} unique items`);
-    return items;
   }
 }
 
