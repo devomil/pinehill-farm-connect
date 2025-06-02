@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -34,7 +33,7 @@ export const PerformanceMonitor: React.FC = () => {
     
     // Simulate some metrics and get real ones where possible
     const data = {
-      pageLoadTime: navigation ? Math.round(navigation.loadEventEnd - navigation.navigationStart) : Math.random() * 2000 + 500,
+      pageLoadTime: navigation ? Math.round(navigation.loadEventEnd - navigation.fetchStart) : Math.random() * 2000 + 500,
       firstContentfulPaint: paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || Math.random() * 1000 + 200,
       largestContentfulPaint: Math.random() * 2500 + 1000,
       cumulativeLayoutShift: Math.random() * 0.25,
