@@ -28,25 +28,49 @@ const Communication: React.FC = () => {
     }, [location]);
   }
 
-  // Style to break out of the sidebar layout and take full width
-  const fullWidthStyle = {
+  // Create a portal-like effect to completely bypass any parent layout
+  React.useEffect(() => {
+    // Set body styles to ensure no constraints
+    const originalBodyStyle = {
+      margin: document.body.style.margin,
+      padding: document.body.style.padding,
+      overflow: document.body.style.overflow
+    };
+    
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.overflow = 'hidden';
+    
+    // Cleanup function
+    return () => {
+      document.body.style.margin = originalBodyStyle.margin;
+      document.body.style.padding = originalBodyStyle.padding;
+      document.body.style.overflow = originalBodyStyle.overflow;
+    };
+  }, []);
+
+  // Style to completely break out of any layout constraints
+  const fullScreenStyle = {
     position: 'fixed' as const,
     top: 0,
     left: 0,
+    right: 0,
+    bottom: 0,
     width: '100vw',
     height: '100vh',
     backgroundColor: '#ff0000',
     border: '5px solid #00ff00',
     padding: '0',
     margin: '0',
-    zIndex: 9999,
-    overflow: 'auto'
+    zIndex: 999999, // Extremely high z-index
+    overflow: 'auto',
+    boxSizing: 'border-box' as const
   };
 
-  console.log("Communication full-width style applied:", fullWidthStyle);
+  console.log("Communication full-screen style applied:", fullScreenStyle);
 
   return (
-    <div style={fullWidthStyle} className="communication-full-width-wrapper">
+    <div style={fullScreenStyle} className="communication-full-screen-wrapper">
       <div style={{ 
         position: 'absolute', 
         top: '10px', 
@@ -54,10 +78,10 @@ const Communication: React.FC = () => {
         backgroundColor: 'yellow', 
         color: 'black', 
         padding: '5px',
-        zIndex: 10000,
+        zIndex: 1000000,
         fontSize: '12px'
       }}>
-        COMMUNICATION PAGE LOADED (FULL WIDTH) - {new Date().toLocaleTimeString()}
+        COMMUNICATION PAGE LOADED (FULL SCREEN) - {new Date().toLocaleTimeString()}
       </div>
       <CommunicationPage />
     </div>

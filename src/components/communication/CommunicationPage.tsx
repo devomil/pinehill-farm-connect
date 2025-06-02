@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
@@ -78,13 +77,17 @@ const CommunicationPage: React.FC = () => {
     }
   }, [isEmergency, showDebugInfo, setShowDebugInfo]);
   
+  // Container style that resets everything and takes full space
   const containerStyle = {
-    width: '100%',
-    minHeight: '100vh',
+    width: '100vw',
+    height: '100vh',
     padding: '0',
     margin: '0',
     backgroundColor: '#00ff00',
-    border: '3px solid #ff0000'
+    border: '3px solid #ff0000',
+    position: 'relative' as const,
+    boxSizing: 'border-box' as const,
+    overflow: 'auto'
   };
   
   console.log("CommunicationPage container style:", containerStyle);
