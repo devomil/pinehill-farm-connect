@@ -16,7 +16,7 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// CLEAN LIST - Only 9 essential pages, no duplicates, single communication entry
+// CLEAN LIST - Exactly 10 essential pages
 const ALL_NAV_ITEMS: NavItem[] = [
   // Main navigation (4 items)
   {
@@ -49,7 +49,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'main',
   },
   
-  // Communication navigation (1 item - unified entry point)
+  // Communication navigation (1 item)
   {
     id: "communication",
     path: "/communication",
@@ -58,7 +58,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'communication',
   },
   
-  // Tools navigation (4 items)
+  // Tools navigation (5 items)
   {
     id: "marketing",
     path: "/marketing",
@@ -116,7 +116,7 @@ export const filterNavItemsByRole = (items: NavItem[], role?: string | null): Na
   });
 };
 
-// Legacy exports for backwards compatibility (but using new system)
+// Legacy exports for backwards compatibility
 export const mainNavItems = getMainNavItems();
 export const communicationNavItems = getCommunicationNavItems();
 export const toolsNavItems = getToolsNavItems();

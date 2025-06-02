@@ -48,9 +48,9 @@ export const SidebarMobileSheet = ({
       </SheetTrigger>
       <SheetContent side="left" className="w-3/4">
         <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+          <SheetTitle>Navigation Menu</SheetTitle>
           <SheetDescription>
-            Navigate to different sections of the application.
+            Access all 10 essential pages of the application.
           </SheetDescription>
         </SheetHeader>
         <nav className="grid gap-4 py-4">

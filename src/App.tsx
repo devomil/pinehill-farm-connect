@@ -15,6 +15,7 @@ import TimeManagementPage from '@/pages/TimeManagementPage';
 import EmployeePage from '@/pages/EmployeePage';
 import MarketingPage from '@/pages/MarketingPage';
 import TrainingPage from '@/pages/TrainingPage';
+import AdminTrainingPage from '@/pages/AdminTrainingPage';
 import ReportsPage from '@/pages/ReportsPage';
 import './App.css';
 
@@ -52,6 +53,7 @@ function App() {
                         <Route path="/employees" element={<EmployeePage />} />
                         <Route path="/marketing" element={<MarketingPage />} />
                         <Route path="/training" element={<TrainingPage />} />
+                        <Route path="/admin-training" element={<AdminTrainingPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
                       </Routes>
                     </RequireAuth>
