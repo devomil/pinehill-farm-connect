@@ -1,6 +1,6 @@
 
 /**
- * Clean route utilities with only essential routes
+ * Clean route utilities with unified communication route
  */
 
 export interface RouteConfig {
@@ -10,7 +10,7 @@ export interface RouteConfig {
   requiresAdmin?: boolean;
 }
 
-// Clean list of only 10 essential routes - no duplicates
+// Clean list of 9 essential routes - no duplicates, unified communication
 export const APP_ROUTES: RouteConfig[] = [
   { path: "/", component: "Navigate", requiresAuth: false },
   { path: "/login", component: "LoginPage", requiresAuth: false },

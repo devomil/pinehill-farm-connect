@@ -16,7 +16,7 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// CLEAN LIST - Only 10 essential pages, no duplicates
+// CLEAN LIST - Only 9 essential pages, no duplicates, single communication entry
 const ALL_NAV_ITEMS: NavItem[] = [
   // Main navigation (4 items)
   {
@@ -49,18 +49,11 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'main',
   },
   
-  // Communication navigation (2 items)
+  // Communication navigation (1 item - unified entry point)
   {
-    id: "announcements",
+    id: "communication",
     path: "/communication",
-    label: "Announcements", 
-    icon: createIcon(Megaphone),
-    section: 'communication',
-  },
-  {
-    id: "messages",
-    path: "/communication?tab=messages",
-    label: "Messages",
+    label: "Communication", 
     icon: createIcon(MessageSquare),
     section: 'communication',
   },

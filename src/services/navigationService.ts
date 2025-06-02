@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 
 /**
- * Simplified navigation service
+ * Simplified navigation service with unified communication handling
  */
 export class NavigationService {
   private static navigate: ReturnType<typeof useNavigate> | null = null;
@@ -21,7 +21,11 @@ export class NavigationService {
   }
 
   static navigateToAnnouncements() {
-    this.navigate?.("/communication?tab=announcements");
+    this.navigate?.("/communication");
+  }
+
+  static navigateToMessages() {
+    this.navigate?.("/communication?tab=messages");
   }
 
   static navigateToCalendar() {
@@ -40,7 +44,7 @@ export class NavigationService {
     this.navigate?.("/marketing");
   }
 
-  // Route validation
+  // Route validation - updated to remove duplicate communication paths
   static isValidRoute(path: string): boolean {
     const validRoutes = [
       '/dashboard',

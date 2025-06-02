@@ -48,25 +48,21 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
     : 0;
 
   const communicationItems = getCommunicationNavItems();
+  
+  // Calculate total unread count for unified badge
+  const totalUnreadCount = unreadMessageCount + unreadAnnouncementCount;
     
-  // Create items with dynamic badges
+  // Create items with dynamic unified badge
   const communicationItemsWithBadges = communicationItems.map(item => {
-    if (item.id === "announcements") {
+    if (item.id === "communication") {
       return {
         ...item,
-        badge: unreadAnnouncementCount > 0 ? (
-          <Badge className="ml-auto">{unreadAnnouncementCount}</Badge>
+        badge: totalUnreadCount > 0 ? (
+          <Badge variant={unreadMessageCount > 0 ? "destructive" : "default"} className="ml-auto">
+            {totalUnreadCount}
+          </Badge>
         ) : null,
-        isActive: pathname === '/communication' && !search.includes('tab=messages')
-      };
-    }
-    if (item.id === "messages") {
-      return {
-        ...item,
-        badge: unreadMessageCount > 0 ? (
-          <Badge variant="destructive" className="ml-auto">{unreadMessageCount}</Badge>
-        ) : null,
-        isActive: pathname === '/communication' && search.includes('tab=messages')
+        isActive: pathname === '/communication'
       };
     }
     return item;
@@ -90,10 +86,10 @@ export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
             {!collapsed && item.badge}
             {collapsed && item.badge && (
               <Badge 
-                variant={item.path.includes("messages") ? "destructive" : "default"} 
+                variant={unreadMessageCount > 0 ? "destructive" : "default"} 
                 className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
               >
-                {item.path.includes("messages") ? unreadMessageCount : unreadAnnouncementCount}
+                {totalUnreadCount}
               </Badge>
             )}
           </Link>
