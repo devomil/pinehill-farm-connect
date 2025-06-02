@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 
 interface SystemHealthMonitorProps {
-  systemHealth: 'healthy' | 'warning' | 'critical';
+  systemHealth?: 'healthy' | 'warning' | 'critical';
 }
 
-export const SystemHealthMonitor: React.FC<SystemHealthMonitorProps> = ({ systemHealth }) => {
+export const SystemHealthMonitor: React.FC<SystemHealthMonitorProps> = ({ 
+  systemHealth = 'healthy' 
+}) => {
   const [healthMetrics, setHealthMetrics] = useState({
     frontend: 95,
     backend: 98,
@@ -28,6 +30,17 @@ export const SystemHealthMonitor: React.FC<SystemHealthMonitorProps> = ({ system
     performance: 85
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Calculate overall system health based on metrics
+  const calculateSystemHealth = (): 'healthy' | 'warning' | 'critical' => {
+    const avgScore = Object.values(healthMetrics).reduce((sum, val) => sum + val, 0) / Object.values(healthMetrics).length;
+    if (avgScore >= 90) return 'healthy';
+    if (avgScore >= 70) return 'warning';
+    return 'critical';
+  };
+
+  // Use calculated health if not provided as prop
+  const currentSystemHealth = systemHealth || calculateSystemHealth();
 
   const refreshMetrics = async () => {
     setIsRefreshing(true);
@@ -62,7 +75,18 @@ export const SystemHealthMonitor: React.FC<SystemHealthMonitorProps> = ({ system
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">System Health Overview</h2>
+        <div>
+          <h2 className="text-2xl font-bold">System Health Overview</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm text-muted-foreground">Overall Status:</span>
+            <Badge variant={
+              currentSystemHealth === 'healthy' ? 'default' : 
+              currentSystemHealth === 'warning' ? 'secondary' : 'destructive'
+            }>
+              {currentSystemHealth.charAt(0).toUpperCase() + currentSystemHealth.slice(1)}
+            </Badge>
+          </div>
+        </div>
         <Button onClick={refreshMetrics} disabled={isRefreshing} variant="outline">
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh Metrics
