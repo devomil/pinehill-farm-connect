@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
@@ -78,7 +77,7 @@ const CommunicationPage: React.FC = () => {
   return (
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
-        <div className="container mx-auto py-4 max-w-6xl px-4">
+        <div className="w-full">
           {/* Show emergency reset if critical loop detected */}
           {isEmergency && (
             <EmergencyNavigationReset 
