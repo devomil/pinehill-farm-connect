@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { DebugProvider } from '@/contexts/DebugContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -34,32 +35,34 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-            <Toaster />
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/*"
-                element={
-                  <RequireAuth>
-                    <DashboardLayout>
-                      <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/communication" element={<CommunicationPage />} />
-                        <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
-                        <Route path="/time-management" element={<TimeManagementPage />} />
-                        <Route path="/employees" element={<EmployeePage />} />
-                        <Route path="/marketing" element={<MarketingPage />} />
-                        <Route path="/training" element={<TrainingPage />} />
-                        <Route path="/reports" element={<ReportsPage />} />
-                      </Routes>
-                    </DashboardLayout>
-                  </RequireAuth>
-                }
-              />
-            </Routes>
-          </ThemeProvider>
+          <DebugProvider>
+            <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+              <Toaster />
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path="/*"
+                  element={
+                    <RequireAuth>
+                      <DashboardLayout>
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/dashboard" element={<DashboardPage />} />
+                          <Route path="/communication" element={<CommunicationPage />} />
+                          <Route path="/diagnostics" element={<GlobalDiagnosticsPage />} />
+                          <Route path="/time-management" element={<TimeManagementPage />} />
+                          <Route path="/employees" element={<EmployeePage />} />
+                          <Route path="/marketing" element={<MarketingPage />} />
+                          <Route path="/training" element={<TrainingPage />} />
+                          <Route path="/reports" element={<ReportsPage />} />
+                        </Routes>
+                      </DashboardLayout>
+                    </RequireAuth>
+                  }
+                />
+              </Routes>
+            </ThemeProvider>
+          </DebugProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>
