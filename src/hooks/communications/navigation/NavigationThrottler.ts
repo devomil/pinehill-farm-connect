@@ -1,23 +1,33 @@
 /**
- * Class that tracks navigation attempts and detects navigation loops
+ * Enhanced NavigationThrottler with circuit breaker pattern
+ * This will aggressively stop navigation loops and improve performance
  */
 export class NavigationThrottler {
   private lastNavigationTime: number = 0;
   private navigationAttempts: number[] = [];
   private loopDetected: boolean = false;
-  private readonly MAX_ATTEMPTS_WINDOW = 3; // Threshold for loop detection
-  private readonly LOOP_DETECTION_THRESHOLD_MS = 3000; // Window for detection
-  private readonly THROTTLE_THRESHOLD_MS = 1500; // Increased min time between navigations
-  private readonly SAFETY_WINDOW_MS = 15000; // Safety window for resetting detection
-  private forcedBreakActive: boolean = false; // New flag for forced break mode
+  private circuitBreakerActive: boolean = false;
+  private readonly MAX_ATTEMPTS_WINDOW = 2; // Reduced from 3 to 2
+  private readonly LOOP_DETECTION_THRESHOLD_MS = 2000; // Reduced from 3000 to 2000
+  private readonly THROTTLE_THRESHOLD_MS = 2000; // Increased from 1500 to 2000
+  private readonly CIRCUIT_BREAKER_DURATION = 30000; // 30 seconds circuit breaker
+  private readonly SAFETY_WINDOW_MS = 60000; // Increased safety window
+  private forcedBreakActive: boolean = false;
+  private circuitBreakerTimer: NodeJS.Timeout | null = null;
 
   /**
-   * Track a navigation attempt and check if it forms part of a loop
+   * Track a navigation attempt with circuit breaker pattern
    */
   trackNavigationAttempt(): boolean {
     const now = Date.now();
     
-    // If we're in forced break mode, block all navigation attempts temporarily
+    // If circuit breaker is active, block ALL navigation
+    if (this.circuitBreakerActive) {
+      console.warn("Circuit breaker active - all navigation blocked");
+      return true;
+    }
+    
+    // If we're in forced break mode, block all navigation attempts
     if (this.forcedBreakActive) {
       console.warn("Navigation throttler in forced break mode - navigation blocked");
       return true;
@@ -31,30 +41,14 @@ export class NavigationThrottler {
       time => now - time < this.LOOP_DETECTION_THRESHOLD_MS
     );
     
-    // If we have too many attempts in a short period, mark as loop
+    // More aggressive loop detection - even 2 attempts in 2 seconds triggers circuit breaker
     if (this.navigationAttempts.length >= this.MAX_ATTEMPTS_WINDOW) {
-      console.warn("Navigation loop detected:", this.navigationAttempts.length, 
-        "attempts in", this.LOOP_DETECTION_THRESHOLD_MS, "ms");
-      this.loopDetected = true;
+      console.error("CRITICAL: Navigation loop detected, activating circuit breaker", {
+        attempts: this.navigationAttempts.length,
+        timeWindow: this.LOOP_DETECTION_THRESHOLD_MS
+      });
       
-      // Activate forced break mode to completely block navigation for a short period
-      this.forcedBreakActive = true;
-      setTimeout(() => {
-        console.log("Deactivating forced break mode");
-        this.forcedBreakActive = false;
-      }, 3000); // Block for 3 seconds to allow state to stabilize
-      
-      // Safety mechanism: Clear attempts array to prevent continuous loop detection
-      this.navigationAttempts = [];
-      
-      // Set a timer to auto-reset loop detection
-      setTimeout(() => {
-        if (this.loopDetected) {
-          console.log("Auto-resetting loop detection after safety window");
-          this.loopDetected = false;
-        }
-      }, this.SAFETY_WINDOW_MS);
-      
+      this.activateCircuitBreaker();
       return true;
     }
     
@@ -64,25 +58,56 @@ export class NavigationThrottler {
   }
 
   /**
+   * Activate circuit breaker to completely stop navigation for a period
+   */
+  private activateCircuitBreaker(): void {
+    this.circuitBreakerActive = true;
+    this.loopDetected = true;
+    this.forcedBreakActive = true;
+    
+    // Clear all navigation attempts
+    this.navigationAttempts = [];
+    
+    // Clear any existing timer
+    if (this.circuitBreakerTimer) {
+      clearTimeout(this.circuitBreakerTimer);
+    }
+    
+    // Set timer to deactivate circuit breaker
+    this.circuitBreakerTimer = setTimeout(() => {
+      console.log("Circuit breaker deactivated - navigation allowed again");
+      this.circuitBreakerActive = false;
+      this.forcedBreakActive = false;
+      this.loopDetected = false;
+      this.circuitBreakerTimer = null;
+    }, this.CIRCUIT_BREAKER_DURATION);
+    
+    // Show user notification
+    if (typeof window !== 'undefined' && window.location) {
+      // Force navigation to announcements tab to break the loop
+      window.history.replaceState(null, '', '/communication?tab=announcements&circuit_break=true');
+    }
+  }
+
+  /**
    * Check if navigation should be throttled
    */
   shouldThrottle(): boolean {
-    // Always block if in forced break mode
-    if (this.forcedBreakActive) {
+    // Always block if circuit breaker is active
+    if (this.circuitBreakerActive || this.forcedBreakActive) {
       return true;
     }
     
     const now = Date.now();
     const timeSinceLastNavigation = now - this.lastNavigationTime;
     
-    // More aggressive throttling if we have multiple recent attempts
+    // More aggressive throttling
     const recentAttemptCount = this.navigationAttempts.length;
-    
-    // Progressively increase throttling as attempts increase
     let throttleTime = this.THROTTLE_THRESHOLD_MS;
-    if (recentAttemptCount > 1) {
-      // Double throttle time for each additional attempt
-      throttleTime = this.THROTTLE_THRESHOLD_MS * recentAttemptCount;
+    
+    // Exponentially increase throttle time for rapid attempts
+    if (recentAttemptCount > 0) {
+      throttleTime = this.THROTTLE_THRESHOLD_MS * Math.pow(2, recentAttemptCount);
     }
     
     return timeSinceLastNavigation < throttleTime;
@@ -92,17 +117,31 @@ export class NavigationThrottler {
    * Check if a navigation loop has been detected
    */
   isLoopDetected(): boolean {
-    return this.loopDetected;
+    return this.loopDetected || this.circuitBreakerActive;
   }
 
   /**
-   * Reset the loop detection state
+   * Check if circuit breaker is active
+   */
+  isCircuitBreakerActive(): boolean {
+    return this.circuitBreakerActive;
+  }
+
+  /**
+   * Manual reset with circuit breaker deactivation
    */
   resetLoopDetection(): void {
     this.loopDetected = false;
     this.navigationAttempts = [];
     this.forcedBreakActive = false;
-    console.log("Navigation throttler manually reset");
+    
+    if (this.circuitBreakerTimer) {
+      clearTimeout(this.circuitBreakerTimer);
+      this.circuitBreakerTimer = null;
+    }
+    
+    this.circuitBreakerActive = false;
+    console.log("Navigation throttler completely reset including circuit breaker");
   }
   
   /**
@@ -113,7 +152,7 @@ export class NavigationThrottler {
   }
   
   /**
-   * Clear old navigation attempts that are no longer relevant
+   * Clean up old navigation attempts
    */
   cleanupOldAttempts(): void {
     const now = Date.now();
@@ -127,5 +166,18 @@ export class NavigationThrottler {
     if (removed > 0) {
       console.log(`Cleaned up ${removed} old navigation attempts`);
     }
+  }
+
+  /**
+   * Get circuit breaker status for debugging
+   */
+  getStatus() {
+    return {
+      loopDetected: this.loopDetected,
+      circuitBreakerActive: this.circuitBreakerActive,
+      forcedBreakActive: this.forcedBreakActive,
+      recentAttempts: this.navigationAttempts.length,
+      lastNavigationTime: this.lastNavigationTime
+    };
   }
 }

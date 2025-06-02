@@ -19,8 +19,11 @@ interface UseNavigationChangeProps {
   processPendingNavigation: () => void;
 }
 
+// Single instance of throttler to prevent multiple instances
+const globalThrottler = new NavigationThrottler();
+
 /**
- * Hook to manage the tab change navigation logic
+ * Simplified navigation change hook with aggressive loop prevention
  */
 export function useNavigationChange({
   activeTab,
@@ -36,11 +39,8 @@ export function useNavigationChange({
 }: UseNavigationChangeProps) {
   const debug = createDebugContext('NavigationChange');
   const navigate = useNavigate();
-  
-  // Create throttler instance to prevent rapid navigation
-  const throttler = new NavigationThrottler();
 
-  // Handle the navigation to a specific tab
+  // Handle the navigation to a specific tab with circuit breaker protection
   const handleTabChange = useCallback((value: string) => {
     debug.info(`Tab changing from ${activeTab} to ${value}`);
     
@@ -50,45 +50,49 @@ export function useNavigationChange({
       return;
     }
     
-    // Check for a navigation loop by tracking rapid requests
-    const loopDetected = throttler.trackNavigationAttempt();
-    
-    // If we have multiple recent attempts but not yet a loop, add a small delay
-    // to help prevent loops from occurring
-    const recentAttempts = throttler.getRecentAttempts();
-    if (recentAttempts >= 3 && !loopDetected) {
-      debug.warn(`Multiple navigation attempts detected (${recentAttempts}), adding delay`);
-      setTimeout(() => {
-        processTabChange(value);
-      }, 300);
+    // Check circuit breaker status first
+    if (globalThrottler.isCircuitBreakerActive()) {
+      debug.error("Circuit breaker active - blocking navigation attempt");
+      toast.error("Navigation temporarily disabled due to performance issues", {
+        description: "Please wait 30 seconds before trying again",
+        duration: 5000
+      });
       return;
     }
     
+    // Check for navigation loop
+    const loopDetected = globalThrottler.trackNavigationAttempt();
+    
     if (loopDetected) {
-      // If loop detected, force a reset by using a different temporary tab first
-      toast.error("Navigation loop detected", {
-        description: "Attempting to stabilize navigation",
-        id: 'navigation-loop'
+      debug.error("Navigation loop detected - circuit breaker activated");
+      toast.error("Navigation loop detected - emergency stop activated", {
+        description: "Navigation will be disabled for 30 seconds to prevent performance issues",
+        duration: 10000,
+        id: 'circuit-breaker'
       });
       
-      // Safety measure: If we're in a loop, use recovery mode
-      const recoveryUrl = buildRecoveryPath('announcements');
-      navigate(recoveryUrl, { replace: true });
+      // Force navigation to announcements to break the loop
+      navigate('/communication?tab=announcements&emergency=true', { replace: true });
+      setActiveTab('announcements');
       
       // Reset navigation state
       navigationInProgress.current = false;
       navigationComplete.current = true;
       
-      // Try again after a delay with explicit recovery mode
-      setTimeout(() => {
-        const messagesRecoveryUrl = buildRecoveryPath(value);
-        navigate(messagesRecoveryUrl, { replace: true });
-      }, 500);
-      
       return;
     }
     
-    // Normal path - process the tab change
+    // Check throttling
+    if (globalThrottler.shouldThrottle()) {
+      debug.warn("Navigation throttled due to rapid attempts");
+      toast.warning("Navigation rate limited", {
+        description: "Please wait before switching tabs again",
+        duration: 3000
+      });
+      return;
+    }
+    
+    // Proceed with normal navigation
     processTabChange(value);
     
   }, [
@@ -105,42 +109,29 @@ export function useNavigationChange({
     debug
   ]);
   
-  // Extracted the actual tab change logic to its own function for clarity
+  // Simplified tab change processing
   const processTabChange = useCallback((value: string) => {
-    // If navigation is already in progress, store this as the pending navigation
+    // If navigation is already in progress, ignore this request
     if (navigationInProgress.current) {
-      debug.info("Navigation already in progress, marking as pending", value);
-      setPendingNavigation(value);
+      debug.info("Navigation already in progress, ignoring request");
       return;
     }
     
-    // Throttle if there have been too many attempts in a short time
-    if (throttler.shouldThrottle()) {
-      setTimeout(() => {
-        debug.info("Processing throttled navigation after delay");
-        processTabChange(value);
-      }, 300);
-      return;
-    }
-    
-    // Check if we're in recovery mode from the URL
+    // Check for recovery mode
     const isRecovery = isInRecoveryMode(location.search);
     
     // Start navigation
     startNavigation();
     
-    // Set active tab first for immediate UI feedback
+    // Set active tab immediately for UI feedback
     setActiveTab(value);
     
-    // Special handling for recovery mode
+    // Handle recovery mode with minimal processing
     if (isRecovery) {
-      debug.info("Navigation in recovery mode - using special handling");
-      
-      // In recovery mode, always replace state and don't initiate new refreshes
+      debug.info("Recovery mode - simplified navigation");
       const recoveryPath = buildRecoveryPath(value);
       navigate(recoveryPath, { replace: true });
       
-      // Mark navigation as complete quickly
       setTimeout(() => {
         completeNavigation();
         debug.info("Recovery navigation complete");
@@ -149,51 +140,35 @@ export function useNavigationChange({
       return;
     }
     
-    // Construct path based on the tab value - default flow
-    const newPath = buildTabPath(value); 
+    // Normal navigation path
+    const newPath = buildTabPath(value);
     
-    // Log the current path and the new path for debugging
-    debug.info(`Current path: ${location.pathname + location.search}, New path: ${newPath}`);
-    
-    // Update URL only if needed
+    // Only navigate if path is different
     if (location.pathname + location.search !== newPath) {
       debug.info("Navigating to:", newPath);
-      
-      // Use replace: true for tabs to prevent history buildup
       navigate(newPath, { replace: true });
       
-      // Always refresh messages when switching to messages tab
+      // For messages tab, perform refresh
       if (value === 'messages') {
-        debug.info("Switching to messages tab, refreshing data");
-        
-        // Add timeout to ensure UI updates first before potentially heavy data loading
         setTimeout(() => {
           performRefresh().finally(() => {
-            processPendingNavigation();
-          });
-        }, 50);
-      } else {
-        // For other tabs, mark as complete more quickly
-        setTimeout(() => {
-          completeNavigation();
-          debug.info("Navigation complete set to true (no refresh needed)");
-          processPendingNavigation();
-        }, 200);
-      }
-    } else {
-      // Already on correct path, just mark navigation as complete
-      navigationComplete.current = true;
-      
-      // Still refresh if switching to messages tab
-      if (value === 'messages') {
-        performRefresh()
-          .catch(err => {
-            console.error("Error refreshing messages on same-path tab change:", err);
-          })
-          .finally(() => {
             completeNavigation();
             processPendingNavigation();
           });
+        }, 100);
+      } else {
+        setTimeout(() => {
+          completeNavigation();
+          processPendingNavigation();
+        }, 100);
+      }
+    } else {
+      // Same path, just complete navigation
+      if (value === 'messages') {
+        performRefresh().finally(() => {
+          completeNavigation();
+          processPendingNavigation();
+        });
       } else {
         completeNavigation();
         processPendingNavigation();
@@ -215,6 +190,8 @@ export function useNavigationChange({
 
   return {
     handleTabChange,
-    loopDetected: throttler.isLoopDetected()
+    loopDetected: globalThrottler.isLoopDetected(),
+    circuitBreakerActive: globalThrottler.isCircuitBreakerActive(),
+    throttlerStatus: globalThrottler.getStatus()
   };
 }
