@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
+import { getMainNavItems, getCommunicationNavItems, getToolsNavItems, filterNavItemsByRole } from "@/config/navConfig";
 import { DebugButton } from "@/components/debug/DebugButton";
 
 interface SidebarMobileSheetProps {
@@ -29,9 +29,10 @@ export const SidebarMobileSheet = ({
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
-  // Get all navigation items and filter by role
-  const allNavItems = getAllNavItems();
-  const navigationItems = filterNavItemsByRole(allNavItems, currentUser?.role);
+  // Get navigation items by section and filter by role
+  const mainNavItems = filterNavItemsByRole(getMainNavItems(), currentUser?.role);
+  const communicationNavItems = filterNavItemsByRole(getCommunicationNavItems(), currentUser?.role);
+  const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
 
   const handleDebugClick = () => {
     navigate("/diagnostics");
@@ -53,7 +54,8 @@ export const SidebarMobileSheet = ({
           </SheetDescription>
         </SheetHeader>
         <nav className="grid gap-4 py-4">
-          {navigationItems.map(item => (
+          {/* Main Navigation */}
+          {mainNavItems.map(item => (
             <Button key={item.id} variant="ghost" className="justify-start font-normal">
               <Link to={item.path} className="flex items-center" onClick={() => setOpen(false)}>
                 {item.icon}
@@ -62,9 +64,43 @@ export const SidebarMobileSheet = ({
             </Button>
           ))}
           
+          {/* Communication Section */}
+          {communicationNavItems.length > 0 && (
+            <>
+              <div className="text-xs font-semibold text-muted-foreground px-2 py-1 border-t pt-4">
+                COMMUNICATION
+              </div>
+              {communicationNavItems.map(item => (
+                <Button key={item.id} variant="ghost" className="justify-start font-normal">
+                  <Link to={item.path} className="flex items-center" onClick={() => setOpen(false)}>
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                </Button>
+              ))}
+            </>
+          )}
+          
+          {/* Tools Section */}
+          {toolsNavItems.length > 0 && (
+            <>
+              <div className="text-xs font-semibold text-muted-foreground px-2 py-1 border-t pt-4">
+                TOOLS
+              </div>
+              {toolsNavItems.map(item => (
+                <Button key={item.id} variant="ghost" className="justify-start font-normal">
+                  <Link to={item.path} className="flex items-center" onClick={() => setOpen(false)}>
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                </Button>
+              ))}
+            </>
+          )}
+          
           <DebugButton
             onClick={handleDebugClick}
-            className="justify-start font-normal"
+            className="justify-start font-normal border-t pt-4 mt-4"
             variant="ghost"
           >
             Open Diagnostics
