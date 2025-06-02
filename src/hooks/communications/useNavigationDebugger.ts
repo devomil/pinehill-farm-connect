@@ -1,10 +1,12 @@
 
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDebug } from "../useDebug";
+import { toast } from "sonner";
 
 export function useNavigationDebugger() {
   const location = useLocation();
+  const navigate = useNavigate();
   const debug = useDebug('NavigationDebugger');
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [timeInMessagesTab, setTimeInMessagesTab] = useState(0);
@@ -14,6 +16,29 @@ export function useNavigationDebugger() {
   const lastLocationRef = useRef(location);
   const rapidNavigationCount = useRef(0);
   const lastNavigationTime = useRef(Date.now());
+
+  // Recovery function to attempt to fix navigation issues
+  const attemptRecovery = useCallback(() => {
+    debug.info('Attempting navigation recovery');
+    
+    // Reset all counters
+    setTabSwitchCount(0);
+    rapidNavigationCount.current = 0;
+    setHasLoopDetected(false);
+    lastNavigationTime.current = Date.now();
+    
+    // Clear any problematic session storage
+    window.sessionStorage.removeItem('communication_recovery');
+    window.sessionStorage.removeItem('message_tab_recovery_needed');
+    localStorage.removeItem('last_communication_tab');
+    
+    // Navigate to a safe state (announcements tab)
+    navigate('/communication?tab=announcements', { replace: true });
+    
+    toast.success("Navigation recovery attempted", {
+      description: "Counters reset and navigated to safe state"
+    });
+  }, [debug, navigate]);
 
   // Track time spent in messages tab
   useEffect(() => {
@@ -99,6 +124,7 @@ export function useNavigationDebugger() {
     tabSwitchCount,
     timeInMessagesTab,
     hasLoopDetected,
-    rapidNavigationCount: rapidNavigationCount.current
+    rapidNavigationCount: rapidNavigationCount.current,
+    attemptRecovery
   };
 }
