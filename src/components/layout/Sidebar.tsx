@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useMobile";
@@ -28,8 +27,8 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
   };
 
   const handleDebugClick = () => {
-    // Navigate to the debug/diagnostics page or open debug panel
-    navigate("/communication?tab=announcements&debug=true");
+    // Navigate to the global diagnostics page
+    navigate("/diagnostics");
   };
 
   return (

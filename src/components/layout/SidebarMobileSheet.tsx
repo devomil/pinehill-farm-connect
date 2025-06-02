@@ -60,7 +60,7 @@ export const SidebarMobileSheet = ({
   const navigationItems = Array.from(uniqueItemsMap.values());
 
   const handleDebugClick = () => {
-    navigate("/communication?tab=announcements&debug=true");
+    navigate("/diagnostics");
     setOpen(false); // Close the mobile sheet
   };
 
