@@ -24,7 +24,9 @@ const Communication: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <CommunicationPage />
+      <div className="w-full h-full" style={{ backgroundColor: '#f0f0f0', border: '2px solid red', padding: '0', margin: '0' }}>
+        <CommunicationPage />
+      </div>
     </DashboardLayout>
   );
 };

@@ -24,7 +24,7 @@ export const CommunicationPageContent: React.FC<CommunicationPageContentProps> =
   isAdmin
 }) => {
   return (
-    <>
+    <div className="w-full">
       <ErrorBoundary componentName="CommunicationTabs">
         <CommunicationTabs 
           activeTab={activeTab} 
@@ -41,6 +41,6 @@ export const CommunicationPageContent: React.FC<CommunicationPageContentProps> =
           isAdmin={isAdmin}
         />
       </ErrorBoundary>
-    </>
+    </div>
   );
 };

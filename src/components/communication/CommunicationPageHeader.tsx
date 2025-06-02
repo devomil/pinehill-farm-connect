@@ -22,7 +22,7 @@ export const CommunicationPageHeader: React.FC<CommunicationPageHeaderProps> = (
   setShowDebugInfo
 }) => {
   return (
-    <>
+    <div className="w-full">
       <CommunicationHeader 
         isAdmin={isAdmin}
         allEmployees={unfilteredEmployees}
@@ -32,13 +32,13 @@ export const CommunicationPageHeader: React.FC<CommunicationPageHeaderProps> = (
         setShowDebugInfo={setShowDebugInfo}
       />
       
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end">
         <DebugButton 
           variant="outline" 
           className="text-xs"
           onClick={() => setShowDebugInfo(!showDebugInfo)} 
         />
       </div>
-    </>
+    </div>
   );
 };

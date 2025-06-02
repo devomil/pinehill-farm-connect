@@ -77,7 +77,7 @@ const CommunicationPage: React.FC = () => {
   return (
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
-        <div className="w-full">
+        <div className="w-full min-h-screen">
           {/* Show emergency reset if critical loop detected */}
           {isEmergency && (
             <EmergencyNavigationReset 

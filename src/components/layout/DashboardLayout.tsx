@@ -31,7 +31,7 @@ export function DashboardLayout({ children, requireAdmin = false, extraHeaderCon
             {extraHeaderControls}
           </div>
         )}
-        <div className="p-2 max-w-7xl mx-auto">
+        <div className="w-full">
           {children}
         </div>
       </main>
