@@ -2,8 +2,8 @@
 import React from "react";
 import { User } from "@/types";
 import { UserTable } from "./UserTable";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { LoadingState, ErrorState } from "@/components/ui";
+import { Section } from "@/components/ui/section";
 
 interface EmployeePageContentProps {
   filteredEmployees: User[];
@@ -14,33 +14,36 @@ interface EmployeePageContentProps {
   onRetry: () => void;
 }
 
-export function EmployeePageContent({
+export const EmployeePageContent: React.FC<EmployeePageContentProps> = ({
   filteredEmployees,
   loading,
   error,
   onUpdateEmployee,
   onDeleteEmployee,
   onRetry
-}: EmployeePageContentProps) {
-  return (
-    <div className="space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {typeof error === 'string' ? error : error instanceof Error ? error.message : 'Unknown error'}
-          </AlertDescription>
-        </Alert>
-      )}
+}) => {
+  if (loading) {
+    return <LoadingState variant="table" lines={6} showHeader={true} />;
+  }
 
-      <UserTable
-        employees={filteredEmployees}
-        loading={loading}
-        error={error}
-        onUpdate={onUpdateEmployee}
-        onDelete={onDeleteEmployee}
+  if (error) {
+    return (
+      <ErrorState
+        title="Failed to load employees"
+        message={typeof error === "string" ? error : error.message}
         onRetry={onRetry}
+        retryLabel="Reload employees"
       />
-    </div>
+    );
+  }
+
+  return (
+    <Section variant="card" title="Employee Directory">
+      <UserTable
+        users={filteredEmployees}
+        onUpdateEmployee={onUpdateEmployee}
+        onDeleteEmployee={onDeleteEmployee}
+      />
+    </Section>
   );
-}
+};
