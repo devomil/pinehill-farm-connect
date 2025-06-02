@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllNavItems, filterNavItemsByRole } from "@/config/navConfig";
+import { NavigationService } from "@/services/navigationService";
 import { DebugButton } from "@/components/debug/DebugButton";
 
 interface SidebarMobileSheetProps {
@@ -31,33 +32,12 @@ export const SidebarMobileSheet = ({
   
   // Get all nav items and filter based on user role
   const allNavItems = getAllNavItems();
-  const visibleItems = filterNavItemsByRole(allNavItems, currentUser?.role);
+  const roleFilteredItems = filterNavItemsByRole(allNavItems, currentUser?.role);
   
-  // List of deprecated paths to explicitly filter out
-  const deprecatedPaths = ['/communications', '/calendar'];
+  // Apply full processing pipeline to ensure no duplicates
+  const navigationItems = NavigationService.processNavigationItems(roleFilteredItems);
   
-  // Manually ensure no duplicate paths by creating a map with path as key
-  const uniqueItemsMap = new Map();
-  
-  visibleItems.forEach(item => {
-    // For items with query params, use the base path as key
-    const basePath = item.path.split('?')[0];
-    
-    // Skip any deprecated paths
-    if (deprecatedPaths.includes(basePath)) {
-      console.log(`Skipping deprecated mobile navigation route: ${basePath}`);
-      return;
-    }
-    
-    // Only add an item if its base path isn't already in the map
-    // or if we're adding an item with query params and prefer it
-    if (!uniqueItemsMap.has(basePath) || item.path.includes('?')) {
-      uniqueItemsMap.set(basePath, item);
-    }
-  });
-  
-  // Convert the map back to an array
-  const navigationItems = Array.from(uniqueItemsMap.values());
+  console.log(`Mobile navigation: Processing ${allNavItems.length} total items, ${roleFilteredItems.length} after role filter, ${navigationItems.length} final items`);
 
   const handleDebugClick = () => {
     navigate("/diagnostics");

@@ -11,6 +11,7 @@ export interface RouteConfig {
   deprecated?: boolean;
 }
 
+// Comprehensive list of all valid routes (no duplicates)
 export const APP_ROUTES: RouteConfig[] = [
   { path: "/", component: "Navigate", requiresAuth: false },
   { path: "/login", component: "LoginPage", requiresAuth: false },
@@ -23,17 +24,27 @@ export const APP_ROUTES: RouteConfig[] = [
   { path: "/admin-training", component: "AdminTrainingPage", requiresAuth: true, requiresAdmin: true },
   { path: "/reports", component: "ReportsPage", requiresAuth: true },
   { path: "/diagnostics", component: "GlobalDiagnosticsPage", requiresAuth: true },
-  // Deprecated routes
+  // Deprecated routes - these should redirect
   { path: "/communications", component: "CommunicationPage", deprecated: true },
   { path: "/calendar", component: "TimeManagementPage", deprecated: true },
   { path: "/time-management", component: "TimeManagementPage", deprecated: true }
 ];
 
 /**
- * Get active routes (non-deprecated)
+ * Get active routes (non-deprecated) with deduplication
  */
 export function getActiveRoutes(): RouteConfig[] {
-  return APP_ROUTES.filter(route => !route.deprecated);
+  const activeRoutes = APP_ROUTES.filter(route => !route.deprecated);
+  
+  // Deduplicate by path
+  const uniqueRoutes = new Map<string, RouteConfig>();
+  activeRoutes.forEach(route => {
+    if (!uniqueRoutes.has(route.path)) {
+      uniqueRoutes.set(route.path, route);
+    }
+  });
+  
+  return Array.from(uniqueRoutes.values());
 }
 
 /**
@@ -77,4 +88,23 @@ export function hasRouteAccess(
   }
   
   return true;
+}
+
+/**
+ * Validate and clean navigation paths
+ */
+export function validateNavigationPaths(paths: string[]): string[] {
+  const validPaths = getActiveRoutes().map(route => route.path);
+  const uniquePaths = [...new Set(paths)]; // Remove duplicates
+  
+  return uniquePaths.filter(path => {
+    const basePath = path.split('?')[0];
+    const isValid = validPaths.includes(basePath);
+    
+    if (!isValid) {
+      console.warn(`Invalid navigation path detected: ${path}`);
+    }
+    
+    return isValid;
+  });
 }

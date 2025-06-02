@@ -61,28 +61,55 @@ export class NavigationService {
 
   // Filter deprecated routes
   static filterDeprecatedRoutes<T extends { path?: string; to?: string }>(items: T[]): T[] {
-    const deprecatedPaths = ['/communications', '/calendar'];
+    const deprecatedPaths = ['/communications', '/calendar', '/time-management'];
     
     return items.filter(item => {
       const pathToCheck = item.path || item.to || '';
       const basePath = pathToCheck.split('?')[0];
-      return !deprecatedPaths.includes(basePath);
+      const isDeprecated = deprecatedPaths.includes(basePath);
+      
+      if (isDeprecated) {
+        console.log(`Filtering out deprecated route: ${basePath}`);
+      }
+      
+      return !isDeprecated;
     });
   }
 
-  // Deduplicate navigation items by path
+  // Enhanced deduplicate navigation items by both path and ID
   static deduplicateNavItems(items: NavItem[]): NavItem[] {
     const uniqueItemsMap = new Map<string, NavItem>();
+    const seenIds = new Set<string>();
     
     items.forEach(item => {
       const basePath = item.path.split('?')[0];
       
-      if (!uniqueItemsMap.has(basePath)) {
-        uniqueItemsMap.set(basePath, item);
+      // Skip if we've already seen this ID or base path
+      if (seenIds.has(item.id) || uniqueItemsMap.has(basePath)) {
+        console.log(`Skipping duplicate navigation item in service: ${item.label} (${item.path})`);
+        return;
       }
+      
+      seenIds.add(item.id);
+      uniqueItemsMap.set(basePath, item);
     });
     
     return Array.from(uniqueItemsMap.values());
+  }
+
+  // Process navigation items with full cleanup pipeline
+  static processNavigationItems(items: NavItem[]): NavItem[] {
+    console.log(`Processing ${items.length} navigation items`);
+    
+    // Step 1: Filter deprecated routes
+    const filteredItems = this.filterDeprecatedRoutes(items);
+    console.log(`After filtering deprecated routes: ${filteredItems.length} items`);
+    
+    // Step 2: Deduplicate items
+    const uniqueItems = this.deduplicateNavItems(filteredItems);
+    console.log(`After deduplication: ${uniqueItems.length} items`);
+    
+    return uniqueItems;
   }
 }
 

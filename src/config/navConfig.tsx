@@ -16,7 +16,7 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// Main navigation items
+// Main navigation items - ensuring unique paths
 export const mainNavItems: NavItem[] = [
   {
     id: "dashboard",
@@ -42,17 +42,17 @@ export const mainNavItems: NavItem[] = [
   },
 ];
 
-// Communication navigation items
+// Communication navigation items - ensuring unique paths
 export const communicationNavItems: NavItem[] = [
   {
-    id: "announcements",
+    id: "communication-announcements",
     path: "/communication",
     label: "Announcements",
     icon: createIcon(Megaphone),
     section: 'communication',
   },
   {
-    id: "messages",
+    id: "communication-messages",
     path: "/communication?tab=messages",
     label: "Messages",
     icon: createIcon(MessageSquare),
@@ -60,7 +60,7 @@ export const communicationNavItems: NavItem[] = [
   }
 ];
 
-// Tools navigation items
+// Tools navigation items - ensuring unique paths
 export const toolsNavItems: NavItem[] = [
   {
     id: "reports",
@@ -93,12 +93,37 @@ export const toolsNavItems: NavItem[] = [
   }
 ];
 
-// Combined navigation items
-export const getAllNavItems = (): NavItem[] => {
-  return [...mainNavItems, ...communicationNavItems, ...toolsNavItems];
+// Enhanced deduplication function
+const deduplicateNavItems = (items: NavItem[]): NavItem[] => {
+  const seenPaths = new Set<string>();
+  const seenIds = new Set<string>();
+  const uniqueItems: NavItem[] = [];
+
+  for (const item of items) {
+    const basePath = item.path.split('?')[0];
+    
+    // Skip if we've already seen this base path or ID
+    if (seenPaths.has(basePath) || seenIds.has(item.id)) {
+      console.log(`Skipping duplicate navigation item: ${item.label} (${item.path})`);
+      continue;
+    }
+    
+    seenPaths.add(basePath);
+    seenIds.add(item.id);
+    uniqueItems.push(item);
+  }
+
+  return uniqueItems;
 };
 
-// Helper for filtering items based on user role
+// Combined navigation items with proper deduplication
+export const getAllNavItems = (): NavItem[] => {
+  const allItems = [...mainNavItems, ...communicationNavItems, ...toolsNavItems];
+  return deduplicateNavItems(allItems);
+};
+
+// Helper for filtering items based on user role with deduplication
 export const filterNavItemsByRole = (items: NavItem[], role?: string | null): NavItem[] => {
-  return items.filter(item => !item.role || item.role === role);
+  const filteredItems = items.filter(item => !item.role || item.role === role);
+  return deduplicateNavItems(filteredItems);
 };

@@ -15,14 +15,15 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
   
-  // Filter items based on user role and remove deprecated routes
-  const visibleItems = filterNavItemsByRole(toolsNavItems, currentUser?.role);
-  const filteredItems = NavigationService.filterDeprecatedRoutes(visibleItems);
-  const uniqueNavItems = NavigationService.deduplicateNavItems(filteredItems);
+  // Filter items based on user role and apply full processing pipeline
+  const roleFilteredItems = filterNavItemsByRole(toolsNavItems, currentUser?.role);
+  const processedNavItems = NavigationService.processNavigationItems(roleFilteredItems);
+
+  console.log(`Tools navigation: Processing ${toolsNavItems.length} tools items, ${roleFilteredItems.length} after role filter, ${processedNavItems.length} final items`);
 
   return (
     <div className="flex flex-col gap-1">
-      {uniqueNavItems.map(item => (
+      {processedNavItems.map(item => (
         <Button
           key={item.id}
           variant="ghost"
