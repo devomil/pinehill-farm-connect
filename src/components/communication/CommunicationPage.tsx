@@ -1,19 +1,15 @@
-
 import React, { useEffect } from "react";
 import { CommunicationDebugHelper } from "./CommunicationDebugHelper";
 import { useCommunicationPageData } from "@/hooks/communications/useCommunicationPageData";
-import { useTabNavigation } from "@/hooks/communications/useTabNavigation";
+import { useSimplifiedTabNavigation } from "@/hooks/communications/useSimplifiedTabNavigation";
 import { useDebug } from "@/hooks/useDebug";
-import { useMessageTabDebugger } from "@/hooks/communications/useMessageTabDebugger";
 import { useNavigationDebugger } from "@/hooks/communications/useNavigationDebugger";
-import { useNavigationRecovery } from "@/hooks/communications/useNavigationRecovery";
+import { EmergencyNavigationReset } from "./EmergencyNavigationReset";
 import ErrorBoundary from "@/components/debug/ErrorBoundary";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
 import { CommunicationPageHeader } from "./CommunicationPageHeader";
 import { CommunicationPageContent } from "./CommunicationPageContent";
-import { NavigationWarning } from "./NavigationWarning";
-import { RouteDebugger } from "@/components/debug/RouteDebugger";
 import { toast } from "sonner";
 
 const CommunicationPage: React.FC = () => {
@@ -42,110 +38,92 @@ const CommunicationPage: React.FC = () => {
     refreshMessages
   } = useCommunicationPageData();
   
-  // Use the navigation debugger to detect navigation issues
+  // Use simplified navigation to prevent loops
+  const { handleTabChange, isNavigating, resetNavigation } = useSimplifiedTabNavigation(
+    activeTab,
+    setActiveTab
+  );
+  
+  // Keep navigation debugger for monitoring
   const navigationDebugger = useNavigationDebugger();
   
-  const { handleTabChange, navigationInProgress } = useTabNavigation({
-    activeTab,
-    setActiveTab,
-    location,
-    navigationComplete,
-    refreshMessages: async () => {
-      await refreshMessages();
-      return Promise.resolve();
-    },
-    isRefreshing,
-    lastRefreshTime
-  });
-
-  // Connect the message tab debugger - it will only be active when on the messages tab
-  const messageDebugger = useMessageTabDebugger(activeTab === 'messages');
-
-  // Use the navigation recovery hook to handle URL parameters and recovery
-  useNavigationRecovery({
-    activeTab,
-    setActiveTab,
-    navigationComplete,
-    refreshMessages: async () => {
-      await refreshMessages();
-      return Promise.resolve();
-    },
-    navigationInProgress,
-    showDebugInfo,
-    setShowDebugInfo
-  });
-
-  // Log component renders - using our debugging system
+  // Emergency detection - if tab switches exceed 1000, show emergency reset
+  const isEmergency = navigationDebugger.tabSwitchCount > 1000;
+  
   debug.info("CommunicationPage rendering", {
     activeTab, 
     url: location.pathname + location.search,
     unreadMessageCount: unreadMessages?.length,
     employeeCount: unfilteredEmployees?.length,
     isAdmin,
-    navigationInProgress: navigationInProgress?.current,
-    navLoopDetected: navigationDebugger.hasLoopDetected,
-    timeInMessagesTab: navigationDebugger.timeInMessagesTab
+    isNavigating,
+    tabSwitchCount: navigationDebugger.tabSwitchCount,
+    isEmergency
   });
   
-  // Automatically show debug info when loop detected
-  React.useEffect(() => {
-    if (navigationDebugger.hasLoopDetected && !showDebugInfo) {
+  // Auto-show debug info during emergency
+  useEffect(() => {
+    if (isEmergency && !showDebugInfo) {
       setShowDebugInfo(true);
-      toast.error("Navigation issue detected", {
-        description: "Debug information has been enabled",
-        duration: 5000
+      toast.error("Navigation emergency detected", {
+        description: "Debug information enabled automatically",
+        duration: 10000
       });
     }
-  }, [navigationDebugger.hasLoopDetected, showDebugInfo, setShowDebugInfo]);
+  }, [isEmergency, showDebugInfo, setShowDebugInfo]);
   
   return (
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
         <div className="container mx-auto py-6 max-w-6xl">
-          <CommunicationPageHeader 
-            isAdmin={isAdmin}
-            unfilteredEmployees={unfilteredEmployees || []}
-            onAnnouncementCreate={handleAnnouncementCreate}
-            onManualRefresh={handleManualRefresh}
-            showDebugInfo={showDebugInfo}
-            setShowDebugInfo={setShowDebugInfo}
-          />
+          {/* Show emergency reset if critical loop detected */}
+          {isEmergency && (
+            <EmergencyNavigationReset 
+              onReset={resetNavigation}
+              switchCount={navigationDebugger.tabSwitchCount}
+            />
+          )}
           
-          <NavigationWarning 
-            hasLoopDetected={navigationDebugger.hasLoopDetected}
-            attemptRecovery={navigationDebugger.attemptRecovery}
-          />
+          {!isEmergency && (
+            <>
+              <CommunicationPageHeader 
+                isAdmin={isAdmin}
+                unfilteredEmployees={unfilteredEmployees || []}
+                onAnnouncementCreate={handleAnnouncementCreate}
+                onManualRefresh={handleManualRefresh}
+                showDebugInfo={showDebugInfo}
+                setShowDebugInfo={setShowDebugInfo}
+              />
+              
+              <CommunicationPageContent
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                unreadMessages={unreadMessages || []}
+                currentUser={currentUser}
+                unfilteredEmployees={unfilteredEmployees || []}
+                isAdmin={isAdmin}
+              />
+            </>
+          )}
           
-          <RouteDebugger />
-          
-          <CommunicationPageContent
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            unreadMessages={unreadMessages || []}
-            currentUser={currentUser}
-            unfilteredEmployees={unfilteredEmployees || []}
-            isAdmin={isAdmin}
-          />
-          
-          {/* Always show debug helper in loop detection mode, otherwise respect user setting */}
-          {(showDebugInfo || navigationDebugger.hasLoopDetected) && (
+          {/* Always show debug helper when emergency or debug mode enabled */}
+          {(showDebugInfo || isEmergency) && (
             <CommunicationDebugHelper
               showDebug={true}
               activeTab={activeTab}
               unreadMessages={unreadMessages || []}
               onTabChange={handleTabChange}
               onRefresh={handleManualRefresh}
-              navigationInProgress={navigationInProgress?.current}
-              messageTabInfo={messageDebugger.debugInfo}
+              navigationInProgress={isNavigating}
               navigationDebugInfo={{
                 switchCount: navigationDebugger.tabSwitchCount,
                 timeInTab: navigationDebugger.timeInMessagesTab,
-                loopDetected: navigationDebugger.hasLoopDetected
+                loopDetected: navigationDebugger.hasLoopDetected,
+                circuitBreakerActive: isEmergency
               }}
             />
           )}
           
-          {/* Global diagnostics panel */}
           <DiagnosticsPanel />
         </div>
       </ErrorBoundary>
