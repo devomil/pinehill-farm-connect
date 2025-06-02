@@ -50,7 +50,7 @@ export const SidebarMobileSheet = ({
         <SheetHeader>
           <SheetTitle>Navigation Menu</SheetTitle>
           <SheetDescription>
-            Access all 10 essential pages of the application.
+            Access all 9 essential pages of the application.
           </SheetDescription>
         </SheetHeader>
         <nav className="grid gap-4 py-4">

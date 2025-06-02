@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 
 /**
- * Clean navigation service for 10 essential pages
+ * Clean navigation service for 9 essential pages
  */
 export class NavigationService {
   private static navigate: ReturnType<typeof useNavigate> | null = null;
@@ -44,7 +44,7 @@ export class NavigationService {
     this.navigate?.("/marketing");
   }
 
-  // Route validation - clean 10 pages only
+  // Route validation - clean 9 pages only
   static isValidRoute(path: string): boolean {
     const validRoutes = [
       '/dashboard',

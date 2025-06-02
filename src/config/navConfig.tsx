@@ -1,5 +1,5 @@
 
-import { Home, Users, CalendarIcon, BookOpen, BookOpenCheck, BarChart3, Image, Megaphone, MessageSquare, Settings } from "lucide-react";
+import { Home, Users, CalendarIcon, BookOpen, BookOpenCheck, BarChart3, Image, MessageSquare, Settings } from "lucide-react";
 import { ReactNode } from "react";
 
 export interface NavItem {
@@ -16,7 +16,7 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
   <Icon className={className} />;
 
-// CLEAN LIST - Exactly 10 essential pages
+// EXACTLY 9 essential pages (no duplicates)
 const ALL_NAV_ITEMS: NavItem[] = [
   // Main navigation (4 items)
   {
@@ -49,7 +49,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'main',
   },
   
-  // Communication navigation (1 item)
+  // Communication navigation (1 item only)
   {
     id: "communication",
     path: "/communication",
@@ -58,7 +58,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'communication',
   },
   
-  // Tools navigation (5 items)
+  // Tools navigation (4 items)
   {
     id: "marketing",
     path: "/marketing",
@@ -115,8 +115,3 @@ export const filterNavItemsByRole = (items: NavItem[], role?: string | null): Na
     return item.role === role;
   });
 };
-
-// Legacy exports for backwards compatibility
-export const mainNavItems = getMainNavItems();
-export const communicationNavItems = getCommunicationNavItems();
-export const toolsNavItems = getToolsNavItems();
