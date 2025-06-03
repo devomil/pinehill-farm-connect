@@ -83,17 +83,35 @@ const ALL_NAV_ITEMS: NavItem[] = [
   }
 ];
 
-// Validate no duplicate IDs
+// Validate no duplicate IDs - enhanced validation
 const validateNavItems = () => {
   const ids = ALL_NAV_ITEMS.map(item => item.id);
   const uniqueIds = new Set(ids);
+  
   if (ids.length !== uniqueIds.size) {
-    console.error("Duplicate navigation item IDs detected:", ids);
-    throw new Error("Navigation configuration contains duplicate IDs");
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+    console.error("Duplicate navigation item IDs detected:", duplicates);
+    throw new Error(`Navigation configuration contains duplicate IDs: ${duplicates.join(', ')}`);
   }
+  
+  console.log("Navigation validation passed: All item IDs are unique");
+  return true;
 };
 
-// Run validation
+// Validate uniqueness of navigation sections
+const validateUniqueNavItems = (sections: NavItem[][]): NavItem[][] => {
+  const allIds = sections.flat().map(item => item.id);
+  const duplicates = allIds.filter((id, index) => allIds.indexOf(id) !== index);
+  
+  if (duplicates.length > 0) {
+    console.error('Duplicate nav item IDs found across sections:', duplicates);
+    throw new Error(`Duplicate navigation items found: ${duplicates.join(', ')}`);
+  }
+  
+  return sections;
+};
+
+// Run validation on load
 validateNavItems();
 
 // Get items by section with validation
@@ -118,6 +136,18 @@ export const getToolsNavItems = (): NavItem[] => {
 // Get all navigation items
 export const getAllNavItems = (): NavItem[] => {
   return ALL_NAV_ITEMS;
+};
+
+// Enhanced navigation getter with cross-section validation
+export const getAllNavSections = (): { main: NavItem[], communication: NavItem[], tools: NavItem[] } => {
+  const main = getMainNavItems();
+  const communication = getCommunicationNavItems();
+  const tools = getToolsNavItems();
+  
+  // Validate uniqueness across all sections
+  validateUniqueNavItems([main, communication, tools]);
+  
+  return { main, communication, tools };
 };
 
 // Simple role-based filtering with debugging

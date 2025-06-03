@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { getMainNavItems, getCommunicationNavItems, getToolsNavItems, filterNavItemsByRole, NavItem } from '@/config/navConfig';
+import { getAllNavSections, filterNavItemsByRole } from '@/config/navConfig';
 
 interface CommunicationTopNavMenuProps {
   onClose: () => void;
@@ -38,35 +38,18 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
     return location.pathname === path;
   };
   
-  // Get navigation items by section and filter by role
-  const mainNavItems = filterNavItemsByRole(getMainNavItems(), currentUser?.role);
-  const communicationNavItems = filterNavItemsByRole(getCommunicationNavItems(), currentUser?.role);
-  const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
-
-  // Create a Set to track used item IDs and prevent duplicates
-  const usedItemIds = new Set<string>();
+  // Get navigation items using the validated source
+  const { main, communication, tools } = getAllNavSections();
   
-  // Helper function to filter out any potential duplicates
-  const getUniqueItems = (items: NavItem[]): NavItem[] => {
-    return items.filter(item => {
-      if (usedItemIds.has(item.id)) {
-        console.warn(`Duplicate navigation item detected and filtered: ${item.id}`);
-        return false;
-      }
-      usedItemIds.add(item.id);
-      return true;
-    });
-  };
+  // Filter by role after validation has already occurred
+  const mainNavItems = filterNavItemsByRole(main, currentUser?.role);
+  const communicationNavItems = filterNavItemsByRole(communication, currentUser?.role);
+  const toolsNavItems = filterNavItemsByRole(tools, currentUser?.role);
 
-  // Apply unique filtering to each section
-  const uniqueMainNavItems = getUniqueItems(mainNavItems);
-  const uniqueCommunicationNavItems = getUniqueItems(communicationNavItems);
-  const uniqueToolsNavItems = getUniqueItems(toolsNavItems);
-
-  console.log("Final unique nav items:", {
-    main: uniqueMainNavItems.map(i => i.label),
-    communication: uniqueCommunicationNavItems.map(i => i.label), 
-    tools: uniqueToolsNavItems.map(i => i.label)
+  console.log("Final nav items from validated source:", {
+    main: mainNavItems.map(i => i.label),
+    communication: communicationNavItems.map(i => i.label), 
+    tools: toolsNavItems.map(i => i.label)
   });
 
   return (
@@ -77,11 +60,11 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
       
       <div className="mt-6 space-y-4">
         {/* Main Navigation */}
-        {uniqueMainNavItems.length > 0 && (
+        {mainNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Main Navigation</h3>
             <div className="space-y-1">
-              {uniqueMainNavItems.map((item) => (
+              {mainNavItems.map((item) => (
                 <Button
                   key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
@@ -97,11 +80,11 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
         )}
         
         {/* Communication */}
-        {uniqueCommunicationNavItems.length > 0 && (
+        {communicationNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Communication</h3>
             <div className="space-y-1">
-              {uniqueCommunicationNavItems.map((item) => (
+              {communicationNavItems.map((item) => (
                 <Button
                   key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
@@ -117,11 +100,11 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
         )}
         
         {/* Tools */}
-        {uniqueToolsNavItems.length > 0 && (
+        {toolsNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Tools</h3>
             <div className="space-y-1">
-              {uniqueToolsNavItems.map((item) => (
+              {toolsNavItems.map((item) => (
                 <Button
                   key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
