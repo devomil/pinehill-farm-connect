@@ -71,7 +71,7 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full h-8 pl-1 pr-2 transition-all duration-200",
+                  "w-full h-8 pl-0 pr-2 transition-all duration-200",
                   collapsed ? "justify-center" : "justify-start"
                 )}
               >
@@ -96,7 +96,7 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
           <DebugButton
             onClick={handleDebugClick}
             className={cn(
-              "w-full h-8 pl-1 pr-2 transition-all duration-200",
+              "w-full h-8 pl-0 pr-2 transition-all duration-200",
               collapsed ? "justify-center" : "justify-start"
             )}
             variant="ghost"
@@ -110,7 +110,7 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
           <Button
             variant="ghost"
             className={cn(
-              "w-full h-8 pl-1 pr-2 transition-all duration-200",
+              "w-full h-8 pl-0 pr-2 transition-all duration-200",
               collapsed ? "justify-center" : "justify-start"
             )}
             onClick={handleLogout}

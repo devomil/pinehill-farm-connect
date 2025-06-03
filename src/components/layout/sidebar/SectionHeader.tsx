@@ -10,7 +10,7 @@ export const SectionHeader = ({ title, collapsed }: SectionHeaderProps) => {
   if (collapsed) return null;
   
   return (
-    <div className="pl-1 mb-1">
+    <div className="pl-0 mb-1">
       <p className="text-xs font-semibold text-muted-foreground">{title}</p>
     </div>
   );
