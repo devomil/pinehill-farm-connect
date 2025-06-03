@@ -22,6 +22,8 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   
+  console.log("CommunicationTopNavMenu rendering for user:", currentUser?.name, "role:", currentUser?.role);
+  
   const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
@@ -36,10 +38,16 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
     return location.pathname === path;
   };
   
-  // Get navigation items by section and filter by role - this prevents duplicates
+  // Get navigation items by section and filter by role
   const mainNavItems = filterNavItemsByRole(getMainNavItems(), currentUser?.role);
   const communicationNavItems = filterNavItemsByRole(getCommunicationNavItems(), currentUser?.role);
   const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
+
+  console.log("Final nav items:", {
+    main: mainNavItems.map(i => i.label),
+    communication: communicationNavItems.map(i => i.label), 
+    tools: toolsNavItems.map(i => i.label)
+  });
 
   return (
     <SheetContent side="right" className="w-80">
@@ -55,7 +63,7 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
             <div className="space-y-1">
               {mainNavItems.map((item) => (
                 <Button
-                  key={item.id}
+                  key={`main-${item.id}`}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
@@ -75,7 +83,7 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
             <div className="space-y-1">
               {communicationNavItems.map((item) => (
                 <Button
-                  key={item.id}
+                  key={`comm-${item.id}`}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
@@ -95,7 +103,7 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
             <div className="space-y-1">
               {toolsNavItems.map((item) => (
                 <Button
-                  key={item.id}
+                  key={`tools-${item.id}`}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
