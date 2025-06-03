@@ -16,7 +16,7 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-4 w-4") => 
   <Icon className={className} />;
 
-// EXACTLY 9 essential pages (no duplicates) - cleaned up navigation
+// Clean navigation items - no duplicates
 const ALL_NAV_ITEMS: NavItem[] = [
   // Main navigation (4 items)
   {
@@ -90,34 +90,22 @@ const ALL_NAV_ITEMS: NavItem[] = [
   }
 ];
 
-// Get items by section with deduplication
+// Get items by section with strict deduplication
 export const getMainNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'main');
-  // Ensure no duplicates by ID
-  return items.filter((item, index, array) => 
-    array.findIndex(i => i.id === item.id) === index
-  );
+  return ALL_NAV_ITEMS.filter(item => item.section === 'main');
 };
 
 export const getCommunicationNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'communication');
-  return items.filter((item, index, array) => 
-    array.findIndex(i => i.id === item.id) === index
-  );
+  return ALL_NAV_ITEMS.filter(item => item.section === 'communication');
 };
 
 export const getToolsNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'tools');
-  return items.filter((item, index, array) => 
-    array.findIndex(i => i.id === item.id) === index
-  );
+  return ALL_NAV_ITEMS.filter(item => item.section === 'tools');
 };
 
-// Get all navigation items with deduplication
+// Get all navigation items - already deduplicated since ALL_NAV_ITEMS has unique IDs
 export const getAllNavItems = (): NavItem[] => {
-  return ALL_NAV_ITEMS.filter((item, index, array) => 
-    array.findIndex(i => i.id === item.id) === index
-  );
+  return ALL_NAV_ITEMS;
 };
 
 // Simple role-based filtering
