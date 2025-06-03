@@ -105,32 +105,87 @@
 }
 
 .react-grid-item {
-  position: absolute; /* Ensure absolute positioning for free movement */
+  position: absolute;
   transform-origin: center;
   transform-style: preserve-3d;
   will-change: transform;
-  overflow: visible !important; /* Prevent content clipping */
+  overflow: visible !important;
 }
 
 /* Responsive improvements */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .react-grid-layout {
     margin: 0 !important;
   }
   
   .react-grid-item {
-    margin: 4px !important;
+    margin: 2px !important;
+  }
+  
+  .grid-dashboard {
+    padding: 0 4px;
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 481px) and (max-width: 768px) {
+  .react-grid-item {
+    margin: 4px !important;
+  }
+  
+  .grid-dashboard {
+    padding: 0 6px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .react-grid-item {
+    margin: 6px !important;
+  }
+  
   .grid-dashboard {
     padding: 0 8px;
   }
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .react-grid-item {
+    margin: 8px !important;
+  }
+  
   .grid-dashboard {
     padding: 0 12px;
+  }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  .react-grid-item {
+    margin: 12px !important;
+  }
+  
+  .grid-dashboard {
+    padding: 0 16px;
+  }
+}
+
+@media (min-width: 1921px) {
+  .react-grid-item {
+    margin: 16px !important;
+  }
+  
+  .grid-dashboard {
+    padding: 0 20px;
+  }
+}
+
+/* Responsive text scaling */
+@media (min-width: 1441px) {
+  .dashboard-widget-content {
+    font-size: 1.05rem;
+  }
+}
+
+@media (min-width: 1921px) {
+  .dashboard-widget-content {
+    font-size: 1.1rem;
   }
 }

@@ -15,7 +15,7 @@ export const useSidebarWidth = () => {
   const [widthConfig, setWidthConfig] = useState<SidebarWidthConfig>(DEFAULT_WIDTH_CONFIG);
 
   const updateWidthConfig = useCallback((newConfig: Partial<SidebarWidthConfig>) => {
-    setWidgetConfig(prev => ({ ...prev, ...newConfig }));
+    setWidthConfig(prev => ({ ...prev, ...newConfig }));
   }, []);
 
   const resetToDefault = useCallback(() => {

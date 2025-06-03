@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { LayoutItem } from "@/types/dashboard";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { Responsive, WidthProvider } from "react-grid-layout";
+import { useResponsiveLayout } from "@/hooks/useResponsiveLayout";
 import "react-grid-layout/css/styles.css";
 import "@/components/dashboard/DashboardGrid.css";
 
@@ -29,13 +30,49 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   cols,
   dragHandleClass,
 }) => {
+  const responsive = useResponsiveLayout();
+
+  // Responsive breakpoints and columns based on screen size
+  const responsiveBreakpoints = {
+    xxl: 1920,
+    xl: 1440,
+    lg: 1024,
+    md: 768,
+    sm: 480,
+    xs: 0
+  };
+
+  const responsiveCols = {
+    xxl: responsive.isExtraLarge ? 6 : 4,
+    xl: responsive.isLargeDesktop ? 4 : 3,
+    lg: 3,
+    md: 2,
+    sm: 1,
+    xs: 1
+  };
+
+  // Responsive row height based on screen size
+  const getRowHeight = () => {
+    if (responsive.isExtraLarge) return 40;
+    if (responsive.isLargeDesktop) return 35;
+    if (responsive.isDesktop) return 30;
+    return 25;
+  };
+
+  // Responsive margins based on screen size
+  const getMargin = (): [number, number] => {
+    if (responsive.isExtraLarge) return [16, 16];
+    if (responsive.isLargeDesktop) return [12, 12];
+    if (responsive.isDesktop) return [8, 8];
+    return [4, 4];
+  };
+
   // Load any stored widget sizes from localStorage on component mount
   useEffect(() => {
     try {
       const storedSizes = localStorage.getItem('dashboard-widget-sizes');
       if (storedSizes) {
         const sizeData = JSON.parse(storedSizes);
-        // Apply stored sizes to layout if they exist
         const updatedLayout = layout.map(item => {
           if (sizeData[item.i]) {
             return {
@@ -53,12 +90,9 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
     }
   }, []);
 
-  // Handle layout changes with collision detection and size persistence
   const handleLayoutChange = (newLayout: LayoutItem[]) => {
-    // Process and validate layout before passing up to parent
     onLayoutChange(newLayout);
     
-    // Store widget sizes in localStorage
     try {
       const sizeData: Record<string, { w: number, h: number }> = {};
       newLayout.forEach(item => {
@@ -70,14 +104,13 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
     }
   };
 
-  // Function to handle widget resizing
   const handleWidgetResize = (widgetId: string, newSize: { width: number, height: number }) => {
     const updatedLayout = layout.map(item => {
       if (item.i === widgetId) {
         return {
           ...item,
-          w: Math.round(newSize.width / (cols.lg / 12)), // Convert pixels to grid units
-          h: Math.round(newSize.height / 30) // Assuming rowHeight is 30
+          w: Math.round(newSize.width / (responsiveCols.lg / 12)),
+          h: Math.round(newSize.height / getRowHeight())
         };
       }
       return item;
@@ -90,26 +123,32 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
     <div className="grid-dashboard w-full max-w-none">
       <ResponsiveGridLayout
         className="layout"
-        layouts={{ lg: layout, md: layout, sm: layout, xs: layout, xxs: layout }}
-        breakpoints={breakpoints}
-        cols={cols}
-        rowHeight={30}
-        containerPadding={[4, 4]}
-        margin={[8, 8]}
+        layouts={{ 
+          xxl: layout, 
+          xl: layout, 
+          lg: layout, 
+          md: layout, 
+          sm: layout, 
+          xs: layout 
+        }}
+        breakpoints={responsiveBreakpoints}
+        cols={responsiveCols}
+        rowHeight={getRowHeight()}
+        containerPadding={[0, 0]}
+        margin={getMargin()}
         onLayoutChange={handleLayoutChange}
         isDraggable={isCustomizing}
         isResizable={isCustomizing}
         draggableHandle={`.${dragHandleClass}`}
-        compactType={null} // Set to null to prevent automatic compacting
-        preventCollision={true} // Prevent widgets from overlapping
+        compactType={null}
+        preventCollision={true}
         useCSSTransforms={true}
-        isBounded={false} // Allow widgets to be placed freely
+        isBounded={false}
         resizeHandles={['se']}
         autoSize={true}
-        width={undefined} // Let the grid calculate its own width
+        width={undefined}
         onResize={(layout, oldItem, newItem) => {
-          // This ensures smooth resizing animation during the resize operation
-          // The final size will be saved in handleLayoutChange when resize is complete
+          // Smooth resizing animation during the resize operation
         }}
         resizeHandle={
           <div className="custom-resize-handle">
