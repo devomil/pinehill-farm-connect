@@ -87,15 +87,15 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
   };
 
   return (
-    <div className="grid-dashboard">
+    <div className="grid-dashboard w-full max-w-none">
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: layout, md: layout, sm: layout, xs: layout, xxs: layout }}
         breakpoints={breakpoints}
         cols={cols}
         rowHeight={30}
-        containerPadding={[16, 16]}
-        margin={[20, 20]}
+        containerPadding={[8, 8]}
+        margin={[16, 16]}
         onLayoutChange={handleLayoutChange}
         isDraggable={isCustomizing}
         isResizable={isCustomizing}
@@ -106,6 +106,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
         isBounded={false} // Allow widgets to be placed freely
         resizeHandles={['se']}
         autoSize={true}
+        width={undefined} // Let the grid calculate its own width
         onResize={(layout, oldItem, newItem) => {
           // This ensures smooth resizing animation during the resize operation
           // The final size will be saved in handleLayoutChange when resize is complete
