@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { getAllNavItems, filterNavItemsByRole } from '@/config/navConfig';
+import { getMainNavItems, getCommunicationNavItems, getToolsNavItems, filterNavItemsByRole } from '@/config/navConfig';
 
 interface CommunicationTopNavMenuProps {
   onClose: () => void;
@@ -36,13 +36,10 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
     return location.pathname === path;
   };
   
-  // Get all navigation items and filter by role, then deduplicate by ID
-  const allNavItems = filterNavItemsByRole(getAllNavItems(), currentUser?.role);
-  
-  // Group items by section for better organization
-  const mainNavItems = allNavItems.filter(item => item.section === 'main');
-  const communicationNavItems = allNavItems.filter(item => item.section === 'communication');
-  const toolsNavItems = allNavItems.filter(item => item.section === 'tools');
+  // Get navigation items by section and filter by role - this prevents duplicates
+  const mainNavItems = filterNavItemsByRole(getMainNavItems(), currentUser?.role);
+  const communicationNavItems = filterNavItemsByRole(getCommunicationNavItems(), currentUser?.role);
+  const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
 
   return (
     <SheetContent side="right" className="w-80">
