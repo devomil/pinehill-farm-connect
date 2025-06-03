@@ -46,16 +46,16 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
       )}
     >
       <SidebarBrand collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto py-2">
         <SidebarNav collapsed={collapsed} />
       </div>
 
       <div className="border-t">
         {/* Debug Button */}
-        <div className="p-2 border-b">
+        <div className="p-1 border-b">
           <DebugButton
             onClick={handleDebugClick}
-            className="w-full justify-start"
+            className="w-full justify-start h-8 px-2"
             variant="ghost"
           >
             <span className={!collapsed ? "ml-2" : "hidden"}>Open Diagnostics</span>
@@ -65,11 +65,11 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className="justify-start font-normal w-full p-3"
+          className="justify-start font-normal w-full h-8 px-2 m-1"
           onClick={handleLogout}
         >
-          <LogOut className="h-5 w-5 mr-3" />
-          <span className={!collapsed ? "block" : "hidden"}>Logout</span>
+          <LogOut className="h-4 w-4" />
+          <span className={!collapsed ? "block ml-2" : "hidden"}>Logout</span>
         </Button>
       </div>
     </div>

@@ -11,7 +11,7 @@ interface SidebarNavProps {
 
 export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   return (
-    <nav className="flex flex-col gap-4 px-2">
+    <nav className="flex flex-col gap-2 px-1">
       {/* Main navigation group */}
       <MainNavItems collapsed={collapsed} />
       

@@ -18,20 +18,20 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
   const filteredItems = filterNavItemsByRole(toolsItems, currentUser?.role);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-0.5">
       {filteredItems.map(item => (
         <Button
           key={item.id}
           variant="ghost"
           className={cn(
-            "justify-start font-normal",
+            "justify-start font-normal h-8 px-2",
             pathname === item.path && "bg-accent"
           )}
           asChild
         >
           <Link to={item.path} className="flex w-full items-center">
             {item.icon}
-            <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+            <span className={!collapsed ? "block ml-2" : "hidden"}>{item.label}</span>
             {!collapsed && item.badge}
           </Link>
         </Button>
