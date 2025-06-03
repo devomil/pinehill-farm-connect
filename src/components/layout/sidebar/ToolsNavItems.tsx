@@ -24,7 +24,7 @@ export const ToolsNavItems = ({ collapsed }: NavItemProps) => {
           key={item.id}
           variant="ghost"
           className={cn(
-            "justify-start font-normal h-8 px-2",
+            "justify-start font-normal h-8 pl-1 pr-2",
             pathname === item.path && "bg-accent"
           )}
           asChild
