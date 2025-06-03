@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useSidebarWidth } from "@/hooks/useSidebarWidth";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,12 +15,14 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, requireAdmin = false, extraHeaderControls }: DashboardLayoutProps) {
   const { currentUser, isAuthenticated } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const { widthConfig, updateWidthConfig, getMainContentStyles } = useSidebarWidth();
 
   console.log("DashboardLayout rendering", {
     isAuthenticated,
     currentUser: currentUser?.name,
     requireAdmin,
-    hasExtraControls: !!extraHeaderControls
+    hasExtraControls: !!extraHeaderControls,
+    widthConfig
   });
 
   if (!isAuthenticated) {
@@ -30,19 +33,24 @@ export function DashboardLayout({ children, requireAdmin = false, extraHeaderCon
     return <Navigate to="/dashboard" />;
   }
 
+  const mainContentStyles = getMainContentStyles(collapsed);
+
   return (
     <div className="flex h-screen bg-gray-50 w-full">
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Sidebar 
+        collapsed={collapsed} 
+        setCollapsed={setCollapsed}
+        widthConfig={widthConfig}
+        onWidthConfigChange={updateWidthConfig}
+      />
       <main 
-        className={cn(
-          "flex-1 overflow-y-auto relative transition-all duration-200",
-          collapsed ? "ml-10" : "ml-32"
-        )}
+        className="flex-1 overflow-y-auto relative transition-all duration-200"
         style={{ 
           padding: '0', 
           margin: '0',
-          width: collapsed ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 8rem)',
-          maxWidth: collapsed ? 'calc(100vw - 2.5rem)' : 'calc(100vw - 8rem)'
+          marginLeft: mainContentStyles.marginLeft,
+          width: mainContentStyles.width,
+          maxWidth: mainContentStyles.maxWidth
         }}
       >
         {extraHeaderControls && (

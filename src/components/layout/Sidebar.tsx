@@ -4,23 +4,29 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { SidebarBrand } from "./SidebarBrand";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarMobileSheet } from "./SidebarMobileSheet";
+import { SidebarWidthControls } from "./SidebarWidthControls";
 import { Button } from "@/components/ui/button";
 import { DebugButton } from "@/components/debug/DebugButton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SidebarWidthConfig } from "@/hooks/useSidebarWidth";
 
 interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  widthConfig: SidebarWidthConfig;
+  onWidthConfigChange: (config: Partial<SidebarWidthConfig>) => void;
 }
 
-export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
+export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigChange }: SidebarProps) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const [showWidthControls, setShowWidthControls] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -28,8 +34,13 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
   };
 
   const handleDebugClick = () => {
-    // Navigate to the global diagnostics page
     navigate("/diagnostics");
+  };
+
+  const getWidthClass = () => {
+    const collapsedWidth = widthConfig.collapsed * 0.25;
+    const expandedWidth = widthConfig.expanded * 0.25;
+    return collapsed ? `w-[${collapsedWidth}rem]` : `w-[${expandedWidth}rem]`;
   };
 
   if (isMobile) {
@@ -40,10 +51,10 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
 
   return (
     <div
-      className={cn(
-        "border-r bg-background relative h-screen flex flex-col transition-all z-30",
-        collapsed ? "w-10" : "w-32"
-      )}
+      className="border-r bg-background relative h-screen flex flex-col transition-all z-30"
+      style={{
+        width: collapsed ? `${widthConfig.collapsed * 0.25}rem` : `${widthConfig.expanded * 0.25}rem`
+      }}
     >
       <SidebarBrand collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="flex-1 overflow-y-auto py-2">
@@ -51,6 +62,30 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
       </div>
 
       <div className="border-t">
+        {/* Width Controls */}
+        <div className="p-1 border-b">
+          <Popover open={showWidthControls} onOpenChange={setShowWidthControls}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-8 px-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span className={!collapsed ? "ml-2" : "hidden"}>Width Settings</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="right" className="w-auto p-0">
+              <SidebarWidthControls
+                currentConfig={widthConfig}
+                onWidthChange={(config) => {
+                  onWidthConfigChange(config);
+                  setShowWidthControls(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {/* Debug Button */}
         <div className="p-1 border-b">
           <DebugButton
