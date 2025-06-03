@@ -5,13 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Home, 
-  Calendar, 
-  Users, 
-  BarChart3, 
   Menu,
-  LogOut,
-  Settings
+  LogOut
 } from 'lucide-react';
 import {
   Sheet,
@@ -20,51 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-
-interface TopNavItem {
-  id: string;
-  path: string;
-  label: string;
-  icon: React.ReactNode;
-  adminOnly?: boolean;
-}
-
-// Clean navigation items - no duplicates
-const topNavItems: TopNavItem[] = [
-  {
-    id: 'dashboard',
-    path: '/dashboard',
-    label: 'Dashboard',
-    icon: <Home className="h-4 w-4" />
-  },
-  {
-    id: 'time',
-    path: '/time',
-    label: 'Time',
-    icon: <Calendar className="h-4 w-4" />
-  },
-  {
-    id: 'employees',
-    path: '/employees',
-    label: 'Employees',
-    icon: <Users className="h-4 w-4" />,
-    adminOnly: true
-  },
-  {
-    id: 'reports',
-    path: '/reports',
-    label: 'Reports',
-    icon: <BarChart3 className="h-4 w-4" />
-  }
-];
-
-// Additional menu items - clean list, no duplicates
-const additionalMenuItems = [
-  { id: 'marketing', path: '/marketing', label: 'Marketing', icon: <BarChart3 className="h-4 w-4" /> },
-  { id: 'training', path: '/training', label: 'Training Portal', icon: <Settings className="h-4 w-4" /> },
-  { id: 'admin-training', path: '/admin-training', label: 'Training Admin', icon: <Settings className="h-4 w-4" />, adminOnly: true },
-  { id: 'diagnostics', path: '/diagnostics', label: 'Diagnostics', icon: <Settings className="h-4 w-4" /> }
-];
+import { getMainNavItems, getToolsNavItems, filterNavItemsByRole } from '@/config/navConfig';
 
 export const CommunicationTopNav: React.FC = () => {
   const navigate = useNavigate();
@@ -88,14 +39,9 @@ export const CommunicationTopNav: React.FC = () => {
     return location.pathname === path;
   };
   
-  // Filter items by role and ensure no duplicates
-  const filteredTopNavItems = topNavItems.filter(item => 
-    !item.adminOnly || isAdmin
-  );
-  
-  const filteredMenuItems = additionalMenuItems.filter(item => 
-    !item.adminOnly || isAdmin
-  );
+  // Get navigation items from centralized config
+  const mainNavItems = filterNavItemsByRole(getMainNavItems(), currentUser?.role);
+  const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm relative z-50">
@@ -111,9 +57,9 @@ export const CommunicationTopNav: React.FC = () => {
             </Badge>
           </div>
           
-          {/* Top Navigation Items */}
+          {/* Top Navigation Items - showing main nav items */}
           <div className="hidden md:flex items-center space-x-1">
-            {filteredTopNavItems.map((item) => (
+            {mainNavItems.map((item) => (
               <Button
                 key={item.id}
                 variant={isActive(item.path) ? "default" : "ghost"}
@@ -147,11 +93,11 @@ export const CommunicationTopNav: React.FC = () => {
                 </SheetHeader>
                 
                 <div className="mt-6 space-y-4">
-                  {/* Quick Navigation */}
+                  {/* Main Navigation */}
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Quick Navigation</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Main Navigation</h3>
                     <div className="space-y-1">
-                      {filteredTopNavItems.map((item) => (
+                      {mainNavItems.map((item) => (
                         <Button
                           key={item.id}
                           variant={isActive(item.path) ? "default" : "ghost"}
@@ -165,11 +111,11 @@ export const CommunicationTopNav: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Additional Tools */}
+                  {/* Tools */}
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Additional Tools</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Tools</h3>
                     <div className="space-y-1">
-                      {filteredMenuItems.map((item) => (
+                      {toolsNavItems.map((item) => (
                         <Button
                           key={item.id}
                           variant={isActive(item.path) ? "default" : "ghost"}
