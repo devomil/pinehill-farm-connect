@@ -13,7 +13,7 @@ function isPromise<T = any>(val: unknown): val is Promise<T> {
 }
 
 /**
- * Optimized refresh hook with aggressive throttling to prevent performance issues
+ * Optimized refresh hook with aggressive throttling and emergency circuit breaker
  */
 export function useRefreshMessages() {
   const communications = useCommunications();
@@ -25,6 +25,11 @@ export function useRefreshMessages() {
   const dashboard = useDashboardData();
   const handleRefreshData = dashboard?.handleRefreshData;
   
+  // Emergency circuit breaker
+  const EMERGENCY_COOLDOWN = 60000; // 1 minute
+  const lastEmergencyReset = useRef<number>(0);
+  const emergencyBlockCount = useRef<number>(0);
+  
   // Much more aggressive throttling
   const lastRefreshTimestamp = useRef<number>(0);
   const isRefreshing = useRef<boolean>(false);
@@ -34,9 +39,19 @@ export function useRefreshMessages() {
   const refreshCount = useRef<number>(0);
   const MAX_REFRESHES_PER_HOUR = 10; // Limit refreshes per hour
   
-  // Combined refresh function with heavy throttling
+  // Combined refresh function with heavy throttling and emergency circuit breaker
   const refresh = useCallback(async () => {
     const now = Date.now();
+    
+    // Emergency circuit breaker
+    if (now - lastEmergencyReset.current < EMERGENCY_COOLDOWN) {
+      emergencyBlockCount.current++;
+      console.warn(`useRefreshMessages: Emergency cooldown active - blocking refresh attempt #${emergencyBlockCount.current}`);
+      return false;
+    } else if (emergencyBlockCount.current > 0) {
+      console.log(`useRefreshMessages: Emergency cooldown expired, resetting. Blocked ${emergencyBlockCount.current} attempts.`);
+      emergencyBlockCount.current = 0;
+    }
     
     // Check if we're refreshing too frequently
     if (isRefreshing.current) {
@@ -66,10 +81,13 @@ export function useRefreshMessages() {
       }
     }
     
-    console.log("useRefreshMessages: Starting optimized refresh");
+    console.log("useRefreshMessages: Starting optimized refresh with emergency controls");
     isRefreshing.current = true;
     lastRefreshTimestamp.current = now;
     refreshCount.current++;
+    
+    // Activate emergency cooldown on refresh to prevent rapid succession
+    lastEmergencyReset.current = now;
     
     try {
       const refreshPromises: Promise<any>[] = [];
@@ -136,6 +154,7 @@ export function useRefreshMessages() {
     lastRefreshTime: lastRefreshTimestamp.current,
     canRefresh: !isRefreshing.current && 
                 (Date.now() - lastRefreshTimestamp.current >= REFRESH_THRESHOLD) &&
-                refreshCount.current < MAX_REFRESHES_PER_HOUR
+                refreshCount.current < MAX_REFRESHES_PER_HOUR &&
+                (Date.now() - lastEmergencyReset.current >= EMERGENCY_COOLDOWN)
   };
 }

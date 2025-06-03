@@ -114,39 +114,38 @@ export const useCommunications = (excludeShiftCoverage = false) => {
     };
   }, [refetch, currentUser?.id, currentUser?.email]);
 
-  // Set up background refresh with EXTREMELY limited frequency
+  // EMERGENCY: Disable background refresh timer completely
   useEffect(() => {
     if (!currentUser?.id || !isMounted.current) return;
     
-    // EXTREMELY less frequent refreshes to prevent UI flickering
-    const isAdmin = currentUser.role === 'admin';
+    console.log("useCommunications: Background refresh DISABLED to prevent loops");
     
-    // One-time setup for background refresh
-    const backgroundRefreshTimer = window.setTimeout(() => {
-      // Don't refresh if component is unmounted or refresh is in progress or max refreshes reached
-      if (!isMounted.current || refreshInProgress.current || bgRefreshCount.current >= MAX_BG_REFRESHES) return;
-      
-      const now = Date.now();
-      // Only do a background refresh if it's been at least 10 minutes
-      if (now - lastBackgroundRefreshTime.current > 600000) { // 10 minutes
-        console.log(`Scheduled background refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
-        bgRefreshCount.current++;
-        lastBackgroundRefreshTime.current = now;
-        
-        refetch().finally(() => {
-          // Just mark it done, no further action needed
-        });
-      }
-    }, isAdmin ? 600000 : 900000); // 10-15 minutes - greatly increased
+    // TEMPORARILY DISABLE background refresh
+    // const isAdmin = currentUser.role === 'admin';
+    // 
+    // const backgroundRefreshTimer = window.setTimeout(() => {
+    //   if (!isMounted.current || refreshInProgress.current || bgRefreshCount.current >= MAX_BG_REFRESHES) return;
+    //   
+    //   const now = Date.now();
+    //   if (now - lastBackgroundRefreshTime.current > 600000) {
+    //     console.log(`Scheduled background refresh of communications data${isAdmin ? ' (admin user)' : ''}`);
+    //     bgRefreshCount.current++;
+    //     lastBackgroundRefreshTime.current = now;
+    //     
+    //     refetch().finally(() => {
+    //       // Just mark it done, no further action needed
+    //     });
+    //   }
+    // }, isAdmin ? 600000 : 900000);
     
     // Clear timeout on unmount
     return () => {
-      clearTimeout(backgroundRefreshTimer);
+      // clearTimeout(backgroundRefreshTimer);
       if (refreshTimeoutRef.current !== null) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [refetch, currentUser?.id, currentUser?.role, lastRefreshTime, refreshInProgress]);
+  }, [currentUser?.id, currentUser?.role]);
 
   return {
     messages: messages || [],

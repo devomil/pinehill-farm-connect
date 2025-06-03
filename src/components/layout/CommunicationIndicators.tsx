@@ -38,23 +38,24 @@ export const CommunicationIndicators: React.FC = () => {
   // Admin users need more frequent refreshes to keep badges accurate
   const isAdmin = currentUser?.role === 'admin';
 
-  // Refresh data when on dashboard to ensure badges are updated
+  // EMERGENCY: Disable auto-refresh completely
   useEffect(() => {
-    // Initial refresh when component mounts
+    // Initial refresh only
+    console.log("CommunicationIndicators: Initial refresh only (auto-refresh disabled)");
     refreshMessages();
     refetchData();
     
-    // Set up automatic refresh interval - more frequent for admins
-    const refreshInterval = setInterval(() => {
-      console.log("Auto-refreshing communications indicators");
-      refreshMessages();
-      refetchData();
-    }, isAdmin ? 20000 : 30000); // 20s for admins, 30s for regular users
+    // COMMENT OUT the interval entirely for now
+    // const refreshInterval = setInterval(() => {
+    //   console.log("Auto-refreshing communications indicators");
+    //   refreshMessages();
+    //   refetchData();
+    // }, isAdmin ? 20000 : 30000); // 20s for admins, 30s for regular users
     
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, [refreshMessages, refetchData, isAdmin]);
+    // return () => {
+    //   clearInterval(refreshInterval);
+    // };
+  }, [refreshMessages, refetchData]);
 
   // Additional effect to refresh when returning to dashboard
   useEffect(() => {

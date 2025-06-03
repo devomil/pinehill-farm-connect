@@ -6,7 +6,7 @@ import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 type RefetchFunction = (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<any, Error>>;
 
 /**
- * Optimized refresh manager with improved debounce and throttling
+ * Optimized refresh manager with improved debounce and throttling + Emergency Circuit Breaker
  */
 export function useMessageRefreshManager(
   currentUser: User | null,
@@ -21,11 +21,26 @@ export function useMessageRefreshManager(
   const loadingToastShown = useRef<boolean>(false);
   const toastIdRef = useRef<string | null>(null);
 
+  // EMERGENCY CIRCUIT BREAKER
+  const EMERGENCY_COOLDOWN = 60000; // 1 minute
+  const lastEmergencyReset = useRef<number>(0);
+  const emergencyBlockCount = useRef<number>(0);
+
   // Track when we hit refresh limit
   const refreshLimitHitTime = useRef<number | null>(null);
 
   const refreshMessages = useCallback(() => {
     const now = Date.now();
+    
+    // EMERGENCY CIRCUIT BREAKER - blocks all refreshes during cooldown
+    if (now - lastEmergencyReset.current < EMERGENCY_COOLDOWN) {
+      emergencyBlockCount.current++;
+      console.warn(`Emergency cooldown active - blocking refresh attempt #${emergencyBlockCount.current}`);
+      return Promise.resolve();
+    } else if (emergencyBlockCount.current > 0) {
+      console.log(`Emergency cooldown expired, resetting. Blocked ${emergencyBlockCount.current} attempts.`);
+      emergencyBlockCount.current = 0;
+    }
     
     // If we've hit refresh limit, enforce a long cooldown period
     if (refreshLimitHitTime.current !== null) {
@@ -46,6 +61,8 @@ export function useMessageRefreshManager(
       if (refreshLimitHitTime.current === null) {
         console.warn(`Maximum refresh count (${MAX_REFRESHES_PER_SESSION}) reached for this session. Enforcing cooldown.`);
         refreshLimitHitTime.current = now;
+        // Activate emergency cooldown when limit is hit
+        lastEmergencyReset.current = now;
       }
       return Promise.resolve();
     }
@@ -96,6 +113,9 @@ export function useMessageRefreshManager(
     refreshInProgress.current = true;
     lastRefreshTime.current = now;
     refreshCount.current++;
+    
+    // Activate emergency cooldown on manual refresh to prevent rapid succession
+    lastEmergencyReset.current = now;
     
     // Only show loading indicators on intentional manual refreshes
     // And only when we're on the communications or time page
