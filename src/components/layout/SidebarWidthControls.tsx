@@ -17,23 +17,23 @@ export const SidebarWidthControls: React.FC<SidebarWidthControlsProps> = ({
 }) => {
   const handleExpandedWidthChange = (value: string) => {
     const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 16 && numValue <= 64) {
+    if (!isNaN(numValue) && numValue >= 32 && numValue <= 80) {
       onWidthChange({ ...currentConfig, expanded: numValue });
     }
   };
 
   const handleCollapsedWidthChange = (value: string) => {
     const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 8 && numValue <= 16) {
+    if (!isNaN(numValue) && numValue >= 12 && numValue <= 24) {
       onWidthChange({ ...currentConfig, collapsed: numValue });
     }
   };
 
   const presetConfigs = [
-    { name: 'Narrow', collapsed: 10, expanded: 28 },
-    { name: 'Default', collapsed: 10, expanded: 32 },
-    { name: 'Wide', collapsed: 10, expanded: 40 },
-    { name: 'Extra Wide', collapsed: 12, expanded: 48 }
+    { name: 'Compact', collapsed: 12, expanded: 48 },
+    { name: 'Default', collapsed: 16, expanded: 56 },
+    { name: 'Wide', collapsed: 16, expanded: 64 },
+    { name: 'Extra Wide', collapsed: 20, expanded: 72 }
   ];
 
   return (
@@ -45,13 +45,14 @@ export const SidebarWidthControls: React.FC<SidebarWidthControlsProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="collapsed-width" className="text-xs">
-              Collapsed Width ({currentConfig.collapsed * 0.25}rem)
+              Collapsed ({(currentConfig.collapsed * 0.25).toFixed(1)}rem)
             </Label>
             <Input
               id="collapsed-width"
               type="number"
-              min={8}
-              max={16}
+              min={12}
+              max={24}
+              step={2}
               value={currentConfig.collapsed}
               onChange={(e) => handleCollapsedWidthChange(e.target.value)}
               className="h-8"
@@ -59,13 +60,14 @@ export const SidebarWidthControls: React.FC<SidebarWidthControlsProps> = ({
           </div>
           <div>
             <Label htmlFor="expanded-width" className="text-xs">
-              Expanded Width ({currentConfig.expanded * 0.25}rem)
+              Expanded ({(currentConfig.expanded * 0.25).toFixed(1)}rem)
             </Label>
             <Input
               id="expanded-width"
               type="number"
-              min={16}
-              max={64}
+              min={32}
+              max={80}
+              step={4}
               value={currentConfig.expanded}
               onChange={(e) => handleExpandedWidthChange(e.target.value)}
               className="h-8"

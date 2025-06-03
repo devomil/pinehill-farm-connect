@@ -11,12 +11,14 @@ interface SidebarNavProps {
 
 export const SidebarNav = ({ collapsed }: SidebarNavProps) => {
   return (
-    <nav className="flex flex-col gap-2 px-1">
+    <nav className="flex flex-col gap-1 px-1">
       {/* Main navigation group */}
-      <MainNavItems collapsed={collapsed} />
+      <div className="mb-2">
+        <MainNavItems collapsed={collapsed} />
+      </div>
       
       {/* Communication group with separator */}
-      <div>
+      <div className="mb-2">
         <SectionHeader title="COMMUNICATION" collapsed={collapsed} />
         <CommunicationNavItems collapsed={collapsed} />
       </div>
