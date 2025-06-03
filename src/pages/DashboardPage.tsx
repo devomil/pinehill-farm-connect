@@ -46,7 +46,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
+      <div className="space-y-3">
         <DashboardHeader userName={currentUser?.name || ''} />
         
         <TimeManagementProvider currentUser={currentUser}>

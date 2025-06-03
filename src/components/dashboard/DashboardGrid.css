@@ -111,3 +111,26 @@
   will-change: transform;
   overflow: visible !important; /* Prevent content clipping */
 }
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .react-grid-layout {
+    margin: 0 !important;
+  }
+  
+  .react-grid-item {
+    margin: 4px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .grid-dashboard {
+    padding: 0 8px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .grid-dashboard {
+    padding: 0 12px;
+  }
+}

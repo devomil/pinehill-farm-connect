@@ -54,11 +54,11 @@ export function DashboardLayout({ children, requireAdmin = false, extraHeaderCon
         }}
       >
         {extraHeaderControls && (
-          <div className="absolute top-4 right-6 z-10">
+          <div className="absolute top-4 right-4 z-10">
             {extraHeaderControls}
           </div>
         )}
-        <div className="w-full h-full max-w-none" style={{ padding: '1.5rem', margin: '0' }}>
+        <div className="w-full h-full max-w-none" style={{ padding: '1rem', margin: '0' }}>
           {children}
         </div>
       </main>

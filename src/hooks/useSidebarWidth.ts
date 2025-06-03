@@ -7,8 +7,8 @@ export interface SidebarWidthConfig {
 }
 
 const DEFAULT_WIDTH_CONFIG: SidebarWidthConfig = {
-  collapsed: 16, // 4rem - wider for better icon visibility
-  expanded: 56,  // 14rem - wider for better text visibility
+  collapsed: 14, // 3.5rem - slightly narrower for better space utilization
+  expanded: 52,  // 13rem - optimized for better space utilization
 };
 
 export const useSidebarWidth = () => {
