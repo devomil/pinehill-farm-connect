@@ -7,15 +7,15 @@ export interface SidebarWidthConfig {
 }
 
 const DEFAULT_WIDTH_CONFIG: SidebarWidthConfig = {
-  collapsed: 14, // 3.5rem - slightly narrower for better space utilization
-  expanded: 52,  // 13rem - optimized for better space utilization
+  collapsed: 12, // 3rem - minimal width for icons only
+  expanded: 48,  // 12rem - compact width for navigation
 };
 
 export const useSidebarWidth = () => {
   const [widthConfig, setWidthConfig] = useState<SidebarWidthConfig>(DEFAULT_WIDTH_CONFIG);
 
   const updateWidthConfig = useCallback((newConfig: Partial<SidebarWidthConfig>) => {
-    setWidthConfig(prev => ({ ...prev, ...newConfig }));
+    setWidgetConfig(prev => ({ ...prev, ...newConfig }));
   }, []);
 
   const resetToDefault = useCallback(() => {

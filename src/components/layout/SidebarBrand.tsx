@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Compass } from "lucide-react";
+import { Compass, Menu } from "lucide-react";
 
 interface SidebarBrandProps {
   collapsed: boolean;
@@ -9,10 +9,15 @@ interface SidebarBrandProps {
 }
 
 export const SidebarBrand = ({ collapsed, setCollapsed }: SidebarBrandProps) => (
-  <div className="flex items-center h-12 px-2 shrink-0">
-    <Button variant="ghost" onClick={() => setCollapsed(!collapsed)} className="p-1">
-      <Compass className="h-4 w-4" />
-      {!collapsed && <span className="ml-1 text-xs">Pinehill</span>}
+  <div className="flex items-center h-14 px-2 shrink-0 border-b bg-gray-50/50">
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={() => setCollapsed(!collapsed)} 
+      className="p-2 hover:bg-gray-100"
+    >
+      <Menu className="h-4 w-4" />
+      {!collapsed && <span className="ml-2 font-semibold text-sm">Pinehill</span>}
     </Button>
   </div>
 );

@@ -13,7 +13,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   children,
   className,
   maxWidth = "full",
-  padding = "md"
+  padding = "none"
 }) => {
   const maxWidthClasses = {
     sm: "max-w-sm",
@@ -33,7 +33,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 
   return (
     <div className={cn(
-      "mx-auto w-full",
+      "w-full",
       maxWidthClasses[maxWidth],
       paddingClasses[padding],
       className

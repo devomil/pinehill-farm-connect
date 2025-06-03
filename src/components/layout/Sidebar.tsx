@@ -50,7 +50,7 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
 
   return (
     <div
-      className="border-r bg-background relative h-screen flex flex-col transition-all duration-300 ease-in-out z-30 shrink-0"
+      className="border-r bg-white/80 backdrop-blur-sm relative h-screen flex flex-col transition-all duration-300 ease-in-out z-30 shrink-0 shadow-sm"
       style={{
         width: `${currentWidthRem}rem`,
         minWidth: `${currentWidthRem}rem`,
@@ -63,20 +63,21 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
         <SidebarNav collapsed={collapsed} />
       </div>
 
-      <div className="border-t">
+      <div className="border-t bg-gray-50/50">
         {/* Width Controls */}
         <div className="p-1 border-b">
           <Popover open={showWidthControls} onOpenChange={setShowWidthControls}>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
+                size="sm"
                 className={cn(
-                  "w-full h-8 pl-0 pr-2 transition-all duration-200",
-                  collapsed ? "justify-center" : "justify-start"
+                  "w-full h-7 text-xs transition-all duration-200",
+                  collapsed ? "justify-center px-1" : "justify-start px-2"
                 )}
               >
-                <Settings className="h-4 w-4 shrink-0" />
-                {!collapsed && <span className="ml-2 truncate">Width Settings</span>}
+                <Settings className="h-3 w-3 shrink-0" />
+                {!collapsed && <span className="ml-2 truncate">Width</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent side="right" className="w-auto p-0">
@@ -96,12 +97,13 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
           <DebugButton
             onClick={handleDebugClick}
             className={cn(
-              "w-full h-8 pl-0 pr-2 transition-all duration-200",
-              collapsed ? "justify-center" : "justify-start"
+              "w-full h-7 text-xs transition-all duration-200",
+              collapsed ? "justify-center px-1" : "justify-start px-2"
             )}
             variant="ghost"
+            size="sm"
           >
-            {!collapsed && <span className="ml-2 truncate">Diagnostics</span>}
+            {!collapsed && <span className="ml-2 truncate">Debug</span>}
           </DebugButton>
         </div>
         
@@ -109,13 +111,14 @@ export const Sidebar = ({ collapsed, setCollapsed, widthConfig, onWidthConfigCha
         <div className="p-1">
           <Button
             variant="ghost"
+            size="sm"
             className={cn(
-              "w-full h-8 pl-0 pr-2 transition-all duration-200",
-              collapsed ? "justify-center" : "justify-start"
+              "w-full h-7 text-xs transition-all duration-200",
+              collapsed ? "justify-center px-1" : "justify-start px-2"
             )}
             onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4 shrink-0" />
+            <LogOut className="h-3 w-3 shrink-0" />
             {!collapsed && <span className="ml-2 truncate">Logout</span>}
           </Button>
         </div>

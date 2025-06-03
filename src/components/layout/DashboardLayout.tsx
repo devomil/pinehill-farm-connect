@@ -44,21 +44,19 @@ export function DashboardLayout({ children, requireAdmin = false, extraHeaderCon
         onWidthConfigChange={updateWidthConfig}
       />
       <main 
-        className="flex-1 overflow-y-auto relative transition-all duration-200"
+        className="flex-1 overflow-y-auto relative transition-all duration-300 ease-in-out"
         style={{ 
-          padding: '0', 
-          margin: '0',
           marginLeft: mainContentStyles.marginLeft,
           width: mainContentStyles.width,
           maxWidth: mainContentStyles.maxWidth
         }}
       >
         {extraHeaderControls && (
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-6 right-6 z-10">
             {extraHeaderControls}
           </div>
         )}
-        <div className="w-full h-full max-w-none" style={{ padding: '1rem', margin: '0' }}>
+        <div className="w-full h-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           {children}
         </div>
       </main>
