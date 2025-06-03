@@ -36,11 +36,10 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
     return location.pathname === path;
   };
   
-  // Get navigation items using the validated source
-  const { main, communication, tools } = getAllNavSections();
+  // Get navigation items using the validated source - only communication and tools
+  const { communication, tools } = getAllNavSections();
   
-  // Filter by role after validation has already occurred
-  const mainNavItems = filterNavItemsByRole(main, currentUser?.role);
+  // Filter by role after validation has already occurred - removed main nav items
   const communicationNavItems = filterNavItemsByRole(communication, currentUser?.role);
   const toolsNavItems = filterNavItemsByRole(tools, currentUser?.role);
 
@@ -51,26 +50,6 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
       </SheetHeader>
       
       <div className="mt-6 space-y-4">
-        {/* Main Navigation */}
-        {mainNavItems.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Main Navigation</h3>
-            <div className="space-y-1">
-              {mainNavItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant={isActive(item.path) ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => handleNavigation(item.path)}
-                >
-                  {item.icon}
-                  <span className="ml-2">{item.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-        
         {/* Communication */}
         {communicationNavItems.length > 0 && (
           <div>
