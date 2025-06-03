@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { getMainNavItems, getCommunicationNavItems, getToolsNavItems, filterNavItemsByRole } from '@/config/navConfig';
+import { getMainNavItems, getCommunicationNavItems, getToolsNavItems, filterNavItemsByRole, NavItem } from '@/config/navConfig';
 
 interface CommunicationTopNavMenuProps {
   onClose: () => void;
@@ -43,10 +43,30 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
   const communicationNavItems = filterNavItemsByRole(getCommunicationNavItems(), currentUser?.role);
   const toolsNavItems = filterNavItemsByRole(getToolsNavItems(), currentUser?.role);
 
-  console.log("Final nav items:", {
-    main: mainNavItems.map(i => i.label),
-    communication: communicationNavItems.map(i => i.label), 
-    tools: toolsNavItems.map(i => i.label)
+  // Create a Set to track used item IDs and prevent duplicates
+  const usedItemIds = new Set<string>();
+  
+  // Helper function to filter out any potential duplicates
+  const getUniqueItems = (items: NavItem[]): NavItem[] => {
+    return items.filter(item => {
+      if (usedItemIds.has(item.id)) {
+        console.warn(`Duplicate navigation item detected and filtered: ${item.id}`);
+        return false;
+      }
+      usedItemIds.add(item.id);
+      return true;
+    });
+  };
+
+  // Apply unique filtering to each section
+  const uniqueMainNavItems = getUniqueItems(mainNavItems);
+  const uniqueCommunicationNavItems = getUniqueItems(communicationNavItems);
+  const uniqueToolsNavItems = getUniqueItems(toolsNavItems);
+
+  console.log("Final unique nav items:", {
+    main: uniqueMainNavItems.map(i => i.label),
+    communication: uniqueCommunicationNavItems.map(i => i.label), 
+    tools: uniqueToolsNavItems.map(i => i.label)
   });
 
   return (
@@ -57,13 +77,13 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
       
       <div className="mt-6 space-y-4">
         {/* Main Navigation */}
-        {mainNavItems.length > 0 && (
+        {uniqueMainNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Main Navigation</h3>
             <div className="space-y-1">
-              {mainNavItems.map((item) => (
+              {uniqueMainNavItems.map((item) => (
                 <Button
-                  key={`main-${item.id}`}
+                  key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
@@ -77,13 +97,13 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
         )}
         
         {/* Communication */}
-        {communicationNavItems.length > 0 && (
+        {uniqueCommunicationNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Communication</h3>
             <div className="space-y-1">
-              {communicationNavItems.map((item) => (
+              {uniqueCommunicationNavItems.map((item) => (
                 <Button
-                  key={`comm-${item.id}`}
+                  key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
@@ -97,13 +117,13 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
         )}
         
         {/* Tools */}
-        {toolsNavItems.length > 0 && (
+        {uniqueToolsNavItems.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-2">Tools</h3>
             <div className="space-y-1">
-              {toolsNavItems.map((item) => (
+              {uniqueToolsNavItems.map((item) => (
                 <Button
-                  key={`tools-${item.id}`}
+                  key={item.id}
                   variant={isActive(item.path) ? "default" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => handleNavigation(item.path)}
