@@ -8,6 +8,7 @@ import { EmergencyNavigationReset } from "./EmergencyNavigationReset";
 import ErrorBoundary from "@/components/debug/ErrorBoundary";
 import { DebugProvider } from "@/components/debug/DebugProvider";
 import { DiagnosticsPanel } from "@/components/debug/DiagnosticsPanel";
+import { CommunicationTopNav } from "./CommunicationTopNav";
 import { CommunicationPageHeader } from "./CommunicationPageHeader";
 import { CommunicationPageContent } from "./CommunicationPageContent";
 import { toast } from "sonner";
@@ -77,17 +78,18 @@ const CommunicationPage: React.FC = () => {
     }
   }, [isEmergency, showDebugInfo, setShowDebugInfo]);
   
-  // Container style that resets everything and takes full space
+  // Container style for full-screen layout
   const containerStyle = {
     width: '100vw',
     height: '100vh',
     padding: '0',
     margin: '0',
-    backgroundColor: '#00ff00',
-    border: '3px solid #ff0000',
+    backgroundColor: '#ffffff',
     position: 'relative' as const,
     boxSizing: 'border-box' as const,
-    overflow: 'auto'
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column' as const
   };
   
   console.log("CommunicationPage container style:", containerStyle);
@@ -96,18 +98,8 @@ const CommunicationPage: React.FC = () => {
     <DebugProvider>
       <ErrorBoundary componentName="CommunicationPage">
         <div style={containerStyle} className="communication-page-container">
-          <div style={{ 
-            position: 'absolute', 
-            top: '50px', 
-            left: '10px', 
-            backgroundColor: 'blue', 
-            color: 'white', 
-            padding: '5px',
-            zIndex: 10001,
-            fontSize: '12px'
-          }}>
-            COMMUNICATION PAGE CONTENT - Tab: {activeTab}
-          </div>
+          {/* Top Navigation */}
+          <CommunicationTopNav />
           
           {/* Show emergency reset if critical loop detected */}
           {isEmergency && (
@@ -118,7 +110,7 @@ const CommunicationPage: React.FC = () => {
           )}
           
           {!isEmergency && (
-            <>
+            <div className="flex-1 flex flex-col overflow-hidden">
               <CommunicationPageHeader 
                 isAdmin={isAdmin}
                 unfilteredEmployees={unfilteredEmployees || []}
@@ -136,7 +128,7 @@ const CommunicationPage: React.FC = () => {
                 unfilteredEmployees={unfilteredEmployees || []}
                 isAdmin={isAdmin}
               />
-            </>
+            </div>
           )}
           
           {/* Always show debug helper when emergency or debug mode enabled */}

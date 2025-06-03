@@ -58,12 +58,11 @@ const Communication: React.FC = () => {
     bottom: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: '#ff0000',
-    border: '5px solid #00ff00',
+    backgroundColor: '#ffffff',
     padding: '0',
     margin: '0',
     zIndex: 999999, // Extremely high z-index
-    overflow: 'auto',
+    overflow: 'hidden',
     boxSizing: 'border-box' as const
   };
 
@@ -71,18 +70,6 @@ const Communication: React.FC = () => {
 
   return (
     <div style={fullScreenStyle} className="communication-full-screen-wrapper">
-      <div style={{ 
-        position: 'absolute', 
-        top: '10px', 
-        left: '10px', 
-        backgroundColor: 'yellow', 
-        color: 'black', 
-        padding: '5px',
-        zIndex: 1000000,
-        fontSize: '12px'
-      }}>
-        COMMUNICATION PAGE LOADED (FULL SCREEN) - {new Date().toLocaleTimeString()}
-      </div>
       <CommunicationPage />
     </div>
   );

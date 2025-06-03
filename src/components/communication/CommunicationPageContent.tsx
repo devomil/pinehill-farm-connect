@@ -24,7 +24,7 @@ export const CommunicationPageContent: React.FC<CommunicationPageContentProps> =
   isAdmin
 }) => {
   return (
-    <div className="w-full">
+    <div className="flex-1 flex flex-col h-full">
       <ErrorBoundary componentName="CommunicationTabs">
         <CommunicationTabs 
           activeTab={activeTab} 
@@ -33,14 +33,16 @@ export const CommunicationPageContent: React.FC<CommunicationPageContentProps> =
         />
       </ErrorBoundary>
       
-      <ErrorBoundary componentName="CommunicationContent">
-        <CommunicationContent
-          activeTab={activeTab}
-          currentUser={currentUser}
-          unfilteredEmployees={unfilteredEmployees || []}
-          isAdmin={isAdmin}
-        />
-      </ErrorBoundary>
+      <div className="flex-1 overflow-hidden">
+        <ErrorBoundary componentName="CommunicationContent">
+          <CommunicationContent
+            activeTab={activeTab}
+            currentUser={currentUser}
+            unfilteredEmployees={unfilteredEmployees || []}
+            isAdmin={isAdmin}
+          />
+        </ErrorBoundary>
+      </div>
     </div>
   );
 };
