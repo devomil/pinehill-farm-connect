@@ -9,10 +9,10 @@ interface SidebarBrandProps {
 }
 
 export const SidebarBrand = ({ collapsed, setCollapsed }: SidebarBrandProps) => (
-  <div className="flex items-center h-20 px-4 shrink-0">
-    <Button variant="ghost" onClick={() => setCollapsed(!collapsed)}>
-      <Compass className="h-6 w-6 mr-2" />
-      {!collapsed && <span>Pinehill Farm</span>}
+  <div className="flex items-center h-16 px-3 shrink-0">
+    <Button variant="ghost" onClick={() => setCollapsed(!collapsed)} className="p-2">
+      <Compass className="h-5 w-5" />
+      {!collapsed && <span className="ml-2 text-sm">Pinehill Farm</span>}
     </Button>
   </div>
 );

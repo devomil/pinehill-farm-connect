@@ -36,13 +36,13 @@ export function DashboardLayout({ children, requireAdmin = false, extraHeaderCon
       <main 
         className={cn(
           "flex-1 overflow-y-auto relative transition-all duration-200",
-          collapsed ? "ml-16" : "ml-64"
+          collapsed ? "ml-12" : "ml-52"
         )}
         style={{ 
           padding: '0', 
           margin: '0',
-          width: collapsed ? 'calc(100vw - 4rem)' : 'calc(100vw - 16rem)',
-          maxWidth: collapsed ? 'calc(100vw - 4rem)' : 'calc(100vw - 16rem)'
+          width: collapsed ? 'calc(100vw - 3rem)' : 'calc(100vw - 13rem)',
+          maxWidth: collapsed ? 'calc(100vw - 3rem)' : 'calc(100vw - 13rem)'
         }}
       >
         {extraHeaderControls && (

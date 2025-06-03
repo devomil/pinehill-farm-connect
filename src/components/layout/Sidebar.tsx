@@ -42,7 +42,7 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     <div
       className={cn(
         "border-r bg-background relative h-screen flex flex-col transition-all z-30",
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-12" : "w-52"
       )}
     >
       <SidebarBrand collapsed={collapsed} setCollapsed={setCollapsed} />
