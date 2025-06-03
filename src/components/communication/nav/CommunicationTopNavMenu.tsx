@@ -22,8 +22,6 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   
-  console.log("CommunicationTopNavMenu rendering for user:", currentUser?.name, "role:", currentUser?.role);
-  
   const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
@@ -45,12 +43,6 @@ export const CommunicationTopNavMenu: React.FC<CommunicationTopNavMenuProps> = (
   const mainNavItems = filterNavItemsByRole(main, currentUser?.role);
   const communicationNavItems = filterNavItemsByRole(communication, currentUser?.role);
   const toolsNavItems = filterNavItemsByRole(tools, currentUser?.role);
-
-  console.log("Final nav items from validated source:", {
-    main: mainNavItems.map(i => i.label),
-    communication: communicationNavItems.map(i => i.label), 
-    tools: toolsNavItems.map(i => i.label)
-  });
 
   return (
     <SheetContent side="right" className="w-80">

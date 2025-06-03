@@ -16,9 +16,9 @@ export interface NavItem {
 const createIcon = (Icon: React.FC<any>, className = "h-4 w-4") => 
   <Icon className={className} />;
 
-// Clean navigation items - exactly one of each, no duplicates
+// Clean navigation items - flattened hierarchy with standardized URLs
 const ALL_NAV_ITEMS: NavItem[] = [
-  // Main navigation (4 items)
+  // Main navigation (frequently used items at top level)
   {
     id: "dashboard",
     path: "/dashboard",
@@ -27,12 +27,11 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'main',
   },
   {
-    id: "employees",
-    path: "/employees", 
-    label: "Employees",
-    icon: createIcon(Users),
+    id: "communication",
+    path: "/communication",
+    label: "Communication", 
+    icon: createIcon(MessageSquare),
     section: 'main',
-    role: "admin",
   },
   {
     id: "time-management",
@@ -49,16 +48,17 @@ const ALL_NAV_ITEMS: NavItem[] = [
     section: 'main',
   },
   
-  // Communication navigation (1 item only)
+  // Admin-only main navigation
   {
-    id: "communication",
-    path: "/communication",
-    label: "Communication", 
-    icon: createIcon(MessageSquare),
-    section: 'communication',
+    id: "employees",
+    path: "/employees", 
+    label: "Employees",
+    icon: createIcon(Users),
+    section: 'main',
+    role: "admin",
   },
   
-  // Tools navigation (3 items - removed diagnostics as it's not a main nav item)
+  // Tools navigation
   {
     id: "marketing",
     path: "/marketing",
@@ -83,14 +83,14 @@ const ALL_NAV_ITEMS: NavItem[] = [
   }
 ];
 
-// Validate no duplicate IDs - enhanced validation
-const validateNavItems = () => {
-  const ids = ALL_NAV_ITEMS.map(item => item.id);
-  const uniqueIds = new Set(ids);
+// Validation function as suggested
+const validateNavConfig = () => {
+  const allItems = ALL_NAV_ITEMS;
+  const ids = allItems.map(item => item.id);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
   
-  if (ids.length !== uniqueIds.size) {
-    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
-    console.error("Duplicate navigation item IDs detected:", duplicates);
+  if (duplicates.length > 0) {
+    console.error('Duplicate nav IDs found:', duplicates);
     throw new Error(`Navigation configuration contains duplicate IDs: ${duplicates.join(', ')}`);
   }
   
@@ -98,39 +98,20 @@ const validateNavItems = () => {
   return true;
 };
 
-// Validate uniqueness of navigation sections
-const validateUniqueNavItems = (sections: NavItem[][]): NavItem[][] => {
-  const allIds = sections.flat().map(item => item.id);
-  const duplicates = allIds.filter((id, index) => allIds.indexOf(id) !== index);
-  
-  if (duplicates.length > 0) {
-    console.error('Duplicate nav item IDs found across sections:', duplicates);
-    throw new Error(`Duplicate navigation items found: ${duplicates.join(', ')}`);
-  }
-  
-  return sections;
-};
-
 // Run validation on load
-validateNavItems();
+validateNavConfig();
 
-// Get items by section with validation
+// Get items by section - simplified without cross-validation
 export const getMainNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'main');
-  console.log("getMainNavItems returning:", items.map(i => i.label));
-  return items;
+  return ALL_NAV_ITEMS.filter(item => item.section === 'main');
 };
 
 export const getCommunicationNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'communication');
-  console.log("getCommunicationNavItems returning:", items.map(i => i.label));
-  return items;
+  return ALL_NAV_ITEMS.filter(item => item.section === 'communication');
 };
 
 export const getToolsNavItems = (): NavItem[] => {
-  const items = ALL_NAV_ITEMS.filter(item => item.section === 'tools');
-  console.log("getToolsNavItems returning:", items.map(i => i.label));
-  return items;
+  return ALL_NAV_ITEMS.filter(item => item.section === 'tools');
 };
 
 // Get all navigation items
@@ -138,24 +119,19 @@ export const getAllNavItems = (): NavItem[] => {
   return ALL_NAV_ITEMS;
 };
 
-// Enhanced navigation getter with cross-section validation
+// Simplified navigation getter
 export const getAllNavSections = (): { main: NavItem[], communication: NavItem[], tools: NavItem[] } => {
-  const main = getMainNavItems();
-  const communication = getCommunicationNavItems();
-  const tools = getToolsNavItems();
-  
-  // Validate uniqueness across all sections
-  validateUniqueNavItems([main, communication, tools]);
-  
-  return { main, communication, tools };
+  return {
+    main: getMainNavItems(),
+    communication: getCommunicationNavItems(),
+    tools: getToolsNavItems()
+  };
 };
 
-// Simple role-based filtering with debugging
+// Simple role-based filtering
 export const filterNavItemsByRole = (items: NavItem[], role?: string | null): NavItem[] => {
-  const filtered = items.filter(item => {
+  return items.filter(item => {
     if (!item.role) return true; // No role requirement
     return item.role === role;
   });
-  console.log(`filterNavItemsByRole: ${items.length} items -> ${filtered.length} items for role: ${role}`);
-  return filtered;
 };
