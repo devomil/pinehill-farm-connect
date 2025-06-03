@@ -1,97 +1,38 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { useCommunications } from "@/hooks/useCommunications";
-import { isAnnouncementReadByUser } from "@/utils/announcementUtils";
-import { getCommunicationNavItems } from "@/config/navConfig";
+import { getCommunicationNavItems, filterNavItemsByRole } from "@/config/navConfig";
 
 interface NavItemProps {
   collapsed: boolean;
 }
 
 export const CommunicationNavItems = ({ collapsed }: NavItemProps) => {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   const { currentUser } = useAuth();
-  const { unreadMessages, refreshMessages } = useCommunications();
-  const { announcements, refetchData } = useDashboardData();
   
-  // Add effect to refresh unread messages when navigating to communications
-  useEffect(() => {
-    if (pathname === '/communication') {
-      const timer = setTimeout(() => {
-        refreshMessages();
-        refetchData();
-      }, 200);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [pathname, refreshMessages, refetchData]);
-  
-  // Count unread messages - explicitly only count direct message types
-  const unreadMessageCount = unreadMessages?.filter(
-    msg => (msg.type === 'general' || msg.type === 'shift_coverage' || msg.type === 'urgent') && 
-           msg.recipient_id === currentUser?.id &&
-           msg.read_at === null
-  ).length || 0;
-  
-  // Count unread announcements - exclude those requiring acknowledgment and those already read
-  const unreadAnnouncementCount = announcements
-    ? announcements.filter(a => {
-        return !isAnnouncementReadByUser(a, currentUser?.id) && 
-          !a.requires_acknowledgment;
-      }).length
-    : 0;
-
   const communicationItems = getCommunicationNavItems();
-  
-  // Calculate total unread count for unified badge
-  const totalUnreadCount = unreadMessageCount + unreadAnnouncementCount;
-    
-  // Create items with dynamic unified badge
-  const communicationItemsWithBadges = communicationItems.map(item => {
-    if (item.id === "communication") {
-      return {
-        ...item,
-        badge: totalUnreadCount > 0 ? (
-          <Badge variant={unreadMessageCount > 0 ? "destructive" : "default"} className="ml-auto">
-            {totalUnreadCount}
-          </Badge>
-        ) : null,
-        isActive: pathname === '/communication'
-      };
-    }
-    return item;
-  });
+  const filteredItems = filterNavItemsByRole(communicationItems, currentUser?.role);
 
   return (
-    <div className="flex flex-col gap-1">
-      {communicationItemsWithBadges.map(item => (
+    <div className="flex flex-col gap-0.5">
+      {filteredItems.map(item => (
         <Button
           key={item.id}
-          variant={item.badge !== null ? "default" : "ghost"}
+          variant="ghost"
           className={cn(
-            "justify-start font-normal",
-            (item as any).isActive && "bg-accent"
+            "justify-start font-normal h-8 px-2",
+            pathname === item.path && "bg-accent"
           )}
           asChild
         >
           <Link to={item.path} className="flex w-full items-center">
             {item.icon}
-            <span className={!collapsed ? "block" : "hidden"}>{item.label}</span>
+            <span className={!collapsed ? "block ml-2" : "hidden"}>{item.label}</span>
             {!collapsed && item.badge}
-            {collapsed && item.badge && (
-              <Badge 
-                variant={unreadMessageCount > 0 ? "destructive" : "default"} 
-                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center"
-              >
-                {totalUnreadCount}
-              </Badge>
-            )}
           </Link>
         </Button>
       ))}

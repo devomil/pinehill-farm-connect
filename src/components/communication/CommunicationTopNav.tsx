@@ -9,8 +9,7 @@ import {
   Calendar, 
   Users, 
   BarChart3, 
-  Menu, 
-  X,
+  Menu,
   LogOut,
   Settings
 } from 'lucide-react';
@@ -30,6 +29,7 @@ interface TopNavItem {
   adminOnly?: boolean;
 }
 
+// Clean navigation items - no duplicates
 const topNavItems: TopNavItem[] = [
   {
     id: 'dashboard',
@@ -58,11 +58,12 @@ const topNavItems: TopNavItem[] = [
   }
 ];
 
+// Additional menu items - clean list, no duplicates
 const additionalMenuItems = [
-  { path: '/marketing', label: 'Marketing', icon: <BarChart3 className="h-4 w-4" /> },
-  { path: '/training', label: 'Training Portal', icon: <Settings className="h-4 w-4" /> },
-  { path: '/admin-training', label: 'Training Admin', icon: <Settings className="h-4 w-4" />, adminOnly: true },
-  { path: '/diagnostics', label: 'Diagnostics', icon: <Settings className="h-4 w-4" /> }
+  { id: 'marketing', path: '/marketing', label: 'Marketing', icon: <BarChart3 className="h-4 w-4" /> },
+  { id: 'training', path: '/training', label: 'Training Portal', icon: <Settings className="h-4 w-4" /> },
+  { id: 'admin-training', path: '/admin-training', label: 'Training Admin', icon: <Settings className="h-4 w-4" />, adminOnly: true },
+  { id: 'diagnostics', path: '/diagnostics', label: 'Diagnostics', icon: <Settings className="h-4 w-4" /> }
 ];
 
 export const CommunicationTopNav: React.FC = () => {
@@ -87,6 +88,7 @@ export const CommunicationTopNav: React.FC = () => {
     return location.pathname === path;
   };
   
+  // Filter items by role and ensure no duplicates
   const filteredTopNavItems = topNavItems.filter(item => 
     !item.adminOnly || isAdmin
   );
@@ -169,7 +171,7 @@ export const CommunicationTopNav: React.FC = () => {
                     <div className="space-y-1">
                       {filteredMenuItems.map((item) => (
                         <Button
-                          key={item.path}
+                          key={item.id}
                           variant={isActive(item.path) ? "default" : "ghost"}
                           className="w-full justify-start"
                           onClick={() => handleNavigation(item.path)}

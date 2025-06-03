@@ -13,10 +13,10 @@ export interface NavItem {
 }
 
 // Icon factory function
-const createIcon = (Icon: React.FC<any>, className = "h-5 w-5 mr-3") => 
+const createIcon = (Icon: React.FC<any>, className = "h-4 w-4") => 
   <Icon className={className} />;
 
-// EXACTLY 9 essential pages (no duplicates)
+// EXACTLY 9 essential pages (no duplicates) - cleaned up navigation
 const ALL_NAV_ITEMS: NavItem[] = [
   // Main navigation (4 items)
   {
@@ -90,22 +90,34 @@ const ALL_NAV_ITEMS: NavItem[] = [
   }
 ];
 
-// Get items by section
+// Get items by section with deduplication
 export const getMainNavItems = (): NavItem[] => {
-  return ALL_NAV_ITEMS.filter(item => item.section === 'main');
+  const items = ALL_NAV_ITEMS.filter(item => item.section === 'main');
+  // Ensure no duplicates by ID
+  return items.filter((item, index, array) => 
+    array.findIndex(i => i.id === item.id) === index
+  );
 };
 
 export const getCommunicationNavItems = (): NavItem[] => {
-  return ALL_NAV_ITEMS.filter(item => item.section === 'communication');
+  const items = ALL_NAV_ITEMS.filter(item => item.section === 'communication');
+  return items.filter((item, index, array) => 
+    array.findIndex(i => i.id === item.id) === index
+  );
 };
 
 export const getToolsNavItems = (): NavItem[] => {
-  return ALL_NAV_ITEMS.filter(item => item.section === 'tools');
+  const items = ALL_NAV_ITEMS.filter(item => item.section === 'tools');
+  return items.filter((item, index, array) => 
+    array.findIndex(i => i.id === item.id) === index
+  );
 };
 
-// Get all navigation items
+// Get all navigation items with deduplication
 export const getAllNavItems = (): NavItem[] => {
-  return [...ALL_NAV_ITEMS];
+  return ALL_NAV_ITEMS.filter((item, index, array) => 
+    array.findIndex(i => i.id === item.id) === index
+  );
 };
 
 // Simple role-based filtering
